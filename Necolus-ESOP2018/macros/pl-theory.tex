@@ -1,0 +1,42 @@
+% General
+\newcommand{\code}[1]{\texttt {#1}}
+\newcommand{\highlight}[1]{\colorbox{yellow}{#1}}
+
+% Logic
+\newcommand{\turns}{\vdash}
+
+% Math
+\newcommand{\im}[1]{\lvert #1 \rvert}
+
+% PL
+\newcommand{\subst}[2]{\lbrack #1 / #2 \rbrack}
+\newcommand{\concatOp}{+\kern-1.3ex+\kern0.8ex}  % http://tex.stackexchange.com/a/4195/73122
+
+% Constructors
+\newcommand{\for}[2]{\forall #1. \, #2}
+\newcommand{\lam}[2]{\lambda #1. \, #2}
+\newcommand{\app}[2]{#1 \; #2}
+\newcommand{\blam}[2]{\Lambda #1. #2}
+\newcommand{\tapp}[2]{#1 \; #2}
+
+\newcommand{\pair}[2]{\langle #1, #2 \rangle}
+\newcommand{\inter}[2]{#1 \,\&\, #2}
+\newcommand{\mer}[2]{#1 \, ,, \, #2}
+\newcommand{\proj}[2]{{\code{proj}}_{#1} #2}
+\newcommand{\ctx}[2]{#1\left\{#2\right\}}
+\newcommand{\bra}[1]{\llbracket #1 \rrbracket}
+
+
+\newcommand{\recordType}[2]{\{ #1 : #2 \}}
+\newcommand{\recordCon}[2]{\{ #1 = #2 \}}
+
+\newcommand{\ifThenElse}[3]{\code{if} \; #1 \; \code{then} \; #2 \; \code{else} \; #3}
+
+\newcommand{\defeq}{\stackrel{def}{=}}
+
+\newcommand{\logeq}[2]{#1 \backsimeq_{log} #2}
+\newcommand{\kleq}[2]{#1 \backsimeq #2}
+\newcommand{\ctxeq}[3]{#1 \backsimeq_{ctx} #2 : #3}
+
+\newcommand{\stepn}{\longmapsto^*}
+\newcommand{\step}{\longmapsto}

@@ -1,0 +1,1411 @@
+% \renewcommand{\listtheoremname}{List of Lemmas and Theorems}
+% \listoftheorems[show={mlemma,clemma,mtheorem,ctheorem}]
+% \renewcommand{\hlmath}{}
+
+\section{Some Missing Definitions}
+
+\begin{definition}[Type annotation erasure]
+  \begin{align*}
+    \erase{x} &= x \\
+    \erase{n} &= n \\
+    \erase{\blam{x}{A}{e}} &= \erlam{x}{\erase{e}} \\
+    \erase{\erlam{x}{e}} &= \erlam{x}{\erase{e}} \\
+    \erase{e_1 ~ e_2} &= \erase{e_1} ~ \erase{e_2} \\
+    \erase{e : A } &= \erase{e}
+  \end{align*}
+\end{definition}
+
+
+\begin{definition}[Less Precision]
+  \begin{mathpar}
+    \framebox{$A \lessp B$}{\quad \text{Type precision}} \\
+    \LUnknown \and \LNat \and \LArrow \and \LTVar
+    \and \LForall
+  \end{mathpar}
+  \begin{mathpar}
+    \framebox{$e_1 \lessp e_2$}{\quad \text{Term precision}} \\
+    \LRefl \and \LAbsAnn \and \LApp
+  \end{mathpar}
+  \begin{mathpar}
+    \framebox{$\dctx_1 \ctxsplit \dctx_2 \bylessp e_1 \lesspp e_2$}
+    {\quad \text{Term less precision in \pbc}} \\
+    \LVar \and \LNatP \and \LAbsAnnP \and
+    \LAppP \and \LCast \and \LCastL \and
+    \LCastR
+  \end{mathpar}
+  \label{fig:lessp}
+\end{definition}
+
+
+
+\section{Properties of Consistent Subtyping}
+
+Below are other properties of consistent subtyping that are needed in the manual
+proofs of the algorithmic system.
+
+% \begin{clemma}[Subtyping Substitution]
+%   If $\Psi \vdash \tau$ and $\Psi, a, \Psi' \vdash A \tconssub B$ then $\Psi,
+%   \Psi' \subst a \tau \vdash A \subst a \tau \tconssub B \subst a \tau$.
+%   \label{lemma:sub_subst}
+% \end{clemma}
+% \begin{proof}
+%   By induction on the given derivation.
+%   \begin{itemize}
+%   \item Case \[\inferrule{b \in \Psi, a, \Psi'}{\Psi, a, \Psi' \vdash b \tconssub b}\rname{CS-TVar}\]
+%     It follows that either $b = a$ or $b \neq a$. In the former case, we need to
+%     show $\Psi, \Psi' \vdash \tau \tconssub \tau$, which follows by
+%     \Cref{lemma:sub_refl}. In the latter case, we need to show $\Psi, \Psi' \subst a \tau
+%     \vdash b \subst a \tau \tconssub b \subst a \tau$, that is $\Psi, \Psi' \subst a \tau
+%     \vdash b \tconssub b$, which follows by \rul{CS-TVar}.
+%   \item Case \[\inferrule{\Psi, a, \Psi' \vdash B_1 \tconssub A_1 \\ \Psi, a,
+%         \Psi' \vdash A_2 \tconssub B_2}{\Psi, a, \Psi' \vdash A_1 \to A_2
+%         \tconssub B_1 \to B_2}\rname{CS-Fun}\]
+%     \begin{longtable}[l]{ll|l}
+%       & $\Psi, a, \Psi' \vdash B_1 \tconssub A_1$ & Premise \\
+%       & $\Psi, \Psi' \subst a \tau \vdash B_1 \subst a \tau \tconssub A_1 \subst a \tau$ & By i.h. \\ \\
+%       & $\Psi, a, \Psi' \vdash A_2 \tconssub B_2$ & Premise \\
+%       & $\Psi, \Psi' \subst a \tau \vdash A_2 \subst a \tau \tconssub B_2 \subst a \tau$ & By i.h. \\ \\
+%       & $\Psi, \Psi' \subst a \tau \vdash (A_1 \subst a \tau) \to (A_2 \subst a \tau) \tconssub (B_1 \subst a \tau) \to (B_2 \subst a \tau)$ & By \rul{CS-Fun} \\
+%       & $\Psi, \Psi' \subst a \tau \vdash (A_1 \to A_2) \subst a \tau  \tconssub (B_1 \to B_2) \subst a \tau$ & By def. of substitution
+%     \end{longtable}
+
+%   \item Case \[\inferrule{ }{\Psi, a, \Psi' \vdash \nat \tconssub \nat}\rname{CS-Int}\]
+%     We need to show $\Psi, \Psi' \subst a \tau \vdash \nat \tconssub \nat$, which follows by \rul{CS-Int}.
+%   \item Case \[\inferrule{\Psi, a, \Psi' \bywf \sigma \\ \Psi, a, \Psi' \vdash A
+%         \subst b \sigma \tconssub B}{\Psi, a, \Psi' \vdash \forall b. A \tconssub B}\rname{CS-ForallL}\]
+%     \begin{longtable}[l]{ll|l}
+%       & $\Psi, a, \Psi' \vdash A \subst b \sigma \tconssub B$ & Premise \\
+%       & $\Psi, \Psi' \subst a \tau \vdash (A \subst b \sigma) \subst a \tau \tconssub B \subst a \tau$ & By i.h. \\
+%       & $\Psi, \Psi' \subst a \tau \vdash (A \subst a \tau) \subst {b} {(\sigma \subst a \tau)} \tconssub B \subst a \tau$ & By distributivity of substitution \\ \\
+%       & $\Psi, a, \Psi' \vdash \sigma$ & Premise \\
+%       & $\Psi \vdash \tau $ & Given \\
+%       & $\Psi, \Psi' \subst a \tau \vdash \sigma \subst a \tau$ & By def. of substitution \\ \\
+%       & $\Psi, \Psi' \subst a \tau \vdash \forall b . A \subst a \tau \tconssub B \subst a \tau$ & By \rul{CS-ForallL} \\
+%       & $\Psi, \Psi' \subst a \tau \vdash (\forall b . A) \subst a \tau \tconssub B \subst a \tau$ & By def. of substitution
+%     \end{longtable}
+%   \item Case \[\inferrule{\Psi, a, \Psi', b \vdash A \tconssub B}{\Psi, a, \Psi' \vdash A \tconssub \forall b. B}\rname{CS-ForallR}\]
+%     \begin{longtable}[l]{ll|l}
+%       & $\Psi, a, \Psi', b \vdash A \tconssub B$ & Premise \\
+%       & $\Psi, \Psi' \subst a \tau, b \vdash A \subst a \tau \tconssub B \subst a \tau$ & By i.h. \\
+%       & $\Psi, \Psi' \subst a \tau \vdash A \subst a \tau \tconssub \forall b. B \subst a \tau$ & By \rul{CS-ForallR} \\
+%       & $\Psi, \Psi' \subst a \tau \vdash A \subst a \tau \tconssub (\forall b. B) \subst a \tau$ & By def. of substitution
+%     \end{longtable}
+%   \item \[\inferrule{ }{\Psi, a, \Psi' \vdash \unknown \tconssub A}\rname{CS-UnknownL}\]
+%     By \rul{CS-UnknownL}, we have $\Psi, \Psi' \subst a \tau \vdash \unknown \tconssub A \subst a \tau$
+%   \item \[\inferrule{ }{\Psi, a, \Psi' \vdash A \tconssub \unknown}\rname{CS-UnknownR}\]
+%     By \rul{CS-UnknownR}, we have $\Psi, \Psi' \subst a \tau \vdash A \subst a \tau \tconssub \unknown $
+%   \end{itemize}
+
+% \end{proof}
+
+\begin{clemma}[Consistent Subtyping is Reflexive] \label{lemma:sub_refl}%
+  If $\Psi \vdash A$ then $\Psi \vdash A \tconssub A$.
+\end{clemma}
+
+
+\begin{clemma}[Monotype Equality] If $\Psi \vdash \sigma \tconssub \tau$ then $\sigma = \tau$.
+  \label{lemma:mono_equal}
+\end{clemma}
+
+
+\begin{mlemma}[Invertibility]
+  If $\Psi \vdash A \tconssub \forall b. B$ then $\Psi, b \vdash A \tconssub B$.
+  \label{lemma:forall_invert}
+\end{mlemma}
+\begin{proof}
+  By induction on the given derivation.
+  \begin{itemize}
+  \item Cases \rul{CS-Fun}, \rul{CS-TVar}, \rul{CS-Int}, \rul{CS-UnknownR} are
+    impossible since the supertype cannot have the form $\forall b. B$.
+  \item Case \[\CSForallR\] The premise is exactly what we need.
+  \item Case \[\CSForallL\] where $B = \forall b. B_0$. By i.h., we have $\Psi,
+    b \vdash A \subst a \tau \tconssub B_0$. By \rul{CS-ForallL}, we have $\Psi,
+    b \vdash \forall a. A \tconssub B_0$
+  \item Case \[\CSUnknownL\] where $A = \forall b. B$. By \rul{CS-UnknownnL} we
+    have $\Psi, b \vdash \unknown \tconssub B$.
+  \end{itemize}
+\end{proof}
+% \begin{proof}
+%   By induction on the given derivation.
+%   \begin{itemize}
+%   \item Cases \rul{CS-ForallR}, \rul{CS-ForallL}, \rul{CS-UnknownL},
+%     \rul{CS-UnknownR} are impossible since at least one of the types in question
+%     is not a monotype.
+%   \item Case \[\CSFun\] By i.h., we have $B_1 = A_1$ and $A_2 = B_2$. Therefore
+%     $A_1 \to A_2 = B_1 \to B_2$.
+%   \item Case \[\CSTVar\] Immediate.
+%   \item Case \[\CSInt\] Immediate.
+%   \end{itemize}
+% \end{proof}
+
+
+% \begin{mlemma}[Algorithmic Consistent Subtyping is Reflexive] \label{lemma:asub_refl}%
+%   If $\Gamma \vdash A$ then $\Gamma \vdash A \tconssub A \dashv \Gamma$.
+% \end{mlemma}
+% \begin{proof}
+%   By induction on $A$
+%   \begin{itemize}
+%   \item Case $A = B_1 \to B_2$. We have $\Gamma \vdash B_1 \tconssub B_1 \dashv
+%     Gamma$ and $\Gamma \vdash B_2 \tconssub B_2 \dashv Gamma$ by induction
+%     hypothesis.
+%   \end{itemize}
+% \end{proof}
+
+\section{Properties of Context Extension}
+
+\begin{definition}[Context extension]
+\begin{mathpar}
+  \framebox{$\Gamma \exto \Delta$}
+  {\quad \text{$\Gamma$ is extended by $\Delta$}} \\
+  \ExtID \and \ExtVar \and \ExtUVar \and \ExtEVar \and \ExtSolved \and \ExtSolve
+  \and \ExtAdd \and \ExtAddS
+\end{mathpar}
+  \label{fig:ctxt:extension}
+\end{definition}
+
+\begin{definition}[Context as a substitution to a type]
+  \begin{align*}
+    [\Gamma]\nat & = \nat \\
+    [\Gamma]a &= a \\
+    [\Gamma]\genA &= \genA \\
+    [\Gamma[\genA = \tau]]\genA &= [\Gamma[\genA = \tau]]\tau \\
+    [\Gamma](A \to B) &= [\Gamma]A \to [\Gamma]B \\
+    [\Gamma](\forall a. A) &= \forall a. [\Gamma]A \\
+    [\Gamma]\unknown &= \unknown
+  \end{align*}
+\end{definition}
+
+\begin{definition}[Complete context as a substitution to a context]
+  \begin{align*}
+    \ctxsubst{\Omega}{\emptyset} &= \emptyset \\
+    \ctxsubst{\Omega, x : A}{(\Gamma, x : A_{\Gamma})} &= \ctxsubst{\Omega}{\Gamma}, x : \ctxsubst{\Omega}{A} \quad (\text{if $\ctxsubst{\Omega}{A} = \ctxsubst{\Omega}{A_\Gamma}$}) \\
+    \ctxsubst{\Omega, a}{(\Gamma, a)} &= \ctxsubst{\Omega}{\Gamma}, a \\
+    \ctxsubst{\Omega, \genA = \tau}{(\Gamma, \genA)} &= \ctxsubst{\Omega}{\Gamma} \\
+    \ctxsubst{\Omega, \genA = \tau}{(\Gamma, \genA = \tau_\Gamma)} &= \ctxsubst{\Omega}{\Gamma} \quad (\text{if $\ctxsubst{\Omega}{\tau} = \ctxsubst{\Omega}{\tau_\Gamma}$}) \\
+    \ctxsubst{\Omega, \genA = \tau}{\Gamma} &= \ctxsubst{\Omega}{\Gamma} \quad (\text{if $\genA \notin \mathit{dom}(\Gamma)$})
+  \end{align*}
+\end{definition}
+
+\begin{definition}[Softness]
+  A context $\Theta$ is soft iff it consists only of $\genA$ and $\genA = \tau$ declarations.
+\end{definition}
+
+
+\subsection{Syntactic Properties}
+
+Since the definition of the context extension judgment ($\Gamma \exto \Delta$,
+\cref{fig:ctxt:extension}) is exactly the same as that of the DK system, we refer
+the reader to their technical report for the proofs of the following syntactic
+properties of context extension.
+
+
+\begin{mlemma}[Reverse Declaration Order Preservation]
+  If $\Gamma \exto \Delta$ and $a$ and $b$ are both declared in $\Gamma$ and $a$
+  is declared to the left of $b$ in $\Delta$, then $a$ is declared to the left
+  of $b$ in $\Gamma$.
+  \label{lemma:reverse_preserve}
+\end{mlemma}
+
+
+
+\begin{mlemma}[Reflexivity]
+  If $\Gamma$ is well-formed then $\Gamma \exto \Gamma$.
+  \label{lemma:reflexivity}
+\end{mlemma}
+
+
+\begin{mlemma}[Transitivity]
+  If $\Gamma \exto \Delta$ and $\Delta \exto \Theta$ then $\Gamma \exto \Theta$.
+  \label{lemma:transitivity}
+\end{mlemma}
+
+
+\begin{mlemma}[Substitution Extension Invariance]
+  If $\Theta \vdash A$ and $\Theta \exto \Gamma$ then $\ctxsubst{\Gamma}{A} =
+  \ctxsubst{\Gamma}{(\ctxsubst{\Theta}{A})}$ and $\ctxsubst{\Gamma}{A} = \ctxsubst{\Theta}{(\ctxsubst{\Gamma}{A})}$.
+ \label{lemma:subst_ext_invar}
+\end{mlemma}
+
+
+\begin{mlemma}[Extension Order] \label{lemma:extension_order}%
+  We have the following:
+  \begin{enumerate}
+  \item If $\Gamma_L, a , \Gamma_R \exto \Delta$ then $\Delta = (\Delta_L, a, \Delta_R)$ where
+    $\Gamma_L \exto \Delta_L$. Moreover, if $\Gamma_R$ is soft then $\Delta_R$ is soft.
+  \item If $\Gamma_L, \genA, \Gamma_R \exto \Delta$ then $\Delta = (\Delta_L, \Theta, \Delta_R)$ where $\Gamma_L \exto \Delta_L$ and $\Theta$ is either $\genA$ or $\genA = \tau$ for some $\tau$.
+  \item If $\Gamma_L , x : A, \Gamma_R \exto \Delta$ then $\Delta = (\Delta_L, x :
+    A', \Delta_R)$ where $\Gamma_L \exto \Delta_L$ and $\ctxsubst{\Delta_L}{A} =
+    \ctxsubst{\Delta_L}{A'}$. Moreover, $\Gamma_R$ is soft if any only if
+    $\Delta_R$ is soft.
+  \end{enumerate}
+\end{mlemma}
+
+\begin{mlemma}[Solution Admissibility for Extension]
+  If $\Gamma_L \vdash \tau$ then $\Gamma_L, \genA, \Gamma_R \exto \Gamma_L,
+  \genA = \tau, \Gamma_R$.
+\label{lemma:solution_ext}
+\end{mlemma}
+
+\begin{mlemma}[Unsolved Variable Addition for Extension]
+  We have that $\Gamma_L, \Gamma_R \exto \Gamma_L, \genA, \Gamma_R$.
+  \label{lemma:unsolved_ext}
+\end{mlemma}
+
+\begin{mlemma}[Drop Variable for Extension]
+  If $\Gamma, \genA \exto \Delta$ then $\Gamma \exto \Delta$.
+  \label{lemma:drop_ext}
+\end{mlemma}
+
+
+\begin{mlemma}[Parallel Admissibility]
+  If $\Gamma_L \exto \Delta_L$ and $\Gamma_L, \Gamma_R \exto \Delta_L, \Delta_R$ then:
+  \begin{enumerate}
+  \item $\Gamma_L, \genA, \Gamma_R \exto \Delta_L, \genA, \Delta_R$
+  \item If $\Delta_L \vdash \tau'$ then $\Gamma_L, \genA, \Gamma_R \exto \Delta_L, \genA, \Delta_R$.
+  \item If $\Gamma_L \vdash \tau$ and $\Delta_L \vdash \tau'$ and $\ctxsubst{\Delta_L}{\tau} = \ctxsubst{\Delta_L}{\tau'}$, then $\Gamma_L, \genA = \tau, \Gamma_R \exto \Delta_L, \genA = \tau', \Delta_R$.
+  \end{enumerate}
+  \label{lemma:paralell_admit}
+\end{mlemma}
+
+\begin{mlemma}[Parallel Extension Solution]
+  If $\Gamma_L, \genA, \Gamma_R \exto \Delta_L, \genA = \tau', \Delta_R$ and
+  $\Gamma_L \vdash \tau$ and $\ctxsubst{\Delta_L}{\tau} =
+  \ctxsubst{\Delta_L}{\tau'}$, then $\Gamma_L, \genA = \tau, \Gamma_R \exto
+  \Delta_L, \genA = \tau', \Delta_R$.
+
+ \label{lemma:solved_var_add_ext}
+\end{mlemma}
+
+
+\begin{mlemma}[Variable Preservation]
+  If $(x : A) \in \Delta$ or $(x : A) \in \Omega$ and $\Delta \exto \Omega$ then $(x : \ctxsubst{\Omega}{A}) \in \ctxsubst{\Omega}{\Delta}$.
+  \label{lemma:variable_preservation}
+\end{mlemma}
+
+\begin{mlemma}[Softness Goes Away]
+  If $\Delta, \Theta \exto \Omega, \Omega_Z$ where $\Delta \exto \Omega$ and $\Theta$ is soft, then $\ctxsubst{\Omega, \Omega_Z}{(\Delta, \Theta)} = \ctxsubst{\Omega}{\Delta}$.
+  \label{lemma:subst_go_away}
+\end{mlemma}
+
+
+\begin{mlemma}[Stability of Complete Contexts]
+  If $\Gamma \exto \Omega$ then $\ctxsubst{\Omega}{\Gamma} = \ctxsubst{\Omega}{\Omega}$.
+  \label{lemma:stable_complete_ctxt}
+\end{mlemma}
+
+\begin{mlemma}[Finishing Types]
+  If $\Omega \vdash A$ and $\Omega \exto \Omega'$ then $\ctxsubst{\Omega}{A} = \ctxsubst{\Omega'}{A}$.
+  \label{lemma:finish_types}
+\end{mlemma}
+
+
+\begin{mlemma}[Finishing completions]
+  If $\Omega \exto \Omega'$ then $\ctxsubst{\Omega}{\Omega} = \ctxsubst{\Omega'}{\Omega'}$.
+  \label{lemma:finish_complete}
+\end{mlemma}
+
+
+\begin{mlemma}[Confluence of Completeness]
+  If $\Delta_1 \exto \Omega$ and $\Delta_2 \exto \Omega$ then
+  $\ctxsubst{\Omega}{\Delta_1} = \ctxsubst{\Omega}{\Delta_2}$.
+  \label{lemma:confluence}
+\end{mlemma}
+
+
+\subsection{Instantiation Extends}
+
+
+\begin{mlemma}[Instantiation Extension]
+  If $\Gamma \vdash \genA \unif A \dashv \Delta$ or $\Gamma \vdash A \unif \genA \dashv \Delta$ then $\Gamma \exto \Delta$.
+  \label{lemma:inst_extension}
+\end{mlemma}
+\begin{proof}
+  By induction on the given instantiation derivation.
+  \begin{itemize}
+  \item Case \[\InstLSolve\] By \cref{lemma:solution_ext}, we have $\Gamma, \genA, \Gamma' \exto \Gamma, \genA = \tau, \Gamma'$.
+  \item Case \[\InstLSolveU\] Immediate by \cref{lemma:reflexivity}.
+  \item Case \[\InstLReach\] By \cref{lemma:solution_ext}, we have $\Gamma[\genA][\genB] \exto \Gamma[\genA][\genB = \genA]$.
+  \item Case \[\InstLArr\] By applying \cref{lemma:unsolved_ext} twice, we
+    have $\Gamma[\genA] \exto \Gamma[\genA_2, \genA_1, \genA]$. By
+    \cref{lemma:solution_ext}, we have $\Gamma[\genA_2, \genA_1, \genA]
+    \exto \Gamma[\genA_2, \genA_1, \genA = \genA_1 \to \genA_2]$. By
+    \cref{lemma:transitivity}, we have $\Gamma[\genA] \exto \Gamma[\genA_2,
+    \genA_1, \genA = \genA_1 \to \genA_2]$. By i.h., we have $\Gamma[\genA_2,
+    \genA_1, \genA = \genA_1 \to \genA_2] \exto \Theta$ and $\Theta \exto
+    \Delta$. Therefore by applying \cref{lemma:transitivity} twice, we have
+    $\Gamma[\genA] \exto \Delta$.
+  \item Case \[\InstLAllR\] By i.h., we have $\Gamma[\genA], b \exto \Delta, b,
+    \Delta'$. By \cref{lemma:extension_order}, we have $\Gamma[\genA] \exto \Delta$.
+  \item Case \[\InstRSolve\] Similar to Case \rul{InstLSolve}.
+  \item Case \[\InstRSolveU\] Similar to Case \rul{InstLSolveU}.
+  \item Case \[\InstRReach\] Similar to Case \rul{InstLReach}.
+  \item Case \[\InstRArr\] Similar to Case \rul{InstLArr}.
+  \item Case \[\InstRAllL\] By i.h., we have $\Gamma[\genA], \genB \exto
+    \Delta$. By \cref{lemma:drop_ext} we have $\Gamma[\genA] \exto \Delta$.
+  \end{itemize}
+
+\end{proof}
+
+
+
+\subsection{Consistent Subtyping Extends}
+
+
+\begin{mlemma}[Consistent Subtyping Extension]
+  If $\Gamma \vdash A \tconssub B \dashv \Delta$ then $\Gamma \exto \Delta$.
+  \label{lemma:sub_extension}
+\end{mlemma}
+\begin{proof}
+  \begin{itemize}
+  \item Case \[\ACSForallR\] By i.h., we have $\Gamma, a \exto \Delta, a,
+    \Theta$. By \cref{lemma:extension_order}, we have $\Gamma \exto \Delta$.
+  \item Case \[\ACSForallL\] By i.h., we have $\Gamma, \genA \exto \Delta$. By
+    \cref{lemma:drop_ext}, we have $\Gamma \exto \Delta$.
+  \item Case \[\ACSFun\] By i.h., we have $\Gamma \exto \Theta$ and $\Theta
+    \exto \Delta$. By \cref{lemma:transitivity}, we have $\Gamma \exto \Delta$.
+  \item Cases \rul{ACS-Int}, \rul{ACS-UnknownL}, \rul{ACS-UnknownR}: In each of
+    these rules, the output context is the same as the input context, so
+    \cref{lemma:reflexivity} suffices.
+  \item Cases \rul{ACS-InstantiateL}, \rul{ACS-InstantiateR}: In each of these
+    rules, the premise has the same input and out contexts as the conclusion, so
+    \cref{lemma:inst_extension} suffices.
+  \end{itemize}
+\end{proof}
+
+\section{Soundness of Consistent Subtyping}
+\label{sec:pf:sound:sub}
+
+\begin{definition}[Filling] The filling of a context $|\Gamma|$ solves all
+  unsolved variables:
+  \begin{align*}
+    |\emptyset| &= \emptyset \\
+    |\Gamma, x : A| &= |\Gamma| , x : A \\
+    |\Gamma, a| &= |\Gamma| , a \\
+    |\Gamma, \genA = \tau| &= |\Gamma| , \genA = \tau \\
+    |\Gamma, \genA| &= |\Gamma| , \genA = \nat
+  \end{align*}
+  \label{def:filling}
+\end{definition}
+
+
+\subsection{Lemmas for Soundness}
+
+
+\begin{mlemma}[Substitution Stability]
+  For any well-formed complete context $(\Omega, \Omega_Z)$, if $\Omega \vdash A$
+  then $\ctxsubst{\Omega}{A} = \ctxsubst{\Omega,\Omega_Z}{A}$.
+  \label{lemma:subst_stable}
+\end{mlemma}
+\begin{proof}
+  By induction on $\Omega_Z$. If $\Omega_Z = \emptyset$, the result is
+  immediate. Otherwise use the i.h. and the fact that $\Omega \vdash A$ implies
+  $\mathit{fv}(A) \cap \mathit{dom}(\Omega_Z) = \emptyset$.
+\end{proof}
+
+
+\begin{mlemma}[Filling Completes]
+  If $\Gamma \exto \Omega$ and $(\Gamma, \Theta)$ is well-formed, then $\Gamma,
+  \Theta \exto \Omega, |\Theta|$.
+  \label{lemma:filling_completes}
+\end{mlemma}
+\begin{proof}
+  By induction on $\Theta$, following \cref{def:filling} and applying
+  the rules for $\exto$.
+\end{proof}
+
+
+
+\subsection{Instantiation Soundness}
+
+\begin{mtheorem}[Instantiation Soundness] \label{thm:inst_soundness}%
+  Given $\Delta \exto \Omega$ and $\ctxsubst{\Gamma}{A} = A$ and $\genA \notin \mathit{fv}(A)$:
+  \begin{itemize}
+  \item If $\Gamma \vdash \genA \unif A \dashv \Delta$ then $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{A}$.
+  \item If $\Gamma \vdash A \unif \genA \dashv \Delta$ then $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{A} \tconssub \ctxsubst{\Omega}{\genA}$.
+  \end{itemize}
+\end{mtheorem}
+
+\begin{proof}
+  By induction on the given instantiation derivation.
+  \begin{itemize}
+  \item Case \[\InstLSolve\] Immediate by \cref{lemma:sub_refl}.
+  \item Case \[\InstLSolveU\] Immediate by \rul{CS-UnknownR}.
+  \item Case \[\InstLReach\] Let $\Delta = \Gamma[\genA][\genB = \genA]$, we
+    have $\ctxsubst{\Delta}{\genA} = \genA = \ctxsubst{\Delta}{\genB}$. By
+    \cref{lemma:sub_refl}, $\ctxsubst{\Omega}{\Delta} \vdash
+    \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{\genB}$.
+  \item Case \[\InstLArr\]
+    Let $\Gamma_1 = \tctx[\genA_2, \genA_1, \genA = \genA_1 \to \genA_2]$:
+    \begin{longtable}[l]{ll|l}
+      & $\Theta \vdash \genA_2 \unif \ctxsubst{\Theta}{A_2} \dashv \Delta$& Premise \\
+      & $\Theta \exto \Delta$ & By \cref{lemma:inst_extension} \\
+      & $\Delta \exto \Omega$ & Given \\
+      & $\Theta \exto \Omega$ & By \cref{lemma:transitivity} \\
+      & $\Gamma_1 \vdash A_1 \unif \genA_1 \dashv \Theta$ & Given \\
+      $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{A_1} \tconssub \ctxsubst{\Omega}{\genA_1}$ & By i.h. and \Cref{lemma:confluence} \\
+      & $\Theta \vdash \genA_2 \unif \ctxsubst{\Theta}{A_2} \dashv \Delta$& Premise \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genA_2} \tconssub \ctxsubst{\Omega}{\ctxsubst{\Theta}{A_2}}$ & By i.h. \\
+      & $\Theta \exto \Omega$ & Above \\
+      $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genA_2} \tconssub \ctxsubst{\Omega}{A_2}$ & By \cref{lemma:subst_ext_invar} \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genA_1} \to \ctxsubst{\Omega}{\genA_2} \tconssub \ctxsubst{\Omega}{A_1} \to \ctxsubst{\Omega}{A_2}$ & By \rul{CS-Fun} \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{(\genA_1 \to \genA_2)} \tconssub \ctxsubst{\Omega}{(A_1 \to A_2)} $ & By def. of substitution
+    \end{longtable}
+  \item Case \[\InstLAllR\]
+    \begin{longtable}[l]{ll|l}
+      & $\Delta, b , \Delta' \exto \Omega, b, |\Delta'|$ & By \cref{lemma:filling_completes} \\
+      & $\tctx[\genA], b \vdash \genA \unif B \toctxr, b, \Delta'$ & Given \\
+      & $ \ctxsubst{\Omega, b, |\Delta'|}{(\Delta, b, \Delta')} \vdash \ctxsubst{\Omega, b, |\Delta'|}{\genA} \tconssub \ctxsubst{\Omega, b, |\Delta'|}{B} $ & By i.h. \\
+      & $ \ctxsubst{\Omega, b, |\Delta'|}{(\Delta, b, \Delta')} \vdash \ctxsubst{\Omega, b}{\genA} \tconssub \ctxsubst{\Omega, b}{B} $ & Free variables in $\genA$ and $B$ are declared in ($\Omega, b$)\\
+      & $ \ctxsubst{\Omega, b}{(\Delta, b)} \vdash \ctxsubst{\Omega, b}{\genA} \tconssub \ctxsubst{\Omega, b}{B} $ & By context partitioning and thinning \\
+      & $ \ctxsubst{\Omega}{\Delta}, b \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{B} $ & By context substitution \\
+      & $ \ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genA} \tconssub \forall b. \ctxsubst{\Omega}{B} $ & By \rul{CS-ForallR} \\
+      & $ \ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{(\forall b. B)} $ & By def. of substitution
+    \end{longtable}
+  \item Case \[\InstRSolve\] Similar to the \rul{InstLSolve} case.
+  \item Case \[\InstRSolveU\] Similar to the \rul{InstLSolveU} case.
+  \item Case \[\InstRReach\] Similar to the \rul{InstLReach} case.
+  \item Case \[\InstRArr\] Similar to the \rul{InstLArr} case.
+  \item Case \[\InstRAllL\]
+    \begin{longtable}[l]{ll|l}
+      & $\tctx[\genA], \genB \vdash B \subst b \genB \unif \genA \toctxr$ & Premise \\
+      & $\Delta \exto \Omega$ & Given \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{(B \subst b \genB)}  \tconssub \ctxsubst{\Omega}{\genA}$ & By i.h. \\
+      $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash (\ctxsubst{\Omega}{B}) \subst{b}{(\ctxsubst{\Omega}{\genB})}  \tconssub \ctxsubst{\Omega}{\genA}$ & By distributivity of substitution \\
+      $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genB} $ & Follows from def. of context application \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \forall b. (\ctxsubst{\Omega}{B})  \tconssub \ctxsubst{\Omega}{\genA}$ & By \rul{CS-ForallL} \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{(\forall b. B)}  \tconssub \ctxsubst{\Omega}{\genA}$ & By def. of substitution
+    \end{longtable}
+    \label{subsec:label}
+  \end{itemize}
+\end{proof}
+
+
+
+\subsection{Soundness of Consistent Subtyping}
+
+\begin{mtheorem}[Soundness of Algorithmic Consistent Subtyping] \label{thm:sub_soundness}%
+  If $\Gamma \vdash A \tconssub B \toctxr$ where $\ctxsubst{\tctx}{A} = A$ and
+  $\ctxsubst{\tctx}{B} = B$ and $\ctxr \exto \cctx$ then
+  $\ctxsubst{\cctx}{\Delta} \vdash \ctxsubst{\cctx}{A} \tconssub
+  \ctxsubst{\cctx}{B}$.
+\end{mtheorem}
+\begin{proof}
+  By induction on the derivation of $\Gamma \vdash A \tconssub B \dashv \Delta$.
+  \begin{itemize}
+  \item Case \[\ACSTVar\]
+    \begin{longtable}[l]{ll|l}
+      & $a \in \Gamma[a]$ & Given \\
+      & $a \in \ctxsubst{\Omega}{(\Gamma[a])}$ & Follows from def. of context application \\
+      & $\ctxsubst{\Omega}{(\Gamma[a])} \vdash a \tconssub a$ & By \rul{CS-TVar} \\
+      & $\ctxsubst{\Omega}{(\Gamma[a])} \vdash \ctxsubst{\Omega}{a} \tconssub \ctxsubst{\Omega}{a}$ & By def. of substitution
+    \end{longtable}
+  \item Case \[\ACSInt\] Immediate.
+  \item Case \[\ACSExVar\]
+    \begin{longtable}[l]{ll|l}
+      & $\ctxsubst{\Omega}{\genA}$ defined & Follows from def. of context application \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genA}$ & Follows from $\Delta = \Gamma[\genA]$ \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{\genA}$ & By \cref{lemma:sub_refl}
+    \end{longtable}
+  \item Case \[\ACSFun\]
+    \begin{longtable}[l]{ll|l}
+      & $\Gamma \vdash B_1 \tconssub A_1 \dashv \Theta$ & Premise \\
+      & $\Delta \exto \Omega$ & Given \\
+      & $\Theta \exto \Omega $ & By \cref{lemma:transitivity} \\
+      & $\ctxsubst{\Omega}{\Theta} \vdash \ctxsubst{\Omega}{B_1} \tconssub \ctxsubst{\Omega}{A_1}$ & By i.h. \\
+      $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{B_1} \tconssub \ctxsubst{\Omega}{A_1}$ & By \cref{lemma:confluence} \\
+      & $\Theta \vdash \ctxsubst{\Theta}{A_2} \tconssub \ctxsubst{\Theta}{B_2} \dashv \Delta$ & Premise \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{(\ctxsubst{\Theta}{A_2})} \tconssub \ctxsubst{\Omega}{(\ctxsubst{\Theta}{B_2})}$ & By i.h. \\
+      & $\ctxsubst{\Omega}{(\ctxsubst{\Theta}{A_2})} = \ctxsubst{\Omega}{A_2}$ & By \cref{lemma:subst_ext_invar} \\
+      & $\ctxsubst{\Omega}{(\ctxsubst{\Theta}{B_2})} = \ctxsubst{\Omega}{B_2}$ & By \cref{lemma:subst_ext_invar} \\
+      $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{A_2} \tconssub \ctxsubst{\Omega}{B_2}$ & By above equalities \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{A_1} \to \ctxsubst{\Omega}{A_2} \tconssub \ctxsubst{\Omega}{B_1} \to \ctxsubst{\Omega}{B_2}$ & By \rul{CS-Fun} \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{(A_1 \to A_2)} \tconssub \ctxsubst{\Omega}{(B_1 \to B_2)} $ & By def. of substitution
+    \end{longtable}
+    \item Case \[\ACSForallL\]
+      \begin{longtable}[l]{ll|l}
+        & $\Gamma, \genA \vdash A \subst a \genA \tconssub B \dashv \Delta$ & Premise \\
+        & $\Delta \exto \Omega$ & Given \\
+        & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{(A \subst a \genA)}  \tconssub \ctxsubst{\Omega}{B}$ & By i.h. \\
+        $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash (\ctxsubst{\Omega}{A}) \subst{a}{(\ctxsubst{\Omega}{\genA})}  \tconssub \ctxsubst{\Omega}{B}$ & By distributivity of substitution \\
+        $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genA} $ & Follows from def. of context application \\
+        & $\ctxsubst{\Omega}{\Delta} \vdash \forall a. (\ctxsubst{\Omega}{A})  \tconssub \ctxsubst{\Omega}{B}$ & By \rul{CS-ForallL} \\
+        & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{(\forall a. A)}  \tconssub \ctxsubst{\Omega}{B}$ & By def. of substitution
+      \end{longtable}
+    \item Case \[\ACSForallR\]
+      \begin{longtable}[l]{ll|l}
+      & $\Gamma, a \exto \Delta, a, \Theta$ & By \cref{lemma:sub_extension} \\
+      & $\Theta$ is soft & By \cref{lemma:extension_order} where $\Gamma_R = \cdot$ \\
+      & $\Delta \exto \Omega$ & Given \\
+      & $\underbrace{\Delta , a, \Theta}_{\Delta'} \exto \underbrace{\Omega, a, |\Theta|}_{\Omega'}$ & By \cref{lemma:filling_completes} \\
+      & $\Gamma, a \vdash A \tconssub B \dashv \Delta, a, \Theta$ & Given \\
+      & $\ctxsubst{\Omega'}{\Delta'} \vdash \ctxsubst{\Omega'}{A} \tconssub \ctxsubst{\Omega'}{B} $ & By i.h. \\
+      & $\ctxsubst{\Omega'}{A} = \ctxsubst{\Omega,a}{A}$ & By \cref{lemma:subst_stable} \\
+      & $\ctxsubst{\Omega'}{B} = \ctxsubst{\Omega,a}{B}$ & By \cref{lemma:subst_stable} \\
+      & $\ctxsubst{\Omega'}{\Delta'} = \ctxsubst{\Omega,a}{(\Delta,a)}$ & By \cref{lemma:subst_go_away} \\
+      & $\ctxsubst{\Omega,a}{(\Delta,a)} \vdash \ctxsubst{\Omega,a}{A} \tconssub \ctxsubst{\Omega,a}{B} $ & By above equalities \\
+      & $\ctxsubst{\Omega}{\Delta}, a \vdash \ctxsubst{\Omega}{A} \tconssub \ctxsubst{\Omega}{B} $ & By def. of substitution \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{A} \tconssub \forall a. \ctxsubst{\Omega}{B} $ & By \rul{CS-ForallR} \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{A} \tconssub \ctxsubst{\Omega}{(\forall a. B)} $ & By def. of substitution
+      \end{longtable}
+    \item Case \[\ACSUnknownL\] Immediate.
+    \item Case \[\ACSUnknownR\] Immediate.
+    \item Case \[\AInstantiateL\]
+      \begin{longtable}[l]{ll|l}
+        & $\Gamma[\genA] \vdash \genA \unif A \dashv \Delta$ & Premise \\
+        & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{A}$ & By \cref{thm:inst_soundness}
+      \end{longtable}
+    \item Case \[\AInstantiateR\] Similar to Case \rul{ACS-InstantiateL}.
+  \end{itemize}
+\end{proof}
+
+
+
+\section{Typing Extension}
+
+\begin{mlemma}[Matching Extension]
+  If $\Gamma \vdash A \match A_1 \to A_2 \dashv \Delta$ then $\Gamma \exto \Delta$.
+  \label{lemma:match_extension}
+\end{mlemma}
+\begin{proof}
+  By induction on the given derivation.
+  \begin{itemize}
+  \item Case \[\AMMA \] Immediate by \cref{lemma:reflexivity}.
+  \item Case \[\AMMB\] Immediate by \cref{lemma:reflexivity}.
+  \item Case \[\AMMC\] By i.h., we have $\Gamma, \genA \exto \Delta$. By
+    \cref{lemma:drop_ext}, we have $\Gamma \exto \Delta$.
+  \item Case \[\AMMD\] By applying \cref{lemma:unsolved_ext} twice, we have
+    $\Gamma[\genC] \exto \Gamma[\genA, \genB, \genC]$. By
+    \cref{lemma:solution_ext}, we have $\Gamma[\genA, \genB, \genC] \exto
+    \Gamma[\genA, \genB, \genC = \genA \to \genB]$. By
+    \cref{lemma:transitivity}, we have $\Gamma[\genC] \exto \Gamma[\genA,
+    \genB, \genC = \genA \to \genB]$.
+  \end{itemize}
+
+\end{proof}
+
+\begin{mlemma}[Typing Extension]
+  If $\Gamma \vdash e \infto A \toctxr$ or $\Gamma \vdash e \chkby A \toctxr$ then $\Gamma \exto \Delta$.
+  \label{lemma:typing_extension}
+\end{mlemma}
+\begin{proof}
+  By induction on the given derivation.
+  \begin{itemize}
+  \item Case \[ \AVar \] Immediate by \cref{lemma:reflexivity}.
+  \item Case \[\ANat \] Immediate by \cref{lemma:reflexivity}.
+  \item Case \[\ALamU \] By i.h., we have $\Gamma, \genA, \genB, x : \genA \exto
+    \Delta, x : \genA, \Theta$. By \Cref{lemma:extension_order}, we have
+    $\Gamma, \genA, \genB \exto \Delta$. By \rul{ExtAdd} twice, we have $\Gamma
+    \exto \Gamma, \genA, \genB$. By \cref{lemma:transitivity} we have $\Gamma
+    \exto \Delta$.
+  \item Case \[ \ALamAnnA \] By i.h., we have $\Gamma, x : A \exto \Delta, x :
+    A, \Theta$. By \Cref{lemma:extension_order}, we have $\Gamma \exto \Delta$.
+  \item Case \[ \AApp\] By i.h., we have $\Gamma \exto \Theta_1$, $\Theta_2
+    \exto \Delta$. By \Cref{lemma:match_extension}, we have $\Theta_1 \exto
+    \Theta_2$. By applying \Cref{lemma:transitivity} multiple times, we have
+    $\Gamma \exto \Delta$.
+  \item Case \[\AAnno \] By i.h., we have $\Gamma \exto \Delta$.
+  \item Case \[\ALam \] By i.h., we have $\Gamma, x : A \exto \Delta, x : A,
+    \Theta$. By \cref{lemma:extension_order} we have $\Gamma \exto \Delta$.
+  \item Case \[\AGen \] By i.h., we have $\Gamma, a \exto \Delta, a, \Theta$. By
+    \cref{lemma:extension_order} we have $\Gamma \exto \Delta$.
+  \item Case \[\ASub \] By i.h., we have $\Gamma \exto \Theta$. By
+    \cref{lemma:sub_extension} we have $\Theta \exto \Delta$. By
+    \cref{lemma:transitivity} we have $\Gamma \exto \Delta$.
+  \end{itemize}
+\end{proof}
+
+
+\section{Soundness of Typing}
+\label{sec:pf:sound:sub}
+
+\begin{mtheorem}[Matching Soundness] \label{thm:match_soundness}%
+  If $\Gamma \vdash A \match A_1 \to A_2 \dashv \Delta$ where
+  $\ctxsubst{\Gamma}{A} = A$ and $\Delta \exto \Omega$ then
+  $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{A} \match
+  \ctxsubst{\Omega}{A_1} \to \ctxsubst{\Omega}{A_2}$.
+\end{mtheorem}
+\begin{proof}
+  By induction on the given matching derivation.
+  \begin{itemize}
+  \item Case \[\AMMA\] Immediate by \rul{M-Arr}.
+  \item Case \[\AMMB\] Immediate by \rul{M-Unknown}.
+  \item Case \[\AMMC\]
+    \begin{longtable}[l]{ll|l}
+      & $\tctx, \genA \vdash A \subst a \genA \match A_1 \to A_2 \toctxr$ & Premise \\
+      & $\Delta \exto \Omega$ & Given \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{(A \subst a \genA)}  \match \ctxsubst{\Omega}{A_1} \to \ctxsubst{\Omega}{A_2} $ & By i.h. \\
+      $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash (\ctxsubst{\Omega}{A}) \subst{a}{(\ctxsubst{\Omega}{\genA})}  \match \ctxsubst{\Omega}{A_1} \to \ctxsubst{\Omega}{A_2}$ & By distributivity of substitution \\
+      $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genA} $ & Follows from def. of context application \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \forall a. (\ctxsubst{\Omega}{A})  \match \ctxsubst{\Omega}{A_1} \to \ctxsubst{\Omega}{A_2}$ & By \rul{M-ForallL} \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{(\forall a. A)}  \match \ctxsubst{\Omega}{A_1} \to \ctxsubst{\Omega}{A_2} $ & By def. of substitution
+    \end{longtable}
+  \item Case \[\AMMD\] Let $\Delta = \tctx[\genA, \genB, \genC = \genA \to \genB] $:
+      \begin{longtable}[l]{ll|l}
+        &$\Delta \exto \Omega$& Given \\
+        & $\ctxsubst{\Omega}{\genC} = \ctxsubst{\Omega}{\genA} \to \ctxsubst{\Omega}{\genB}$ & By def. of context application \\
+        & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genA} \to \ctxsubst{\Omega}{\genB} \match \ctxsubst{\Omega}{\genA} \to \ctxsubst{\Omega}{\genB}$ & By \rul{M-Arr}
+      \end{longtable}
+  \end{itemize}
+\end{proof}
+
+
+\typingsoundness*
+\begin{proof}
+  By induction on the algorithmic typing derivation.
+  \begin{itemize}
+  \item Case \[\AVar\]
+    \begin{longtable}[l]{ll|l}
+      &$(x : A) \in \Gamma$ & Premise \\
+      &$(x : A) \in \Delta$ & $\Delta = \Gamma$ \\
+        &$\Delta  \exto \Omega$ & Given \\
+      &$(x : \ctxsubst{\cctx}{A}) \in \ctxsubst{\Omega}{\Gamma}$ & By \Cref{lemma:variable_preservation} \\
+      $\byhave$&$\ctxsubst{\Omega}{\Gamma} \vdash x : \ctxsubst{\cctx}{A}$ & By \rul{Var} \\
+      $\byhave$& $\erase{x} = \erase{x}$ & By def. of erasure
+    \end{longtable}
+  \item Case \[\ANat\]
+    \begin{longtable}[l]{ll|l}
+      $\byhave$&$\ctxsubst{\Omega}{\Gamma} \vdash n : \nat $ & By \rul{Nat} \\
+      $\byhave$& $\erase{n} = \erase{n}$ & By def. of erasure
+    \end{longtable}
+  \item Case \[ \ALamU \]
+    \begin{longtable}[l]{ll|l}
+      &$\Gamma, \genA, \genB, x : \genA \exto \Delta, x : \genA, \Theta$& By \cref{lemma:typing_extension} \\
+      &$\Gamma, \genA, \genB,  \exto \Delta $& By \cref{lemma:extension_order} \\
+      &$\Theta $ is soft & Above \\ \\
+      &$\Delta \exto \Omega$  & Given \\
+      &$\Delta, x : \genA \exto \Omega, \ctxsubst{\Omega}{\genA}$  & By \rul{ExtVar} \\
+      &$\underbrace{\Delta, x : \genA , \Theta}_{\Delta'} \exto \underbrace{\Omega, \ctxsubst{\Omega}{\genA}, |\Theta|}_{\Omega'}$  & By \cref{lemma:filling_completes} \\ \\
+
+      & $\Gamma, \genA, \genB, x : \genA \vdash e \Leftarrow \genB \dashv \Delta'$ & Premise \\
+      & $\ctxsubst{\Omega'}{\Delta'} \vdash e' : \ctxsubst{\Omega'}{\genB}$ & By i.h. \\
+      & $\erase{e} = \erase{e'}$ & Above \\
+      & $\ctxsubst{\Omega'}{\genB} = \ctxsubst{\Omega}{\genB}$ & By def. of context substitution \\
+      & $\ctxsubst{\Omega'}{\Delta'} = \ctxsubst{\Omega}{\Delta}, x : \ctxsubst{\Omega}{\genA}$ & By def. of context substitution \\
+      & $\ctxsubst{\Omega}{\Delta}, x : \ctxsubst{\Omega}{\genA} \vdash e' : \ctxsubst{\Omega}{\genB}$ & By above equalities \\
+      & $\ctxsubst{\Omega}{\genA}$ is a monotype & $\Omega$ is predicative \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \erlam{x}{e'} : \ctxsubst{\Omega}{\genA} \to \ctxsubst{\Omega}{\genB} $ & By \rul{Lam} \\
+      $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash \erlam{x}{e'} : \ctxsubst{\Omega}{(\genA \to \genB)} $ & By def. of substitution \\
+      $\byhave$& $\erase{\erlam{x}{e}} = \erlam{x}{\erase{e}} = \erlam{x}{\erase{e'}} = \erase{\erlam{x}{e'}}$ & By def. of erasure
+    \end{longtable}
+  \item Case \[\ALamAnnA\]
+    \begin{longtable}[l]{ll|l}
+      & $\Gamma, x : A \exto \Delta, x : A, \Theta$ & By \Cref{lemma:typing_extension} \\
+      & $\Theta$ is soft & By \Cref{lemma:extension_order} where $\Gamma_R = \cdot$ \\
+      & $\Delta \exto \Omega$ & Given \\
+      & $\underbrace{\Delta , x : A, \Theta}_{\Delta'} \exto \underbrace{\Omega, x : A, |\Theta|}_{\Omega'}$ & By \Cref{lemma:filling_completes} \\
+      & $\Gamma, x : A \vdash e \infto B \dashv \Delta, x : A, \Theta$ & Premise \\
+      & $\ctxsubst{\Omega'}{\Delta'} \vdash e' : \ctxsubst{\Omega'}{B}$ & By i.h. \\
+      & $\erase{e} = \erase{e'}$ & above \\
+      & $\ctxsubst{\Omega'}{B} = \ctxsubst{\Omega, x : A}{B} = \ctxsubst{\Omega}{B}$ & By \Cref{lemma:subst_stable} and def. of substitution \\
+      & $\ctxsubst{\Omega'}{\Delta'}$ = $\ctxsubst{\Omega}{\Delta}, x : \ctxsubst{\Omega}{A}$ & By \Cref{lemma:subst_go_away} and def. of context substitution \\
+      & $\ctxsubst{\Omega}{\Delta}, x : \ctxsubst{\Omega}{A} \vdash e' : \ctxsubst{\Omega}{B}$ & By above equalities \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \blam{x}{\ctxsubst{\Omega}{A}}{e'} : \ctxsubst{\Omega}{A} \to \ctxsubst{\Omega}{B}$ & By \rul{LamAnn} \\
+      & $\ctxsubst{\Omega}{A} = A$ & Type annotations cannot contain evars \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \blam{x}{A}{e'} : \ctxsubst{\Omega}{A} \to \ctxsubst{\Omega}{B}$ & By above equality \\
+      $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash \blam{x}{A}{e'} : \ctxsubst{\Omega}{(A \to B)}$ & By def. of substitution \\
+      $\byhave$& $\erase{\blam{x}{A}{e'}} = \erlam{x}{\erase{e'}} = \erlam{x}{\erase{e}} = \erase{\blam{x}{A}{e}} $ & By def. of erasure
+    \end{longtable}
+    \item Case \[\AApp\]
+    \begin{longtable}[l]{ll|l}
+      & $\ctxr \exto \cctx$ & Given \\
+      & $\Theta_1 \exto \Omega$ & By \cref{lemma:match_extension} and \cref{lemma:typing_extension} and \Cref{lemma:transitivity} \\
+      & $\Gamma \vdash e_1 \infto A \dashv \Theta_1$ & Premise \\
+      & $\ctxsubst{\Omega}{\Theta_1} \vdash e_1' : \ctxsubst{\Omega}{A}$ & By i.h. \\
+      & $\erase{e_1'} = \erase{e_1}$ & above \\
+      & $\ctxsubst{\Omega}{\Theta_1} = \ctxsubst{\Omega}{\Delta}$ & By \Cref{lemma:confluence} \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash e_1' : \ctxsubst{\Omega}{A}$ & By above equality \\
+      % & $\Theta_3 \exto \Omega$ & By \Cref{lemma:typing_extension} and \Cref{lemma:transitivity} \\
+      & $\ctxl_2 \byinf e_2 \chkby \ctxsubst{\ctxl_2}{A_1} \dashv \ctxr$ & Premise \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash e_2' : \ctxsubst{\Omega}{A_1}$ & By i.h. \\
+      & $\erase{e_2'} = \erase{e_2}$ & Above \\
+      % & $\ctxsubst{\Omega}{\Theta_3} = \ctxsubst{\Omega}{\Delta}$ & By \Cref{lemma:confluence} \\
+      % $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash e_2 : \ctxsubst{\Omega}{A_3}$ & By above equality \\
+      & $\Theta_1 \vdash \ctxsubst{\Theta_1}{A} \match A_1 \to A_2 \dashv \Theta_2$ & Premise \\
+      & $\ctxsubst{\Omega}{\Theta_2} \vdash \ctxsubst{\Omega}{(\ctxsubst{\Theta_1}{A})} \match \ctxsubst{\Omega}{A_1} \to \ctxsubst{\Omega}{A_2}$ & By \Cref{thm:match_soundness} \\
+      & $\ctxsubst{\Omega}{\Theta_2} = \ctxsubst{\Omega}{\Delta}$ & By \Cref{lemma:confluence} \\
+      & $\ctxsubst{\Omega}{(\ctxsubst{\Theta_1}{A})} = \ctxsubst{\Omega}{A}$ & By \Cref{lemma:subst_ext_invar} \\
+       & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{A} \match \ctxsubst{\Omega}{A_1} \to \ctxsubst{\Omega}{A_2}$ & By above equalities \\
+      & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{A_1} \tconssub \ctxsubst{\Omega}{A_1}$ & By \cref{lemma:sub_refl} \\
+      $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash e_1' ~ e_2' : \ctxsubst{\Omega}{A_2}$ & By \rul{App} \\
+      $\byhave$& $\erase{e_1' ~ e_2'} = \erase{e_1'} ~ \erase{e_2'} = \erase{e_1} ~ \erase{e_2} = \erase{e_1 ~ e_2}$ & By def. of erasure
+    \end{longtable}
+    \item Case \[ \AAnno \]
+      \begin{longtable}[l]{ll|l}
+        & $ \tctx \bychk e \chkby A \toctxr $ & Premise \\
+        $\byhave$ & $\ctxsubst{\Omega}{\Delta} \vdash e' : \ctxsubst{\Omega}{A}$ & By i.h., \\
+        & $\erase{e} = \erase{e'}$ & Above \\
+        $\byhave$ & $\erase{e : A} = \erase{e} = \erase{e'}$ & By above equality and the def. of erasure
+      \end{longtable}
+
+    \item Case \[ \ALam \]
+      \begin{longtable}[l]{ll|l}
+        & $\Delta \exto \Omega$ & Given \\
+        & $\Delta, x : A \exto \Omega ,x : \ctxsubst{\Omega}{A}$ & By \rul{ExtVar} \\
+        & $\Gamma, x : A \exto \Delta, x : A, \Theta$ & By \cref{lemma:typing_extension} \\
+        & $\Theta$ is soft & By \cref{lemma:extension_order} \\
+        & $\underbrace{\Delta, x : A, \Theta}_{\Delta'} \exto \underbrace{\Omega, x : \ctxsubst{\Omega}{A}, | \Theta |}_{\Omega'}$ & By \cref{lemma:filling_completes} \\
+        & $\Gamma, x : A \vdash e \chkby B \dashv \Delta' $ & Premise \\
+        & $\ctxsubst{\Omega'}{\Delta'} \vdash e' : \ctxsubst{\Omega'}{B}$ & By i.h., \\
+        & $\erase{e} = \erase{e'}$ & Above \\
+        & $\ctxsubst{\Omega'}{B}  = \ctxsubst{\Omega}{B}$ & By \cref{lemma:subst_stable} \\
+        & $\ctxsubst{\Omega'}{\Delta'}$ = $\ctxsubst{\Omega}{\Delta}, x : \ctxsubst{\Omega}{A}$ & By \Cref{lemma:subst_go_away} and def. of context substitution \\
+        & $\ctxsubst{\Omega}{\Delta}, x : \ctxsubst{\Omega}{A} \vdash e' : \ctxsubst{\Omega}{B}$ & By above equalities \\
+        & $\ctxsubst{\Omega}{\Delta} \vdash \blam x {\ctxsubst{\Omega}{A}} e' : \ctxsubst{\Omega}{A} \to \ctxsubst{\Omega}{B}  $ & By \rul{LamAnn} \\
+        $\byhave$ & $\ctxsubst{\Omega}{\Delta} \vdash \blam x {\ctxsubst{\Omega}{A}} e' : \ctxsubst{\Omega}{(A \to B)}  $ & By def. of substitution \\
+        $\byhave$ & $\erase{\erlam x e} = \erlam x {\erase{e}} = \erlam x {\erase{e'}} = \erase{\blam x {\ctxsubst{\Omega}{A}} e'}$ & By the def. of erasure
+      \end{longtable}
+    \item Case \[ \AGen \]
+      \begin{longtable}[l]{ll|l}
+        & $\Delta \exto \Omega$ & Given \\
+        & $\Delta, a \exto \Omega, a$ & By \rul{ExtEVar} \\
+        & $\Gamma, a \exto \Delta, a, \Theta$ & By \cref{lemma:typing_extension} \\
+        & $\Theta$ is soft & By \cref{lemma:extension_order} \\
+        & $\underbrace{\Delta, a, \Theta}_{\Delta'} \exto \underbrace{\Omega, a, | \Theta |}_{\Omega'}$ & By \cref{lemma:filling_completes} \\
+        & $\Gamma, a \vdash e \chkby A \dashv \Delta'$  & Premise \\
+        & $\ctxsubst{\Omega'}{\Delta'} \vdash e' : \ctxsubst{\Omega'}{A}$  & By i.h., \\
+        $\byhave$& $\erase{e} = \erase{e'}$ & Above \\
+        & $\ctxsubst{\Omega'}{A}  = \ctxsubst{\Omega}{A}$ & By \cref{lemma:subst_stable} \\
+        & $\ctxsubst{\Omega'}{\Delta'}$ = $\ctxsubst{\Omega}{\Delta}, a$ & By \Cref{lemma:subst_go_away} and def. of context substitution \\
+        & $ \ctxsubst{\Omega}{\Delta}, a \vdash e' : \ctxsubst{\Omega}{A}$  & By above equalities \\
+        & $ \ctxsubst{\Omega}{\Delta} \vdash e' : \forall a. \ctxsubst{\Omega}{A}$  & By \rul{Gen} \\
+        $\byhave$& $ \ctxsubst{\Omega}{\Delta} \vdash e' : \ctxsubst{\Omega}{(\forall a. A)}$  & By def. of substitution
+
+      \end{longtable}
+
+    \item Case \[ \ASub \]
+      \begin{longtable}[l]{ll|l}
+        & $\ctxl \bysub \ctxsubst{\ctxl} A \tconssub \ctxsubst{\ctxl} B \toctxr$ & Premise \\
+        & $\Theta \exto \Delta$ & By \cref{lemma:sub_extension} \\
+        & $\Delta \exto \Omega$ & Given \\
+        & $\Theta \exto \Omega$ & By \cref{lemma:transitivity} \\
+        & $\Gamma \vdash e \infto A \dashv \Theta $ & Premise \\
+        & $\ctxsubst{\Omega}{\Theta} \vdash e' : \ctxsubst{\Omega}{A}$ & By i.h., \\
+        & $\erase{e} = \erase{e'}$ & Above \\
+        & $\ctxsubst{\Omega}{\Theta} = \ctxsubst{\Omega}{\Delta}$ & By \cref{lemma:confluence} \\
+        & $\ctxsubst{\Omega}{\Delta} \vdash e' : \ctxsubst{\Omega}{A}$ & By above equality \\
+        & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{(\ctxsubst{\Theta}{A})} \tconssub \ctxsubst{\Omega}{(\ctxsubst{\Theta}{B})}$ & By \Cref{thm:sub_soundness} \\
+        & $\ctxsubst{\Omega}{(\ctxsubst{\Theta}{A})} = \ctxsubst{\Omega}{A}$ & By \cref{lemma:subst_ext_invar} \\
+        & $\ctxsubst{\Omega}{(\ctxsubst{\Theta}{B})} = \ctxsubst{\Omega}{B}$ & By \cref{lemma:subst_ext_invar} \\
+        & $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{A} \tconssub \ctxsubst{\Omega}{B}$ & By above equalities \\
+        $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash (e' : \ctxsubst{\Omega}{B}) : \ctxsubst{\Omega}{B}$ & By def. annotation \\
+        $\byhave$& $\erase{(e' : \ctxsubst{\Omega}{B})} = \erase{e'} = \erase{e}$ & By def. erasure
+      \end{longtable}
+  \end{itemize}
+\end{proof}
+
+
+\section{Completeness of Consistent Subtyping}
+\label{sec:pf:complete:sub}
+
+
+\subsection{Instantiation Completeness}
+
+\begin{mtheorem}[Instantiation Completeness]  \label{thm:inst_complete}%
+  Given $\Gamma \exto \Omega$ and $A = \ctxsubst{\Gamma}{A}$ and $\genA \in
+  \mathit{unsolved}(\Gamma)$ and $\genA \notin \mathit{fv}(A)$:
+  \begin{enumerate}
+  \item If $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub
+    \ctxsubst{\Omega}{A}$ then there exist $\Delta$, $\Omega'$ such that $\Omega \exto
+    \Omega'$ and $\Delta \exto \Omega'$ and $\Gamma \vdash \genA \unif A \dashv \Delta$.
+  \item If $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{A} \tconssub
+    \ctxsubst{\Omega}{\genA}$ then there exist $\Delta$, $\Omega'$ such that $\Omega \exto
+    \Omega'$ and $\Delta \exto \Omega'$ and $\Gamma \vdash A \unif \genA \dashv \Delta$.
+  \end{enumerate}
+\end{mtheorem}
+\begin{proof}
+  By mutual induction on the given derivation.
+  \begin{enumerate}
+  \item We have $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{A}$. We case analyze the shape of $A$.
+    \begin{itemize}
+    \item Case $A = \unknown$:
+      \begin{longtable}[l]{ll|l}
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{\unknown}$ & Given \\
+        & $\ctxsubst{\Omega}{\unknown} = \unknown$ \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \unknown$ & By above equality \\
+        & $\genA \in \mathit{unsolved}{(\Gamma)}$ & Given \\
+        & $\Gamma = \Gamma_0[\genA]$ & Above \\
+        & Let $\Delta = \Gamma_0[\genA]$ and $\Omega' = \Omega$\\
+        & $\Gamma_0[\genA] \vdash \genA \unif \unknown \dashv \Delta$ & By \rul{InstLSolveU} \\
+        & $\Delta \exto \Omega'$ & Given \\
+        & $\Omega \exto \Omega'$ & By \Cref{lemma:reflexivity} \\
+      \end{longtable}
+    \item Case $A = \genB$:
+      \begin{longtable}[l]{ll|l}
+        & $\genA \neq \genB$ & By $\genA \notin \mathit{fv}{A}$ \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{A}$ & Given \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{\genB}$ & By above equality \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \tau_1 \tconssub \tau_2$ & Let $\ctxsubst{\Omega}{\genA} = \tau_1$ and $\ctxsubst{\Omega}{\genB} = \tau_2$ and $\Omega$ is predicative \\
+        & $\tau_1 = \tau_2$ & By \Cref{lemma:mono_equal} \\ \\
+        & $\ctxsubst{\Gamma}{A} = A$ & Given \\
+        & $\ctxsubst{\Gamma}{\genB} = \genB$ & By above equality \\
+        & $\genB \in \mathit{unsolved}{(\Gamma)}$ & Above \\
+        $\byhave$& $\Omega \exto \Omega'$ & By \Cref{lemma:reflexivity} and $\Omega' = \Omega$ \\
+      \end{longtable}
+      Now consider whether $\genA$ is declared to the left of $\genB$.
+      \begin{itemize}
+      \item Case $\Gamma = \Gamma_0, \genA, \Gamma_1, \genB, \Gamma_2$
+        \begin{longtable}[l]{ll|l}
+          & Let $\Delta = \Gamma_0, \genA, \Gamma_1, \genB = \genA, \Gamma_2$ & \\
+          $\byhave$& $\Gamma \vdash \genA \unif \genB \dashv \Delta$ & By \rul{InstLReach} \\
+          & $\ctxsubst{\Omega}{\genA} = \ctxsubst{\Omega}{\genB}$ & From $\tau_1 = \tau_2$ \\
+          $\byhave$& $\Delta \exto \Omega$ & By \Cref{lemma:solved_var_add_ext}
+        \end{longtable}
+      \item Case $\Gamma = \Gamma_0, \genB, \Gamma_1, \genA, \Gamma_2$
+        \begin{longtable}[l]{ll|l}
+          & Let $\Delta = \Gamma_0, \genB, \Gamma_1, \genA = \genB, \Gamma_2$ & \\
+          $\byhave$& $\Gamma \vdash \genA \unif \genB \dashv \Delta$ & By \rul{InstLSolve} \\
+          & $\ctxsubst{\Omega}{\genA} = \ctxsubst{\Omega}{\genB}$ & From $\tau_1 = \tau_2$ \\
+          $\byhave$& $\Delta \exto \Omega$ & By \Cref{lemma:solved_var_add_ext}
+        \end{longtable}
+      \end{itemize}
+    \item Case $A = a$:
+      \begin{longtable}[l]{ll|l}
+        &$\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{a}$& Given \\
+        &$\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub a$& From $\ctxsubst{\Omega}{a} = a$ \\
+        & $\ctxsubst{\Omega}{\genA} = a$ & By inversion of \rul{CS-TVar} \\
+        & $a$ is declared to the left of $\genA$ in $\Omega$ & $\Omega$ is well-formed \\
+        & $\Gamma \exto \Omega$ & Given \\
+        & $a$ is declared to the left of $\genA$ in $\Gamma$ & By \Cref{lemma:reverse_preserve} \\
+        & Let $\Gamma = \Gamma_0[a][\genA]$ \\
+        & Let $\Delta = \Gamma_0[a][\genA = a]$ \\
+        $\byhave$& $\Gamma \vdash \genA \unif a \dashv \Delta$ & By \rul{InstLSolve} \\
+        $\byhave$& $\Delta \exto \Omega$ & By \Cref{lemma:solved_var_add_ext} \\
+        $\byhave$& $\Omega \exto \Omega$ & By \Cref{lemma:reflexivity}
+      \end{longtable}
+    \item Case $A = A_1 \to A_2$:
+      \begin{longtable}[l]{ll|l}
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{A}$ & Given \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{A_1} \to \ctxsubst{\Omega}{A_2}$ & By above equality \\
+        & $\ctxsubst{\Omega}{\genA} = \tau_1 \to \tau_2$ & $\Omega$ is predicative \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{A_1} \tconssub \tau_1$ & By inversion of \rul{CS-Fun} \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \tau_2 \tconssub \ctxsubst{\Omega}{A_2} $ & Above \\
+        & $\Gamma = \Gamma_0[\genA]$ & From $\genA \in \mathit{unsolved}{(\Gamma)}$ \\
+        & $\Gamma_0[\genA] \exto \underbrace{\Gamma_0[\genA_2, \genA_1, \genA = \genA_1 \to \genA_2]}_{\Gamma_1}$ \\
+        & $\Gamma \exto \Omega$ & Given \\
+        & $\Omega = \Omega_0[\genA = \tau_0]$ & From $\genA \in \mathit{unsolved}{(\Gamma)}$ \\
+        & $\Omega_0[\genA = \tau_0] \exto \underbrace{\Omega_0[\genA_2 = \tau_2, \genA_1 = \tau_1, \genA = \genA_1 \to \genA_2]}_{\Omega_1}$ \\ \\
+        & $\ctxsubst{\Omega}{\Gamma} = \ctxsubst{\Omega_1}{\Gamma_1}$ & By \Cref{lemma:finish_complete} \\
+        & $\ctxsubst{\Omega}{A_1} = \ctxsubst{\Omega_1}{A_1}$ & By \Cref{lemma:finish_types} \\
+        & $\tau_1 = \ctxsubst{\Omega_1}{\genA_1}$ & From def. of $\Omega_1$ \\
+        & $\ctxsubst{\Omega_1}{\Gamma_1} \vdash \ctxsubst{\Omega_1}{A_1} \tconssub \ctxsubst{\Omega_1}{\genA_1}$ & By above equalities \\
+        & $\Gamma_1 \vdash A_1 \unif \genA_1 \dashv \Delta_2$ & By i.h. \\
+        & $\Delta_2 \exto \Omega_2$ and $\Omega_1 \exto \Omega_2$ & Above \\ \\
+        & $\ctxsubst{\Omega}{\Gamma} = \ctxsubst{\Omega_2}{\Delta_2}$ & By \Cref{lemma:finish_complete} \\
+        & $\ctxsubst{\Omega}{A_2} = \ctxsubst{\Omega_2}{A_2} = \ctxsubst{\Omega_2}{(\ctxsubst{\Delta_2}{A_2})}$ & By \Cref{lemma:finish_types} \\
+        & $\tau_2 = \ctxsubst{\Omega_2}{\genA_2}$ & By  $\Omega_1 \exto \Omega_2$ \\
+        & $\ctxsubst{\Omega_2}{\Delta_2} \vdash \ctxsubst{\Omega_2}{\genA_2} \tconssub \ctxsubst{\Omega_2}{(\ctxsubst{\Delta_2}{A_2})}$ & By above equalities \\
+        & $\Delta_2 \vdash \genA_2 \unif \ctxsubst{\Delta_2}{A_2} \dashv \Delta$ & By i.h. \\
+        & $\Omega_2 \exto \Omega'$ & Above \\
+        $\byhave$& $\Delta \exto \Omega'$ & Above \\
+        $\byhave$& $\Gamma_0[\genA] \vdash \genA \unif A_1 \to A_2 \dashv \Delta$ & By \rul{InstLArr} \\
+        $\byhave$& $\Omega \exto \Omega'$ & By \Cref{lemma:transitivity}
+      \end{longtable}
+    \item Case $A = \nat$:
+      \begin{longtable}[l]{ll|l}
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{\nat}$ & Given \\
+        & $\ctxsubst{\Omega}{\nat} = \nat$ \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \nat$ & By above equality \\
+        & $\ctxsubst{\Omega}{\genA} = \nat$ & $\Omega$ is predicative \\
+        & $\genA \in \mathit{unsolved}{(\Gamma)}$ & Given \\
+        & $\Gamma = \Gamma_0[\genA]$ & Above \\
+        & Let $\Delta = \Gamma_0[\genA = \nat]$ and $\Omega' = \Omega$\\
+        & $\Gamma_0[\genA] \vdash \genA \unif \nat \dashv \Delta$ & By \rul{InstLSolve} \\
+        & $\Gamma \exto \Omega$ & Given \\
+        & $\Gamma_0[\genA = \nat] \exto \Omega$ & By \Cref{lemma:solved_var_add_ext}
+      \end{longtable}
+    \item Case $A = \forall b. B$:
+      \begin{longtable}[l]{ll|l}
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \forall b . \ctxsubst{\Omega}{B}$ & Given \\
+        & $\ctxsubst{\Omega}{\genA}$ cannot be a quantifier & $\Omega$ is predicative \\
+        & $\ctxsubst{\Omega}{\Gamma}, b \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{B}$ & By inversion of \rul{CS-ForallR} \\ \\
+        & $\ctxsubst{\Omega}{\Gamma}, b = \ctxsubst{\Omega, b}{(\Gamma, b)}$ & By def. of context substitution \\
+        & $\ctxsubst{\Omega}{\genA} = \ctxsubst{\Omega, b}{\genA}$ & By def. of substitution \\
+        & $\ctxsubst{\Omega}{B} = \ctxsubst{\Omega, b}{B}$ & By def. of substitution \\
+        & $\ctxsubst{\Omega, b}{(\Gamma, b)} \vdash \ctxsubst{\Omega, b}{\genA} \tconssub \ctxsubst{\Omega, b}{B}$ & By above equalities \\
+        & $\Gamma, b \vdash \genA \unif B \dashv \Delta_0$ & By i.h. \\
+        & $\Delta_0 \exto \Omega'$ & Above \\
+        & $\Omega, b \exto \Omega'$ & Above \\
+        $\byhave$& $\Omega \exto \Omega'$ \\ \\
+        & $\Gamma, b \exto \Delta_0$ & By \Cref{lemma:inst_extension} \\
+        & $\Delta_0 = \Delta, b, \Delta'$ & By \Cref{lemma:extension_order} \\
+        & $\Gamma \exto \Delta$ & Above \\
+        $\byhave$& $\Delta \exto \Omega'$ \\
+        $\byhave$& $\Gamma \vdash \genA \unif \forall b. B \dashv \Delta$ & By \rul{InstLAllR}
+      \end{longtable}
+    \end{itemize}
+  \item Now we have $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{A}
+    \tconssub \ctxsubst{\Omega}{\genA}$. These cases are mostly symmetric. The one exception is when $A = \forall a. B$.
+    \begin{itemize}
+    \item Case $A = \forall a. B$:
+      \begin{longtable}[l]{ll|l}
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \forall a. \ctxsubst{\Omega}{B} \tconssub \ctxsubst{\Omega}{\genA}$ & Given \\
+        & $\ctxsubst{\Omega}{\genA}$ cannot be a quantifier & $\Omega$ is predicative \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \tau$ & By inversion of $\rul{CS-ForallL}$ \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash (\ctxsubst{\Omega}{B}) \subst a \tau \tconssub \ctxsubst{\Omega}{\genA}$ & Above \\ \\
+        & $\ctxsubst{\Omega}{\Gamma} = \ctxsubst{\Omega, \genB = \tau}{(\Gamma, \genB)}$ & By def. of context application \\
+        & $(\ctxsubst{\Omega}{B}) \subst a \tau = \ctxsubst{\Omega, \genB = \tau}{(B \subst a \genB)}$ & by def. of substitution \\
+        & $\ctxsubst{\Omega}{\genA} = \ctxsubst{\Omega, \genB = \tau}{\genA}$ & By def. of substitution \\
+        & $\ctxsubst{\Omega, \genB = \tau}{(\Gamma, \genB)} \vdash \ctxsubst{\Omega, \genB = \tau}{(B \subst a \genB)}  \tconssub \ctxsubst{\Omega, \genB = \tau}{\genA}$ & By above equalities \\
+        & $\Gamma, \genB \vdash B \subst a \genB \unif \genA \dashv \Delta$ & By i.h. \\
+        $\byhave$& $\Delta \exto \Omega'$ & Above \\
+        & $\Omega, \genB = \tau \exto \Omega'$ & Above \\
+        $\byhave$& $\Omega \exto \Omega'$ \\
+        $\byhave$ & $\Gamma \vdash \forall a . B \unif \genA \dashv Delta$ & By \rul{InstRAllL}
+      \end{longtable}
+    \end{itemize}
+  \end{enumerate}
+\end{proof}
+
+
+\subsection{Completeness of Consistent Subtyping}
+
+\begin{mtheorem}[Generalized Completeness of Subtyping]  \label{thm:sub_completeness}%
+  If $\Gamma \exto \Omega$ and $\Gamma \vdash A$ and $\Gamma \vdash B$ and
+  $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{A} \tconssub
+  \ctxsubst{\Omega}{B}$ then there exist $\Delta$, $\Omega'$ such that $\Delta
+  \exto \Omega'$ and $\Omega \exto \Omega'$ and $\Gamma \vdash
+  \ctxsubst{\Gamma}{A} \tconssub \ctxsubst{\Gamma}{B \dashv \Delta}$.
+\end{mtheorem}
+\begin{proof}
+  By induction on the given declarative derivation. We list all the possible cases in the following table:
+
+  \begin{center}
+\begin{footnotesize}
+\begin{tabular}{cccccccc} \toprule
+&                 & \multicolumn{6}{c}{ $\ctxsubst{\Gamma}{B}$  }  \\
+&                 & $\forall b. B'$  & $\nat$      & $a$         & $\genB$     & $\unknown$          & $B_1 \to B_2$ \\ \cmidrule{3-8}
+   \multirow{6}{*}{$\ctxsubst{\Gamma}{A}$} & $\forall a. A'$ & \hl{1 (B poly)}  & \hl{2.Poly} & \hl{2.Poly} & \hl{2.Poly} & \hl{1 (B unknown)}         &  \hl{2.Poly}  \\ \cmidrule{3-8}
+& $\nat$          & \hl{1 (B poly)}  &  \hl{2.Ints}           &  \textit{Impossible} & \hl{2.BEx.Int}            & \hl{1 (B unknown)}  &  \textit{Impossible}  \\ \cmidrule{3-8}
+& $a$             &  \hl{1 (B poly)} & \textit{Impossible} &  \hl{2.UVars}           &  \hl{2.BEx.UVar}           &  \hl{1 (B unknown)} &  \textit{Impossible}  \\ \cmidrule{3-8}
+& \multirow{2}{*}{$\genA$}         & \multirow{2}{*}{\hl{1 (B poly)}}   & \multirow{2}{*}{\hl{2.AEx.Int}} & \multirow{2}{*}{\hl{2.AEx.UVar}} & \hl{2.AEx.SameEx}  & \multirow{2}{*}{\hl{1 (B unknown)}}  & \multirow{2}{*}{\hl{2.AEx.Arrow}} \\
+& & & & & \hl{2.AEx.OtherEx} &   &   \\ \cmidrule{3-8}
+& $\unknown$      & \hl{1 (B poly)}  & \hl{2.Unknown} &  \hl{2.Unknown}  &  \hl{2.Unknown} & \hl{1 (B unknown)}  & \hl{2.Unknown} \\ \cmidrule{3-8}
+  & $A_1 \to A_2$     & \hl{1 (B poly)}  & \textit{Impossible} &  \textit{Impossible}  & \hl{2.BEx.Arrow}  & \hl{1 (B unknown)}  & \hl{2.Arrows} \\ \bottomrule
+\end{tabular}
+\end{footnotesize}
+  \end{center}
+
+We first split on$\ctxsubst{\Gamma}{B}$.
+  \begin{itemize}
+  \item Case \hl{1 (B poly)}: $\ctxsubst{\Gamma}{B}$ is polymorphic: $\ctxsubst{\Gamma}{B} = \forall b . B'$:
+    \begin{longtable}[l]{ll|l}
+      &$B = \forall b . B_0$& $\Gamma$ is predicative \\
+      & $B' = \ctxsubst{\Gamma}{B_0}$ & $\Gamma$ is predicative \\
+      & $\ctxsubst{\Omega}{B} = \forall b. \ctxsubst{\Omega}{B_0}$ & By def. of substitution \\
+      & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{A} \tconssub \ctxsubst{\Omega}{B}$ & Premise \\
+      & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{A} \tconssub \forall b. \ctxsubst{\Omega}{B_0}$ & By above equality \\
+      & $\ctxsubst{\Omega}{\Gamma}, b \vdash \ctxsubst{\Omega}{A} \tconssub \ctxsubst{\Omega}{B_0}$ & By \Cref{lemma:forall_invert} \\
+      & $\ctxsubst{\Omega}{\Gamma}, b = \ctxsubst{\Omega, b}{(\Gamma, b)}$ & By def. of substitution \\
+      & $\ctxsubst{\Omega}{A} = \ctxsubst{\Omega, b}{A}$ & By def. of substitution \\
+      & $\ctxsubst{\Omega}{B} = \ctxsubst{\Omega, b}{B}$ & By def. of substitution \\
+      & $\ctxsubst{\Omega, b}{(\Gamma, b)} \vdash \ctxsubst{\Omega, b}{A} \tconssub \ctxsubst{\Omega, b}{B_0}$ & By above equalities \\
+      & $\Gamma, b \vdash \ctxsubst{\Gamma, b}{A} \tconssub \ctxsubst{\Gamma, b}{B_0} \dashv \Delta'$ & By i.h. \\
+      & $\Delta' \exto \Omega_0'$ & Above \\
+      & $\Omega, b \exto \Omega_0'$ & Above \\
+      & $\Gamma, b \vdash \ctxsubst{\Gamma}{A} \tconssub \ctxsubst{\Gamma}{B_0} \dashv \Delta'$ & By def. of substitution \\ \\
+      & $\Gamma, b \exto \Delta'$ & By \Cref{lemma:inst_extension} \\
+      & $\Delta' = \Delta, b, \Theta$ & By \Cref{lemma:extension_order} \\
+      & $\Gamma \exto \Delta $ & Above \\
+      & $\Delta, b, \Theta \exto \Omega_0'$ & By $\Delta' \exto \Omega_0'$ and above equality \\
+      & $\Omega_0' = \Omega', b, \Omega_R$ & By \Cref{lemma:extension_order} \\
+      $\byhave$& $\Delta \exto \Omega'$ & Above \\
+      & $\Omega, b \exto \Omega', b, \Omega_R$ & By above equality \\
+      $\byhave$& $\Omega \exto \Omega'$ & By \Cref{lemma:extension_order} \\ \\
+      & $\Gamma, b \vdash \ctxsubst{\Gamma}{A} \tconssub \ctxsubst{\Gamma}{B_0} \dashv \Delta, b, \Theta$ & By above equality \\
+      & $\Gamma \vdash \ctxsubst{\Gamma}{A} \tconssub \forall b. \ctxsubst{\Gamma}{B_0} \dashv \Delta$ & By \rul{ACS-ForallR} \\
+      $\byhave$& $\Gamma \vdash \ctxsubst{\Gamma}{A} \tconssub \forall b. B' \dashv \Delta$ & By above equality
+    \end{longtable}
+  \item Case \hl{1 (B unknown)}: $\ctxsubst{\Gamma}{B} = \unknown$:
+        \begin{longtable}[l]{ll|l}
+          &$\Gamma \exto \Omega$& Given \\
+          & $\Gamma \vdash \ctxsubst{\Gamma}{A} \tconssub \unknown \dashv \Gamma$ & By \rul{ACS-UnknownR} \\
+          & $\Delta \exto \Omega$ & $\Delta = \Gamma$ \\
+          & $\Omega \exto \Omega'$ & By \Cref{lemma:reflexivity} and $\Omega' = \Omega$
+        \end{longtable}
+ \item Case 2.*: $\ctxsubst{\Gamma}{B}$ is not polymorphic. We split on the form of $\ctxsubst{\Gamma}{A}$.
+    \begin{itemize}
+    \item Case \hl{2.Poly}: $\ctxsubst{\Gamma}{A}$ is polymorphic: $\ctxsubst{\Gamma}{A} = \forall a. A'$:
+      \begin{longtable}[l]{ll|l}
+        & $A = \forall a . A_0$& $\Gamma$ is predicative \\
+        & $A' = \ctxsubst{\Gamma}{A_0}$ & $\Gamma$ is predicative \\
+        & $\ctxsubst{\Omega}{A} = \forall a. \ctxsubst{\Omega}{A_0}$ & By def. of substitution \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{A} \tconssub \ctxsubst{\Omega}{B}$ & Premise \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \forall a. \ctxsubst{\Omega}{A_0} \tconssub \ctxsubst{\Omega}{B} $ & By above equality \\
+        & $\ctxsubst{\Gamma}{B} \neq \forall b. \dots$ & $\ctxsubst{\Gamma}{B}$ is not polymorphic \\
+        & $B \neq \forall b . \dots$ & $\Gamma$ is predicative \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash (\ctxsubst{\Omega}{A}) \subst a \tau \tconssub \ctxsubst{\Omega}{B}$ & By inversion on \rul{CS-ForallL} \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \tau$ & Above \\ \\
+        & $\ctxsubst{\Omega}{\Gamma} = \ctxsubst{\Omega, \genA = \tau}{(\Gamma, \genA)}$ & By def. of substitution \\
+        & $(\ctxsubst{\Omega}{A}) \subst a \tau = \ctxsubst{\Omega, \genA = \tau}{(A_0 \subst a \genA)}$ & By def. of substitution \\
+        & $\ctxsubst{\Omega}{B} = \ctxsubst{\Omega, \genA = \tau}{B}$ & By def. of substitution \\
+        & $\ctxsubst{\Omega, \genA = \tau}{(\Gamma, \genA)} \vdash \ctxsubst{\Omega, \genA = \tau}{(A_0 \subst a \genA)} \tconssub \ctxsubst{\Omega, \genA = \tau}{B}$ & By above equalities \\
+        & $\Gamma, \genA \vdash \ctxsubst{\Gamma, \genA}{(A_0 \subst a \genA)} \tconssub \ctxsubst{\Gamma, \genA}{B} \dashv \Delta$ & By i.h. \\
+        $\byhave$& $\Delta \exto \Omega'$ & Above \\
+        & $\Omega, \genA = \tau \exto \Omega'$ & Above \\
+        $\byhave$& $\Omega \exto \Omega'$ & Above \\
+        & $\ctxsubst{\Gamma, \genA}{(A_0 \subst a \genA)} = (\ctxsubst{\Gamma}{A_0}) \subst a \genA $ & By def. of substitution \\
+        & $\Gamma, \genA \vdash (\ctxsubst{\Gamma}{A_0}) \subst a \genA \tconssub \ctxsubst{\Gamma}{B} \dashv \Delta$ & By above equality \\
+        & $\Gamma \vdash \forall a. (\ctxsubst{\Gamma}{A_0})  \tconssub \ctxsubst{\Gamma}{B} \dashv \Delta$ & By \rul{ACS-ForallL} \\
+        $\byhave$& $\Gamma \vdash \forall a. A'  \tconssub \ctxsubst{\Gamma}{B} \dashv \Delta$ & By above equality \\
+      \end{longtable}
+    \item Case \hl{2.Unknown}: $\ctxsubst{\Gamma}{A} = \unknown$:
+        \begin{longtable}[l]{ll|l}
+          &$\Gamma \exto \Omega$& Given \\
+          & $\Gamma \vdash \unknown \tconssub \ctxsubst{\Gamma}{B} \dashv \Gamma$ & By \rul{ACS-UnknownL} \\
+          & $\Delta \exto \Omega$ & $\Delta = \Gamma$ \\
+          & $\Omega \exto \Omega'$ & By \Cref{lemma:reflexivity} and $\Omega' = \Omega$
+        \end{longtable}
+    \item Case \hl{2.AEx}: $\ctxsubst{\Gamma}{A}$ is an existential variable:
+      $\ctxsubst{\Gamma}{A} = \genA$. We split on the form of
+      $\ctxsubst{\Gamma}{B}$.
+      \begin{itemize}
+      \item Case \hl{2.AEx.SameEx}. $\ctxsubst{\Gamma}{B}$ is the same existential variable $\ctxsubst{\Gamma}{B} = \genA$:
+        \begin{longtable}[l]{ll|l}
+          &$\Gamma \vdash \genA \tconssub \genA \dashv \Gamma$& By \rul{ACS-ExVar} \\
+          & $\Gamma \vdash \ctxsubst{\Gamma}{A} \tconssub \ctxsubst{\Gamma}{B} \dashv \Gamma$ & By above equality \\
+          & $\Delta \exto \Omega$ & $\Delta = \Gamma$ \\
+          & $\Omega \exto \Omega'$ & By \Cref{lemma:reflexivity} and $\Omega' = \Omega$
+        \end{longtable}
+      \item Case \hl{2.AEx.OtherEx}. $\ctxsubst{\Gamma}{B}$ is a different existential variable $\ctxsubst{\Gamma}{B} = \genB$ where $\genB \neq \genA$:
+        \begin{longtable}[l]{ll|l}
+          &$\ctxsubst{\Omega}{A} = \ctxsubst{\Omega}{(\ctxsubst{\Gamma}{A})} = \ctxsubst{\Omega}{\genA}$& By \Cref{lemma:subst_ext_invar} and $\ctxsubst{\Gamma}{A} = \genA$ \\
+          &$\ctxsubst{\Omega}{B} = \ctxsubst{\Omega}{(\ctxsubst{\Gamma}{B})} = \ctxsubst{\Omega}{\genB}$& By \Cref{lemma:subst_ext_invar} and $\ctxsubst{\Gamma}{B} = \genB$ \\
+          & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Gamma}{A} \tconssub \ctxsubst{\Gamma}{B}$ & Given \\
+          & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{\genB}$ & By above equalities \\
+          & $\Gamma \vdash \genA \unif \genB \dashv \Delta$ & By \Cref{thm:inst_complete} and $\genA \notin \mathit{fv}(\genB)$ \\
+          $\byhave$& $\Delta \exto \Omega'$ & Above \\
+          $\byhave$& $\Omega \exto \Omega'$ & Above \\
+          & $\Gamma \vdash \genA \tconssub \genB \dashv \Delta$ & By \rul{ACS-InstantiateL} \\
+          $\byhave$& $\Gamma \vdash \ctxsubst{\Gamma}{A} \tconssub \ctxsubst{\Gamma}{B} \dashv \Delta$ & By above equalities
+        \end{longtable}
+      \item Case \hl{2.AEx.Int}. We have $\ctxsubst{\Gamma}{B} = \nat$:
+        \begin{longtable}[l]{ll|l}
+          &$\Gamma \exto \Omega$& Given \\
+          & $\nat = \ctxsubst{\Omega}{\nat}$ & By def. of substitution \\
+          & $\genA \notin \mathit{fv}(\nat)$ & By def. of $\mathit{fv}(-)$ \\
+          & $\ctxsubst{\Omega}{A} = \ctxsubst{\Omega}{(\ctxsubst{\Gamma}{A})} = \ctxsubst{\Omega}{\genA}$ & By \Cref{lemma:subst_ext_invar} and $\ctxsubst{\Gamma}{A}= \genA$ \\
+          & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{A} \tconssub \ctxsubst{\Omega}{B}$ & Given \\
+          & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{\nat}$ & By above equalities \\
+          & $\Gamma \vdash \genA \unif \nat \dashv \Delta$ & By \Cref{thm:inst_complete} \\
+          $\byhave$& $\Delta \exto \Omega'$ & Above \\
+          $\byhave$& $\Omega \exto \Omega'$ & Above \\
+          & $\Gamma \vdash \genA \tconssub \nat \dashv \Delta$ & By \rul{ACS-InstantiateL} \\
+          $\byhave$& $\Gamma \vdash \ctxsubst{\Gamma}{A} \tconssub \ctxsubst{\Gamma}{B} \dashv \Delta$ & By above equalities
+        \end{longtable}
+      \item Case \hl{2.AEx.UVar}. We have $\ctxsubst{\Gamma}{B} = b$. Similar to Case \hl{2.AEx.Int}.
+      \item Case \hl{2.AEx.Arrow}. $\ctxsubst{\Gamma}{B} = B_1 \to B_2$. We prove
+        $\genA \notin \mathit{fv}(\ctxsubst{\Gamma}{B})$. Suppose for a
+        contradiction, that $\genA \in \mathit{fv}(\ctxsubst{\Gamma}{B})$, then
+        $\genA$ must be a subterm of $\ctxsubst{\Gamma}{B}$, so is
+        $\ctxsubst{\Omega}{\genA}$ a subterm of
+        $\ctxsubst{\Omega}{(\ctxsubst{\Gamma}{B})}$. The latter is equal to
+        $\ctxsubst{\Omega}{B}$, so $\ctxsubst{\Omega}{\genA}$ is a subterm of
+        $\ctxsubst{\Omega}{B}$. Since $\ctxsubst{\Gamma}{B} = B_1 \to B_2$, then
+        $\ctxsubst{\Omega}{B}$ must have the form $C_1\to C_2$. Therefore
+        $\ctxsubst{\Omega}{\genA}$ must occur in either $C_1$ or $C_2$. But we
+        have $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA}
+        \tconssub \ctxsubst{\Omega}{B}$. That is , $\ctxsubst{\Omega}{\genA}$
+        cannot not be a subterm of $\ctxsubst{\Omega}{B}$. This is a
+        contradiction.
+        \begin{longtable}[l]{ll|l}
+          &$\genA \notin \mathit{fv}(\ctxsubst{\Gamma}{B})$ & Proved above \\
+          & $\Gamma \exto \Omega$ & Given \\
+          & $\ctxsubst{\Omega}{B} = \ctxsubst{\Omega}{(\ctxsubst{\Gamma}{B})}$ & By \Cref{lemma:subst_ext_invar} \\
+          & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{B}$ & Given \\
+          & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{(\ctxsubst{\Gamma}{B})}$ & By above equality \\
+          & $\Gamma \vdash \genA \unif \ctxsubst{\Gamma}{B} \dashv \Delta$ & By \Cref{thm:inst_complete} \\
+          $\byhave$& $\Delta \exto \Omega'$ & Above \\
+          $\byhave$& $\Omega \exto \Omega'$ & Above \\
+          &$\Gamma \vdash \genA \tconssub \ctxsubst{\Gamma}{B} \dashv \Delta$ & By \rul{ACS-InstantiateL} \\
+          $\byhave$& $\Gamma \vdash \ctxsubst{\Gamma}{A} \tconssub \ctxsubst{\Gamma}{B} \dashv \Delta$ & By above equalities
+        \end{longtable}
+      \end{itemize}
+    \item Case \hl{2.BEx}. $\ctxsubst{\Gamma}{A}$ is not polymorphic and
+      $\ctxsubst{\Gamma}{B}$ is an existential variable: $\ctxsubst{\Gamma}{B} =
+      \genB$. We split on the form of $\ctxsubst{\Gamma}{A}$.
+      \begin{itemize}
+      \item Case \hl{2.BEx.Int}. Similar to Case \hl{2.AEx.Unit}.
+      \item Case \hl{2.BEx.UVar}. Similar to Case \hl{2.AEx.UVar}.
+      \item Case \hl{2.BEx.Arrow}. Similar to Case \hl{2.AEx.Arrow}.
+      \end{itemize}
+      We use the second part of \Cref{thm:inst_complete} and apply \rul{ACS-InstantiateR}.
+    \item Case \hl{2.Ints}. $\ctxsubst{\Gamma}{A} = \ctxsubst{\Gamma}{B} = \nat$:
+      \begin{longtable}[l]{ll|l}
+        $\byhave$&$\Gamma \vdash \nat \tconssub \nat \dashv \Gamma$& By \rul{ACS-Int} \\
+                 & $\Gamma \exto \Omega$ & Given \\
+        $\byhave$& $\Delta \exto \Omega'$ & $\Delta = \Gamma$ \\
+        $\byhave$& $\Omega \exto \Omega'$ & By \Cref{lemma:reflexivity} and $\Omega' = \Omega$
+      \end{longtable}
+    \item Case \hl{2.UVars}. $\ctxsubst{\Gamma}{A} = \ctxsubst{\Gamma}{B} = a$:
+      \begin{longtable}[l]{ll|l}
+      $\byhave$&$\Gamma \vdash a \tconssub a \dashv \Gamma$& By \rul{ACS-TVar} \\
+                 & $\Gamma \exto \Omega$ & Given \\
+        $\byhave$& $\Delta \exto \Omega'$ & $\Delta = \Gamma$ \\
+        $\byhave$& $\Omega \exto \Omega'$ & By \Cref{lemma:reflexivity} and $\Omega' = \Omega$
+      \end{longtable}
+    \item Case \hl{2.Arrows}. Let $\ctxsubst{\Gamma}{A} = A_1 \to A_2$ and $\ctxsubst{\Gamma}{B} = B_1 \to B_2$:
+      \begin{longtable}[l]{ll|l}
+        & $\Gamma \exto \Omega$ & Given \\
+        &$\ctxsubst{\Omega}{A} = \ctxsubst{\Omega}{(\ctxsubst{\Gamma}{A})} = \ctxsubst{\Omega}{A_1} \to \ctxsubst{\Omega}{A_2}$ & By \Cref{lemma:subst_ext_invar} \\
+        &$\ctxsubst{\Omega}{B} = \ctxsubst{\Omega}{(\ctxsubst{\Gamma}{B})} = \ctxsubst{\Omega}{B_1} \to \ctxsubst{\Omega}{B_2}$ & By \Cref{lemma:subst_ext_invar} \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{A} \tconssub \ctxsubst{\Omega}{B}$ & Given \\
+        & $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{B_1} \tconssub \ctxsubst{\Omega}{A_1}$ & Premise \\
+        & $\Gamma \vdash \ctxsubst{\Gamma}{B_1} \tconssub \ctxsubst{\Gamma}{A_1} \dashv \Theta$ & By i.h. \\
+        & $\Theta \exto \Omega_0$ & Above \\
+        & $\Omega \exto \Omega_0$ & Above \\
+        & $\Gamma \exto \Omega_0$ & By \Cref{lemma:transitivity} \\ \\
+        & $\ctxsubst{\Omega_0}{\Gamma} = \ctxsubst{\Omega_0}{\Theta}$ & By \Cref{lemma:confluence} \\
+        & $\ctxsubst{\Omega_0}{A_2} = \ctxsubst{\Omega_0}{(\ctxsubst{\Gamma}{A_2})}$ & By \Cref{lemma:subst_ext_invar} \\
+        & $\ctxsubst{\Omega_0}{B_2} = \ctxsubst{\Omega_0}{(\ctxsubst{\Gamma}{B_2})}$ & By \Cref{lemma:subst_ext_invar} \\
+        & $\ctxsubst{\Omega_0}{\Gamma} \vdash \ctxsubst{\Omega_0}{A_2} \tconssub \ctxsubst{\Omega_0}{B_2}$ & Premise \\
+        & $\ctxsubst{\Omega_0}{\Theta} \vdash \ctxsubst{\Omega_0}{(\ctxsubst{\Gamma}{A_2})} \tconssub \ctxsubst{\Omega_0}{(\ctxsubst{\Gamma}{B_2})}$ & By above equalities \\
+        & $\Theta \vdash \ctxsubst{\Theta}{(\ctxsubst{\Gamma}{A_2})} \tconssub \ctxsubst{\Theta}{(\ctxsubst{\Gamma}{A_2})} \dashv \Delta$ & By i.h. \\
+        $\byhave$& $\Delta \exto \Omega'$ & Above \\
+        & $\Omega_0 \exto \Omega'$ & Above \\ \\
+        & $\Gamma \vdash (\ctxsubst{\Gamma}{A_1}) \to (\ctxsubst{\Gamma}{A_2}) \tconssub (\ctxsubst{\Gamma}{B_2}) \to (\ctxsubst{\Gamma}{B_2}) \dashv \Delta$ & By \rul{ACS-Fun} \\
+        $\byhave$& $\Gamma \vdash (\ctxsubst{\Gamma}{A_1 \to A_2}) \tconssub (\ctxsubst{\Gamma}{B_1 \to B_2})  \dashv \Delta$ & By def. of substitution \\
+        $\byhave$& $\Omega \exto \Omega'$ & By \Cref{lemma:transitivity}
+
+      \end{longtable}
+    \end{itemize}
+  \end{itemize}
+\end{proof}
+
+
+
+\section{Completeness of Typing}
+\label{sec:pf:complete:sub}
+
+\begin{mtheorem}[Matching Completeness] \label{thm:match_complete}%
+  Given $\Gamma \exto \Omega$ and $\Gamma \vdash A$, if
+  $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{A} \match A_1 \to A_2$
+  then there exist $\Delta$, $\Omega'$, $A_1'$ and $A_2'$ such that $\Gamma
+  \vdash \ctxsubst{\Gamma}{A} \match A_1' \to A_2' \dashv \Delta$ and $\Delta \exto \Omega'$ and
+  $\Omega \exto \Omega'$ and $A_1 = \ctxsubst{\Omega'}{A_1'}$ and $A_2 =
+  \ctxsubst{\Omega'}{A_2'}$.
+\end{mtheorem}
+\begin{proof}
+  By induction on the given matching derivation.
+  \begin{itemize}
+  \item Case \[\inferrule{ }{\ctxsubst{\Omega}{\Gamma} \vdash (A_1 \to A_2) \match (A_1 \to A_2)}\rname{M-Arr}\] \\
+    We have $\ctxsubst{\Omega}{A} = A_1 \to A_2$. Either $\ctxsubst{\Gamma}{A} = A_1' \to A_2'$, where $A_1 = \ctxsubst{\Omega}{A_1'}$ and $A_2 = \ctxsubst{\Omega}{A_2'}$, or
+    $\ctxsubst{\Gamma}{A} = \genA$ where $\genA \in \mathit{unsolved}(\Gamma)$ and $\ctxsubst{\Omega}{\genA} = A_1 \to A_2$.
+    \begin{itemize}
+    \item In the former case:
+      \begin{longtable}[l]{ll|l}
+      & $\ctxsubst{\Gamma}{A} = A_1' \to A_2'$ & Given \\
+      & $\Gamma \vdash A_1' \to A_2' \match A_1' \to A_2' \dashv \Gamma$ & By \rul{AM-Arr} \\
+      & $\Gamma \exto \Omega$ & Given \\
+      & $\Omega \exto \Omega$ & By \Cref{lemma:reflexivity} \\
+      & $A_1 = \ctxsubst{\Omega}{A_1'}$ and $A_2 = \ctxsubst{\Omega}{A_2'}$ & Given
+      \end{longtable}
+    \item In the latter case:
+      \begin{longtable}[l]{ll|l}
+      & $\Gamma = \Gamma_0[\genA]$ & since $\genA \in \mathit{unsolved}(\Gamma)$ \\
+      & $\ctxsubst{\Omega}{\genA} = A_1 \to A_2$ & Given \\
+      & $\Omega = \Omega_0[\genA = A_0]$ and $\Omega[A_0] = A_1 \to A_2$ & Follows from above \\
+      & Let $\Delta = \Gamma_0[\genB, \genC, \genA = \genB \to \genC]$. \\
+      & Let $\Omega_0' = \Omega_0[\genB = \ctxsubst{\Omega}{A_1}, \genC = \ctxsubst{\Omega}{A_2}, \genA = \genB \to \genC]$. \\
+      $\byhave$& $\Delta \exto \Omega_0'$ & By \Cref{lemma:paralell_admit} twice \\
+      $\byhave$& $\Omega \exto \Omega_0'$ & By \Cref{lemma:solved_var_add_ext} and \Cref{lemma:paralell_admit} \\
+      $\byhave$& $\Gamma_0[\genA] \vdash \genA \match \genB \to \genC \dashv \Delta$ & By \rul{AM-Var} \\
+      $\byhave$& $A_1 = \ctxsubst{\Omega}{A_1} = \ctxsubst{\Omega_0'}{\genB}$ \\
+      $\byhave$& $A_2 = \ctxsubst{\Omega}{A_2} = \ctxsubst{\Omega_0'}{\genC}$
+      \end{longtable}
+    \end{itemize}
+  \item Case \[\inferrule{ }{\ctxsubst{\Omega}{\Gamma} \vdash \unknown \match \unknown \to \unknown}\rname{M-Unknown}\]
+    We have $\ctxsubst{\Omega}{A} = \unknown$, thus $A = \unknown$.
+    \begin{longtable}[l]{ll|l}
+      &$\ctxsubst{\Gamma}{A} = \unknown$& From $A = \unknown$ \\
+      & $\Gamma \vdash \unknown \match \unknown \to \unknown \dashv \Gamma$ & By \rul{AM-Unknown} \\
+      & $\Gamma \exto \Omega$ & Given \\
+      & $\Omega \exto \Omega$ & By \Cref{lemma:reflexivity} \\
+      & $\unknown = \ctxsubst{\Omega}{\unknown}$
+    \end{longtable}
+  \item Case \[\inferrule{\ctxsubst{\Omega}{\Gamma} \vdash \tau \\ \ctxsubst{\Omega}{\Gamma} \vdash A' \subst a \tau \match A_1 \to A_2}{\ctxsubst{\Omega}{\Gamma} \vdash \forall a. A' \match A_1 \to A_2}\rname{M-Forall}\]
+    We have $\ctxsubst{\Omega}{A} = \forall a. A'$.
+    \begin{longtable}[l]{ll|l}
+      &$A = \forall a . A_0$& $\Omega$ predicative \\
+      & $A' = \ctxsubst{\Omega}{A_0}$ & $\Omega$ is predicative \\
+      & $\ctxsubst{\Omega}{\Gamma} \vdash A' \subst a \tau \match A_1 \to A_2$ & Premise \\
+      & $\ctxsubst{\Omega}{\Gamma} \vdash (\ctxsubst{\Omega}{A_0}) \subst a \tau \match A_1 \to A_2$ & By above equality \\
+      & $\ctxsubst{\Omega}{\Gamma} \vdash \tau$ & Premise \\
+      & $\Gamma \exto \Omega$ & Given \\
+      & $\Gamma, \genA \exto \Omega, \genA = \tau$ & By def. of context extension \\ \\
+      & $\ctxsubst{\Omega}{\Gamma} = \ctxsubst{\Omega, \genA = \tau}{(\Gamma, \genA)}$ & By def. of context application \\
+      & $(\ctxsubst{\Omega}{A_0}) \subst a \tau = \ctxsubst{\Omega, \genA = \tau}{(A_0 \subst a \genA)}$ & By def. of substitution \\
+      & $\ctxsubst{\Omega, \genA = \tau}{(\Gamma, \genA)} \vdash \ctxsubst{\Omega, \genA = \tau}{(A_0 \subst a \genA)} \match A_1 \to A_2$ & By above equalities \\
+      & $\Gamma, \genA \vdash \ctxsubst{\Gamma, \genA}{(A_0 \subst a \genA)} \match A_1' \to A_2' \dashv \Delta$ & By i.h. \\
+      & $\Delta \exto \Omega'$ and $\Omega, \genA = \tau \exto \Omega'$ & Above \\
+      & $A_1 = \ctxsubst{\Omega'}{A_1'}$ and $A_2 = \ctxsubst{\Omega'}{A_2'}$ & Above \\
+      & $\ctxsubst{\Gamma, \genA}{(A_0 \subst a \genA)} = (\ctxsubst{\Gamma}{A_0}) \subst a \genA$ & By def. of substitution \\
+      & $\Gamma, \genA \vdash (\ctxsubst{\Gamma}{A_0}) \subst a \genA \match A_1' \to A_2' \dashv \Delta$ & By above equality \\
+      & $\Gamma \vdash \forall a. \ctxsubst{\Gamma}{A_0} \match A_1' \to A_2' \dashv \Delta$ & By \rul{AM-Forall} \\
+      & $\ctxsubst{\Gamma}{A} = \forall a. A' = \forall a . \ctxsubst{\Gamma}{A_0}$ & By above equalities \\
+      & $\Gamma \vdash \ctxsubst{\Gamma}{A} \match A_1' \to A_2' \dashv \Delta$ & Above
+    \end{longtable}
+  \end{itemize}
+\end{proof}
+
+
+\typingcomplete*
+\begin{proof}
+  By induction on the given declarative derivation.
+  \begin{itemize}
+  \item Case \[\inferrule{(x : A) \in \ctxsubst{\Omega}{\Gamma}}{\ctxsubst{\Omega}{\Gamma} \byinf x : A}\rname{Var}\]
+    \begin{longtable}[l]{ll|l}
+      & $(x : A) \in \ctxsubst{\Omega}{\Gamma}$  & Premise \\
+      & $\Gamma \exto \Omega$ & Given \\
+      & $(x : A') \in \Gamma$ where $\ctxsubst{\Omega}{A'} = \ctxsubst{\Omega}{A}$ & From def. of context application \\
+      & Let $\Delta = \Gamma$ and $\Omega' = \Omega$. \\
+      $\byhave$& $\Gamma \exto \Omega$ & Given \\
+      $\byhave$& $\Omega \exto \Omega$ & By \Cref{lemma:reflexivity} \\
+      $\byhave$& $\Gamma \vdash x \infto A' \dashv \Gamma$ & By \rul{AVar} \\
+      $\byhave$& $\ctxsubst{\Omega}{A'} = \ctxsubst{\Omega}{A} = A$ & A is well-formed in $\ctxsubst{\Omega}{\Gamma}$ \\
+      $\byhave$& $\erase{x} = \erase{x}$ & By def. of erasure
+    \end{longtable}
+  \item Case \[ \inferrule{ }{\ctxsubst{\Omega}{\Gamma} \vdash n : \nat }\rname{Nat} \]
+    \begin{longtable}[l]{ll|l}
+      &Let $A' = \nat$ and $\Delta = \Gamma$ and $\Omega' = \Omega$. & \\
+      $\byhave$& $\Gamma \exto \Omega$ & Given \\
+      $\byhave$& $\Omega \exto \Omega$ & By \Cref{lemma:reflexivity} \\
+      $\byhave$& $\Gamma \vdash n \infto \nat \dashv \Gamma$ & By \rul{ANat} \\
+      $\byhave$& $\ctxsubst{\Omega}{\nat} = \nat$ \\
+      $\byhave$& $\erase{n} = \erase{n}$ & By def. of erasure
+    \end{longtable}
+  \item Case \[\inferrule{\ctxsubst{\Omega}{\Gamma}, x: A \byinf e : B}{\ctxsubst{\Omega}{\Gamma} \byinf \blam x A e : A \to B }\rname{LamAnn}\]
+    \begin{longtable}[l]{ll|l}
+      & Let $\Omega_0 = \Omega, x : A$. \\
+      & $\ctxsubst{\Omega_0}{(\Gamma, x : A)} = \ctxsubst{\Omega}{\Gamma}, x : A$ & From def. of context application \\
+      & $\ctxsubst{\Omega_0}{(\Gamma, x : A)} \vdash e : B$ & By above equality and premise \\
+      & $\Gamma, x : A \vdash e' \infto B_0 \dashv \Delta_0$ & By i.h. \\
+      & $\Delta_0 \exto \Omega'$ & Above \\
+      & $\Omega_0 \exto \Omega'$ & Above \\
+      & $B = \ctxsubst{\Omega'}{B_0}$ & Above \\
+      & $\erase{e} = \erase{e'}$ & Above \\
+      & $\Gamma , x : A \exto \Delta_0$ & From \Cref{lemma:typing_extension} \\
+      & $\Delta_0 = \Delta_L , x : A', \Delta_R$ & From \Cref{lemma:extension_order} \\
+      & $\ctxsubst{\Delta_L}{A} = \ctxsubst{\Delta_L}{A'}$ & Above \\
+      & $A = A'$ & Type annotations cannot contain evars \\
+      $\byhave$& $\Gamma \vdash \blam x A e' \infto A \to B_0 \dashv \Delta_L$ & From \rul{ALamAnnA} \\
+      % & Let $\Delta = \Delta_L$ and $\Omega' = \Omega_0'$. \\
+      & $\Delta_0 \exto \Omega'$ & Above \\
+      $\byhave$& $\Delta_L \exto \Omega'$ & From def. of context extension \\
+      & $\Omega_0 \exto \Omega'$ & Above \\
+      $\byhave$& $\Omega \exto \Omega'$ & From def. of context extension \\
+      & $B = \ctxsubst{\Omega'}{B_0}$ & Above \\
+      $\byhave$& $\ctxsubst{\Omega'}{(A \to B_0)} = A \to \ctxsubst{\Omega'}{B_0} = A \to B$ & From above equality \\
+      $\byhave$& $\erase{\blam{x}{A}{e}} = \erlam{x}{\erase{e}} = \erlam{x}{\erase{e'}} = \erase{\blam{x}{A}{e'}}$ & By def. of erasure
+    \end{longtable}
+  \item Case \[\inferrule{\ctxsubst{\Omega}{\Gamma} \byinf e_1 : A \\
+        \ctxsubst{\Omega}{\Gamma}  \byinf A \match A_1 \to A_2 \\
+        \ctxsubst{\Omega}{\Gamma}  \byinf e_2 : A_3  \\
+        \ctxsubst{\Omega}{\Gamma}  \vdash A_3 \tconssub A_1}{\ctxsubst{\Omega}{\Gamma}  \byinf e_1 ~ e_2 : A_2 }\rname{App}\]
+    \begin{longtable}[l]{ll|l}
+      & $\ctxsubst{\Omega}{\Gamma} \vdash e_1 : A$ & Premise \\
+      & $\Gamma \exto \Omega$ & Given \\
+      & $\Gamma \vdash e_1' \infto A' \dashv \Theta_1$ & By i.h. \\
+      & $A = \ctxsubst{\Omega_0'}{A'}$ & Above \\
+      & $\Theta_1 \exto \Omega_0'$ & Above \\
+      & $\Omega \exto \Omega_0'$ & Above \\
+      & $\erase{e_1} = \erase{e_1'}$ & Above \\ \\
+      & $\ctxsubst{\Omega}{\Gamma} \vdash A \match A_1 \to A_2$ & Premise \\
+      & $\ctxsubst{\Omega}{\Gamma} = \ctxsubst{\Omega}{\Omega}$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = \ctxsubst{\Omega_0'}{\Omega_0'}$ & By \Cref{lemma:finish_complete} \\
+      & $ = \ctxsubst{\Omega_0'}{\Gamma}$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = \ctxsubst{\Omega_0'}{\Theta_1}$ & By \Cref{lemma:confluence} \\
+      % & $\ctxsubst{\Omega_0'}{A'} = \ctxsubst{\Omega_0'}{(\ctxsubst{\Theta_1}{A'})}$ & By \Cref{lemma:subst_ext_invar} \\
+      & $\ctxsubst{\Omega_0'}{\Theta_1} \vdash \ctxsubst{\Omega_0'}{A'} \match A_1 \to A_2$ & By above equalities \\
+      & $\Theta_1 \vdash \ctxsubst{\Theta_1}{A'} \match A_1' \to A_2' \dashv \Theta_2$ & By \Cref{thm:match_complete} \\
+      & $\Theta_2 \exto \Omega'$ & Above \\
+      & $\Omega_0' \exto \Omega'$ & Above \\
+      & $A_1 = \ctxsubst{\Omega'}{A_1'}$ & Above \\
+      & $A_2 = \ctxsubst{\Omega'}{A_2'}$ & Above \\ \\
+      & $\ctxsubst{\Omega}{\Gamma} \vdash e_2 : A_3$ & Premise \\
+      & $\ctxsubst{\Omega}{\Gamma} = \ctxsubst{\Omega}{\Omega}$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = \ctxsubst{\Omega'}{\Omega'}$ & By \Cref{lemma:finish_complete} \\
+      & $ = \ctxsubst{\Omega'}{\Gamma}$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = \ctxsubst{\Omega'}{\Theta_2}$ & By \Cref{lemma:confluence} \\
+      & $\ctxsubst{\Omega'}{\Theta_2} \vdash e_2 : A_3$ & By above equality \\
+      & $\Theta_2 \vdash e_2' \infto A_3' \dashv \Theta_3$ & By i.h. \\
+      & $\Theta_3 \exto \Omega_1'$ & Above \\
+      & $\Omega' \exto \Omega_1'$ & Above \\
+      & $A_3 = \ctxsubst{\Omega_1'}{A_3'}$ & Above \\
+      & $\erase{e_2} = \erase{e_2'}$ & Above \\ \\
+      & $\ctxsubst{\Omega}{\Gamma} \vdash A_3 \tconssub A_1$ & Premise \\
+      & $\ctxsubst{\Omega}{\Gamma} = \ctxsubst{\Omega}{\Omega}$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = \ctxsubst{\Omega_1'}{\Omega_1'}$ & By \Cref{lemma:finish_complete} \\
+      & $ = \ctxsubst{\Omega_1'}{\Gamma}$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = \ctxsubst{\Omega_1'}{\Theta_3}$ & By \Cref{lemma:confluence} \\
+      & $A_3 = \ctxsubst{\Omega_1'}{A_3'}$ & Above \\
+      & $A_1 = \ctxsubst{\Omega'}{A_1'}$ & Above \\
+      & $ = \ctxsubst{\Omega_1'}{A_1'}$ & By \Cref{lemma:finish_types} \\
+      & $\ctxsubst{\Omega_1'}{\Theta_3} \vdash \ctxsubst{\Omega_1'}{A_3'} \tconssub \ctxsubst{\Omega_1'}{A_1'}$ & By above equalities \\
+      & $\Theta_3 \vdash \ctxsubst{\Theta_3}{A_3'} \tconssub \ctxsubst{\Theta_3}{A_1'} \dashv \Delta$ & By \Cref{thm:sub_completeness} \\
+      & $\Theta_2 \vdash e_2' \chkby A_1' \dashv \Theta_3$ & By \rul{ASub} \\ \\
+      $\byhave$& $\Delta \exto \Omega_2'$ & Above \\
+      & $\Omega_1' \exto \Omega_2'$ & Above \\
+      $\byhave$& $\Gamma \vdash e_1' ~ e_2' \infto A_2' \dashv \Delta$ & By \rul{AApp} \\
+      $\byhave$& $A_2 = \ctxsubst{\Omega'}{A_2'} = \ctxsubst{\Omega_2'}{A_2'}$ & \Cref{lemma:finish_types} \\
+      $\byhave$& $\Omega \exto \Omega_2'$ & By \Cref{lemma:transitivity} \\
+      $\byhave$& $\erase{e_1 ~ e_2} = \erase{e_1} ~ \erase{e_2} = \erase{e_1'} ~ \erase{e_2'} = \erase{e_1' ~ e_2'}$ & By def. of erasure
+    \end{longtable}
+  \item Case \[ \inferrule{\ctxsubst{\Omega}{\Gamma}, x: \tau \byinf e : B }{\ctxsubst{\Omega}{\Gamma} \byinf \erlam x e : \tau \to B}\rname{Lam} \]
+    \begin{longtable}[l]{ll|l}
+      & $\ctxsubst{\Omega}{\Gamma}, x : \tau \vdash e : B$ & Given \\
+      & $\ctxsubst{\Omega}{\Gamma}, x : \tau = \ctxsubst{\Omega, x : \tau}{(\Gamma, x : \tau)}$ & By def. of context substitution \\
+      & $\ctxsubst{\Omega, x : \tau}{(\Gamma, x : \tau)} \vdash e : B$ & By above equality \\
+      & $\Gamma, x : \tau \vdash e' \infto B' \dashv \Delta'$ & By i.h., \\
+      & $\Delta' \exto \Omega'$ & Above \\
+      & $\Omega, x : \tau \exto \Omega'$ & Above \\
+      & $B = \ctxsubst{\Omega'}{B'}$ & Above \\
+      & $\erase{e} = \erase{e'}$ & Above \\
+      & $\Gamma, x : \tau \exto \Delta'$ & By \cref{lemma:typing_extension} \\
+      & $\Delta' = \Delta , x : \tau, \Theta$ & By \cref{lemma:extension_order} \\
+      & $\Gamma, x : \tau \vdash e' \infto B' \dashv \Delta , x : \tau, \Theta$ & By above equality \\
+      $\byhave$& $\Gamma \vdash \blam{x}{\tau}{e'} \infto \tau \to B' \dashv \Delta $ & By \rul{ALamAnnA} \\
+      $\byhave$& $\Delta \exto \Omega'$ & By context extension \\
+      $\byhave$& $\Omega \exto \Omega'$ & By context extension \\
+      $\byhave$& $\tau \to B = \tau \to \ctxsubst{\Omega'}{B'} = \ctxsubst{\Omega'}{(\tau \to B')}$ & By def. of substitution \\
+      $\byhave$& $\erase{\erlam{x}{e}} = \erlam{x}{\erase{e}} = \erlam{x}{\erase{e'}} = \erase{\blam{x}{\tau}{e'}}$ & By def. of erasure
+    \end{longtable}
+  \item Case \[ \inferrule{\ctxsubst{\Omega}{\Gamma}, a \byinf e : A }{\ctxsubst{\Omega}{\Gamma} \byinf e : \forall a. A }\rname{Gen} \]
+    \begin{longtable}[l]{ll|l}
+      & $\ctxsubst{\Omega}, a \vdash e : A$ & Given \\
+      & $\ctxsubst{\Omega}, a = \ctxsubst{\Omega, a}{(\Gamma , a)}$ & By def. of context substitution \\
+      & $\ctxsubst{\Omega, a}{(\Gamma , a)} \vdash e : A$ & By above equality \\
+      & $\Gamma , a \vdash e' \infto A' \dashv \Delta' $ & By i.h., \\
+      & $\Delta' \exto \Omega'$ & Above \\
+      & $\Omega, a \exto \Omega'$ & Above \\
+      & $A = \ctxsubst{\Omega'}{A'}$ & Above \\
+      $\byhave$& $\erase{e} = \erase{e'}$ & Above \\
+      & $\Gamma, a \exto \Delta'$ & By \cref{lemma:typing_extension} \\
+      & $\Delta' = \Delta, a, \Theta$ & By \cref{lemma:extension_order} \\
+      % & $\Delta, a, \Theta \exto \Omega_0$ & By above equality \\
+      % & $\Omega_0 = \Omega', a, \Omega_0'$ & By \cref{lemma:extension_order} \\
+      $\byhave$& $\Delta \exto  \Omega'$ & By context extension \\
+      $\byhave$& $\Omega \exto  \Omega'$ & By context extension \\
+      & $\Gamma , a \vdash e' \infto A' \dashv \Delta, a, \Theta $ & By above equality \\
+      & $\Delta, a, \Theta \vdash \ctxsubst{\Delta, a, \Theta}{A'} \tconssub
+        \ctxsubst{\Delta, a, \Theta}{A'} \dashv \Delta, a, \Theta$ & By reflexivity of consistent subtyping \\
+      & $\Gamma , a \vdash e' \chkby A' \dashv \Delta, a, \Theta $ & By \rul{ASub} \\
+      & $\Gamma \vdash e' \chkby \forall a. A' \dashv \Delta $ & By \rul{AGen} \\
+      $\byhave$& $\Gamma \vdash e' : \forall a. A' \infto \forall a. A' \dashv \Delta $ & By \rul{AAnno} \\
+      $\byhave$& $\forall a . A = \forall a . \ctxsubst{\Omega'}{A'} = \ctxsubst{\Omega'}{(\forall a. A')}$ & By def. of substitution \\
+    \end{longtable}
+  \end{itemize}
+\end{proof}
+
+
+
+
+
+% \input{sections/rules.tex}
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: "../paper.bib"
+%%% End:

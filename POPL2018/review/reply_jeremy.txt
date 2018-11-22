@@ -1,0 +1,127 @@
+
+Overall, we agree with that we should soften some of our claims.
+
+
+
+Review A
+=========
+
+
+>  The language seems much weaker than it should be.  In fact, the type
+>  system in this paper seems to lack a rule to introduce forall types
+>  (\textsc{Gen} in Odersky-L{\"{a}}ufer).  At first, I thought we
+>  could dispense with Gen by using subtyping but it's not clear.
+>  Dunfield and Krishnaswami 2013 also has a similar rule to introduce
+>  forall types as well.
+
+forall type can be introduced by type annotation which is just syntactic sugar
+in Fig. 9.
+
+
+>  Another possibly related point is that in \textsc{ForallR} a bound
+>  type variable on the right-hand side may be captured by type $A$ on
+>  the left-hand side, while the Odersky-L{\"{a}}ufer type system
+>  disallows it by giving a side condition.  (Maybe it is just due to a
+>  sloppy presentation -- Dunfield and Krishnaswami 2013 has the same
+>  problem, by the way.)  If it's capture-avoiding, it doesn't seem
+>  possible to derive, say, X->X <: \forall X.X->X, so a rule like Gen
+>  seems to be needed to introduce forall types.  If it's not, X->X <:
+>  \forall X.X->X can be derived but such a rule is odd.
+
+It is capture-avoiding, and indeed X -> X <: \forall X . X -> X cannot be
+derived, which is reasonable since X in the left is different from X in the
+right, and different type variables have no subtyping relation at all.
+
+
+>  There are no examples of using gradual typing with both subtyping
+>  and implicit higher-rank polymorphism, and so this work is not well
+>  motivated.  Especially, it is not fully clarified why this work is
+>  significant, why introducing implicit higher-rank polymorphism to
+>  gradual typing is important, and what new programs one can write in
+>  that system?
+
+We acknowledge the lack of ample examples, but we clearly motivate our work in
+the introduction (P.3) by saying "Implicit polymorphism is a hallmark of
+functional programming", and our paper is "a step towards gradualizing such type
+systems". By combing implicit higher-rank polymorphism with gradual typing,
+programmers can enjoy benefits from both worlds.
+
+
+>  The paper shows what properties consistent subtyping should satisfy
+>  but does not explain fully why the usual consistent subtyping with
+>  implicit polymorphism does not satisfy.  Although it is a natural
+>  path to Definition 2 from counterexamples in Figure 5 and
+>  Observations 1 and 2, I'd like to see deeper analysis why the
+>  introduction of higher-rank types in the style of
+>  Odersky-L{\"{a}}ufer breaks Def. 1.
+
+No prior work, to our knowledge, defines consistent subtyping with implicit
+polymorphism. jeremy{i don't quite understand his question, is he talking about
+the Gen rule?)
+
+
+> (ForallL) in Fig. 3 refers to well-formedness judgment of types in the
+>  premise, but I couldn't find the formal nor informal definition of it.
+
+Probably we shouldn't include well-formedness judgment of types as the original
+Odersky-L{\"{a}}ufer system doesn't have it. In any case, it is just
+well-formedness of monotypes, which is standard in literature.
+
+
+>  Fig. 5(a) is not quite a counterexample because:
+>
+>   (\forall a.a) -> Int  <: (\forall a.a) -> Int  (reflexivity)
+>                         ~   * -> Int            (because forall a.a ~ *)
+
+Our fault, but the claim is right.
+
+
+>  Fig. 13 in Section 5.2 shows algorithmic consistent subtyping rules, but they
+> are not syntax-directed---e.g., we have 4 applicable rules for cases that the
+> left-hand side is a polymorphic type---so it is not (immediately) clear that
+> constraint generation by this system is algorithmic.  The same thing happens
+> also in Fig.  14.  For example, for \tau1 -> \tau2, both (InstLSolve) and (InstLArr)
+> can be applied, because monotypes can be seen as types.
+
+We should emphasize the order of rules doesn't matter, and as with Dunfield and
+Krishnaswami 2013, in practice one can always try ACS-ForallR first.
+
+
+
+
+Reviewer B
+===========
+
+
+
+> Details: - p6 l293 - the syntax of Fig 3 does not explain that monotypes do not
+> contain the unknown type, since there is no unknown on that figure. In fact, the
+> syntactic category to which * is added is not explicitly described before. - p16
+
+Fig 3 presents the static counterpart of our gradual-typed calculus, of course
+it doesn't contain the unknown type. The syntax of our calculus is in Fig 9,
+where monotypes do not contain the unknown type.
+
+
+Reviewer C
+===========
+
+
+>  Results seem incremental? Calculus seems like a small improvement overall:
+>  basically same polymorphic blame calculus with more precise static typing.
+>  Similarly, top extension seems small as validation albeit not originally
+>  supported.
+
+The reviewer seems to confuse our calculus with our target calculus PBC. This
+paper is not about improvements over PBC. Rather, it proposes a source calculus
+with support for implicit higher-rank polymorphism in a gradually-typed setting,
+which is new.
+
+>  Unclear what is the bigger motivation for this work? The paper seems to dive
+>  into the technical motivation to reconcile consistency and subtyping while
+>  keeping them orthogonal. But why is this exciting overall? The authors leave
+>  as future work that this orthogonal design scales to many features, larger
+>  gradual systems. Even then, the orthogonal design does not automatically
+>  provide a recipe on how to integrate a new feature?
+
+Orthogonality is an important design principle in programming languages design.

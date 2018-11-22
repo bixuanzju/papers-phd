@@ -1,0 +1,133 @@
+
+\section{Related Work}
+\label{sec:related}
+
+Along the way we discussed some of the most relevant work to motivate,
+compare and
+promote our gradual typing design. In what follows, we briefly discuss related
+work on gradual typing and polymorphism.
+
+
+\paragraph{Gradual Typing}
+
+The seminal paper by \citet{siek2006gradual} is the first to propose gradual
+typing.
+% which enables programmers to mix static and dynamic typing in a program
+% by providing a mechanism to control which parts of a program are statically
+% checked.
+The original proposal extends the simply typed lambda calculus by
+introducing the unknown type $\unknown$ and replacing type equality with type
+consistency.
+% Casts are introduced to mediate between statically and dynamically
+% typed code.
+Later \citet{siek2007gradual} incorporated gradual typing into a
+simple object oriented language, and showed that subtyping and consistency are
+orthogonal -- an insight that partly inspired our work. We show that subtyping
+and consistency are orthogonal in a much richer type system with higher-rank
+polymorphism.
+% In the light of the ever-growing popularity of gradual typing, and its
+% somewhat murky theoretical foundations,
+\citet{siek2015refined}
+% felt the urge to
+% have a complete formal characterization of what it means to be gradually typed.
+% They
+proposed a set of criteria that provides important guidelines for designers
+of gradually typed languages. \citet{cimini2016gradualizer} introduced the
+\textit{Gradualizer}, a general methodology for generating gradual
+type systems from static type systems. Later they also develop an algorithm 
+to generate dynamic semantics~\cite{CiminiPOPL}.
+\citet{garcia2016abstracting} introduced the AGT approach based on abstract
+interpretation.
+% As we discussed, none of these approaches can instruct us how to
+% define consistent subtyping for polymorphic types.
+
+
+\paragraph{Gradual Type Systems with Explicit Polymorphism}
+
+% There is not much work on integrating gradual typing with parametric
+% polymorphism. Early works include the dynamic type of
+% \citet{abadi1995dynamic} and
+% the \textit{Sage} language of \citet{gronski2006sage}. None of them carefully
+% studied parametricity, nor the interactions between statically and dynamically
+% typed code.
+\citet{ahmed2011blame} proposed \pbc that
+extends the blame calculus~\cite{Wadler_2009} to incorporate polymorphism. The
+key novelty of their work is to use dynamic sealing to enforce parametricity.
+% As such, they end up with a sophisticated dynamic semantics.
+% Compared to our
+% work, our type system can catch more errors earlier. For example, the following
+% is rejected by the type system:
+% \[
+%   (\blam x \unknown x + 1) : \forall a. a \to a \rightsquigarrow \cast {\unknown \to \nat}
+%   {\forall a. a \to a} (\blam x \unknown x + 1)
+% \]
+% while the type system of \pbc would accept the translation, though at runtime,
+% such program would result in a cast error as it violates parametricity. This does not imply, in any regard that \pbc is not well-designed;
+% there are circumstances where runtime checks are \textit{needed} to ensure
+% parametricity. We emphasize that it is the combination of our powerful type
+% system together with the powerful dynamic semantics of \pbc that makes it
+% possible to have implicit higher-rank polymorphism in a gradually typed setting,
+% without compromising parametricity.
+\citet{devriese2017parametricity} proved that embedding of System F terms into
+\pbc is not fully abstract.
+\citet{yuu2017poly} also studied integrating
+gradual typing with parametric polymorphism. They proposed System F$_G$, a
+gradually typed extension of System F, and System F$_C$, a new polymorphic blame
+calculus. As has been discussed extensively, their definition of type consistency
+does not apply to our setting (implicit polymorphism). All of these approaches mix consistency with
+subtyping to some extent, which we argue should be orthogonal.
+% On a side note,
+% it seems that our calculus can also be safely translated to System F$_C$. However we
+% do not understand all the tradeoffs involved in the choice between \pbc and
+% System F$_C$ as a target.
+
+
+
+\paragraph{Gradual Type Inference }
+\citet{siek2008gradual} studied unification-based type inference for gradual
+typing, where they show why three straightforward approaches fail to meet their
+design goals. Their type system infers gradual types, which results in a
+complicated type system and inference algorithm.
+% This distinction explains
+% \citeauthor{siek2008gradual}'s observation about assigning the unknown type.
+\citet{garcia2015principal} presented a new approach
+where gradual type inference only produces static types, which is adopted in our
+type system. They also deal with let-polymorphism (rank 1 types).
+However none of these works deals with higher-ranked implicit polymorphism.
+% where they proposed the distinction between static and gradual type parameters.
+% As \citet{garcia2015principal}, our system only infers static types,
+% We also distinguish between the different roles of type variables and
+% existential variables when it comes to parametricity.
+% which is similar to our distinction of type variables and existential variables.
+% and gradual types are introduced only via program annotations.
+% Although our system and the existing work all involve gradual types and
+% inference, they have essential differences that make them complementary. First,
+% both \citet{siek2008gradual} and \citet{garcia2015principal} do not support
+% first-class polymorphism: each type is concrete.
+% Second, like
+% \citet{siek2006gradual}, in our system, missing annotations are syntactic sugar
+% for $\unknown$ annotations.
+% Both \citet{siek2008gradual} and
+% \citet{garcia2015principal} begin with an implicitly typed language and extend
+% it with gradual typing.
+% As future work, we are interested to increase the amount
+% of type inference done in our system.
+
+
+\paragraph{Higher-rank Implicit Polymorphism}
+
+\citet{odersky1996putting} introduced a type system for higher-rank types. Based
+on that, \citet{jones2007practical} developed an approach for type checking
+higher-rank predicative polymorphism. \citet{dunfield2013complete} proposed a
+bidirectional account of higher-rank polymorphism, and an algorithm for
+implementing the declarative system, which serves as a sole inspiration for our
+algorithmic system. The key difference, however, is the integration of gradual
+typing. \citet{vytiniotis2012defer} defers static type errors to runtime, which
+is fundamentally different from gradual typing, where programmers can control
+over static or runtime checks by precision of the annotations.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: "../paper.bib"
+%%% End:

@@ -1,0 +1,43 @@
+% General
+\newcommand{\code}[1]{\texttt {#1}}
+\newcommand{\highlight}[1]{\colorbox{yellow}{#1}}
+
+% Logic
+\newcommand{\turns}{\vdash}
+
+% Math
+\newcommand{\im}[1]{\lvert #1 \rvert}
+
+% PL
+\newcommand{\subst}[2]{\lbrack #1 / #2 \rbrack}
+\newcommand{\concatOp}{+\kern-1.3ex+\kern0.8ex}  % http://tex.stackexchange.com/a/4195/73122
+
+% Constructors
+\newcommand{\for}[2]{\forall #1. \, #2}
+\newcommand{\lam}[2]{\lambda #1. \, #2}
+\newcommand{\app}[2]{#1 \; #2}
+\newcommand{\blam}[2]{\Lambda #1. #2}
+\newcommand{\tapp}[2]{#1 \; #2}
+
+\newcommand{\pair}[2]{\langle #1, #2 \rangle}
+\newcommand{\inter}[2]{#1 \,\&\, #2}
+\newcommand{\proj}[2]{{\code{proj}}_{#1} #2}
+\newcommand{\ctx}[2]{#1\left\{#2\right\}}
+\newcommand{\bra}[1]{\llbracket #1 \rrbracket}
+
+
+\newcommand{\recordType}[2]{\{ #1 : #2 \}}
+\newcommand{\recordCon}[2]{\{ #1 = #2 \}}
+
+\newcommand{\ifThenElse}[3]{\code{if} \; #1 \; \code{then} \; #2 \; \code{else} \; #3}
+
+\newcommand{\defeq}{\triangleq}
+
+% \newcommand{\mynotes}[3]{{\color{#2} {\sc #1}: #3}}
+% \newcommand\bruno[1]{\mynotes{bruno}{red}{#1}}
+% \newcommand\jeremy[1]{\mynotes{jeremy}{gray}{#1}}
+\newcommand\name{\textsf{SEDEL}\xspace}
+\newcommand{\bname}{$\mathsf{F}_{i} $\xspace}
+
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%

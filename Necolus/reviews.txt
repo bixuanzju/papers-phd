@@ -1,0 +1,138 @@
+ECOOP 2018 Paper #2 Reviews and Comments
+===========================================================================
+Paper #36 The Essence of Nested Composition
+
+
+Review #36A
+===========================================================================
+
+> Overall merit
+> -------------
+> B. Weak accept
+>
+> Reviewer expertise
+> ------------------
+> X. I am an expert in this area
+>
+> Paper summary
+> -------------
+> This paper presents NeColus, an extension to disjoint intersection types with flexible BCD-style subtyping. The paper described a semantic proof method for addressing coherence relying on logical relations, together with sound and complete algorithmic subtyping. The work is motivated to support family polymorphism. The core calculus has been mechanized in Coq.
+>
+> Comments for author
+> -------------------
+> This paper is a combination of several interesting (but sometimes competing) narratives:
+>
+> 1. How to add BCD-style subtyping to disjoint intersection types: declarative, algorithmic, and meta-theory impact (such as coherence).
+>
+> 2. How to bring disjoint intersection types to OO: here the authors identified that their design space overlaps with prior work on family polymorphism and multiple inheritance. They correctly observed that to bring disjoint intersection types up to speed, a more flexible notion of subtyping is unavoidable. In that sense, OO became a motivation for this work.
+>
+> 3. How to improve the elegance of the previous work of disjoint intersection types. There are a number of technical ideas: getting rid of ordinary types, getting rid of well-formedness judgments, and resorting to a more semantic notion of coherence to avoid rigidness introduced by the previously syntactic method.
+>
+> 4. How to mechanize the proofs: a Coq-based development.
+>
+> These narratives are indeed interconnected, but my impression after reading the paper is that the authors are perhaps most serious with the foundational problem of #1. This is indeed a contribution. The distributivity rules over functions and records are fun to read, and natural questions such as on coherence will arise. This contribution alone however is perhaps a little lean, so #2, #3, and #4 together make the work more substantive. Overall, I think this paper contains a good mix of ideas --- large or small --- and its discussion on a wide range of OO design issues and its relatively clean formalization may make it an enjoyable read to ECOOP audience.
+>
+> For narrative #1, I wish you could have delved deeper into the following features:
+>
+> a) I notice that you only support covariant distribution, see S-DistArr. How about the contravariant?
+>
+> b) Why doesn't distribution go both ways? Intuitively, isn't the "distribution law" in maths defined as equality? What's the subtle issue at work? There is a curious comment in the text: "Note that the other direction ... is admissible relative to the existing sutyping rules" without additional elaboration. If we were to admit the other way, what does it mean to support the other two reductions in the coercion reduction system? Does that lead to any challenge in algorithmic subtyping?
+
+What we mean by "admissible" is that they are all *derivable* from the existing
+rules. So they are redundant with respect to the existing rules and adding them
+does not add any expressiveness power.
+
+For example the contravariant version is derivable as follows:
+
+```
+                                              A1 & A3 <: A1   A2 <: A2
+----------------------------------- S-AndL  ----------------------------- S-Arr
+(A1 -> A2) & (A3 -> A2) <: A1 -> A2          A1 -> A2 <: A1 & A3 -> A2
+-------------------------------------------------------------------------------- S-Trans
+(A1 -> A2) & (A3 -> A2) <: A1 & A3 -> A2
+
+```
+
+The other direction is derivable as well:
+
+```
+  A1 <: A1    A2 & A3 <: A2                ...
+----------------------------- S-Arr  --------------------------
+  A1 -> A2 & A3 <: A1 -> A2           A1 -> A2 & A3 <: A1 -> A3
+---------------------------------------------------------------- S-And
+         A1 -> A2 & A3 <: (A1 -> A2) & (A1 -> A3)
+```
+
+In fact, if we define type equality "A == B" as both A <: B and B <: A, then
+distributivity rule is indeed type equality:
+
+
+(A1 -> A2) & (A1 -> A3) == A1 -> A2 & A3
+
+
+>
+> c) I think your decision of delaying mutation as future work is a bit unfortunate. Even though functional OO is possible, the OO commonly used today is still strongly reliant on mutation. (I realize this is a "feature request," in which the list can be arbitrary long. I perhaps would have skipped this if you did not motivate so much with family polymorphism, multiple inheritance, and traits.) This comment is also related to my earlier comment related to narrative #2. From a type system perspective, mutation is tightly coupled with contravariants.
+>
+> I'm disappointed that the paper is only half-hearted with narrative #2. At the end, we do not precisely know how the proposed system is related to previous work, especially in terms of expressiveness. The example helps, and the discussion at the top of page 7 touched on some of the expressiveness issues, but there remains a significant gap between the formal system that comes later and how/whether such an idea can be built into an OO due to both feature intervention and programmability. For the latter, consider Figure 2. This figure might be meant for demonstrating expressiveness, but it looks so complex --- or in the words of the authors, "nuanced" --- that I'm not sure this is for better or for worse.
+>
+> Presentations:
+>
+> The paper sometimes goes into highly technical comparison with prior work, only to heighten the incrementality of their current work. One example was the "no ordinary types" discussion. It is so specific to \lambda_i that I could not understand without reading/rereading \lambda_i. The forward referencing in the paragraph was distracting, and didn't help either. The same applies to "No Well-formedness judgment" discussion. I understand narrative #3 above may be important and exciting to the authors: a better, more elegant, and more unified system is now in shape --- an achievement if prior work was developed by others, and/or if some authors are in an advanced stage to complete a dissertation. However, I have to admit much of the #3 narratives add little to readability.
+>
+> A suggestion is, would it be possible to just present the current work in the most ideal form you believe, and then come back to a more technical comparison with \lambda_i? You can search through the paper and check every occurrence of discussion, e.g., "unlike \lambda_i", "a key difference from \lambda_i," and so on, and see if all can be moved to a later section titled as, e.g., "Relating NeColus and \lambda_i."
+>
+> Another suggestion is to reorganize your formal system around logical relations. A good part of the (new) formal development here results from the semantic proof based on logical relations. It has a ripple effect on both typing and semantics. See the squiggly notations in all typing rules, and the adoption of explicit coercion, and the source-target elaboration semantics. Much of this is highly stylized. Without the backdrop of logical relations, they look tangent to the core narrative #1.
+>
+> Definition 3 and Theorem 3 are somewhat odd to read. In Definition 3, I would expect \Gamm |_ e_1 \sim_ctx e_2: A rather than \Gamm |_ E_1 \sim_ctx E_2: A. Similarly, in Theorem 3, I would expect the conclusion to be \Gamm |_ e_1 \sim_ctx e_2: A, instead of \Gamm |_ E \sim_ctx E: A. In the way Theorem 3 is defined, you might as well introduce a unary relation instead of the binary \sim_ctx.
+>
+
+What the reviewer proposed is similar to our Definition 2, which as we have
+discussed in detail does not work. In short, the logical relation does not hold
+for target programs in general, but only for those that are the images of the
+corresponding source programs, thus E instead of e.
+
+
+> Quantification over arrows is awkward. In Definition 3, it reads better if you just inline the condition into two.
+
+We agree, and will inline the definition in the revised version of the paper.
+
+
+>
+>
+>
+> Review #36C
+> ===========================================================================
+>
+> Overall merit
+> -------------
+> A. Accept
+>
+> Reviewer expertise
+> ------------------
+> Y. I am knowledgeable in this area, but not an expert
+>
+> Paper summary
+> -------------
+> The paper presents a calculus that includes disjoint intersections types and a distributivity rule among the subtyping rules that supports nested composition. The paper argues that the calculus is more flexible than previous work and proves coherence of the type system.
+>
+> Points For and Against
+> ----------------------
+> This is a very nicely written theoretical paper on disjoint intersection types, which were introduced by Oliveira et al in 2016 as a model for multiple inheritance. Unlike normal intersection types, ambiguities are not allowed on merge, which prevents many of the issues with multiple inheritance. The calculus described in the paper supports family polymorphism and nested composition. As far as I am aware, this is the first language to support these features that is not based on virtual classes or dependent types.
+>
+> The technical results are convincing: the calculus, the subtyping algorithm with mechanized proof, and the proof of coherence.
+>
+> The language does not support mutable fields. This is typical for a calculus, but I would have liked to have seen whether the could be encoded in some way and if not, what problems arise. Since the calculus is pure, coherence allows one to merge identical records. However, if we try to model mutable fields or objects, we would have to add memory addresses and a heap to the calculus, which might complicate the coherence argument. For instance, we'd like to be able to merge two identical records at different addresses.
+>
+> Related work should discuss further work on family polymorphism, for instance Zhang and Myers, OOPSLA 17, and the work of Qi and Myers, PLDI 09.
+>
+> Comments for author
+> -------------------
+> Some minor comments:
+>
+> p 7. The first two paragraphs of the Subtyping section are repetitive.
+>
+> p. 13. "c.f." -> "cf."
+>
+> p 24 Prefix types in Jx and J& are not to deal with conflicts, but rather to be able to soundly refer to other classes in the same family.
+>
+> p 25 "combing" -> "combining"

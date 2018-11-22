@@ -1,0 +1,110 @@
+%%% !!! WARNING: AUTO GENERATED. DO NOT MODIFY !!! %%%
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.5,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
+\section{Some Definitions}
+
+\begin{definition}[Type translation]
+  \begin{align*}
+    | \mathsf{Nat} | &= \mathsf{Nat} \\
+    | \top | &= \langle \rangle \\
+    | A \rightarrow B | &= | A | \rightarrow | B | \\
+    | \inter{A}{B} | &= | A | \times | B | \\
+    | \recordType{l}{A} | &= \recordType{l}{| A |}
+  \end{align*}
+\end{definition}
+
+\begin{example}[Derivation of other direction of distribution]
+  \begin{small}
+\begin{mathpar}
+  \inferrule*[right=\rref*{S-and}]
+  {  \inferrule*[right=\rref*{S-arr}]{ \ottnt{A_{{\mathrm{1}}}}  \ottsym{<:}  \ottnt{A_{{\mathrm{1}}}} \\ \ottnt{A_{{\mathrm{2}}}}  \, \& \,  \ottnt{A_{{\mathrm{3}}}}  \ottsym{<:}  \ottnt{A_{{\mathrm{2}}}}  }{\ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}  \, \& \,  \ottnt{A_{{\mathrm{3}}}}  \ottsym{<:}  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}} \\
+    \inferrule*[right=\rref*{S-arr}]{ \ottnt{A_{{\mathrm{1}}}}  \ottsym{<:}  \ottnt{A_{{\mathrm{1}}}} \\ \ottnt{A_{{\mathrm{2}}}}  \, \& \,  \ottnt{A_{{\mathrm{3}}}}  \ottsym{<:}  \ottnt{A_{{\mathrm{3}}}} }{\ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}  \, \& \,  \ottnt{A_{{\mathrm{3}}}}  \rightarrow  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{3}}}}}  }
+  {  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}  \, \& \,  \ottnt{A_{{\mathrm{3}}}}  \ottsym{<:}  \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}  \ottsym{)}  \, \& \,  \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{3}}}}  \ottsym{)}  }
+\end{mathpar}
+  \end{small}
+\end{example}
+
+
+\begin{example}[Derivation of contravariant distribution]
+  \begin{small}
+\begin{mathpar}
+  \inferrule*[right=\rref*{S-trans}]
+  {  \inferrule*[right=\rref*{S-andl}]{ }{\ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}  \ottsym{)}  \, \& \,  \ottsym{(}  \ottnt{A_{{\mathrm{3}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}  \ottsym{)}  \ottsym{<:}  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}} \\
+    \inferrule*[right=\rref*{S-arr}]{ \ottnt{A_{{\mathrm{1}}}}  \, \& \,  \ottnt{A_{{\mathrm{3}}}}  \ottsym{<:}  \ottnt{A_{{\mathrm{1}}}} \\ \ottnt{A_{{\mathrm{2}}}}  \ottsym{<:}  \ottnt{A_{{\mathrm{2}}}} }{\ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}  \ottsym{<:}  \ottnt{A_{{\mathrm{1}}}}  \, \& \,  \ottnt{A_{{\mathrm{3}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}}  }
+  {  \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}  \ottsym{)}  \, \& \,  \ottsym{(}  \ottnt{A_{{\mathrm{3}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}  \ottsym{)}  \ottsym{<:}  \ottnt{A_{{\mathrm{1}}}}  \, \& \,  \ottnt{A_{{\mathrm{3}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}   }
+\end{mathpar}
+  \end{small}
+\end{example}
+
+
+
+\section{Full Type System of \name}
+% \label{sec:appendix}
+
+% \begin{definition}[Meta-functions $\llbracket \cdot \rrbracket_{\top} $ and $\llbracket \cdot \rrbracket_{\&}$]
+%   \begin{align*}
+%      \llbracket  \ottsym{[]}  \rrbracket_{\top}  &=   \mathsf{top}  \\
+%      \llbracket  \ottsym{\{}  \ottmv{l}  \ottsym{\}}  \ottsym{,}  \mathcal{L}  \rrbracket_{\top}  &=  \ottsym{\{}  \ottmv{l}  \ottsym{:}   \llbracket  \mathcal{L}  \rrbracket_{\top}   \ottsym{\}}  \circ   \mathsf{top}_{ \{  \ottmv{l}  \} }   \\
+%      \llbracket  \ottnt{A}  \ottsym{,}  \mathcal{L}  \rrbracket_{\top}  &=  \ottsym{(}  \mathsf{id}  \rightarrow   \llbracket  \mathcal{L}  \rrbracket_{\top}   \ottsym{)}  \circ  \ottsym{(}   \ottsym{(}  \mathsf{top}  \rightarrow  \mathsf{top}  \ottsym{)}  \circ  \ottsym{(}   \mathsf{top}_{\rightarrow}  \circ  \mathsf{top}   \ottsym{)}   \ottsym{)}  \\ \\
+%     %  \llbracket  \ottnt{A}  \ottsym{,}  \mathcal{L}  \rrbracket_{\top}  &=  \ottsym{(}  \mathsf{top}  \rightarrow   \llbracket  \mathcal{L}  \rrbracket_{\top}   \ottsym{)}  \circ  \ottsym{(}   \mathsf{top}_{\rightarrow}  \circ  \mathsf{top}   \ottsym{)}  \\ \\
+%      \llbracket  \ottsym{[]}  \rrbracket_{\&}  &=   \mathsf{id}  \\
+%      \llbracket  \ottsym{\{}  \ottmv{l}  \ottsym{\}}  \ottsym{,}  \mathcal{L}  \rrbracket_{\&}  &=  \ottsym{\{}  \ottmv{l}  \ottsym{:}   \llbracket  \mathcal{L}  \rrbracket_{\&}   \ottsym{\}}  \circ   \mathsf{dist}_{ \{  \ottmv{l}  \} }   \\
+%      \llbracket  \ottnt{A}  \ottsym{,}  \mathcal{L}  \rrbracket_{\&}  &=  \ottsym{(}  \mathsf{id}  \rightarrow   \llbracket  \mathcal{L}  \rrbracket_{\&}   \ottsym{)}  \circ  \mathsf{dist}_{\rightarrow} 
+%   \end{align*}
+
+% \end{definition}
+
+
+
+\drules[S]{$ \ottnt{A}   \ottsym{<:}   \ottnt{B}  \rulehl{ \rightsquigarrow   \ottnt{c} } $}{Declarative subtyping}{refl, trans, top, rcd, arr, andl, andr, and, distArr, distRcd, topArr, topRcd}
+
+\drules[T]{$ \Gamma   \vdash   E   \Rightarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e} } $}{Inference}{top, lit, var, app, anno, merge, rcd, proj}
+
+\drules[T]{$ \Gamma   \vdash   E   \Leftarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e} } $}{Checking}{abs, sub}
+
+\drules[D]{$\ottnt{A}  *  \ottnt{B}$}{Disjointness}{topL, topR, arr, andL, andR, rcdEq, rcdNeq, axNatArr, axArrNat, axNatRcd, axRcdNat, axArrRcd, axRcdArr}
+
+\drules[CTyp]{$\mathcal{C}  \ottsym{:}  \ottsym{(}  \Gamma \, \Rightarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Gamma' \, \Rightarrow \, \ottnt{B}  \ottsym{)}  \rightsquigarrow  \mathcal{D}$}{Context typing I}{emptyOne, appLOne, appROne, mergeLOne, mergeROne, rcdOne, projOne, annoOne}
+
+\drules[CTyp]{$\mathcal{C}  \ottsym{:}  \ottsym{(}  \Gamma \, \Leftarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Gamma' \, \Leftarrow \, \ottnt{B}  \ottsym{)}  \rightsquigarrow  \mathcal{D}$}{Context typing II}{emptyTwo, absTwo}
+
+\drules[CTyp]{$\mathcal{C}  \ottsym{:}  \ottsym{(}  \Gamma \, \Leftarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Gamma' \, \Rightarrow \, \ottnt{B}  \ottsym{)}  \rightsquigarrow  \mathcal{D}$}{Context typing III}{appLTwo, appRTwo, mergeLTwo, mergeRTwo, rcdTwo, projTwo, annoTwo}
+
+\drules[CTyp]{$\mathcal{C}  \ottsym{:}  \ottsym{(}  \Gamma \, \Rightarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Gamma' \, \Leftarrow \, \ottnt{B}  \ottsym{)}  \rightsquigarrow  \mathcal{D}$}{Context typing IV}{absOne}
+
+\drules[A]{$ \mathcal{L}   \vdash   \ottnt{A}  \prec :  \ottnt{B}   \rightsquigarrow   \ottnt{c} $}{Algorithmic subtyping}{and, arr, rcd, top, arrNat, rcdNat, nat, andNOne, andNTwo}
+
+\section{Full Type System of \tname}
+
+\drules[typ]{$\Delta  \vdash  \ottnt{e}  \ottsym{:}  \tau$}{Target typing}{unit, lit, var, abs, app, pair, capp, rcd, proj}
+
+\drules[cotyp]{$\ottnt{c}  \vdash  \tau_{{\mathrm{1}}} \, \triangleright \, \tau_{{\mathrm{2}}}$}{Coercion typing}{refl, trans, top, topArr, topRcd, arr, pair, projl, projr, rcd, distRcd, distArr}
+
+\drules[step]{$\ottnt{e}  \longrightarrow  \ottnt{e'}$}{Small-step reduction}{id, trans, top, topArr,
+  topRcd, arr, pair, distArr, distRcd, projl, projr, crcd, beta, projRcd, appOne, appTwo, pairOne, pairTwo, capp, rcdOne, rcdTwo}
+
+
+% \begin{lemma}[Converse evaluation]
+%   Suppose that $(e, e') \in \eeR{\tau}{\tau'}$. If $d \step e$, then $(d, e')
+%   \in \eeR{\tau}{\tau'}$, and if $d' \step e'$, then $(e, d') \in
+%   \eeR{\tau}{\tau'}$.
+%   \label{lemma:converse}
+% \end{lemma}
+
+
+
+% \begin{lemma}[Compatibility lemma] The logical relation is preserved by language constructs.
+%   \begin{itemize}
+%   \item If $x : \tau_1 \in \Gamma_1$ and $x : \tau_2 \in \Gamma_2$ then
+%     $\Gamma_1;\Gamma_2 \vdash \logeq{x}{x} : \tau_1;\tau_2 $.
+%   \item $\Gamma \vdash \logeq{ \langle \rangle }{ \langle \rangle } :  \langle \rangle $
+%   \item $\Gamma \vdash \logeq{\ottmv{i}}{\ottmv{i}} :  \mathsf{Nat} $
+%   \item If $\Gamma_1;\Gamma_2 \vdash \logeq{e_1}{e_2} : (\tau_{{\mathrm{1}}}  \rightarrow  \tau'_{{\mathrm{1}}}) ; (\tau_{{\mathrm{2}}}  \rightarrow  \tau'_{{\mathrm{2}}})$ and $\Gamma_1;\Gamma_1 \vdash \logeq{e_3}{e_4} : \tau_1;\tau_2$ then $\Gamma_1;\Gamma_2 \vdash \logeq{\ottnt{e_{{\mathrm{1}}}} \, \ottnt{e_{{\mathrm{3}}}}}{\ottnt{e_{{\mathrm{2}}}} \, \ottnt{e_{{\mathrm{4}}}}} : \tau_1' ; \tau_2'$.
+%   \item If $\Gamma_1, x : \tau_1 ; \Gamma_2, x : \tau_2 \vdash \logeq{e_1}{e_2} : \tau_1' ; \tau_2'$ then $\Gamma_1;\Gamma_2 \vdash \logeq{ \lambda \ottmv{x} .\, \ottnt{e_{{\mathrm{1}}}} }{ \lambda \ottmv{x} .\, \ottnt{e_{{\mathrm{2}}}} } : (\tau_{{\mathrm{1}}}  \rightarrow  \tau'_{{\mathrm{1}}}) ; (\tau_{{\mathrm{2}}}  \rightarrow  \tau'_{{\mathrm{2}}})$.
+%   \end{itemize}
+% \end{lemma}

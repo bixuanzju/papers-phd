@@ -1,0 +1,290 @@
+\documentclass[format=acmsmall, review=false, screen=true]{acmart}
+
+
+% Metadata Information
+\acmJournal{TWEB}
+\acmVolume{9}
+\acmNumber{4}
+\acmArticle{39}
+\acmYear{2010}
+\acmMonth{3}
+\copyrightyear{2009}
+%\acmArticleSeq{9}
+
+% Copyright
+%\setcopyright{acmcopyright}
+\setcopyright{acmlicensed}
+%\setcopyright{rightsretained}
+%\setcopyright{usgov}
+%\setcopyright{usgovmixed}
+%\setcopyright{cagov}
+%\setcopyright{cagovmixed}
+
+% DOI
+\acmDOI{0000001.0000001}
+
+% Paper history
+% \received{February 2007}
+% \received[revised]{March 2009}
+% \received[accepted]{June 2009}
+
+
+
+%% Some recommended packages.
+\usepackage{booktabs}   %% For formal tables:
+                        %% http://ctan.org/pkg/booktabs
+\usepackage{subcaption} %% For complex figures with subfigures/subcaptions
+                        %% http://ctan.org/pkg/subcaption
+
+%% Bibliography style
+\bibliographystyle{ACM-Reference-Format}
+\citestyle{acmauthoryear}   %% For author/year citations
+% \setcitestyle{aysep={}}
+
+
+% AMS packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\usepackage{mathtools}
+\usepackage{mdwlist}
+\usepackage{pifont}
+
+
+% Miscellaneous
+\usepackage{paralist}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{lscape}
+
+
+% Revision tools
+\usepackage{xspace}
+\usepackage{comment}
+\newcommand\mynote[3]{}
+% \newcommand\bruno[1]{\mynote{Bruno}{red}{#1}}
+% \newcommand\tom[1]{\mynote{Tom}{blue}{#1}}
+% \newcommand\ningning[1]{\mynote{Ningning}{orange}{#1}}
+% \newcommand\jeremy[1]{\mynote{Jeremy}{gray}{#1}}
+
+\newcommand{\hl}[2][gray!40]{\colorbox{#1}{#2}}
+\newcommand{\hlmath}[2][gray!40]{\colorbox{#1}{$\displaystyle#2$}}
+\newcommand{\otthl}[2][gray!40]{ \colorbox{#1}{$\displaystyle#2$}}
+
+
+\newcommand{\name}{\textsf{GPC}\xspace}
+
+
+% Graphs
+\usepackage{tikz}
+\usetikzlibrary{matrix}
+\usetikzlibrary{arrows,automata}
+\usetikzlibrary{positioning}
+
+
+% Hyper links
+\usepackage{url}
+\usepackage{
+  nameref,%\nameref
+  hyperref,%\autoref
+}
+\usepackage[capitalise]{cleveref}
+
+\usepackage{thmtools, thm-restate}
+
+\usepackage[misc]{ifsym}
+
+\declaretheorem[name=$\mathcal{L}$emma,
+  % numberwithin=section,
+  refname={$\mathcal{L}$emma,$\mathcal{L}$emmas},
+  Refname={$\mathcal{L}$emma,$\mathcal{L}$emmas}]{clemma}
+
+\declaretheorem[name=$\mathcal{T}$heorem,
+  % numberwithin=section,
+  refname={$\mathcal{T}$heorem,$\mathcal{T}$heorems},
+  Refname={$\mathcal{T}$heorem,$\mathcal{T}$heorems}]{ctheorem}
+
+\declaretheorem[name=Observation]{observation}
+
+\declaretheorem[name=Proof]{Proof}
+
+
+\usepackage{rotating}
+
+\usepackage{ottalt}
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[right=\scriptsize{#1}]
+    {#3}
+    {#4}
+}
+
+
+\inputott{ott-rules}
+\input{paper_utility.tex}
+\input{sections/formal.tex}
+
+\begin{document}
+
+%% Title information
+
+\title{Consistent Subtyping for All}
+
+
+\author{Ningning Xie}
+\affiliation{%
+  \institution{The University of Hong Kong}
+  \city{Hong Kong}
+  \country{China}}
+\email{nnxie@cs.hku.hk}
+\author{Xuan Bi}
+\affiliation{%
+  \institution{The University of Hong Kong}
+  \city{Hong Kong}
+  \country{China}
+}
+\email{xbi@cs.hku.hk}
+\author{Bruno C. d. S. Oliveira}
+\affiliation{%
+ \institution{The University of Hong Kong}
+ \city{Hong Kong}
+ \country{China}}
+\email{bruno@cs.hku.hk}
+\author{Tom Schrijvers}
+\affiliation{%
+ \institution{KU Leuven}
+ \city{Leuven}
+ \country{Belgium}}
+\email{tom.schrijvers@cs.kuleuven.be}
+
+
+
+
+\begin{abstract}
+  Consistent subtyping is employed in some gradual type systems to validate type
+  conversions. The original definition by \citeauthor{siek2007gradual} serves as a guideline for designing gradual type
+  systems with subtyping. Polymorphic types \`a la System F also induce a
+  subtyping relation that relates polymorphic types to their instantiations.
+  However \citeauthor{siek2007gradual}'s definition is not adequate for
+  polymorphic subtyping.
+% , including the subtyping
+% relation arising from implicit polymorphism.
+The first goal of this paper is to propose a generalization of consistent
+subtyping that is adequate for polymorphic subtyping, and subsumes the original
+definition by \citeauthor{siek2007gradual}. The new definition of consistent
+subtyping provides novel insights with respect to previous polymorphic gradual
+type systems, which did not employ consistent subtyping.
+% For instance both
+% \citeauthor{ahmed2011blame} (in the Polymorphic Blame Calculus) and
+% \citeauthor{yuu2017poly} use, respectively,
+% notions of \emph{compatibility} and \emph{type consistency} instead
+% of consistent subtyping to validate casts.
+% We argue that, for implicit
+% polymorphism, \citeauthor{ahmed2011blame}'s notion of
+% compatibility is too permissive (i.e. too many programs are allowed to
+% type-check), and that \citeauthor{yuu2017poly}'s notion of type consistency is too
+% conservative (i.e. programs that should type check are rejected).
+% To further validate our
+% generalized notion of consistent subtyping we also study the addition
+% of top types to gradual type systems. Like polymorphism, the notion of
+% consistent subtyping proposed by \citeauthor{siek2007gradual} does not work for top
+% types, but our revised definition can account for top types.
+The second goal of this paper is to present a gradually typed calculus for
+implicit (higher-rank) polymorphism that uses our new notion of consistent
+subtyping. We develop both declarative and (bidirectional) algorithmic versions
+for the type system.
+The algorithmic version employs techniques developed by
+\citeauthor{dunfield2013complete} for higher-rank polymorphism to deal with instantiation.
+We prove that the
+new calculus satisfies all static aspects of the refined criteria for gradual
+typing. 
+We also study an extension of the type system with static and gradual
+type parameters, in an attempt to support a variant of the dynamic
+criterion for gradual typing.
+Assuming a coherence conjecture for the extended calculus,
+we show that the dynamic gradual guarantee of our source
+language can be reduced to that of \pbc, which, at the time of writing, is
+still an open question.
+Most of the metatheory of this paper, except some manual proofs for the algorithmic type
+system and extensions, has been mechanically formalized using the Coq proof assistant.
+\end{abstract}
+
+
+%
+% The code below should be generated by the tool at
+% http://dl.acm.org/ccs.cfm
+% Please copy and paste the code instead of the example below.
+%
+% \begin{CCSXML}
+% <ccs2012>
+%  <concept>
+%   <concept_id>10010520.10010553.10010562</concept_id>
+%   <concept_desc>Computer systems organization~Embedded systems</concept_desc>
+%   <concept_significance>500</concept_significance>
+%  </concept>
+%  <concept>
+%   <concept_id>10010520.10010575.10010755</concept_id>
+%   <concept_desc>Computer systems organization~Redundancy</concept_desc>
+%   <concept_significance>300</concept_significance>
+%  </concept>
+%  <concept>
+%   <concept_id>10010520.10010553.10010554</concept_id>
+%   <concept_desc>Computer systems organization~Robotics</concept_desc>
+%   <concept_significance>100</concept_significance>
+%  </concept>
+%  <concept>
+%   <concept_id>10003033.10003083.10003095</concept_id>
+%   <concept_desc>Networks~Network reliability</concept_desc>
+%   <concept_significance>100</concept_significance>
+%  </concept>
+% </ccs2012>
+% \end{CCSXML}
+
+% \ccsdesc[500]{Computer systems organization~Embedded systems}
+% \ccsdesc[300]{Computer systems organization~Redundancy}
+% \ccsdesc{Computer systems organization~Robotics}
+% \ccsdesc[100]{Networks~Network reliability}
+
+%
+% End generated code
+%
+
+
+% \keywords{Wireless sensor networks, media access control,
+% multi-channel, radio interference, time synchronization}
+
+
+\maketitle
+
+
+
+%% -- Starting Point --
+
+\input{sections/introduction.mng}
+\input{sections/background.mng}
+\input{sections/motivation.mng}
+\input{sections/exploration.mng}
+\input{sections/typesystem.mng}
+\input{sections/algorithm.mng}
+\input{sections/discussion.mng}
+\input{sections/extension.mng}
+\input{sections/related.tex}
+\input{sections/conclusion.tex}
+\input{sections/acknowledge.tex}
+
+
+%% Acknowledgments
+
+%% Bibliography
+\bibliography{paper}
+
+% \ifdefined\submitoption
+\newpage
+\appendix
+\input{sections/appendix.mng}
+% \fi
+
+\end{document}

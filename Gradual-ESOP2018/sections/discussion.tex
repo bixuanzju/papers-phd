@@ -1,0 +1,274 @@
+
+\section{Discussion}
+\label{sec:discussion}
+
+% In this section we consider top types to further
+% demonstrate the applicability of our definition of consistent subtyping. We also
+% discuss the design decisions involved in the declarative/algorithmic system.
+% and show how it
+% helps address the issue arising from the ambiguity of the type-directed
+% translation.
+
+\subsection{Top Types}
+\label{subsec:extension-top}
+
+To demonstrate that our definition of consistent subtyping (\cref{def:decl-conssub}) is
+applicable to other features,
+% We argued that our definition of consistent subtyping (\cref{def:decl-conssub})
+% is a \textit{general} definition in that it is independent of language features.
+% We have shown its applicability to polymorphic types, for which neither
+% \citet{siek2007gradual} nor the AGT approach~\citep{garcia2016abstracting} can
+% be extended naturally. To strengthen our argument,
+we show how to extend our approach to $\tope$ types with all the desired properties preserved.
+% To aid comparison, we also
+% show how to adapt the AGT approach to support $\tope$ and verify that these two
+% approaches, though rooted in different foundations, coincide again on
+% \textit{simple types}. However, \cref{def:old-decl-conssub} of
+% \citet{siek2007gradual} fails to support $\tope$.
+
+
+% \paragraph{Extending Definitions}
+
+In order to preserve the orthogonality between subtyping and consistency, we
+require $\top$ to be a common supertype of all static types, as shown in rule
+\rul{S-Top}. This rule might seem strange at first glance, since even
+if we remove
+the requirement $A~static$, the rule seems reasonable.
+However, an important point is that because of the orthogonality between
+subtyping and consistency, subtyping itself should not contain a potential
+information loss!
+Therefore, subtyping instances such as $\unknown \tsub \top$ are not allowed.
+For consistency, we add the rule that $\top$ is consistent with $\top$, which is
+actually included in the original reflexive rule $A \sim A$. For consistent
+subtyping, every type is a consistent subtype of $\top$, for example, $\nat \to
+\unknown \tconssub \top$.
+\begin{mathpar}
+  \SubTop \and \CTop \and \CSTop
+\end{mathpar}
+It is easy to verify that \cref{def:decl-conssub} is still equivalent to that in
+\cref{fig:decl:conssub} extended with rule \rul{CS-Top}. That is,
+\cref{lemma:properties-conssub} holds:
+\begin{proposition}[Extension with $\top$]
+  $\tpreconssub A \tconssub B \Leftrightarrow \tpresub A \tsub C$, $C \sim D$, $\tpresub D \tsub B$, for some $C, D$.
+\end{proposition}
+% \begin{proof}\leavevmode
+%   \begin{itemize}
+%   \item From first to second: By induction on the derivation of consistent
+%     subtyping. We have extra case \rul{CS-Top} now, where $B = \top$.
+%     We can choose $C = A$, and
+%     $D$ by replacing the unknown types in $C$ by $\nat$. Namely, $D$ is a static
+%     type, so by \rul{S-Top} we are done.
+%   \item From second to first: By induction on the derivation of second
+%     subtyping. We have extra case \rul{S-Top} now, where
+%     $B = \top$, so $A \tconssub B$ holds by \rul{CS-Top}.
+%   \end{itemize}
+% \end{proof}
+
+% \paragraph{Extending AGT}
+
+We extend the definition of concretization (\cref{def:concret}) with $\top$
+by adding another equation $\gamma(\top) = \{\top\}$. Note that
+\citet{castagna2017gradual} also have this equation in their calculus.
+It is easy to verify that \cref{lemma:coincide-agt} still holds:
+\begin{proposition}[Equivalent to AGT on $\top$]
+  \label{prop:agt-top}
+  $A \tconssub B$ if only if $A \agtconssub B$.
+\end{proposition}
+
+% \begin{proof}\leavevmode
+%   \begin{itemize}
+%   \item From left to right: By induction on the derivation of consistent
+%     subtyping. We have case \rul{CS-Top} now.
+%     It follows that for
+%     every static type $A_1 \in \gamma(A)$, we can derive $A_1 \tsub \top$ by
+%     \rul{S-Top}.
+%     We have $B_1 = B = \top$ and we are done.
+%   \item From right to left: By induction on the derivation of subtyping and
+%     inversion on the concretization. We have extra case \rul{S-Top} now, where
+%     $B$ is $\top$. So
+%     consistent subtyping directly holds.
+%   \end{itemize}
+% \end{proof}
+
+\paragraph{\citeauthor{siek2007gradual}'s Definition of Consistent Subtyping Does Not Work for $\top$.}
+
+As the analysis in \cref{subsec:towards-conssub}, $\nat \to \unknown
+\tconssub \top$ only holds when we first apply consistency, then subtyping.
+However we cannot find a type $A$ such that
+$\nat \to \unknown \tsub A$ and $A \sim \top$. Also we have a similar problem in
+extending the restriction operator: \textit{non-structural} masking between
+$\nat \to \unknown$ and $\top$ cannot be easily achieved.
+% \begin{center}
+%   \begin{tikzpicture}
+%     \matrix (m) [matrix of math nodes,row sep=3em,column sep=4em,minimum width=2em]
+%     {
+%       \bot & \top \\
+%       \nat \to \unknown &
+%       \nat \to \nat \\};
+
+%     \path[-stealth]
+%     (m-2-1) edge node [left] {$\tsub$} (m-1-1)
+%     (m-2-2) edge node [left] {$\tsub$} (m-1-2);
+
+%     \draw
+%     (m-1-1) edge node [above] {$\sim$} (m-1-2)
+%     (m-2-1) edge node [below] {$\sim$} (m-2-2);
+%   \end{tikzpicture}
+% \end{center}
+
+
+\subsection{Interpretation of the Dynamic Semantics}
+\label{subsec:algo:discuss}
+
+In \cref{sec:type:trans} we have seen an example where a source expression could
+produce two different target expressions with different runtime behaviour. As we
+explained, this is due to the guessing nature of the declarative system, and
+from the typing point of view, no type is particularly better than others.
+However, in practice, this is not desirable. Let us revisit the same example, now
+from the algorithmic point of view (we omit the translation for space reasons):
+\[
+  f: \forall a. a \to a \byinf (\blam x \unknown {f ~ x}) \infto \unknown \to \genA \dashv f : \forall a. a \to a, \genA
+\]
+Compared with declarative typing, which produces many types
+($\unknown \to \nat$, $\unknown \to \bool$, and so on), the algorithm computes
+the type $\unknown \to \genA$ with $\genA$ unsolved in the output context.
+% This is due to rule \rul{ACS-UnknownL}.
+What can we know from the output context? The only thing we know is that $\genA$
+is not constrained at all! However, it is possible to make a more refined distinction
+between different kinds of existential variables. The first
+kind of existential variables are those that indeed have no constraints at all,
+as they do not affect the dynamic semantics. The second kind of existential
+variables (as in this example) are those where the only constraint is that
+\textit{the variable was once compared with an unknown type}~\citep{garcia2015principal}.
+
+To emphasize the difference and have better support for dynamic semantics, we
+could have \textit{gradual variables} in addition to existential variables, with
+the difference that only unsolved gradual variables are allowed to be unified
+with the
+unknown type. An irreversible transition from existential variables to
+gradual variables occurs when an existential variable is compared with
+$\unknown$. After the algorithm terminates, we can set all unsolved existential
+variables to be any (static) type (or more precisely, as \citet{garcia2015principal}, with
+\textit{static type parameters}), and all unsolved gradual variables to be
+$\unknown$ (or \textit{gradual type parameters}).
+% we should solve all unsolved gradual variables to $\unknown$ to avoid
+% unnecessary casts, while unsolved existential variables are free to have any
+% solution.
+% Note that this choice is different from \citet{garcia2015principal},
+% instead it corresponds more to the constraint solver in \citet{siek2008gradual}.
+% This is because unlike \citet{garcia2015principal}, where parametric
+% polymorphism is provided by (static or gradual) type parameters, our parametric
+% polymorphism is directly from implicit polymorphism (type variables, and annotations in
+% algorithmic type system).
+However, this approach requires a more sophisticated declarative/algorithmic type system than the
+ones presented in this paper, where we only produce static
+monotypes in type inference. We believe this is a typical trade-off in existing
+gradual type systems with inference~\citep{siek2008gradual,
+  garcia2015principal}. Here we suppress the complexity of dynamic semantics
+in favour of the conciseness of static typing.
+
+
+\subsection{The Dynamic Guarantee}
+\label{subsec:dynamic}
+
+
+In \cref{sec:criteria} we mentioned that the dynamic guarantee is closely related
+to the coherence issue. To aid discussion, we first give the definition of
+dynamic guarantee as follows:
+
+\begin{definition}[Dynamic guarantee]
+  Suppose $e' \lessp e$, $ \emptyset \byinf e : A \trto s$ and $ \emptyset
+  \byinf e' : A' \trto s'$, if $s \Downarrow v$, then $s' \Downarrow v'$ and $v'
+  \lessp v$.
+\end{definition}
+
+The dynamic guarantee says that if a gradually typed program evaluates to a
+value, then removing type annotations always produces a program that evaluates
+to an equivalent value (modulo type annotations). Now apparently the coherence
+issue of the declarative system breaks the dynamic guarantee. For instance:
+\begin{mathpar}
+  (\blam{f}{\forall a. a \to a}{\blam{x}{\nat}{f~x}})~(\lambda x .\, x)~3 \and
+  (\blam{f}{\forall a. a \to a}{\blam{x}{\unknown}{f~x}})~(\lambda x .\, x)~3
+\end{mathpar}
+The left one evaluates to 3, whereas its less precise version (right) will give
+a cast error if $a$ is instantiated to $\bool$ for example.
+
+As discussed in \cref{subsec:algo:discuss}, we could design a more sophisticated
+declarative/algorithmic type system where coherence is retained. However, even
+with a coherent source language, the dynamic guarantee is still a
+question. Currently, the dynamic guarantee for our target language \pbc is still an open
+question. According to \citet{yuu2017poly}, the difficulty lies in the definition of term precision
+that preserves the semantics.
+
+
+\begin{comment}
+\paragraph{Do soundness and completeness still hold?}
+
+The reader may ask if the declarative system produces types such as $\unknown
+\to \nat$ and $\unknown \to \bool$, but the algorithmic system computes the type
+$\unknown \to \unknown$, does it imply that the algorithmic system is no longer
+sound and complete with respect to the declarative system? The answer is no.
+First of all, note that \cref{thm:type_complete} reads ``$\dots$ there exist
+$\Delta$, $\Omega'$ and $A'$ such that $\dots$ $A = \ctxsubst{\Omega'}{A'}$''.
+Now if $A'$ (which is produced by the algorithmic system) contains some unsolved
+existential variables, it is up to us to pick solutions in $\Omega'$ to match up
+with $A$ (which is produced by the declarative system). More concretely, let us
+assume that the declarative system produces type $\unknown \to \nat$, and let
+$\Omega = f : \forall a. a \to a$ and $\Delta = f : \forall a. a \to a, \genA$,
+the completeness theorem asks if we can find a complete context $\Omega'$ that
+extends both $\Delta$ and $\Omega$ such that $\ctxsubst{\Omega'}{(\unknown \to
+  \genA)} = \unknown \to \nat$. It is obvious that $\Omega' = f : \forall a. a
+\to a, \genA = \nat$ is one such complete context, and we have
+$\ctxsubst{\Omega'}{(\unknown \to \genA)} = \unknown \to \nat$. So the
+algorithmic system is still complete. Similar arguments apply to the soundness
+theorem. 
+Secondly, an observation (which follows from the soundness and
+completeness theorems) is: if an
+expression is typeable with many types in the declarative system, the same expression must be
+typeable with a single type that contains some unsolved existential variables in the algorithmic
+algorithmic system.
+In that case, replacing them with $\unknown$ is the best
+strategy for the sake of execution.
+
+\paragraph{Existential variables do not indicate parametricity}
+
+Another reading of the above example may suggest that the result type $\unknown
+\to \genA$ implies parametricity, with the implication that $\genA$ can be
+changed arbitrarily without affecting the runtime behaviour of the
+program. A similar phenomenon is discussed by \citet{siek2008gradual}, where they
+argue that we cannot simply ``ignore dynamic types during unification''. In
+their view, a type signature with a type variable indicates parametricity, but
+this type does not. We agree that type variables do indicate parametricity, but
+\textit{existential variables} do not! An \textit{unsolved} existential variable
+indicates that a value's only constraint is that it may be cast to and from
+$\unknown$, thus may introduce runtime casts. A similar observation is also
+found in \citet{garcia2015principal}, where they have to distinguish between
+\textit{static polymorphism} and \textit{gradual polymorphism}, and in addition
+to gradual type parameters, they have to introduce the so-called \textit{static
+  type parameters}. We argue that our language design is much simpler, and our
+algorithmic system naturally embraces this distinction.
+
+Now the question is can we really do that? The syntax in \cref{fig:algo-syntax}
+specifies that the solution of a existential variable can only be a monotype.
+This is true if the existential variable has a solution. Reading of the output
+context reveals that $\genA$ does not have any solution at all. What is more,
+our target language (i.e., \pbc) has a nice property, the so-called
+``Jack-of-All-Trade Principle''~\cite{ahmed2011blame} that says if instantiating
+a type parameter to any given type yields an answer then instantiating that type
+parameter to $\unknown$ yields the same answer. In light of these, no type is
+more suitable than $\unknown$.
+
+We need to note that this does not mean we should always instantiate a type
+parameter to $\unknown$, as is the case in \pbc. One of our design principles is
+that we should extract as much information as possible from the static aspects of
+the type system, until there is nothing more we can know, then leave the job to
+the runtime checks.
+\end{comment}
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: ../paper.bib
+%%% End:

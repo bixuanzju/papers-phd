@@ -1,0 +1,283 @@
+\section{Motivation and Applications}
+\label{sec:motivation}
+
+In this section we motivate why the combination of gradual typing and implicit
+polymorphism is useful. We then illustrate two concrete applications related to
+algebraic datatypes. The first application shows how gradual typing helps in
+defining Scott encodings of algebraic datatypes~\citep{curry1958combinatory,
+  parigot1992recursive}, which are impossible to encode in plain System F. The
+second application shows how gradual typing makes it easy to model and use
+heterogeneous containers.
+
+% \subsection{Motivation}
+
+% In this section we discuss why we are interested in integrating gradual
+% typing and implicit polymorphism.
+
+% \paragraph{Why bring gradual types to implicit polymorphism} The Glasgow
+% Haskell Compiler (GHC) is a state-of-art compiler that is able to deal with many
+% advanced features, including predicative implicit polymorphism. However,
+% consider the program \lstinline{(\f. (f 1, f 'a')) id} that cannot type check in
+% current GHC, where \lstinline{id} stands for the identity function. The problem
+% with this expression is that type inference fails to infer a polymorphic type
+% for $f$, given there is no explicit annotation for it. However, from dynamic
+% point of view, this program would run smoothly. Also, requesting programmers to
+% add annotations for each polymorphic types could become annoying when the
+% program scales up and the annotation is long and complicated.
+
+% Gradual types provides a simple solution for it. Rewriting the above expression
+% to \lstinline{(\f: *. (f 1, f 'a')) id} produces the value \lstinline{(1, 'a')}.
+% Namely, gradual typing provides an alternative that defers typing errors (if
+% exists) into dynamic time. Also, without losing type safety, it allows
+% programmer to be sloppy about annotations to be agile for program development,
+% and later refine the typing annotations to regain the power of static typing.
+
+% \paragraph{Why bring implicit polymorphism to gradual typing} There are several
+% existing work about integrating explicit polymorphism into gradual type systems,
+% with or without explicit casts~\citep{ahmed2011blame, yuu2017poly}, yet no work
+% investigates to add the expressive power of implicit polymorphism into a
+% source language.
+% % In implicit
+% % polymorphism, type applications can be reconstructed by the type checker, for
+% % example, instead of \lstinline{id Int 3}, one can directly write \lstinline{id 3}.
+% Implicit polymorphism is a hallmark of functional programming, and
+% modern functional languages (such as Haskell) employ sophisticated
+% type-inference algorithms that, aided by type annotations, can deal with
+% higher-rank polymorphism. Therefore as a step towards gradualizing such type
+% systems, this paper develops both declarative and algorithmic versions for a
+% type system with implicit higher-rank polymorphism.
+
+\subsection{Motivation: Gradually Typed Higher-Rank Polymorphism}
+
+Our work combines implicit (higher-rank) polymorphism with gradual typing. As
+is well known, a gradually typed language supports both fully static and fully
+dynamic checking of program properties, as well as the continuum between these
+two extremes. It also offers programmers fine-grained control over the
+static-to-dynamic spectrum, i.e., a program can be evolved by introducing more
+or less precise types as needed~\citep{garcia2016abstracting}. 
+
+Haskell is a language renowned for its advanced type system, but it does not feature
+gradual typing. Of particular interest to us is its support for implicit
+higher-rank polymorphism, which is supported via explicit type
+annotations. 
+In Haskell some programs that are safe at run-time may
+be rejected due to the conservativity of the type system. For example, consider
+the following Haskell program adapted from \citet{jones2007practical}:
+\begin{lstlisting}
+foo :: ([Int], [Char])
+foo = let f x = (x [1, 2] , x ['a', 'b']) in f reverse
+\end{lstlisting}
+This program is rejected by Haskell's type checker because Haskell implements
+the Damas-Milner \citep{hindley69principal, damas1982principal} rule that a
+lambda-bound argument (such as \lstinline{x}) can only have a monotype, i.e.,
+the type checker can only assign \lstinline{x} the type
+\lstinline{[Int] -> [Int]}, or \lstinline{[Char] -> [Char]},
+but not \lstinline$foralla. [a] -> [a]$.
+Finding such manual polymorphic annotations can be non-trivial, especially
+when the program scales up and the annotation is long and complicated.
+
+Instead
+of rejecting the program outright, due to missing type annotations, gradual
+typing provides a simple alternative by giving \lstinline$x$ the unknown type
+$\unknown$. With this type the same program type-checks and produces
+\lstinline$([2, 1], ['b', 'a'])$. By running the program, programmers can gain
+more insight about its run-time behaviour. Then, with this insight, they can
+also give \lstinline$x$ a more precise type (\lstinline$foralla. [a] -> [a]$) a
+posteriori so that the program continues to type-check via implicit polymorphism
+and also grants more static safety. In this paper, we envision such a language
+that combines the benefits of both implicit higher-rank polymorphism and gradual
+typing.
+
+%-------------------------------------------------------------------------------
+\subsection{Application: Efficient (Partly) Typed Encodings of ADTs}
+
+Our calculus does not provide built-in support for algebraic datatypes (ADTs).
+Nevertheless, the calculus is expressive enough to support efficient
+function-based encodings of (optionally polymorphic) ADTs\footnote{In a type
+  system with impure features, such as non-termination or exceptions, the encoded
+  types can have valid inhabitants with side-effects. However, that is beyond
+  the scope of this paper.}. This offers an immediate way to model algebraic
+datatypes in our calculus without requiring extensions to our calculus or, more
+importantly, to its target---the polymorphic blame calculus. While we believe
+that such extensions are possible, they would likely require non-trivial
+extensions to the polymorphic blame calculus. Thus the alternative of being able
+to model algebraic datatypes without extending \pbc is appealing. The encoding
+also paves the way to provide built-in support for algebraic datatypes in the
+source language, while elaborating them via the encoding into \pbc.
+
+\paragraph{Church and Scott Encodings}
+It is well-known
+that polymorphic calculi such as System F can encode datatypes via
+Church encodings. However these encodings have well-known drawbacks. 
+In particular, some operations are hard to define, and they can have a time
+complexity that is greater than that of the corresponding functions for built-in
+algebraic datatypes. A good example is the definition of
+the predecessor function for Church numerals~\citep{church1941calculi}. Its
+definition requires significant ingenuity (while it is trivial with 
+built-in algebraic datatypes), and it has \emph{linear} time
+complexity (versus the \emph{constant} time complexity for a definition 
+using built-in algebraic datatypes). 
+
+An alternative to Church encodings are the so-called Scott
+encodings~\citep{curry1958combinatory}. They address the two drawbacks of Church
+encodings: they allow simple definitions that directly correspond to programs
+implemented with built-in algebraic datatypes, and those definitions have the same time
+complexity to programs using algebraic datatypes.
+
+Unfortunately, Scott encodings, or more precisely, their typed
+variant~\citep{parigot1992recursive}, cannot be expressed in System F: in the
+general case they require recursive types, which System F does not support.
+However, with gradual typing, we can remove the need for recursive types, thus
+enabling Scott encodings in our calculus.
+
+\paragraph{A Scott Encoding of Parametric Lists}
+Consider for instance the typed
+Scott encoding of parametric lists in a system with implicit polymorphism:
+\begin{align*}
+   \mathsf{List} \, \ottmv{a} &\triangleq  \mu  \ottmv{L}   .\,   \forall  \ottmv{b}  .\,  \ottmv{b}   \rightarrow  \ottsym{(}  \ottmv{a}  \rightarrow  \ottmv{L}  \rightarrow  \ottmv{b}  \ottsym{)}  \rightarrow  \ottmv{b} \\
+    \mathsf{nil}  &\triangleq  \mathbf{fold} _{ \mathsf{List} \, \ottmv{a} }  \, \ottsym{(}  \lambda  \ottmv{n}  .\,  \lambda  \ottmv{c}  .\,  \ottmv{n}  \ottsym{)}  \ottsym{:}  \forall  \ottmv{a}  .\,  \mathsf{List} \, \ottmv{a} \\
+    \mathsf{cons}  & \triangleq \lambda  \ottmv{x}  .\,  \lambda  \ottmv{xs}  .\,   \mathbf{fold} _{ \mathsf{List} \, \ottmv{a} }  \, \ottsym{(}  \lambda  \ottmv{n}  .\,  \lambda  \ottmv{c}  .\,  \ottmv{c} \, \ottmv{x} \, \ottmv{xs}  \ottsym{)}  \ottsym{:}  \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \mathsf{List} \, \ottmv{a}  \rightarrow  \mathsf{List} \, \ottmv{a}
+\end{align*}
+This encoding requires both polymorphic and recursive types\footnote{Here we use
+iso-recursive types, but equi-recursive types can be used too.}. 
+Like System F, our calculus 
+only supports the former, but not the latter. Nevertheless, gradual types still
+allow us to use the Scott encoding in a partially typed fashion.
+The trick is to omit the recursive type binder $\mu L$ and replace the recursive
+occurrence of $L$ by the unknown type $\unknown$:
+\begin{align*}
+   \mathsf{List}_\unknown \, \ottmv{a} &\triangleq \forall  \ottmv{b}  .\,  \ottmv{b}  \rightarrow  \ottsym{(}  \ottmv{a}  \rightarrow  \star  \rightarrow  \ottmv{b}  \ottsym{)}  \rightarrow  \ottmv{b}
+\end{align*}
+As a consequence, we need to replace the term-level witnesses of the
+iso-recursion by explicit type annotations to respectively forget or recover the type structure of
+the recursive occurrences:
+\begin{align*}
+   \mathbf{fold} _{ \mathsf{List}_\unknown \, \ottmv{a} }  & \triangleq \lambda  \ottmv{x}  .\,  \ottmv{x}  \ottsym{:}  \ottsym{(}  \forall  \ottmv{b}  .\,  \ottmv{b}  \rightarrow  \ottsym{(}  \ottmv{a}  \rightarrow  \mathsf{List}_\unknown \, \ottmv{a}  \rightarrow  \ottmv{b}  \ottsym{)}  \rightarrow  \ottmv{b}  \ottsym{)}  \rightarrow  \mathsf{List}_\unknown \, \ottmv{a} \\
+   \mathbf{unfold} _{ \mathsf{List}_\unknown \, \ottmv{a} }  & \triangleq \lambda  \ottmv{x}  .\,  \ottmv{x}  \ottsym{:}  \mathsf{List}_\unknown \, \ottmv{a}  \rightarrow  \ottsym{(}  \forall  \ottmv{b}  .\,  \ottmv{b}  \rightarrow  \ottsym{(}  \ottmv{a}  \rightarrow  \mathsf{List}_\unknown \, \ottmv{a}  \rightarrow  \ottmv{b}  \ottsym{)}  \rightarrow  \ottmv{b}  \ottsym{)}
+\end{align*}
+With the reinterpretation of $ \mathbf{fold} $ and $ \mathbf{unfold} $ as functions instead of
+built-in primitives, we have exactly the same definitions of $ \mathsf{nil}_\unknown $ and
+$ \mathsf{cons}_\unknown $.
+
+Note that when we elaborate our calculus into the polymorphic blame calculus, the above
+type annotations give rise to explicit casts. For
+instance, after elaboration $ \mathbf{fold} _{ \mathsf{List}_\unknown \, \ottmv{a} }  \, \ottnt{e}$ results in the cast 
+$ \langle  \ottsym{(}  \forall  \ottmv{b}  .\,  \ottmv{b}  \rightarrow  \ottsym{(}  \ottmv{a}  \rightarrow  \mathsf{List}_\unknown \, \ottmv{a}  \rightarrow  \ottmv{b}  \ottsym{)}  \rightarrow  \ottmv{b}  \ottsym{)}  \hookrightarrow  \mathsf{List}_\unknown \, \ottmv{a}  \rangle  s $ where $s$ is the elaboration of $\ottnt{e}$.
+
+In order to perform recursive traversals on lists, e.g., to compute their
+length, we need a fixpoint combinator like the Y combinator. Unfortunately, this combinator
+cannot be assigned a type in the simply typed lambda calculus or System F.
+Yet, we can still provide a gradual typing for it in our system.
+\begin{align*}
+\mathsf{fix} &\triangleq \lambda  \ottmv{f}  .\,  \ottsym{(}  \lambda  \ottmv{x}  \ottsym{:}  \star  .\,  \ottmv{f} \, \ottsym{(}  \ottmv{x} \, \ottmv{x}  \ottsym{)}  \ottsym{)} \, \ottsym{(}  \lambda  \ottmv{x}  \ottsym{:}  \star  .\,  \ottmv{f} \, \ottsym{(}  \ottmv{x} \, \ottmv{x}  \ottsym{)}  \ottsym{)}  \ottsym{:}  \forall  \ottmv{a}  .\,  \ottsym{(}  \ottmv{a}  \rightarrow  \ottmv{a}  \ottsym{)}  \rightarrow  \ottmv{a}
+\end{align*}
+This allows us for instance to compute the length of a list.
+\begin{align*}
+\mathsf{length} &\triangleq \mathsf{fix} \, \ottsym{(}  \lambda  \ottmv{len}  .\,  \lambda  \ottmv{l}  .\,   \mathsf{zero}_\unknown  \, \ottsym{(}  \lambda  \ottmv{xs}  .\,   \mathsf{succ}_\unknown  \, \ottsym{(}  \ottmv{len} \, \ottmv{xs}  \ottsym{)}  \ottsym{)}  \ottsym{)}
+\end{align*}
+Here $ \mathsf{zero}_\unknown   \ottsym{:}   \mathsf{Nat}_\unknown $ and $ \mathsf{succ}_\unknown   \ottsym{:}   \mathsf{Nat}_\unknown   \rightarrow   \mathsf{Nat}_\unknown $
+are the encodings of the constructors for natural numbers $ \mathsf{Nat}_\unknown $. In practice, 
+for performance reasons, we could extend our
+language with a $\mathbf{letrec}$ construct in a standard way to
+support general recursion, instead of defining a fixpoint combinator.
+
+% length :: forall a. List a -> Nat
+% length = fix (\len -> \l -> l zero (\xs -> succ (len xs)))
+
+Observe that the gradual typing of lists still enforces that all
+elements in the list are
+of the same type. For instance, a heterogeneous list like
+$\mathsf{cons}_\unknown \,  \mathsf{zero}_\unknown  \, \ottsym{(}  \mathsf{cons}_\unknown \,  \mathsf{true}_\unknown  \, \mathsf{nil}_\unknown  \ottsym{)}$,
+is rejected because $ \mathsf{zero}_\unknown   \ottsym{:}   \mathsf{Nat}_\unknown $ and $ \mathsf{true}_\unknown   \ottsym{:}   \mathsf{Bool}_\unknown $ have different types.
+
+\paragraph{Heterogeneous Containers}
+Heterogeneous containers are datatypes that can store data of different types,
+which is very useful in various scenarios. One typical application is that an
+XML element is heterogeneously typed. Moreover, the result of a SQL query
+contains heterogeneous rows.
+
+In statically typed languages, there are several ways to obtain heterogeneous lists. For example, in Haskell, one option is
+to use \emph{dynamic types}. Haskell's library \textbf{Data.Dynamic} provides the
+special type \textbf{Dynamic} along with its injection \textbf{toDyn} and
+projection \textbf{fromDyn}. The drawback is that the code is littered with
+\textbf{toDyn} and \textbf{fromDyn}, which obscures the program logic.
+One can also use the \textsc{HList} library
+\citep{kiselyov2004strongly}, which provides strongly typed data structures for
+heterogeneous collections. The library requires several Haskell extensions, such as multi-parameter classes~\citep{jones1997type} and
+functional dependencies~\citep{jones2000type}.
+With fake dependent
+types~\citep{mcbride2002faking}, heterogeneous vectors are also possible with
+type-level constructors.
+
+In our type system, with explicit type annotations that set the element types to
+the unknown type we can disable the homogeneous typing discipline for the
+elements and get gradually typed heterogeneous lists\footnote{This argument is
+  based on the extended type system in \cref{sec:advanced-extension}.}. Such
+gradually typed heterogeneous lists are akin to Haskell's approach with Dynamic
+types, but much more convenient to use since no injections and projections are
+needed, and the $ \star $ type is built-in and natural to use.
+
+An example of such gradually typed heterogeneous collections is:
+\[
+l \triangleq \mathsf{cons}_\unknown \, \ottsym{(}   \mathsf{zero}_\unknown   \ottsym{:}  \star  \ottsym{)} \, \ottsym{(}  \mathsf{cons}_\unknown \, \ottsym{(}   \mathsf{true}_\unknown   \ottsym{:}  \star  \ottsym{)} \, \mathsf{nil}_\unknown  \ottsym{)}
+\]
+Here we annotate each element with type annotation $\unknown$ and the type
+system is happy to type-check that $\ottmv{l}  \ottsym{:}  \mathsf{List}_\unknown \, \star$.
+Note that we are being meticulous about the syntax, but with proper
+implementation of the source language, we could write more succinct programs
+akin to Haskell's syntax, such as \lstinline{[0, True]}.
+
+% \begin{itemize}
+% \item Scott encodings of simple first-order ADTs (e.g. naturals)
+% \item Parigot encodings improves Scott encodings with recursive schemes, but
+%   occupies exponential space, whereas Church encoding only occupies linear
+%   space.
+% \item An alternative encoding which retains constant-time destructors but also
+%   occupies linear space.
+% \item Parametric ADTs also possible?
+% \item Typing rules
+% \end{itemize}
+% 
+% \begin{example}[Scott Encoding of Naturals]
+% \begin{align*}
+%    \mathsf{Nat}  &\triangleq \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \ottsym{(}  \star  \rightarrow  \ottmv{a}  \ottsym{)}  \rightarrow  \ottmv{a} \\
+%   \mathsf{zero} &\triangleq \lambda  \ottmv{x}  .\,  \lambda  \ottmv{f}  .\,  \ottmv{x} \\
+%   \mathsf{succ} &\triangleq \lambda  \ottmv{y}  \ottsym{:}  \mathsf{Nat}  .\,  \lambda  \ottmv{x}  .\,  \lambda  \ottmv{f}  .\,  \ottmv{f} \, \ottmv{y}
+% \end{align*}
+% \end{example}
+% Scott encodings give constant-time destructors (e.g., predecessor), but one has to
+% get recursion somewhere. Since our calculus admits untyped lambda calculus, we
+% could use a fixed point combinator.
+% 
+% \begin{example}[Parigot Encoding of Naturals]
+% \begin{align*}
+%    \mathsf{Nat}  &\triangleq \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \ottsym{(}  \star  \rightarrow  \ottmv{a}  \rightarrow  \ottmv{a}  \ottsym{)}  \rightarrow  \ottmv{a} \\
+%   \mathsf{zero} &\triangleq \lambda  \ottmv{x}  .\,  \lambda  \ottmv{f}  .\,  \ottmv{x} \\
+%   \mathsf{succ} &\triangleq \lambda  \ottmv{y}  \ottsym{:}  \mathsf{Nat}  .\,  \lambda  \ottmv{x}  .\,  \lambda  \ottmv{f}  .\,  \ottmv{f} \, \ottmv{y} \, \ottsym{(}  \ottmv{y} \, \ottmv{x} \, \ottmv{f}  \ottsym{)}
+% \end{align*}
+% \end{example}
+% Parigot encodings give primitive recursion, apart form constant-time
+% destructors, but at the cost of exponential space complexity (notice in
+% $\mathsf{succ}$ there are two occurances of $\ottmv{y}$).
+% 
+% Both Scott and Parigot encodings are typable in System F with positive recursive
+% types, which is strong normalizing.
+% 
+% \begin{example}[Alternative Encoding of Naturals]
+% \begin{align*}
+%    \mathsf{Nat}  &\triangleq \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \ottsym{(}  \star  \rightarrow  \ottsym{(}  \star  \rightarrow  \ottmv{a}  \ottsym{)}  \rightarrow  \ottmv{a}  \ottsym{)}  \rightarrow  \ottmv{a} \\
+%   \mathsf{zero} &\triangleq \lambda  \ottmv{x}  .\,  \lambda  \ottmv{f}  .\,  \ottmv{x} \\
+%   \mathsf{succ} &\triangleq \lambda  \ottmv{y}  \ottsym{:}  \mathsf{Nat}  .\,  \lambda  \ottmv{x}  .\,  \lambda  \ottmv{f}  .\,  \ottmv{f} \, \ottmv{y} \, \ottsym{(}  \lambda  \ottmv{g}  .\,  \ottmv{g} \, \ottmv{x} \, \ottmv{f}  \ottsym{)}
+% \end{align*}
+% \end{example}
+% This encoding enjoys constant-time destructors, linear space complexity, and
+% primitive recursion.
+% The static version is $ \mu  \ottmv{b}   .\,   \forall  \ottmv{a}  .\,  \ottmv{a}   \rightarrow  \ottsym{(}  \ottmv{b}  \rightarrow  \ottsym{(}  \ottmv{b}  \rightarrow  \ottmv{a}  \ottsym{)}  \rightarrow  \ottmv{a}  \ottsym{)}  \rightarrow  \ottmv{a}$,
+% which can only be expressed in System F with
+% general recursive types (notice the second $\ottmv{b}$ appears in a negative position).
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: "../paper.bib"
+%%% End:

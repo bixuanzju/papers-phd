@@ -1,0 +1,474 @@
+\section{Algorithmic Type System}
+\label{sec:algorithm}
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+\begin{tabular}{lrcl} \toprule
+  Expressions & $e$ & \syndef & $x \mid n \mid
+                         \blam x A e \mid \erlam x e \mid e~e \mid e : A $ \\
+  Types & $A, B$ & \syndef & $ \nat \mid a \mid \genA \mid A \to B \mid \forall a. A \mid \unknown$ \\
+  Monotypes & $\tau, \sigma$ & \syndef & $ \nat \mid a \mid \genA \mid \tau \to \sigma$ \\
+  Contexts & $\Gamma, \Delta, \Theta$ & \syndef & $\ctxinit \mid \tctx,x: A \mid \tctx, a \mid \tctx, \genA \mid \tctx, \genA = \tau$ \\
+  Complete Contexts & $\Omega$ & \syndef & $\ctxinit \mid \Omega,x: A \mid \Omega, a \mid \Omega, \genA = \tau$ \\ \bottomrule
+\end{tabular}
+  \end{small}
+\caption{Syntax of the algorithmic system}
+\label{fig:algo-syntax}
+\end{figure}
+
+
+% The declarative type system in \cref{sec:type-system} serves as a good
+% specification for how typing should behave. It remains to see whether this
+% specification delivers an algorithm. The main challenge lies in the rules \rul{CS-ForallL} in
+% \cref{fig:decl:conssub} and rule \rul{M-Forall} in
+% \cref{fig:decl-typing}, which both need to guess a monotype.
+
+% \bruno{why are we not highlightinh the differences in gray anymore?}
+In this section we give a bidirectional account of the algorithmic type system
+that implements the declarative specification. The algorithm is largely inspired
+by the algorithmic bidirectional system of \citet{dunfield2013complete}
+(henceforth DK system). However our algorithmic system differs from theirs in
+three aspects: 1) the addition of the unknown type $\unknown$; 2) the use of the
+matching judgment; and 3) the approach of \textit{gradual inference only
+  producing static types}~\citep{garcia2015principal}. We then prove that our
+algorithm is both sound and complete with respect to the declarative type
+system. Full proofs can be found in the appendix.
+
+\paragraph{Algorithmic Contexts.}
+
+The algorithmic context $\Gamma$ is an
+\textit{ordered} list containing declarations of type variables $a$ and term
+variables $x : A$. Unlike declarative contexts, algorithmic contexts also
+contain declarations of existential type variables $\genA$, which can be either
+unsolved (written $\genA$) or solved to some monotype (written $\genA = \tau$).
+Complete contexts $\Omega$ are those that contain no unsolved existential type
+variables. \Cref{fig:algo-syntax} shows the syntax of the algorithmic system.
+Apart from expressions in the declarative system, we have annotated expressions
+$e : A$.
+
+% \paragraph{Notational convenience}
+% Following \citet{dunfield2013complete}, we use contexts as substitutions on
+% types. We write $\ctxsubst{\Gamma}{A}$ to mean $\Gamma$ applied as a
+% substitution to type $A$. We also use a hole notation, which is useful when
+% manipulating contexts by inserting and replacing declarations in the middle. The
+% hole notation is used extensively in proving soundness and completeness. For
+% example, $\Gamma[\Theta]$ means $\Gamma$ has the form $\Gamma_L, \Theta,
+% \Gamma_R$; if we have $\Gamma[\genA] = (\Gamma_L, \genA, \Gamma_R)$, then
+% $\Gamma[\genA = \tau] = (\Gamma_L, \genA = \tau, \Gamma_R)$.
+
+% \paragraph{Input and output contexts}
+% The algorithmic system, compared with the declarative system, includes similar
+% judgment forms, except that we replace the declarative context $\Psi$ with an
+% algorithmic context $\Gamma$ (the \textit{input context}), and add an
+% \textit{output context} $\Delta$ after a backward turnstile. For example,
+% $\Gamma \vdash A \tconssub B \dashv \Delta$ is the judgment form for the
+% algorithmic consistent subtyping, and so on. All rules manipulate input and
+% output contexts in a way that is consistent with the notion of \textit{context
+%   extension}, which is described in \cref{sec:ctxt:extension}.
+
+% We start with the explanation of the algorithmic consistent subtyping as it
+% involves manipulating existential type variables explicitly (and solving them if
+% possible).
+
+\subsection{Algorithmic Consistent Subtyping and Instantiation}
+\label{sec:algo:subtype}
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+  %   \begin{mathpar}
+  % \framebox{$\Gamma \vdash A$} \\
+  % \VarWF \and \IntWF \and \UnknownWF \and \FunWF \and \ForallWF \and \EVarWF
+  % \and \SolvedEVarWF
+  %   \end{mathpar}
+
+\begin{mathpar}
+  \framebox{$\Gamma \vdash A \tconssub B \toctxr$} \\
+  \ACSTVar \and \ACSExVar \and \ACSInt \quad \ACSUnknownL \quad \ACSUnknownR \and
+  \ACSFun \and \ACSForallR \and \ACSForallL \and \AInstantiateL \quad \AInstantiateR
+\end{mathpar}
+  \end{small}
+  \caption{Algorithmic consistent subtyping}
+  \label{fig:algo:subtype}
+\end{figure}
+
+\Cref{fig:algo:subtype} shows the algorithmic consistent subtyping rules.
+The first five rules do not manipulate contexts. % Rules \rul{ACS-TVar} and
+% \rul{ACS-Int} do not involve existential variables, so the output context
+% remains unchanged. Rule \rul{ACS-ExVar} says that any unsolved existential
+% variable is a consistent subtype of itself. The output is still the same as the
+% input context as this gives no clue as to what is the solution of that
+% existential variable.
+% Rules \rul{ACS-UnknownL} and \rul{ACS-UnknownR} are the verbatim
+% correspondences of rule \rul{CS-UnknownL} and \rul{CS-UnknownR}.
+Rule \rul{ACS-Fun} is a natural extension of its declarative counterpart. The
+output context of the first premise is used by the second premise, and the
+output context of the second premise is the output context of the conclusion.
+Note that we do not simply check $A_2 \tconssub B_2$, but apply $\Theta$
+% (the input context of the second premise)
+to both types (e.g., $\ctxsubst{\Theta}{A_2} $). This is
+to maintain an important invariant that types
+% : whenever we try to derive $\Gamma \vdash A \tconssub B \dashv \Delta$, the types $A$ and $B$
+are fully applied
+under input context $\Gamma$ (they contain no existential variables already solved in
+$\Gamma$). The same invariant applies to every algorithmic judgment.
+Rule \rul{ACS-ForallR} looks similar to its declarative counterpart, except that
+we need to drop the trailing context $a, \Theta$ from the concluding output
+context since they become out of scope.
+% again, bears a similarity with the declarative
+% version. Note that the output context of its premise allows additional elements
+% to appear after the type variable $a$, in a trailing context $\Theta$. Since $a$
+% becomes out of scope in the conclusion, we need to drop the trailing context
+% $\Theta$ together with $a$ from the concluding output context, resulting in
+% $\Delta$.
+% The next rule is essential to eliminating the guessing work, thus appears
+% significantly different from its declarative version. Instead of guessing a
+% monotype $\tau$ out of thin air,
+Rule \rul{ACS-ForallL} generates a fresh
+existential variable $\genA$, and replaces $a$ with $\genA$ in the body $A$. The
+new existential variable $\genA$ is then added to the premise's input context.
+% Unlike rule \rul{ACS-ForallR}, the output context $\Delta$ of the premise
+% remains unchanged in the conclusion.
+% A central idea behind this rule is that we
+% defer the decision of choosing a monotype for a type variable, and hope that it
+% could be solved later when we have more information at hand.
+As a side note, when both types are quantifiers, then either \rul{ACS-ForallR}
+or \rul{ACS-ForallR} could be tried. In practice, one can apply
+\rul{ACS-ForallR} eagerly.
+The last two rules % are specific to the algorithm, thus having no counterparts in
+% the declarative version. They
+together check consistent subtyping with an
+unsolved existential variable on one side and an arbitrary type on the other
+side by the help of the instantiation judgment. % Apart from checking that the existential variable does not occur in the
+% type $A$, both of the rules do not directly solve the existential variables, but
+% leave the real work to the instantiation judgment.
+
+% \subsection{Instantiation}
+% \label{sec:algo:instantiate}
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+\begin{mathpar}
+  \framebox{$\tctx \vdash \genA \unif A \toctxr$} \\
+  % {\quad \text{Under input context $\Gamma$, instantiate $\genA$ such that
+  %     $\genA \tconssub A$, with output context $\Delta$ }} \\
+  \InstLSolve \and \InstLReach \and \InstLSolveU   \and \InstLAllR \and \InstLArr
+\end{mathpar}
+
+% \begin{mathpar}
+%   \framebox{$\tctx \vdash A \unif \genA  \toctxr$} \\
+%   % {\quad \text{Under input context $\Gamma$, instantiate $\genA$ such that
+%   %     $A \tconssub \genA$, with output context $\Delta$}} \\
+%   \InstRSolve \and \InstRReach \and \InstRSolveU  \and \InstRAllL \and \InstRArr
+% \end{mathpar}
+
+  \end{small}
+  \caption{Algorithmic instantiation}
+  \label{fig:algo:instantiate}
+\end{figure}
+
+% A central idea of the algorithmic system is to defer the decision of picking a
+% monotype to as late as possible.
+The judgment $\Gamma \vdash \genA \unif A \dashv \Delta$ defined in
+\cref{fig:algo:instantiate} instantiates unsolved existential variables.
+Judgment $\genA \unif A$ reads ``instantiate $\genA$ to a consistent subtype of
+$A$''. For space reasons, we omit its symmetric judgement $\Gamma \vdash A \unif
+\genA \dashv \Delta$.
+% Since these two are mutually defined, we
+% discuss them together, and omit symmetric rules when convenient.
+Rule \rul{InstLSolve} and rule \rul{InstLReach} set $\genA$ to
+$\tau$ and $\genB$ in the output context, respectively.
+% is the simplest
+% one -- when an existential variable meets a monotype. In that case, we simply
+% set the solution of $\genA$ to the monotype $\tau$ in the output context. We
+% also need to check that the monotype $\tau$ is well-formed under the prefix
+% context $\Gamma$.
+Rule \rul{InstLSolveU} is similar to \rul{ACS-UnknownR} in that we put no
+constraint on $\genA$ when it meets the unknown type $\unknown$. This design
+decision reflects the point that type inference only produces static
+types~\citep{garcia2015principal}. We will get back to this point in
+\cref{subsec:algo:discuss}.
+% Rule \rul{InstLReach} deals with the situation where two existential variables
+% meet. Note that $\Gamma[\genA][\genB]$ denotes a context where some unsolved existential
+% variable $\genA$ is declared before $\genB$. In this situation, the only logical
+% thing we can do is to set the solution of one existential variable to the other
+% one, depending on which is declared before which. For example, in the output
+% context of rule \rul{InstLReach}, we have $\genB = \genA$ because in the input
+% context, $\genA$ is declared before $\genB$.
+Rule \rul{InstLAllR} is the instantiation version of rule \rul{ACS-ForallR}.
+% Since our system is predicative, $\genA$ cannot be instantiated to $\forall b.
+% B$, but we can decompose $\forall b. B$ in the same way as in \rul{ACS-ForallR}.
+% Rule \rul{InstRAllL} is the instantiation version of rule \rul{ACS-ForallL}.
+The last rule \rul{InstLArr} applies when $\genA$ meets a function type. It
+follows that the solution must also be a function type.
+% looks a bit complicated, but it is actually very
+% intuitive: what does the solution of $\genA$ look like when $A$ is a function
+% type? The solution must also be a function type!
+That is why, in the first premise, we generate two fresh existential variables
+$\genA_1$ and $\genA_2$, and insert them just before $\genA$ in the input
+context, so that the solution of $\genA$ can mention them. Note that $A_1 \unif
+\genA_1$ switches to the other instantiation judgment.
+
+
+% \paragraph{Example}
+
+% We show a derivation of $\Gamma[\genA] \vdash \forall b. b \to \unknown \unif
+% \genA$ to demonstrate the interplay between instantiation, quantifiers and the
+% unknown type:
+% \[
+%   \inferrule*[right=InstRAllL]
+%       {
+%         \inferrule*[right=InstRArr]
+%         {
+%           \inferrule*[right=InstLReach]{ }{\Gamma', \genB \vdash \genA_1 \unif \genB \dashv \Gamma' , \genB = \genA_1} \\
+%           \inferrule*[right=InstRSolveU]{ }{\Gamma', \genB = \genA_1 \vdash \unknown \unif \genA_2 \dashv \Gamma', \genB = \genA_1}
+%         }
+%         {
+%           \Gamma[\genA], \genB \vdash \genB \to \unknown \unif \genA \dashv \Gamma', \genB = \genA_1
+%         }
+%       }
+%       {
+%         \Gamma[\genA] \vdash \forall b. b \to \unknown \unif \genA \dashv \Gamma', \genB = \genA_1
+%       }
+% \]
+% where $\Gamma' = \Gamma[\genA_2, \genA_1, \genA = \genA_1 \to \genA_2]$. Note
+% that in the output context, $\genA$ is solved to $\genA_1 \to \genA_2$, and
+% $\genA_2$ remains unsolved because the unknown type $\unknown$ puts no
+% constraint on it. Essentially this means that the solution of $\genA$ can be any
+% function, which is intuitively correct since $\forall b. b \to \unknown$ can be
+% interpreted, from the parametricity point of view, as any function.
+
+\subsection{Algorithmic Typing}
+\label{sec:algo:typing}
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+\begin{mathpar}
+  \framebox{$\Gamma \vdash e \Rightarrow A \toctxr $} \\
+  % {\quad \text{Under input context $\Gamma$, $e$ synthesizes output type $A$,
+  %     with output context $\Delta$}} \\
+  \AVar \and \ANat \and \ALamU \and \ALamAnnA \and \AAnno \and \AApp
+\end{mathpar}
+\begin{mathpar}
+  \framebox{$\Gamma \vdash e \Leftarrow A \toctxr $} \\
+  % {\quad \text{Under input context $\Gamma$, $e$ synthesizes output type $A$,
+  %     with output context $\Delta$}} \\
+  \ALam \and \AGen \and \ASub
+\end{mathpar}
+\begin{mathpar}
+  \framebox{$\Gamma \vdash A \match A_1 \to A_2 \toctxr$} \\
+  % {\quad \text{Under input context $\Gamma$, $A$ synthesizes output type $A_1
+  %     \to A_2$, with output context $\Delta$}} \\
+  \AMMC \quad \AMMA \and \AMMB \and \AMMD
+\end{mathpar}
+  \end{small}
+  \caption{Algorithmic typing}
+  \label{fig:algo:typing}
+\end{figure}
+
+We now turn to the algorithmic typing rules in \cref{fig:algo:typing}. The
+algorithmic system uses bidirectional type checking to accommodate polymorphism.
+Most of them are quite standard.
+% All of them are direct analogies of their declarative counterparts. Rules \rul{AVar}
+% and \rul{ANat} do not generate any new information, thus the output context is
+% the same as the input context. Rule \rul{ALamAnnA} infers the type of a lambda
+% abstraction. It does so by pushing $x : A$ into the input context and continues
+% to infer the type of the body $B$. The output context in the premise has
+% additional declarations in the trailing context $\Theta$, which is discarded in
+% the concluding output context.
+Perhaps rule \rul{AApp} (which differs significantly from that in the DK system)
+deserves attention. It relies on the algorithmic matching judgment $\Gamma
+\vdash A \match A_1 \to A_2 \dashv \Delta$.
+% The matching judgment
+% algorithmically synthesizes a function type from an arbitrary type.
+Rule
+\rul{AM-ForallL} replaces $a$ with a fresh existential variable $\genA$, thus
+eliminating guessing. Rule \rul{AM-Arr} and \rul{AM-Unknown} correspond
+directly to the declarative rules.
+% self-explanatory. Rule
+% \rul{AM-Unknown} says that the unknown type $\unknown$ can be split into a
+% function type $\unknown \to \unknown$.
+Rule \rul{AM-Var}, which has no
+corresponding declarative version, is similar to \rul{InstRArr}/\rul{InstLArr}:
+we create $\genA$ and $\genB$ and add $\genC = \genA \to \genB$ to the context.
+
+% Back to \rul{AApp}. This rule first infers the type of $e_1$, producing a output
+% context $\Theta_1$. Then it applies $\Theta_1$ to $A$ and goes into the matching
+% judgment, which delivers a function type $A_1 \to A_2$ and another output
+% context $\Theta_2$. $\Theta_2$ is used as the input context when inferring the
+% type of $e_2$. The last premise algorithmically checks if
+% $\ctxsubst{\Theta_3}{A_3}$ is a consistent subtype of
+% $\ctxsubst{\Theta_3}{A_1}$. $A_2$ and $\Delta$ are the concluding output type
+% and the concluding output context, respectively.
+
+
+% \section{Soundness and Completeness}
+% \label{sec:sound:complete}
+
+% To be confident that our algorithmic type system and the declarative type system
+% accept exactly the same programs, we need to prove that the algorithmic rules
+% are sound and complete with respect to the declarative specifications. Before we
+% give the formal statements of the soundness and completeness theorems, we need a
+% meta-theoretical device, called \textit{context extension}~\cite{dunfield2013complete}, to help capture a notion of
+% information increase from input contexts to output contexts.
+
+% \subsection{Context Extension}
+% \label{sec:ctxt:extension}
+
+
+% A context extension judgment $\Gamma \exto \Delta$ reads ``$\Gamma$ is extended
+% by $\Delta$''. Intuitively, this judgment says that $\Delta$ has at least as
+% much information as $\Gamma$: some unsolved existential variables in $\Gamma$
+% may be solved in $\Delta$. (The full inductive definition can be found in the
+% supplementary material. We refer the reader to \citet[][Section
+% 4]{dunfield2013complete} for further explanations of context extension.)
+
+\subsection{Completeness and Soundness}
+
+We prove that the algorithmic rules are sound and complete with
+respect to the declarative specifications. We need an auxiliary judgment
+$\Gamma \exto \Delta$ that captures a notion of information increase from input
+contexts $\Gamma$ to output contexts $\Delta$~\citep{dunfield2013complete}.
+
+\paragraph{Soundness.} Roughly speaking, soundness of the algorithmic system says
+that given an expression $e$ that type checks in the algorithmic system, there exists
+a corresponding expression $e'$ that type checks in the declarative system.
+However there is one complication: $e$ does not necessarily have more annotations
+than $e'$. For example, by \rul{ALam} we have $\erlam{x}{x} \chkby (\forall a.
+a) \rightarrow (\forall a . a)$, but $\erlam{x}{x}$ itself cannot have type
+$(\forall a. a) \rightarrow (\forall a . a)$ in the declarative system. To
+circumvent that, we add an annotation to the lambda abstraction, resulting in
+$\blam{x}{(\forall a . a)}{x}$, which is typeable in the declarative system with
+the same type. To relate $\erlam{x}{x}$ and $\blam{x}{(\forall a . a)}{x}$, we
+erase all annotations on both expressions. The definition of erasure $\erase{\cdot}$ is
+standard and thus omitted.
+
+% \jeremy{mention erasure and why (talk about \rul{ALam} and \rul{ASub})}
+
+
+% \begin{restatable}[Instantiation Soundness]{mtheorem}{instsoundness} \label{thm:inst_soundness}%
+%   Given $\Delta \exto \Omega$ and $\ctxsubst{\Gamma}{A} = A$ and $\genA \notin \mathit{fv}(A)$:
+%   \begin{itemize}
+%   \item If $\Gamma \vdash \genA \unif A \dashv \Delta$ then $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{\genA} \tconssub \ctxsubst{\Omega}{A}$.
+%   \item If $\Gamma \vdash A \unif \genA \dashv \Delta$ then $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{A} \tconssub \ctxsubst{\Omega}{\genA}$.
+%   \end{itemize}
+% \end{restatable}
+
+% Notice that the declarative judgment uses $\ctxsubst{\Omega}{\Delta}$, a
+% operation that applies a complete context $\Omega$ to the algorithmic context
+% $\Delta$, essentially plugging in all known solutions and removing all
+% declarations of existential variables (both solved and unsolved), resulting in a
+% declarative context.
+
+% With instantiation soundness, next we show that the algorithmic consistent
+% subtyping is sound:
+
+% \begin{restatable}[Soundness of Algorithmic Consistent Subtyping]{mtheorem}{subsoudness} \label{thm:sub_soundness}%
+%   If $\Gamma \vdash A \tconssub B \toctxr$ where $\ctxsubst{\tctx}{A} = A$ and
+%   $\ctxsubst{\tctx}{B} = B$ and $\ctxr \exto \cctx$ then
+%   $\ctxsubst{\cctx}{\Delta} \vdash \ctxsubst{\cctx}{A} \tconssub
+%   \ctxsubst{\cctx}{B}$.
+% \end{restatable}
+
+% At this point, we are ``two thirds of the way'' to proving the ultimate theorem.
+% The remaining third concerns with the soundness of matching:
+
+% \begin{restatable}[Matching Soundness]{mtheorem}{matchsoundness}  \label{thm:match_soundness}%
+%   If $\Gamma \vdash A \match A_1 \to A_2 \dashv \Delta$ where
+%   $\ctxsubst{\Gamma}{A} = A$ and $\Delta \exto \Omega$ then
+%   $\ctxsubst{\Omega}{\Delta} \vdash \ctxsubst{\Omega}{A} \match
+%   \ctxsubst{\Omega}{A_1} \to \ctxsubst{\Omega}{A_2}$.
+% \end{restatable}
+
+
+% Finally the soundness theorem of algorithmic typing is:
+
+\begin{restatable}[Soundness of Algorithmic Typing]{mtheorem}{typingsoundness} \label{thm:type_sound}
+  Given $\ctxr \exto \cctx$,
+
+  \begin{enumerate}
+  \item If $\Gamma \vdash e \infto A \toctxr$ then $\exists e'$ such
+    that $\ctxsubst{\cctx}{\Delta} \vdash e' : \ctxsubst{\cctx}{A}$ and
+    $\erase{e} = \erase{e'}$.
+  \item If $\Gamma \vdash e \chkby A \toctxr$ then $\exists e'$ such
+    that $\ctxsubst{\cctx}{\Delta} \vdash e' : \ctxsubst{\cctx}{A}$ and
+    $\erase{e} = \erase{e'}$.
+  \end{enumerate}
+
+
+\end{restatable}
+
+
+\paragraph{Completeness.}
+Completeness of the algorithmic system is the reverse of soundness: given a
+declarative judgment of the form $\ctxsubst{\Omega}{\Gamma} \vdash
+\ctxsubst{\Omega} \dots $, we want to get an algorithmic derivation of $\Gamma
+\vdash \dots \dashv \Delta$. It turns out that completeness is a bit trickier to
+state in that the algorithmic rules generate existential variables on the fly,
+so $\Delta$ could contain unsolved existential variables that are not found in
+$\Gamma$, nor in $\Omega$. Therefore the completeness proof must produce another
+complete context $\Omega'$ that extends both the output context $\Delta$, and
+the given complete context $\Omega$. As with soundness, we need erasure to
+relate both expressions.
+
+% \jeremy{talk about \rul{Gen}}
+
+% \begin{restatable}[Instantiation Completeness]{mtheorem}{instcomplete}  \label{thm:inst_complete}%
+%   Given $\Gamma \exto \Omega$ and $A = \ctxsubst{\Gamma}{A}$ and $\genA \in
+%   \mathit{unsolved}(\Gamma)$ and $\genA \notin \mathit{fv}(A)$:
+%   \begin{enumerate}
+%   \item If $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{\genA} \tconssub
+%     \ctxsubst{\Omega}{A}$ then there exist $\Delta$, $\Omega'$ such that $\Omega \exto
+%     \Omega'$ and $\Delta \exto \Omega'$ and $\Gamma \vdash \genA \unif A \dashv \Delta$.
+%   \item If $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{A} \tconssub
+%     \ctxsubst{\Omega}{\genA}$ then there exist $\Delta$, $\Omega'$ such that $\Omega \exto
+%     \Omega'$ and $\Delta \exto \Omega'$ and $\Gamma \vdash A \unif \genA \dashv \Delta$.
+%   \end{enumerate}
+% \end{restatable}
+
+
+% Next is the completeness of consistent subtyping:
+
+% \begin{restatable}[Generalized Completeness of Subtyping]{mtheorem}{subcomplete}  \label{thm:sub_completeness}%
+%   If $\Gamma \exto \Omega$ and $\Gamma \vdash A$ and $\Gamma \vdash B$ and
+%   $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{A} \tconssub
+%   \ctxsubst{\Omega}{B}$ then there exist $\Delta$, $\Omega'$ such that $\Delta
+%   \exto \Omega'$ and $\Omega \exto \Omega'$ and $\Gamma \vdash
+%   \ctxsubst{\Gamma}{A} \tconssub \ctxsubst{\Gamma}{B \dashv \Delta}$.
+% \end{restatable}
+
+
+% We prove that the algorithmic matching is complete with respect to the
+% declarative matching:
+
+% \begin{restatable}[Matching Completeness]{mtheorem}{matchcomplete} \label{thm:match_complete}%
+%   Given $\Gamma \exto \Omega$ and $\Gamma \vdash A$, if
+%   $\ctxsubst{\Omega}{\Gamma} \vdash \ctxsubst{\Omega}{A} \match A_1 \to A_2$
+%   then there exist $\Delta$, $\Omega'$, $A_1'$ and $A_2'$ such that $\Gamma
+%   \vdash \ctxsubst{\Gamma}{A} \match A_1' \to A_2' \dashv \Delta$ and $\Delta \exto \Omega'$ and
+%   $\Omega \exto \Omega'$ and $A_1 = \ctxsubst{\Omega'}{A_1'}$ and $A_2 =
+%   \ctxsubst{\Omega'}{A_2'}$.
+% \end{restatable}
+
+
+% Finally here is the completeness theorem of the algorithmic typing:
+
+\begin{restatable}[Completeness of Algorithmic Typing]{mtheorem}{typingcomplete}  \label{thm:type_complete}
+  Given $\Gamma \exto \Omega$ and $\Gamma \vdash A $, if
+  $\ctxsubst{\Omega}{\Gamma} \vdash e : A$ then there exist $\Delta$,
+  $\Omega'$, $A'$ and $e'$ such that $\Delta \exto \Omega'$ and $\Omega \exto \Omega'$
+  and $\Gamma \vdash e' \infto A' \dashv \Delta$ and $A = \ctxsubst{\Omega'}{A'}$ and $\erase{e} = \erase{e'}$.
+\end{restatable}
+
+
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: "../paper.bib"
+%%% End:

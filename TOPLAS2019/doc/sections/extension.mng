@@ -1,0 +1,639 @@
+\section{Restoring the Dynamic Gradual Guarantee with Type Parameters}
+\label{sec:advanced-extension}
+
+In \cref{sec:type:trans} we have seen an example where a single source expression could
+produce two different target expressions with different runtime behaviors. As we
+explained, this is due to the guessing nature of the declarative system, and,
+from the (source) typing point of view, no guessed type is particularly better than 
+any other. As a consequence, this breaks the dynamic gradual guarantee as discussed in \cref{sec:criteria}.
+
+To alleviate this situation, we introduce \textit{static type parameters}, which
+are placeholders for monotypes, and \textit{gradual type parameters}, which are
+placeholders for monotypes that are consistent with the unknown type. The
+concept of static type parameters and gradual type parameters in the context of
+gradual typing was first introduced by \citet{garcia2015principal}, and later
+played a central role in the work of \citet{yuu2017poly}. In our type system,
+type parameters mainly help capture the notion of \textit{representative
+  translations}, and should not appear in a source program.
+% As far as we know,
+% we are the first to employ type parameters in the (implicit) polymorphic
+% setting.
+With them we are able to recast the dynamic gradual guarantee in terms
+of representative translations, and to prove that every well-typed source expression
+possesses at least one representative translation. With a
+coherence conjecture regarding representative translations, the dynamic gradual
+guarantee of our extended source language now can be reduced to that of \pbc,
+which, at the time of writing, is still an open question.
+
+
+% \jeremy{emphasize type parameters are just analysis tool for the purpose of
+%   discussing dynamic gradual guarantee, they don't actually appear in program text. }
+
+
+% The crucial difference
+% between them is that the former correspond to existential variables without any
+% constraints, while the latter correspond to existential variables with the only
+% constraint that they are compared with an unknown type. With static and gradual
+% type parameters in place, we are able to reason about dynamic semantics in more
+% depth.
+
+
+\subsection{Declarative Type System}
+\label{sec:type-param}
+
+The new syntax of types is given at the top of \cref{fig:exd:type}, with the differences
+highlighted. In addition to the types of \cref{fig:decl:subtyping}, we add \emph{static type parameters} $ \mathcal{S} $,
+and \emph{gradual type parameters} $ \mathcal{G} $. Both kinds of type parameters are monotypes. The addition of type parameters,
+however, leads to two new syntactic categories of types. \emph{Castable types} $\mathbb{C}$
+represent types that can be cast from or to $ \star $. It includes all
+types, except those that contain static type parameters. \emph{Castable monotypes}
+$t$ are those castable types that are also monotypes.
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+    \begin{tabular}{lrcl} \toprule
+      Types & $\ottnt{A}, \ottnt{B}$ & \syndef & $ \mathsf{Int}  \mid \ottmv{a} \mid \ottnt{A}  \rightarrow  \ottnt{B} \mid \forall  \ottmv{a}  .\,  \ottnt{A} \mid  \star  \mid \hlmath{ \mathcal{S}  \mid  \mathcal{G} } $ \\
+      Monotypes & $\tau, \sigma$ & \syndef & $  \mathsf{Int}  \mid \ottmv{a} \mid \tau  \rightarrow  \sigma \mid \hlmath{ \mathcal{S}  \mid  \mathcal{G} }$ \\
+      \hl{Castable Types} & $\mathbb{C}$ & \syndef & $  \mathsf{Int}  \mid \ottmv{a} \mid \mathbb{C}_{{\mathrm{1}}}  \rightarrow  \mathbb{C}_{{\mathrm{2}}} \mid \forall  \ottmv{a}  .\,  \mathbb{C} \mid  \star  \mid  \mathcal{G}  $ \\
+      \hl{Castable Monotypes} & $t$ & \syndef & $  \mathsf{Int}  \mid \ottmv{a} \mid t_{{\mathrm{1}}}  \rightarrow  t_{{\mathrm{2}}} \mid  \mathcal{G} $ \\
+
+      \bottomrule
+    \end{tabular}
+
+    \begin{drulepar}[cs]{$ \Psi  \vdash  \ottnt{A}  \lesssim  \ottnt{B} $}{Consistent Subtyping}{}
+      \drule{tvar}
+      \drule{int}
+      \drule{arrow}
+      \drule{forallR}
+      \drule{forallL}
+      \hlmath{\drule{unknownLL}} \and
+      \hlmath{\drule{unknownRR}} \and
+      \hlmath{\drule{spar}} \and
+      \hlmath{\drule{gpar}}
+    \end{drulepar}
+  \end{small}
+  \caption{Syntax of types, and consistent subtyping in the extended declarative
+  system.}
+  \label{fig:exd:type}
+\end{figure}
+
+
+\paragraph{Consistent Subtyping.}
+The new definition of consistent subtyping is given at the bottom of
+\cref{fig:exd:type}, again with the differences highlighted. Now the unknown type is only a consistent subtype of all
+castable types, rather than of all types (\rref{cs-unknownLL}), and vice versa
+(\rref{cs-unknownRR}). Moreover, the static type parameter $ \mathcal{S} $ is a consistent
+subtype of itself (\rref{cs-spar}), and similarly for the gradual type parameter
+(\rref{cs-gpar}). From this definition it follows immediately that 
+$ \star $ is incomparable with types that contain static type parameters $ \mathcal{S} $,
+such as $\mathcal{S}  \rightarrow  \mathsf{Int}$.
+
+\paragraph{Typing and Translation.}
+
+Given these extensions to types and consistent subtyping, the typing process
+remains the same as in \cref{fig:decl-typing}. To account for the
+changes in the translation, if we extend \pbc with type parameters as in
+\citet{garcia2015principal}, then the translation remains the same as well.
+
+\subsection{Substitutions and Representative Translations}
+
+As we mentioned, type parameters serve as placeholders for monotypes. As a
+consequence, wherever a type parameter is used, any \emph{suitable} monotype
+could appear just as well. To formalize this observation, we define substitutions for type
+parameters as follows:
+
+\begin{definition}[Substitution] Substitutions for type parameters are defined as:
+  \begin{enumerate}
+    \item Let $\ssubst :  \mathcal{S}  \to \tau$ be a total function mapping static type
+      parameters to monotypes. 
+    \item Let $\gsubst :  \mathcal{G}  \to t$ be a total function mapping gradual type
+      parameters to castable monotypes.
+    \item Let $\psubst = \gsubst \cup \ssubst$ be a union of $\ssubst$ and $\gsubst$ mapping static and gradual
+      type parameters accordingly.
+  \end{enumerate}
+\end{definition}
+\noindent Note that since $ \mathcal{G} $ might be compared with $ \star $, only
+castable monotypes are suitable substitutes, whereas $ \mathcal{S} $
+can be replaced by any monotypes. Therefore, we can substitute $ \mathcal{G} $ for $ \mathcal{S} $,
+but not the other way around.
+
+
+Let us go back to our example and its two translations in \cref{sec:type:trans}. The
+problem with those translations is that neither $\mathsf{Int}  \rightarrow  \mathsf{Int}$ nor $\mathsf{Bool}  \rightarrow  \mathsf{Int}$ is general enough. With type parameters, however, we can state a more
+\textit{general} translation that covers both through substitution:
+\begin{align*}
+  f: \forall a. a \to \nat &\byinf (\blam x \unknown {f ~ x})
+                          : \unknown \to \nat \\
+                          &\trto (\blam x \unknown (\cast {\forall a. a \to \nat} {\gradual \to \nat} f) ~
+                          (\hlmath{\cast \unknown \gradual} x))
+\end{align*}
+The advantage of type parameters is that they help reasoning
+about the dynamic semantics. Now we are not limited to a particular choice, such
+as $\mathsf{Int}  \rightarrow  \mathsf{Int}$ or $\mathsf{Bool}  \rightarrow  \mathsf{Int}$, which might or might not emit a cast
+error at runtime. Instead we have a general choice $\mathcal{G}  \rightarrow  \mathsf{Int}$. 
+
+What does the more general choice with type parameters tell us? First, we know that in this case, there is no concrete
+constraint on $\ottmv{a}$, so we can instantiate it with a type parameter. Second,
+the fact that the general choice uses $ \mathcal{G} $ rather than
+$ \mathcal{S} $ indicates that any chosen instantiation needs to be a castable type.
+It follows that any concrete instantiation will have an impact on the
+runtime behavior; therefore it is best to instantiate $\ottmv{a}$ with
+$ \star $. However, type inference cannot instantiate $\ottmv{a}$ with
+$ \star $, and substitution cannot replace $ \mathcal{G} $ with $ \star $ either.
+This means that we need a syntactic refinement process of the translated programs in
+order to replace type parameters with allowed gradual types.
+
+\paragraph{Syntactic Refinement.}
+
+We define syntactic refinement of the translated expressions as follows. As
+$ \mathcal{S} $ denotes no constraints at all, substituting it with any monotype
+would work. Here we arbitrarily use $ \mathsf{Int} $. We interpret
+$ \mathcal{G} $ as $ \star $ since any monotype could possibly lead to a cast
+error.
+
+\begin{definition}[Syntactic Refinement] The syntactic refinement of a
+  translated expression $s$ is denoted by $\erasetp s$, and defined as follows:
+  \begin{center}
+\begin{tabular}{lllllll} \toprule
+  $\erasetp{\nat}$ &$=$ & $ \nat$ &  &   $\erasetp{a} $ & $ = $ & $a $ \\
+  $\erasetp{A \to B}$ &$=$ & $ \erasetp{A} \to \erasetp{B}$ &  &   $\erasetp {\forall a. A} $ & $ = $ & $ \forall a . \erasetp{A} $ \\
+  $\erasetp{\unknown}$ &$=$ & $\unknown$ &  &   $\erasetp {\static} $ & $ = $ & $\nat$ \\
+  $\erasetp{\gradual}$ &$=$ & $\unknown$ &  \\ \bottomrule
+\end{tabular}
+
+  \end{center}
+\end{definition}
+% \bruno{Can we align the ``='' and the types?}
+\noindent Applying the syntactic refinement to the translated
+expression, we get
+  \[
+    (\blam x \unknown (\cast {\forall a. a \to \nat} { \hlmath[blue!40]{\unknown} \to \nat} f) ~
+    (\cast \unknown {\hlmath[blue!40]{\unknown}} x))
+  \]
+where two $ \mathcal{G} $ are refined by $ \star $ as highlighted.
+It is easy to verify that both applying this expression to $3$ and to
+$\mathit{true}$ now results in a translation that evaluates to
+a value.
+
+\paragraph{Representative Translations.}
+To decide whether one translation is more general than the other, we define a preorder
+between translations.
+
+\begin{definition}[Translation Pre-order]
+  Suppose $ \Psi   \vdash   \ottnt{e}  :  \ottnt{A}  \otthl{ \rightsquigarrow   s_{{\mathrm{1}}} } $ and $ \Psi   \vdash   \ottnt{e}  :  \ottnt{A}  \otthl{ \rightsquigarrow   s_{{\mathrm{2}}} } $,
+  we define $s_{{\mathrm{1}}} \leq s_{{\mathrm{2}}}$ to mean $s_{{\mathrm{2}}} \aeq \psubst \, \ottsym{(}  s_{{\mathrm{1}}}  \ottsym{)}$ for
+  some $ \psubst $.
+\end{definition}
+
+\begin{restatable}[]{proposition}{propparalpha}
+  \label{prop:parameter:alpha}
+  If $s_{{\mathrm{1}}} \leq s_{{\mathrm{2}}}$ and $s_{{\mathrm{2}}} \leq s_{{\mathrm{1}}}$, then $s_{{\mathrm{1}}}$ and
+  $s_{{\mathrm{2}}}$ are $\alpha$-equivalent (i.e., equivalent up to renaming of type parameters).
+\end{restatable}
+
+The preorder between translations gives rise to a notion of
+what we call \textit{representative translations}:
+
+\begin{definition}[Representative Translation]
+  A translation $s$ is said to be a representative translation of a typing
+  derivation $ \Psi   \vdash   \ottnt{e}  :  \ottnt{A}  \otthl{ \rightsquigarrow   s } $ if and only if for any other translation
+  $ \Psi   \vdash   \ottnt{e}  :  \ottnt{A}  \otthl{ \rightsquigarrow   s' } $ such that $s' \leq s$, we have $s
+  \leq s'$. From now on we use $r$ to denote a representative
+  translation.
+\end{definition}
+
+An important property of representative translations, which we conjecture for
+the lack of rigorous proof, is that if there exists any translation of an
+expression that (after syntactic refinement) can reduce to a value, so can a
+representative translation of that expression. Conversely, if a
+representative translation runs into a blame, then no translation of that
+expression can reduce to a value.
+
+\begin{conjecture}[Property of Representative Translations]\label{lemma:repr}
+  For any expression $\ottnt{e}$ such that $ \Psi   \vdash   \ottnt{e}  :  \ottnt{A}  \otthl{ \rightsquigarrow   s } $ and $ \Psi   \vdash   \ottnt{e}  :  \ottnt{A}  \otthl{ \rightsquigarrow   r } $ and
+  $\forall \mathcal{C}.\,  \mathcal{C}  : (  \Psi  \vdash^\mathit{B}  \ottnt{A}  ) \rightsquigarrow (  \bullet  \vdash^\mathit{B}  \mathsf{Int}  )    $, we have
+  \begin{itemize}
+  \item If $  \mathcal{C} \{  \erasetp{s} \}   \Downarrow  \ottmv{n}$, then $ \mathcal{C} \{   \erasetp{r}   \}  \Downarrow  \ottmv{n}$.
+  \item If $\mathcal{C} \{ \erasetp {r}   \}  \Downarrow   \mathsf{blame} $, then $ \mathcal{C} \{ \erasetp {s} \}   \Downarrow   \mathsf{blame} $.
+  \end{itemize}
+\end{conjecture}
+
+Given this conjecture, we can state a stricter coherence property (without the
+``up to casts'' part) between any two representative translations. We first
+strengthen \cref{conj:coher} following \citet{amal2017blame}:
+
+\begin{definition}[Contextual Approximation \`a la \citet{amal2017blame}] \leavevmode
+  \begin{center}
+  \begin{tabular}{lll}
+$\Psi \vdash \ctxappro{s_{{\mathrm{1}}}}{s_{{\mathrm{2}}}}{\ottnt{A}}$ & $\defeq$ & $ \Psi  \vdash^\mathit{B}  s_{{\mathrm{1}}}  :  \ottnt{A}  \land  \Psi  \vdash^\mathit{B}  s_{{\mathrm{2}}}  :  \ottnt{A}  \ \land $ \\
+                                                   & & for all $\mathcal{C}.\,  \mathcal{C}  : (  \Psi  \vdash^\mathit{B}  \ottnt{A}  ) \rightsquigarrow (  \bullet  \vdash^\mathit{B}  \mathsf{Int}  )  \Longrightarrow$ \\
+                                                   & &  $\quad (\mathcal{C}\{ \erasetp{s_{{\mathrm{1}}}} \}   \Downarrow \ottmv{n} \Longrightarrow  \mathcal{C} \{ \erasetp{s_{{\mathrm{2}}}}  \}  \reduce \ottmv{n}) \ \land$ \\
+                                                   & & $\quad (\mathcal{C} \{ \erasetp{s_{{\mathrm{1}}}} \} \reduce \blamev \Longrightarrow \mathcal{C} \{ \erasetp{s_{{\mathrm{2}}}}  \}  \reduce \blamev)$
+
+  \end{tabular}
+  \end{center}
+\end{definition}
+The only difference is
+that now when a program containing $s_{{\mathrm{1}}}$ reduces to a value, so does one
+containing $s_{{\mathrm{2}}}$.
+
+
+From \cref{lemma:repr}, it follows that coherence holds between
+two representative translations of the same expression.
+
+\begin{corollary}[Coherence for Representative Translations]
+  For any expression $\ottnt{e}$
+  such that $ \Psi   \vdash   \ottnt{e}  :  \ottnt{A}  \otthl{ \rightsquigarrow   r_{{\mathrm{1}}} } $ and $ \Psi   \vdash   \ottnt{e}  :  \ottnt{A}  \otthl{ \rightsquigarrow   r_{{\mathrm{2}}} } $, we have
+  $\Psi \vdash \ctxeq{r_{{\mathrm{1}}}}{r_{{\mathrm{2}}}}{\ottnt{A}} $.
+\end{corollary}
+
+We have proved that for every typing derivation, at least one representative translation exists.
+
+\begin{restatable}[Representative Translation for Typing]{lemma}{lemmareptyping}
+  \label{lemma:rep:typing}
+  For any typing derivation $\Psi  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{A}$ there exists at least one
+  representative translation $r$ such that $ \Psi   \vdash   \ottnt{e}  :  \ottnt{A}  \otthl{ \rightsquigarrow   r } $.
+\end{restatable}
+
+For our example, $(\blam x \unknown (\cast {\forall a. a \to \nat} {\gradual \to
+  \nat} f) ~ (\cast \unknown \gradual x))$ is a representative translation,
+while the other two are not.
+
+
+\subsection{Dynamic Gradual Guarantee, Reloaded}
+
+Given the above propositions, we are ready to revisit the dynamic gradual
+guarantee. The nice thing about representative translations is that the
+dynamic gradual guarantee of our source language is essentially that of \pbc,
+our target language. However, the dynamic gradual guarantee for \pbc is still an
+open question. According to \citet{yuu2017poly}, the difficulty lies in the
+definition of term precision that preserves the semantics. We leave it here as a
+conjecture as well. From a declarative point of view, we cannot prevent the
+system from picking undesirable instantiations, but we know that some choices
+are better than the others, so we can restrict the discussion of dynamic gradual
+guarantee to representative translations.
+
+\begin{conjecture}[Dynamic Gradual Guarantee in terms of Representative Translations]
+  Suppose $e' \lessp e$,
+  \begin{enumerate}
+  \item If $ \bullet   \vdash   \ottnt{e}  :  \ottnt{A}  \otthl{ \rightsquigarrow   r } $, $\erasetp {r} \Downarrow v$,
+    then for some $B$ and $r'$, we have $ \bullet   \vdash   \ottnt{e'}  :  \ottnt{B}  \otthl{ \rightsquigarrow   r' } $,
+    and $B \lessp A$,
+    and $\erasetp {r'} \Downarrow v'$,
+    and $v' \lessp v$.
+  \item If $ \bullet   \vdash   \ottnt{e'}  :  \ottnt{B}  \otthl{ \rightsquigarrow   r' } $, $\erasetp {r'} \Downarrow v'$,
+    then for some $A$ and $r$, we have $  \bullet   \vdash   \ottnt{e}  :  \ottnt{A}  \otthl{ \rightsquigarrow   r } $,
+    and $B \lessp A$. Moreover,
+    $\erasetp r \Downarrow v$ and $v' \lessp v$,
+    or $\erasetp r \Downarrow \blamev$.
+  \end{enumerate}
+\end{conjecture}
+
+For the example in \cref{sec:criteria}, now we know that the representative
+translation of the right one will evaluate to $1$ as well.
+\begin{mathpar}
+  (\blam{f}{\forall a. a \to \nat}{\blam{x}{\nat}{f~x}})~(\lambda x .\, 1)~3 \and
+  (\blam{f}{\forall a. a \to \nat}{\blam{x}{\unknown}{f~x}})~(\lambda x .\, 1)~3
+\end{mathpar}
+
+More importantly, in what follows, we show that our extended algorithm is able to find those representative translations.
+
+
+\subsection{Extended Algorithmic Type System}
+\label{subsec:exd-algo}
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+    \begin{tabular}{lrcl} \toprule
+      Types & $A, B$ & \syndef & $  \mathsf{Int}  \mid \ottmv{a} \mid \widehat{a} \mid A  \rightarrow  B \mid \forall  \ottmv{a}  .\,  A \mid  \star  \mid \hlmath{ \mathcal{S}  \mid  \mathcal{G} } $ \\
+      Monotypes & $\tau, \sigma$ & \syndef & $  \mathsf{Int}  \mid \ottmv{a} \mid \widehat{a} \mid \tau  \rightarrow  \sigma \mid \hlmath{ \mathcal{S}  \mid  \mathcal{G} }$ \\
+      \hl{Existential variables} & $\widehat{a}$ & \syndef & $ \widehat{a}_{S}   \mid  \widehat{a}_{G}   $   \\
+      \hl{Castable Types} & $\mathbb{C}$ & \syndef & $  \mathsf{Int}  \mid \ottmv{a} \mid \widehat{a} \mid \mathbb{C}_{{\mathrm{1}}}  \rightarrow  \mathbb{C}_{{\mathrm{2}}} \mid \forall  \ottmv{a}  .\,  \mathbb{C} \mid  \star  \mid  \mathcal{G}  $ \\
+      \hl{Castable Monotypes} & $t$ & \syndef & $  \mathsf{Int}  \mid \ottmv{a} \mid \widehat{a} \mid t_{{\mathrm{1}}}  \rightarrow  t_{{\mathrm{2}}} \mid  \mathcal{G} $ \\
+      Algorithmic Contexts & $\Gamma, \Delta, \Theta$ & \syndef & $ \bullet  \mid \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A \mid \Gamma  \ottsym{,}  \ottmv{a} \mid \Gamma  \ottsym{,}  \widehat{a}  \mid \hlmath{\Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  \tau \mid \Gamma  \ottsym{,}   \widehat{a}_{G}   \ottsym{=}  t} \mid \Gamma  \ottsym{,}   \blacktriangleright_{ \widehat{a} }  $ \\
+      Complete Contexts & $\Omega$ & \syndef & $ \bullet  \mid \Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  A \mid \Omega  \ottsym{,}  \ottmv{a} \mid \hlmath{\Omega  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  \tau \mid \Omega  \ottsym{,}   \widehat{a}_{G}   \ottsym{=}  t} \mid \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{a} }  $ \\
+      \bottomrule
+    \end{tabular}
+  \end{small}
+  \caption{Syntax of types, contexts and consistent subtyping in the extended algorithmic system.}
+  \label{fig:exd:algo:type}
+\end{figure}
+
+
+% \jeremy{the example is wrong, we need a new example to motivate}
+To understand the design choices involved in the new algorithmic system, we
+consider the following algorithmic typing example:
+\[
+  f: \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \mathsf{Int}, x :  \star  \byinf \ottmv{f} \, \ottmv{x} \infto  \mathsf{Int}   \dashv f : \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \mathsf{Int}, x :  \star , \genA
+\]
+Compared with the declarative typing, where we have many choices (e.g., $\mathsf{Int}  \rightarrow  \mathsf{Int}$, $\mathsf{Bool}  \rightarrow  \mathsf{Int}$, and so on)
+to instantiate $\forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \mathsf{Int}$, the algorithm computes
+the instantiation $\widehat{a}  \rightarrow  \mathsf{Int}$ with $\widehat{a}$ unsolved in the output context.
+What can we know from the algorithmic typing? First we know that, here $\widehat{a}$
+is \textit{not constrained} by the typing problem. Second, and more importantly,
+$\widehat{a}$ has been compared with an unknown type (when typing $(\ottmv{f} \, \ottmv{x})$).
+Therefore, it is possible to make a more refined distinction
+between different kinds of existential variables. The first
+kind of existential variables are those that indeed have no constraints at all,
+as they do not affect the dynamic semantics; while the second kind (as in this example) are
+those where the only constraint is that
+\textit{the variable was once compared with an unknown type}~\citep{garcia2015principal}.
+
+The syntax of types is shown in \cref{fig:exd:algo:type}. A notable
+difference, apart from the addition of static and gradual parameters, is that we
+further split existential variables $\widehat{a}$ into static existential variables
+$ \widehat{a}_{S} $ and gradual existential variables $ \widehat{a}_{G} $.
+Depending on whether an existential variable has been
+compared with $ \star $ or not, its solution space changes. More
+specifically, static existential variables can be solved to a monotype
+$\tau$, whereas gradual existential variables can only be solved to a
+castable monotype $t$, as can be seen in the changes of algorithmic
+contexts and complete contexts. As a result, the typing result for the above example
+now becomes
+\[
+  f: \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \mathsf{Int}, x :  \star  \byinf \ottmv{f} \, \ottmv{x} \infto  \mathsf{Int}   \dashv f : \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \mathsf{Int}, x :  \star , \hlmath{ \widehat{a}_{G} }
+\]
+since we can solve any unconstrained $ \widehat{a}_{G} $ to $ \mathcal{G} $, it is easy to
+verify that the resulting translation is indeed a representative translation.
+
+Our extended algorithm is novel in the following aspects. We naturally extend
+the concept of existential variables~\citep{dunfield2013complete} to deal with
+comparisons between existential variables and unknown types. Unlike
+\citet{garcia2015principal}, where they use an extra set to store types that
+have been compared with unknown types, our two kinds of existential variables emphasize
+the type distinction better, and correspond more closely to the two kinds of type parameters,
+as we can solve $ \widehat{a}_{S} $ to $  \mathcal{S} $ and $ \widehat{a}_{G}  $ to $  \mathcal{G} $.
+
+The implementation of the algorithm can be found in the supplementary materials.
+
+
+\paragraph{Extended Algorithmic Consistent Subtyping}
+
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+   \begin{drulepar}[as]{$ \Gamma  \vdash  A  \lesssim  B  \dashv  \Delta $}{Algorithmic Consistent Subtyping}
+     \drule{tvar}
+     \drule{int}
+     \drule{evar} \and
+     \hlmath{\drule{spar}} \and
+     \hlmath{\drule{gpar}} \and
+     \hlmath{\drule{unknownLL}}
+     \hlmath{\drule{unknownRR}} \and
+     \drule{arrow}
+     \drule{forallR} \and
+     \hlmath{\drule{forallLL}} \and
+     \drule{instL}
+     \drule{instR}
+   \end{drulepar}
+  \end{small}
+  \caption{Extended algorithmic consistent subtyping}
+  \label{fig:exd:algo:sub}
+\end{figure}
+
+While the changes in the syntax seem negligible, the addition of static and
+gradual type parameters changes the algorithmic judgments in a significant way.
+We first discuss the algorithmic consistent subtyping, which is shown in \cref{fig:exd:algo:sub}.
+For notational convenience, when static and
+gradual existential variables have the same rule form, we compress them into one rule. For
+example, \rref{as-evar} is really two rules $\Gamma  \ottsym{[}   \widehat{a}_{S}   \ottsym{]}  \vdash   \widehat{a}_{S}   \lesssim   \widehat{a}_{S}   \dashv  \Gamma  \ottsym{[}   \widehat{a}_{S}   \ottsym{]}$
+and $\Gamma  \ottsym{[}   \widehat{a}_{G}   \ottsym{]}  \vdash   \widehat{a}_{G}   \lesssim   \widehat{a}_{G}   \dashv  \Gamma  \ottsym{[}   \widehat{a}_{G}   \ottsym{]}$; same for \rref{as-instL,as-instR}.
+
+\Rref{as-spar,as-gpar} are direct analogies of \rref{cs-spar,cs-gpar}. Though
+looking simple, \rref{as-unknownLL,as-unknownRR} deserve much explanation. To
+understand what the output context $ \mathsf{contaminate}(  \Gamma  ,  \mathbb{C}  ) $ is for, let us first see why
+this seemingly intuitive rule $\Gamma  \vdash  \star  \lesssim  \mathbb{C}  \dashv  \Gamma$ (like
+\rref{as-unknownL} in the original algorithmic system) is wrong. Consider the
+judgment $ \widehat{a}_{S}   \vdash  \star  \lesssim   \widehat{a}_{S}   \rightarrow   \widehat{a}_{S}   \dashv   \widehat{a}_{S} $, which seems fine. If this
+holds, then -- since $ \widehat{a}_{S} $ is unsolved in the output context -- we can solve
+it to $ \mathcal{S} $ for example (recall that $ \widehat{a}_{S} $ can be solved to some
+monotype), resulting in $\star  \lesssim  \mathcal{S}  \rightarrow  \mathcal{S}$. However, this is in
+direct conflict with \rref{cs-unknownLL} in the declarative system precisely
+because $\mathcal{S}  \rightarrow  \mathcal{S}$ is not a castable type! A possible solution
+would be to transform all static existential variables to gradual existential
+variables within $\mathbb{C}$ whenever it is being compared to $ \star $:
+while $ \widehat{a}_{S}   \vdash  \star  \lesssim   \widehat{a}_{S}   \rightarrow   \widehat{a}_{S}   \dashv   \widehat{a}_{S} $ does not hold, $ \widehat{a}_{G}   \vdash  \star  \lesssim   \widehat{a}_{G}   \rightarrow   \widehat{a}_{G}   \dashv   \widehat{a}_{G} $ does. While substituting static existential variables with
+gradual existential variables seems to be intuitively correct, it is rather hard
+to formulate---not only do we need to perform substitution in $\mathbb{C}$, we also
+need to substitute accordingly in both the input and output contexts in order to
+ensure that no existential variables become unbound. However, making such changes is
+at odds with the interpretation of input contexts: they are ``input'', which
+evolve into output contexts with more variables solved. Therefore, in line with
+the use of input contexts, a simple solution is to generate a
+new gradual existential variable and solve the static existential variable to it
+in the output context, without touching $\mathbb{C}$ at all. So we have $ \widehat{a}_{S}   \vdash  \star  \lesssim   \widehat{a}_{S}   \rightarrow   \widehat{a}_{S}   \dashv   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{=}   \widehat{a}_{G} $.
+
+Based on the above discussion, the following defines $ \mathsf{contaminate}(  \Gamma  ,  A  ) $:
+\begin{definition}$ \mathsf{contaminate}(  \Gamma  ,  A  ) $ is defined inductively as follows  \label{def:contamination} %
+  \begin{center}
+    \begin{tabular}{llll} \toprule
+     $ \mathsf{contaminate}(  \bullet  ,  A  ) $ & = &  $ \bullet $  & \\
+    $ \mathsf{contaminate}(  \ottsym{(}  \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{)}  ,  A  ) $ &=& $ \mathsf{contaminate}(  \Gamma  ,  A  )   \ottsym{,}  \ottmv{x}  \ottsym{:}  A$ & \\
+    $ \mathsf{contaminate}(  \ottsym{(}  \Gamma  \ottsym{,}  \ottmv{a}  \ottsym{)}  ,  A  ) $ &=& $ \mathsf{contaminate}(  \Gamma  ,  A  )   \ottsym{,}  \ottmv{a}$ & \\
+    $ \mathsf{contaminate}(  \ottsym{(}  \Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{)}  ,  A  ) $ &=& $ \mathsf{contaminate}(  \Gamma  ,  A  )   \ottsym{,}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{=}   \widehat{a}_{G} $  & if $ \widehat{a}_{S} $ occurs in $A$     \\
+    $ \mathsf{contaminate}(  \ottsym{(}  \Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{)}  ,  A  ) $ &=& $ \mathsf{contaminate}(  \Gamma  ,  A  )   \ottsym{,}   \widehat{a}_{S} $     & if $ \widehat{a}_{S} $ does not occur in $A$  \\
+    $ \mathsf{contaminate}(  \ottsym{(}  \Gamma  \ottsym{,}   \widehat{a}_{G}   \ottsym{)}  ,  A  ) $ &=& $ \mathsf{contaminate}(  \Gamma  ,  A  )   \ottsym{,}   \widehat{a}_{G} $ & \\
+    $ \mathsf{contaminate}(  \ottsym{(}  \Gamma  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau  \ottsym{)}  ,  A  ) $ &=& $ \mathsf{contaminate}(  \Gamma  ,  A  )   \ottsym{,}  \widehat{a}  \ottsym{=}  \tau$ & \\
+    $ \mathsf{contaminate}(  \ottsym{(}  \Gamma  \ottsym{,}   \blacktriangleright_{ \widehat{a} }   \ottsym{)}  ,  A  ) $ &=& $ \mathsf{contaminate}(  \Gamma  ,  A  )   \ottsym{,}   \blacktriangleright_{ \widehat{a} } $ & \\ \bottomrule
+    \end{tabular}
+  \end{center}
+\end{definition}
+\noindent $ \mathsf{contaminate}(  \Gamma  ,  A  ) $ solves all static existential variables found within $A$ to fresh
+gradual existential variables in $\Gamma$. Notice the case for $ \mathsf{contaminate}(  \ottsym{(}  \Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{)}  ,  A  ) $
+is exactly what we have just described.
+
+\Rref{as-forallLL} is slightly different from \rref{as-forallL} in the original
+algorithmic system in that we replace $\ottmv{a}$ with a new static existential
+variable $ \widehat{a}_{S} $. Note that $ \widehat{a}_{S} $ might be solved to a gradual existential
+variable later. The rest of the rules are the same as those in the original system.
+
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+
+   \begin{drulepar}[instl]{$ \Gamma  \vdash  \widehat{a}  \lessapprox  A  \dashv  \Delta $}{Instantiation I}
+     \hlmath{\drule{solveS}} \and
+     \hlmath{\drule{solveG}} \and
+     \hlmath{\drule{solveUS}} \and
+     \hlmath{\drule{solveUG}} \and
+     \hlmath{\drule{reachSGOne}} \and
+     \hlmath{\drule{reachSGTwo}} \and
+     \hlmath{\drule{reachOther}} \and
+     \drule{forallR}
+     \drule{arr}
+   \end{drulepar}
+
+   \begin{drulepar}[instr]{$ \Gamma  \vdash  A  \lessapprox  \widehat{a}  \dashv  \Delta $}{Instantiation II, excerpt}
+     \hlmath{\drule{forallLL}} \and
+   \end{drulepar}
+  \end{small}
+
+  \caption{Instantiation in the extended algorithmic system}
+  \label{fig:exd:inst}
+
+\end{figure}
+
+\paragraph{Extended Instantiation}
+
+The instantiation judgments shown in \cref{fig:exd:inst} also change
+significantly. The complication comes from the fact that now we have two different
+kinds of existential variables, and the relative order they appear in the
+context affects their solutions.
+
+
+\Rref{instl-solveS, instl-solveG} are the refinement to \rref{instl-solve} in
+the original system. The next two rules deal with situations where one side is
+an existential variable and the other side is an unknown type.
+\Rref{instl-solveUS} is a special case of \rref{as-unknownRR} where we create a
+new gradual existential variable $ \widehat{a}_{G} $ and set the solution of $ \widehat{a}_{S} $ to be
+$ \widehat{a}_{G} $ in the output context. \Rref{instl-solveUG} is the same as
+\rref{instl-solveU} in the original system and simply propagates the input
+context. The next two rules \rref*{instl-reachSG1,instl-reachSG2} are a bit
+involved, but they both answer to the same question: how to solve a gradual
+existential variable when it is declared after some static existential variable.
+More concretely, in \rref{instl-reachSG1}, we feel that we need to solve
+$ \widehat{b}_{G} $ to another existential variable. However, simply setting $ \widehat{b}_{G}   \ottsym{=}   \widehat{a}_{S} $ and leaving $ \widehat{a}_{S} $ untouched
+in the output context is wrong. The reason is that $ \widehat{b}_{G} $ could be a gradual existential
+variable created by \rref{as-unknownLL}/\rref*{as-unknownRR} and solving $ \widehat{b}_{G} $ to a static existential
+variable would result in the same problem as we have discussed. Instead, we create another new gradual
+existential variable $ \widehat{a}_{G} $ and set the solutions of both $ \widehat{a}_{S} $ and $ \widehat{b}_{G} $ to it; similarly in \rref{instl-reachSG2}.
+\Rref{instl-reachOther} deals with the other cases (e.g., $ \widehat{a}_{S}   \lessapprox   \widehat{b}_{S} $, $ \widehat{a}_{G}   \lessapprox   \widehat{b}_{G} $ and so on).
+In those cases, we employ the same strategy as in the original system.
+
+As for the other instantiation judgment, most of the rules are symmetric and thus omitted.
+The only interesting rule is \rref*{instr-forallLL}, which is similar to what we did for \rref{as-forallLL}.
+
+
+
+\paragraph{Algorithmic Typing and Metatheory}
+
+Fortunately, the changes in the algorithmic bidirectional system are minimal: we replace
+every existential variable with a static existential variable.
+Furthermore, we proved that the extended
+algorithmic system is sound and complete with respect to the extended
+declarative system. The proofs can be found in the appendix.
+
+
+
+\paragraph{Do We Really Need Type Parameters in the Algorithmic System?}
+
+As we mentioned earlier, type parameters in the declarative system are merely an
+analysis tool, and in practice, type parameters are inaccessible to
+programmers. For the sake of proving soundness and completeness, we have to
+endow the algorithmic system with type parameters. However, the algorithmic
+system already has static and gradual existential variables, which can serve the same
+purpose. In that regard, we could directly solve every \textit{unsolved} static and
+gradual existential variable in the output context to $ \mathsf{Int} $ and
+$ \star $, respectively.
+
+
+% \jeremy{example of showing finding the representative translation?}
+% \ningning{Include a simple discussion?: since type parameters are used to help
+%   with reasoning, in practice, programmers are actually not allowed to write
+%   them. Therefore, the algorithm could directly set unsolved static existential
+%   to integers and gradual existential to unknowns after type checking as
+%   algorithmic refinement process, without even knowing type parameters. }
+
+% \subsection{Discussion}
+
+\subsection{Restricted Generalization}
+
+In \cref{sec:type:trans}, we discussed the issue that the translation produces
+multiple target expressions due to the different choices for instantiations, and
+those translations have different dynamic semantics. Besides that, there is
+another cause for multiple translations: redundant generalization during
+translation by \rref{gen}. Consider the simple expression $\ottsym{(}  \lambda  \ottmv{x}  \ottsym{:}  \mathsf{Int}  .\,  \ottmv{x}  \ottsym{)} \, \ottsym{1}$,
+the following shows two possible translations:
+\begin{align*}
+  \bullet  \vdash  \ottsym{(}  \lambda  \ottmv{x}  \ottsym{:}  \mathsf{Int}  .\,  \ottmv{x}  \ottsym{)} \, \ottsym{1}  \ottsym{:}  \mathsf{Int} & \rightsquigarrow  \ottsym{(}  \lambda  \ottmv{x}  \ottsym{:}  \mathsf{Int}  .\,  \ottmv{x}  \ottsym{)} \, \ottsym{(}  \langle  \mathsf{Int}  \hookrightarrow  \mathsf{Int}  \rangle  \ottsym{1}  \ottsym{)}
+  \\
+  \bullet  \vdash  \ottsym{(}  \lambda  \ottmv{x}  \ottsym{:}  \mathsf{Int}  .\,  \ottmv{x}  \ottsym{)} \, \ottsym{1}  \ottsym{:}  \mathsf{Int} & \rightsquigarrow   \ottsym{(}  \lambda  \ottmv{x}  \ottsym{:}  \mathsf{Int}  .\,  \ottmv{x}  \ottsym{)} \, \ottsym{(}  \langle  \forall  \ottmv{a}  .\,  \mathsf{Int}  \hookrightarrow  \mathsf{Int}  \rangle  \ottsym{(}  \Lambda  \ottmv{a}  .\,  \ottsym{1}  \ottsym{)}  \ottsym{)}
+\end{align*}
+The difference comes from the fact that in the second translation, we apply
+\rref{gen} while typing $1$ to get $\bullet  \vdash  \ottsym{1}  \ottsym{:}  \forall  \ottmv{a}  .\,  \mathsf{Int}$. As a consequence, the translation of $1$
+is accompanied by a cast from $\forall  \ottmv{a}  .\,  \mathsf{Int}$ to $ \mathsf{Int} $ since the former is a
+consistent subtype of the latter. This difference is harmless, because obviously
+these two expressions will reduce to the same value in \pbc, thus preserving
+coherence (up to cast error). While it is not going to break coherence,
+it does result in multiple representative translations for one
+expression (e.g., the above two translations are both the representative translations).
+
+There are several ways to make the translation process more deterministic. For
+example, we can restrict generalization to happen only in let expressions and
+require let expressions to include annotations, as $\ottkw{let} \, \ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{=}  \ottnt{e_{{\mathrm{1}}}} \, \ottkw{in} \, \ottnt{e_{{\mathrm{2}}}}$.
+Another feasible option would be to give a declarative, bidirectional system as
+the specification (instead of the type assignment one), in the same spirit of
+\citet{dunfield2013complete}. Then we can restrict generalization to be
+performed through annotations in checking mode.
+
+With restricted generalization, we hypothesize that now each expression has exactly
+one representative translation (up to renaming of fresh type parameters).
+Instead of calling it a \textit{representative} translation, we can say it is a
+\textit{principal} translation. Of course the above is only a sketch; we have
+not defined the corresponding rules, nor studied metatheory.
+
+
+\begin{comment}
+\subsubsection{Interpretation of Type Parameters}
+\label{subsec:type-par}
+
+% \jeremy{If I understand it correctly, we actually used these two interpretations
+%   in the extended declarative system. Def 8.1 (substitutions) is the first
+%   interpretation; and Def 8.2 (syntactic refinement) is the second
+%   interpretation in that $ \mathcal{S} $ is irrelevant to program execution so we
+%   can replace it with any type, whereas $ \mathcal{G} $ is relevant so we replace
+%   it with unknown }
+
+In \cref{sec:type-param}, we introduced type parameters into our type system. It turns
+out that type parameters are a useful tool to help us identify
+representative translations and reason about the dynamic semantics of the
+type system. But what are type parameters, exactly? Below we provide two plausible
+interpretations.
+
+The first interpretation of type parameters (the one we adopted) is that they are placeholders for
+monotypes. This is to say, their meaning is given by substitution, and replacing
+type parameters with other monotypes should not break typing:
+
+\begin{proposition}
+  If $\Psi  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{A}$, then $\psubst (\Psi) \vdash \psubst (\ottnt{e}) : \psubst (\ottnt{A})$.
+\end{proposition}
+
+\jeremy{See Proposition 1 of Principle scheme for gradual programs, where they also have exactly the same proposition, but they call it
+type polymorphism! how this compare to the second interpretation?}
+
+In practice, we should not allow programmers to write type parameters explicitly
+in a program, as type parameters are only generated during typing process, and
+get refined before evaluation. As a result, we can hide all the details of type
+parameters from programmers and internally replace them with suitable concrete
+types when necessary. This also reflects the point we discussed in the end of
+\cref{subsec:exd-algo}.
+
+On the other hand, we can interpret type parameters using \textit{polymorphism}.
+In this sense, both of them can be extracted to generate type abstractions.
+However, there is one subtle difference. That is, static type parameter
+indicates \textit{parametric polymorphism} in the traditional sense, which is
+irrelevant to program execution; while gradual type parameter indicates
+\textit{gradual polymorphism}, which means it has no typing constraints but is
+relevant to program execution \citep{garcia2015principal}. This interpretation
+suggests that we might need a more refined distinction between type
+abstractions, such as \citet{yuu2017poly}.
+
+We argue that the extension of type parameters is \textit{a} feasible way to
+reason about the dynamic semantics in a implicit polymorphic language, but it is
+not necessarily \textit{the} only way. Still, it remains to see if
+our discussion sheds lights on the study of dynamic semantics for
+gradual languages with implicit polymorphism.
+
+\end{comment}
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: ../paper.bib
+%%% End:

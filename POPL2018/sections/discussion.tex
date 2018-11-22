@@ -1,0 +1,214 @@
+
+\section{Discussion}
+\label{sec:discussion}
+
+In this section we consider a simple extension to the language to further
+demonstrate the applicability of our definition of consistent subtyping. We also
+discuss the design decisions involved in the algorithmic system and show how it
+helps address the issue arising from the ambiguity of the type-directed
+translation.
+
+\subsection{Extension with Top}
+\label{subsec:extension-top}
+
+We argued that our definition of consistent subtyping (\Cref{def:decl-conssub})
+is a \textit{general} definition in that it is independent of language features.
+We have shown its applicability to polymorphic types, for which neither
+\citet{siek2007gradual} nor the AGT approach~\citep{garcia2016abstracting} can
+be extended naturally. To strengthen our argument, we consider extending the
+language with the $\tope$ type and show that our approach naturally embraces the
+extension, with all the desired properties preserved. To aid comparison, we also
+show how to adapt the AGT approach to support $\tope$ and verify that these two
+approaches, though rooted in different foundations, coincide again on
+\textit{simple types}. However, \Cref{def:old-decl-conssub} of
+\citet{siek2007gradual} fails to support $\tope$.
+
+
+\paragraph{Extending Definitions}
+
+In order to preserve the orthogonality between subtyping and consistency, we
+require $\top$ to be a common supertype of all static types, as shown in rule
+\rul{S-Top}. This rule might seem strange at first glance, since even
+if we remove
+the requirement $A~static$, the rule seems reasonable.
+However, the important point is that because of the orthogonality between
+subtyping and consistency, subtyping itself should not contain a potential cast
+in principle! Therefore, subtyping instances such as $\unknown \tsub \top$ are not allowed.
+For consistency, we add the rule that $\top$ is consistent with $\top$, which is
+actually included in the original reflexive rule $A \sim A$. For consistent
+subtyping, every type is a consistent subtype of $\top$, for example, $\nat \to
+\unknown \tconssub \top$.
+\begin{mathpar}
+  \SubTop \and \CTop \and \CSTop
+\end{mathpar}
+It is easy to verify that \Cref{def:decl-conssub} is still equivalent to that in
+\Cref{fig:decl:conssub} extended with rule \rul{CS-Top}. That is,
+\Cref{lemma:properties-conssub} holds:
+\begin{mprop}[Extension with $\top$]
+  The following are equivalent:
+  \begin{itemize}
+  \item  $\tpreconssub A \tconssub B$.
+  \item  $\tpresub A \tsub C$, $C \sim D$, $\tpresub D \tsub B$, for some $C, D$.
+  \end{itemize}
+\end{mprop}
+% \begin{proof}\leavevmode
+%   \begin{itemize}
+%   \item From first to second: By induction on the derivation of consistent
+%     subtyping. We have extra case \rul{CS-Top} now, where $B = \top$.
+%     We can choose $C = A$, and
+%     $D$ by replacing the unknown types in $C$ by $\nat$. Namely, $D$ is a static
+%     type, so by \rul{S-Top} we are done.
+%   \item From second to first: By induction on the derivation of second
+%     subtyping. We have extra case \rul{S-Top} now, where
+%     $B = \top$, so $A \tconssub B$ holds by \rul{CS-Top}.
+%   \end{itemize}
+% \end{proof}
+
+\paragraph{Extending AGT}
+
+We now extend the definition of concretization (\Cref{def:concret}) with $\top$
+by adding another equation:
+\[
+  \gamma(\top) = \{\top\}
+\]
+It is easy to verify that \Cref{lemma:coincide-agt} still holds:
+\begin{mprop}[Equivalent to AGT Extended with $\top$ on Simple Types]
+  \label{prop:agt-top}
+  $A \tconssub B$ if only if $A \agtconssub B$.
+\end{mprop}
+
+% \begin{proof}\leavevmode
+%   \begin{itemize}
+%   \item From left to right: By induction on the derivation of consistent
+%     subtyping. We have case \rul{CS-Top} now.
+%     It follows that for
+%     every static type $A_1 \in \gamma(A)$, we can derive $A_1 \tsub \top$ by
+%     \rul{S-Top}.
+%     We have $B_1 = B = \top$ and we are done.
+%   \item From right to left: By induction on the derivation of subtyping and
+%     inversion on the concretization. We have extra case \rul{S-Top} now, where
+%     $B$ is $\top$. So
+%     consistent subtyping directly holds.
+%   \end{itemize}
+% \end{proof}
+
+\paragraph{\citeauthor{siek2007gradual}'s definition of consistent subtyping does not work for $\top$}
+
+Similarly to the analysis in \Cref{subsec:towards-conssub}, $\nat \to \unknown
+\tconssub \top$ only holds when we first apply consistency, then subtyping, as
+shown in the following diagram. However we cannot find a type $A$ such that
+$\nat \to \unknown \tsub A$ and $A \sim \top$. Also we have a similar problem in
+extending the restriction operator: \textit{non-structural} masking between
+$\nat \to \unknown$ and $\top$ cannot be easily achieved.
+\begin{center}
+  \begin{tikzpicture}
+    \matrix (m) [matrix of math nodes,row sep=3em,column sep=4em,minimum width=2em]
+    {
+      \bot & \top \\
+      \nat \to \unknown &
+      \nat \to \nat \\};
+
+    \path[-stealth]
+    (m-2-1) edge node [left] {$\tsub$} (m-1-1)
+    (m-2-2) edge node [left] {$\tsub$} (m-1-2);
+
+    \draw
+    (m-1-1) edge node [above] {$\sim$} (m-1-2)
+    (m-2-1) edge node [below] {$\sim$} (m-2-2);
+  \end{tikzpicture}
+\end{center}
+
+
+\subsection{Better to be Unknown}
+\label{subsec:algo:discuss}
+
+In \Cref{sec:type:trans} we have seen an example where a source expression could
+produce two different target expressions with different runtime behaviour. As we
+explained, this is due to the guessing nature of the declarative system, and
+from the typing point of view, no type is particularly better than others.
+However in practice, this is not desirable. Let us revisit the same example, now
+from the algorithmic point of view (we omit the translation for space reasons,
+the interested reader can try to write down the full derivation):
+\[
+  f: \forall a. a \to a \byinf (\blam x \unknown {f ~ x}) \infto \unknown \to \genA \dashv f : \forall a. a \to a, \genA
+\]
+Compared with declarative typing, which can produce as many types as
+possible ($\unknown \to \nat$, $\unknown \to \bool$, and so on), the algorithm
+computes the type $\unknown \to \genA$ with $\genA$ unsolved in the output
+context. This is due to rule \rul{ACS-UnknownL}. What can we know from the
+output context? The only thing we know is that $\genA$ is not constrained at
+all! As we discussed, any monotype for $\genA$ is inappropriate. Instead, we
+replace $\genA$ with the unknown type $\unknown$, which helps to avoid unnecessary
+down-casts at runtime (any cast to $\unknown$ is safe), resulting in the final
+type $\unknown \to \unknown$.
+
+
+\paragraph{Do soundness and completeness still hold?}
+
+The reader may ask if the declarative system produces types such as $\unknown
+\to \nat$ and $\unknown \to \bool$, but the algorithmic system computes the type
+$\unknown \to \unknown$, does it imply that the algorithmic system is no longer
+sound and complete with respect to the declarative system? The answer is no.
+First of all, note that \Cref{thm:type_complete} reads ``$\dots$ there exist
+$\Delta$, $\Omega'$ and $A'$ such that $\dots$ $A = \ctxsubst{\Omega'}{A'}$''.
+Now if $A'$ (which is produced by the algorithmic system) contains some unsolved
+existential variables, it is up to us to pick solutions in $\Omega'$ to match up
+with $A$ (which is produced by the declarative system). More concretely, let us
+assume that the declarative system produces type $\unknown \to \nat$, and let
+$\Omega = f : \forall a. a \to a$ and $\Delta = f : \forall a. a \to a, \genA$,
+the completeness theorem asks if we can find a complete context $\Omega'$ that
+extends both $\Delta$ and $\Omega$ such that $\ctxsubst{\Omega'}{(\unknown \to
+  \genA)} = \unknown \to \nat$. It is obvious that $\Omega' = f : \forall a. a
+\to a, \genA = \nat$ is one such complete context, and we have
+$\ctxsubst{\Omega'}{(\unknown \to \genA)} = \unknown \to \nat$. So the
+algorithmic system is still complete. Similar arguments apply to the soundness
+theorem. 
+Secondly, an observation (which follows from the soundness and
+completeness theorems) is: if an
+expression is typeable with many types in the declarative system, the same expression must be
+typeable with a single type that contains some unsolved existential variables in the algorithmic
+algorithmic system.
+In that case, replacing them with $\unknown$ is the best
+strategy for the sake of execution.
+
+\paragraph{Existential variables do not indicate parametricity}
+
+Another reading of the above example may suggest that the result type $\unknown
+\to \genA$ implies parametricity, with the implication that $\genA$ can be
+changed arbitrarily without affecting the runtime behaviour of the
+program. A similar phenomenon is discussed by \citet{siek2008gradual}, where they
+argue that we cannot simply ``ignore dynamic types during unification''. In
+their view, a type signature with a type variable indicates parametricity, but
+this type does not. We agree that type variables do indicate parametricity, but
+\textit{existential variables} do not! An \textit{unsolved} existential variable
+indicates that a value's only constraint is that it may be cast to and from
+$\unknown$, thus may introduce runtime casts. A similar observation is also
+found in \citet{garcia2015principal}, where they have to distinguish between
+\textit{static polymorphism} and \textit{gradual polymorphism}, and in addition
+to gradual type parameters, they have to introduce the so-called \textit{static
+  type parameters}. We argue that our language design is much simpler, and our
+algorithmic system naturally embraces this distinction.
+
+Now the question is can we really do that? The syntax in \Cref{fig:algo-syntax}
+specifies that the solution of a existential variable can only be a monotype.
+This is true if the existential variable has a solution. Reading of the output
+context reveals that $\genA$ does not have any solution at all. What is more,
+our target language (i.e., \pbc) has a nice property, the so-called
+``Jack-of-All-Trade Principle''~\cite{ahmed2011blame} that says if instantiating
+a type parameter to any given type yields an answer then instantiating that type
+parameter to $\unknown$ yields the same answer. In light of these, no type is
+more suitable than $\unknown$.
+
+We need to note that this does not mean we should always instantiate a type
+parameter to $\unknown$, as is the case in \pbc. One of our design principles is
+that we should extract as much information as possible from the static aspects of
+the type system, until there is nothing more we can know, then leave the job to
+the runtime checks.
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: "../paper.bib"
+%%% End:

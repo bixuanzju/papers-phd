@@ -1,0 +1,331 @@
+
+\documentclass[a4paper,UKenglish]{lipics-v2018}
+%This is a template for producing LIPIcs articles. 
+%See lipics-manual.pdf for further information.
+%for A4 paper format use option "a4paper", for US-letter use option "letterpaper"
+%for british hyphenation rules use option "UKenglish", for american hyphenation rules use option "USenglish"
+% for section-numbered lemmas etc., use "numberwithinsect"
+
+\nolinenumbers
+
+\usepackage{microtype}%if unwanted, comment out or use option "draft"
+
+%\graphicspath{{./graphics/}}%helpful if your graphic files are in another directory
+
+\bibliographystyle{plainurl}% the recommnded bibstyle
+
+\title{Typed First-Class Traits}
+% \titlerunning{Dummy short title}%optional, please use if title is longer than one line
+
+\author{Xuan Bi}{The University of Hong Kong, Hong Kong, China}{xbi@cs.hku.hk}{}{}%mandatory, please use full name; only 1 author per \author macro; first two parameters are mandatory, other parameters can be empty.
+
+\author{Bruno C. d. S. Oliveira}{The University of Hong Kong, Hong Kong, China}{bruno@cs.hku.hk}{}{}
+
+
+\authorrunning{X.\,Bi and B.\,C.\,d.\,S.\,Oliveira} %mandatory. First: Use abbreviated first/middle names. Second (only in severe cases): Use first author plus 'et. al.'
+
+\Copyright{Xuan Bi and Bruno C. d. S. Oliveira}%mandatory, please use full first names. LIPIcs license is "CC-BY";  http://creativecommons.org/licenses/by/3.0/
+
+
+\subjclass{Software and its engineering $\rightarrow$ Object oriented languages}% mandatory: Please choose ACM 2012 classifications from https://www.acm.org/publications/class-2012 or https://dl.acm.org/ccs/ccs_flat.cfm . E.g., cite as "General and reference $\rightarrow$ General literature" or \ccsdesc[100]{General and reference~General literature}.
+
+\keywords{traits, extensible designs}%mandatory
+
+\category{}%optional, e.g. invited paper
+
+\relatedversion{}%optional, e.g. full version hosted on arXiv, HAL, or other respository/website
+
+\supplement{}%optional, e.g. related research data, source code, ... hosted on a repository like zenodo, figshare, GitHub, ...
+
+\funding{Hong Kong Research Grant Council projects number 17210617 and 17258816}%optional, to capture a funding statement, which applies to all authors. Please enter author specific funding statements as fifth argument of the \author macro.
+
+\acknowledgements{We thank the anonymous reviewers for their helpful comments.}%optional
+
+%Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\EventEditors{Todd Millstein}
+\EventNoEds{1}
+\EventLongTitle{32nd European Conference on Object-Oriented Programming (ECOOP 2018)}
+\EventShortTitle{ECOOP 2018}
+\EventAcronym{ECOOP}
+\EventYear{2018}
+\EventDate{July 16--21, 2018}
+\EventLocation{Amsterdam, Netherlands}
+\EventLogo{}
+\SeriesVolume{109}
+\ArticleNo{9} % “New number” (=<article-no>) goes here!%\nolinenumbers %uncomment to disable line numbering
+%\hideLIPIcs  %uncomment to remove references to LIPIcs series (logo, DOI, ...), e.g. when preparing a pre-final version to be uploaded to arXiv or another public repository
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Basics
+\usepackage{fixltx2e}
+\usepackage{url}
+\usepackage{fancyvrb}
+\usepackage{mdwlist}  % Miscellaneous list-related commands
+\usepackage{xspace}   % Smart spacing
+\usepackage{supertabular}
+\usepackage{longtable}
+
+
+% https://www.nesono.com/?q=book/export/html/347
+% Package for inserting TODO statements in nice colorful boxes - so that you
+% won’t forget to ﬁx/remove them. To add a todo statement, use something like
+% \todo{Find better wording here}.
+\usepackage{todonotes}
+
+%% Math
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{bm}       % Bold symbols in maths mode
+
+% http://tex.stackexchange.com/questions/114151/how-do-i-reference-in-appendix-a-theorem-given-in-the-body
+\usepackage{thmtools, thm-restate}
+
+%% Theoretical computer science
+\usepackage{stmaryrd}
+\usepackage{mathtools}  % For "::=" ( \Coloneqq )
+
+%% Font
+% \usepackage[euler-digits,euler-hat-accent]{eulervm}
+
+
+%% Some recommended packages.
+\usepackage{booktabs}   %% For formal tables:
+                        %% http://ctan.org/pkg/booktabs
+\usepackage{subcaption} %% For complex figures with subfigures/subcaptions
+                        %% http://ctan.org/pkg/subcaption
+
+% Hyper links
+\usepackage{url}
+\usepackage{
+  nameref,%\nameref
+  hyperref,%\autoref
+}
+\usepackage[capitalise]{cleveref}
+
+% Code highlighting
+\usepackage{listings}
+
+\lstset{%
+  backgroundcolor=\color{white},
+  basicstyle=\small\ttfamily,
+  keywordstyle=\sffamily\bfseries,
+  captionpos=none,
+  columns=flexible,
+  lineskip=-1pt,
+  keepspaces=true,
+  showspaces=false,               % show spaces adding particular underscores
+  showstringspaces=false,         % underline spaces within strings
+  showtabs=false,                 % show tabs within strings adding particular underscores
+  breaklines=true,                % sets automatic line breaking
+  breakatwhitespace=true,         % sets if automatic breaks should only happen at whitespace
+  escapeinside={(*}{*)},
+  literate={->}{{$\rightarrow$}}1 {Top}{{$\top$}}1 {/\\}{{$\Lambda$}}1,
+  tabsize=2,
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  % aboveskip =0pt,
+  belowskip =0pt,
+  sensitive=false
+}
+
+\lstdefinelanguage{sedel}{
+  keywords={Void, Class, All, extends, letrec, Int, String, this, inherits, super, type, Trait, override, new, if, then, else, let, in},
+  identifierstyle=\color{black},
+  morecomment=[l]{--},
+  morecomment=[l]{//},
+  morestring=[b]",
+  xleftmargin  = 3mm,
+  morestring=[b]'
+}
+
+\lstdefinelanguage{JavaScript}{
+  keywords={const, extends, super, class, export, boolean, throw, implements, import, this, typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break},
+  identifierstyle=\color{black},
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  xleftmargin  = 3mm,
+  morestring=[b]"
+}
+
+\lstset{language=sedel}
+
+
+\usepackage{pifont}
+
+% Revision tools
+\usepackage{comment}
+
+% \renewcommand{\paragraph}[1]{\noindent{\bf #1}}
+
+\input{macros.tex}
+
+% Ott includes
+\usepackage{ottalt}
+\inputott{ott-rules}
+% I prefer rulenames on the right
+% \renewcommand\ottaltinferrule[4]{
+%   \inferrule*[narrower=0.7,right=#1,#2]
+%     {#3}
+%     {#4}
+% }
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.9,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
+% \renewcommand{\ottnt}[1]{#1}
+% \renewcommand{\ottmv}[1]{#1}
+
+% \renewcommand{\subparagraph}[1]{\vspace{3pt}\noindent{\bf #1}}
+
+\newcommand{\hll}[2][gray!40]{\colorbox{#1}{#2}}
+\newcommand{\hlmath}[2][gray!40]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Many dynamically-typed languages (including JavaScript, Ruby, Python
+or Racket) support \emph{first-class classes}, or related concepts
+such as first-class traits and/or mixins. In those languages classes
+are first-class values and, like any other values, they can be
+passed as an argument, or returned from a function. Furthermore
+first-class classes support \emph{dynamic inheritance}: i.e. they
+can inherit from other classes at \emph{runtime}, enabling
+programmers to abstract over the inheritance hierarchy. In contrast,
+type system limitations prevent most
+statically-typed languages from having first-class classes and
+dynamic inheritance.
+
+This paper shows the design of \name: a polymorphic statically-typed
+language with \emph{first-class traits}, supporting \emph{dynamic
+  inheritance} as well as conventional OO features such as
+\emph{dynamic dispatching} and \emph{abstract methods}.  To address
+the challenges of type-checking first-class traits, \name employs a type
+system based on the recent work on \emph{disjoint
+  intersection types} and \emph{disjoint polymorphism}. The novelty of
+\name over core disjoint intersection calculi are \emph{source level} features for
+practical OO programming, including first-class traits with dynamic inheritance, dynamic
+dispatching and abstract methods. Inspired by Cook and Palsberg's work on the
+denotational semantics for inheritance, we show how to design a source
+language that can be elaborated into Alpuim et al.'s \bname
+(a core polymorphic calculus with records supporting disjoint polymorphism).
+We illustrate the applicability of \name with several example uses for
+first-class traits, and a case study that modularizes programming
+language interpreters using a highly modular form of visitors.
+
+\begin{comment}
+To allow for \emph{dynamic dispatching} \name
+uses
+
+Traits pose additional challenges when compared to
+models with first-class classes or mixins, because method conflicts
+should be detected \emph{statically}. To enable such dynamic
+composition of traits, even when traits are \emph{polymorphic},
+SEDEL's type system is based on \emph{disjoint intersection types} and
+\emph{disjoint polymorphism}. Inspired by Cook's denotational
+semantics of inheritance, this work shows how to develop a source
+language.
+
+ While at first such static
+detection of conflicts appears to in conflict with dynamic inheritance
+(since traits can be plugged
+
+
+presents a simple language design called \name that supports
+\emph{first-class traits}.
+
+essentially  In other words classes are first-class values
+
+
+
+Differently from statically typed object
+
+``These untyped languages tend to support flexible mechanisms for class
+composition, such as mixins or traits, that allow the programmer to
+abstract over inheritance. Fur- thermore, some untyped languages
+support a generalization of mixins and traits where classes are
+first-class values and thus can inherit from other classes at runtime.''
+
+
+Object-oriented programming is popular in both statically typed, as
+well as dynamically typed languages.
+
+This paper presents \name: a new polymorphic, statically-typed and delegation-based object-oriented
+programming language. The design of \name follows Cook et al. motto
+of ``\emph{Inheritance is not Subtyping}'' and clearly separates the two notions.
+Unlike most previous designs for delegation (or dynamic inheritance)
+based languages \name is statically typed;
+has an expressive polymorphic type system; and it
+supports a powerful form of \emph{conflict-free} multiple dynamic
+inheritance mechanism called \emph{dynamically composable traits}.
+The design of \name and its type system is based on previous work
+on disjoint intersection types and disjoint polymorphism. This
+guarantees important \emph{safety} properties, and
+ensures a high-degree of programming \emph{flexibility}.
+In terms of safety \name's type system provides, not only the usual
+type-safety property, but also coherence. The coherence property
+ensures that the semantics of \name is unambiguous. In particular
+this property is useful to ensure that programs using
+multiple dynamic inheritance remain free of conflicts/ambiguities
+(even when the types of the object parts being composed are not
+statically know).
+In terms of flexibility, the polymorphic type system provides
+an expressive form of polymorphism and intersection types that
+can type-check various delegation-based programs and patterns.
+We show how the mechanisms of \name improve extensibility design patterns
+such as Extensible Visitors and Object Algebras. Furthermore we show
+how the high-level OO mechanisms of \name can be elaborated using
+a thin-layer of syntactic sugar into a core calculus with disjoint
+intersection types and polymorphism.
+\end{comment}
+\end{abstract}
+
+%% -- Starting Point --
+
+
+\input{sections/introduction.tex}
+
+\input{sections/overview.tex}
+
+\input{sections/traits.tex}
+
+% \input{sections/sedel.tex}
+
+\input{sections/typesystem.mng}
+
+\input{sections/applications.tex}
+
+% \input{sections/desugar.mng}
+
+% \input{sections/discussion.tex}
+
+\input{sections/related.tex}
+
+\input{sections/conclusion.tex}
+
+%%
+%% Bibliography
+%%
+
+%% Please use bibtex,
+
+\bibliography{paper}
+
+
+% \newpage
+% \appendix
+% \input{appendix.mng}
+
+
+
+
+
+\end{document}

@@ -1,0 +1,680 @@
+
+% Formalization of Fi with extensions
+
+metavar var, x , y, a {{ tex \alpha }}, b {{ tex \beta }}, l, f, T {{ tex t }}, m, super {{ tex \mathsf{super} }}, self {{ tex \mathsf{self} }} ::=
+  {{ repr-locally-nameless }}
+  {{ com variables }}
+  {{ lex alphanum }}
+
+indexvar i, j, k, n, m ::= {{ com Index variables }}
+
+
+grammar
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% SEDEL Syntax
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Declarations
+pgm                                         :: 'pgm_' ::=      {{ com Program }}
+  | E                          ::   :: expression
+  | decl ; pgm :: :: decl
+  | [ A / T ] pgm :: M :: subst {{ tex [ [[T]] \mapsto [[A]] ] [[pgm]] }}
+
+
+decl                                        :: 'decl_' ::=     {{ com Declaration }}
+  | def f ( x : A ) : B = E  ::   :: TermDecl   {{ com Term Declaration }}
+  | typ T = A             ::   :: TypeDecl              {{ com Type Declaration }}
+
+
+
+E  :: 'E_' ::=
+  | top                              ::   :: Top
+  | x                              ::   :: Var
+  | ii                              ::   :: Arith
+  | BL                              ::   :: Bool
+  | \ x . E                        ::  :: Lambda
+  | E1 E2                        ::  :: App
+  | E1 ,, E2                        ::  :: Merge
+  | blam ( a ** A ) . E                       ::  :: BLam
+  | E A                        ::  :: TApp
+  | { l = E }                        ::  :: Recd
+  | E . l                        ::  :: Proj
+  | letrec x : A = E1 in E2      :: :: LetBinding
+  | new [ A ] ( </ Ei // i /> )  :: :: New
+  | E : A  :: :: Anno {{ com Anno }}
+  | E -- { l : A }                       ::  :: Rem
+  | trait [ self : B ] inherits </ Ei // i /> { </ lj = Ej' // j /> } : A  :: :: Trait
+  | trait x { </ li = Ei // i />  } :: :: Trait2
+  | if E1 then E2 else E3          ::  S:: If
+  | E1 + E2                        ::  S:: Add
+  | E1 - E2                        ::  S :: Sub
+  | E1 * E2                        ::  S :: Mult
+  | E1 / E2                        ::  S :: Div
+  | E1 == E2                       ::  S :: Eq
+  | E1 /= E2                       ::  S :: Neq
+  | E1 < E2                        ::  S :: Lt
+  | E1 > E2                        ::  S :: Gt
+  | E1 ^ E2                        ::  S :: Lift {{ tex [[E1]] \textasciicircum\, [[E2]] }}
+  | { l1 = E1 , ... , ln = En }     :: S :: Recds
+  | { l1 = E1 } ,, ... ,, { ln = En }  ::  S :: Recds2
+  | ( E ) :: S :: Paren
+
+
+
+A, B, C :: 'T_' ::=                                              {{ com Type }}
+  | top                           ::   :: Top          {{ com Arith }}
+  | Int                          ::   :: Int           {{ com Int }}
+  | A -> B                          ::   :: Arrow           {{ com Arrow }}
+  | A & B                          ::   :: And           {{ com And }}
+  | a                          ::   :: Var           {{ com Var }}
+  | forall ( a ** A ) . B      ::   :: Forall           {{ com Forall }}
+  | { l : A }      ::   :: RecdT           {{ com Record }}
+  | Trait [ A , B ] :: :: Trait {{ com Trait Type }}
+  | Trait [ B ] :: :: Trait2 {{ com Trait Type }}
+  | { l1 : A1 , ... , ln : An } :: S:: RecdTs  {{ com Records }}
+  | A1 & ... & An :: S:: And2  {{ com And2 }}
+  | Bool                          ::  S :: Bool           {{ com Bool }}
+  | Char                          ::  S :: Char           {{ com Char }}
+  | String                          ::  S :: String           {{ com String }}
+  | [ A / a ] C :: M :: subst {{ tex [ [[A]] / [[a]] ] [[C]] }}
+
+ctx, G {{ tex \Gamma }} :: 'ctx_' ::= {{ com Contexts }}
+  | empty :: :: Empty {{ com empty }}
+  | G , x : A :: :: Cons1 {{ com cons1 }}
+  | G , a ** A :: :: Cons2 {{ com cons2 }}
+  | G , x1 : A1 , .. , xn : An , self : B :: S :: Ctx2 {{ com ctx }}
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Fi Syntax
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+jpgm {{ tex pgm }}                      :: 'jpgm_' ::=      {{ com Program }}
+  | jdecl1 .. jdecln e                          ::   :: Decl
+
+jdecl {{ tex decl }}                           :: 'jdecl_' ::=     {{ com Top-level function }}
+  | function f ( x : t ) { e }  ::   :: Fun
+
+
+e  :: 'e_' ::=                                                    {{ com Terms }}
+  | top                              ::   :: Top                 {{ com Top }}
+  | e1 + e2                        ::   :: Add                 {{ com Add }}
+  | e1 - e2                        ::   :: Sub                 {{ com Sub }}
+  | e1 * e2                        ::   :: Mult                {{ com Mult }}
+  | e1 / e2                        ::   :: Div                 {{ com Division }}
+  | e1 == e2                       ::   :: Eq                  {{ com Equality }}
+  | e1 < e2                        ::   :: Lt                  {{ com Comparison }}
+  | e1 && e2                        ::   :: And                  {{ com And }}
+  | e1 || e2                        ::   :: Or                  {{ com Or }}
+  | if e1 then e2 else e3          ::   :: If                  {{ com Conditional }}
+  | var x = e1 ; e2                 ::   :: Decl                {{ com Local Def }}
+  | x                              ::   :: Var                 {{ com Variable }}
+  | ii                              ::   :: Arith               {{ com Literal }}
+  | \ x . e                        ::  :: Lambda               {{ com Abstraction }}
+  | lam ( x : t ) . e :: :: multi1
+  | \ ( x : t ) . e :: :: multi2
+  | e1 e2                        ::  :: App               {{ com Application }}
+  | e1 ,, e2                        ::  :: Merge               {{ com Merge }}
+  | e1 ,, ... ,, en :: S:: Merge2
+  | blam ( a ** t ) . e                       ::  :: BLam               {{ com BLam }}
+  | e t                        ::  :: TApp               {{ com TApp }}
+  | { l = e }                        ::  :: Recd               {{ com Record }}
+  | { l1 = e1 , ... , ln = en }     :: S :: Recds               {{ com Records }}
+  | e . l                        ::  :: Proj               {{ com Projection }}
+  | letrec x : t = e1 in e2      :: :: LetBinding {{ com Let binding }}
+  | let x = e1 in e2      :: :: LetBinding' {{ com Let binding }}
+  | e : t :: :: Anno {{ com Anno }}
+  | ( e ) :: S :: Paren {{ com Pren }}
+
+
+
+
+t {{ tex \tau }}, tt {{ tex \sigma }} :: 't_' ::=                                              {{ com Type }}
+  | top                           ::   :: Top          {{ com Arith }}
+  | Int                          ::   :: Int           {{ com Int }}
+  | t -> tt                          ::   :: Arrow           {{ com Arrow }}
+  | t & tt                          ::   :: And           {{ com And }}
+  | t1 & ... & tn :: S:: And2  {{ com And2 }}
+  | a                          ::   :: Var           {{ com Var }}
+  | forall ( a ** t ) . tt      ::   :: Forall           {{ com Forall }}
+  | { l1 : t1 , ... , ln : tn } :: S:: RecdTs  {{ com Records }}
+  | { l : t }      ::   :: RecdT           {{ com Record }}
+  | M :: M :: Co
+  | | A | :: S :: Trans
+  | [ tt / a ] t :: M :: subst {{ tex [ [[tt]] / [[a]] ] [[t]] }}
+
+
+tctx, gg {{ tex \Delta }} :: 'ctx3_' ::= {{ com Kind contexts }}
+  | empty :: :: Empty {{ com empty }}
+  | gg , x : t :: :: Cons {{ com cons }}
+  | gg , a ** t :: :: Cons2 {{ com cons2 }}
+  | gg , x1 : t1 , .. , xn : tn , self : t :: S :: Ctx2 {{ com ctx }}
+  | | G | :: S:: Trans
+
+
+%%% Terminals
+terminals :: 'terminals_' ::=
+  | ii        ::  :: Arith      {{ tex i }}
+  | S        ::  :: String      {{ tex \mathbb{S} }}
+  | BL        ::  :: Bool       {{ tex \mathbb{B} }}
+  | Int        ::  :: Int       {{ tex \mathsf{Int} }}
+  | String        ::  :: String2       {{ tex \mathsf{String} }}
+  | /        ::  :: Div       {{ tex \div }}
+  | *        ::  :: Time       {{ tex \times }}
+  | .        :: :: dot {{ tex .\, }}
+  | \        ::  :: lambda    {{ tex \lambda }}
+  | lam        ::  :: lambda2    {{ tex \\ \lambda }}
+  | --        ::  :: rem    {{ tex \,\backslash\, }}
+  | &&        ::  :: and    {{ tex \,\&\&\, }}
+  | ||        ::  :: or    {{ tex \,||\, }}
+  | blam       ::  :: blam        {{ tex \Lambda }}
+  | top       ::  :: Top        {{ tex \top }}
+  | ,,       ::  :: Merge        {{ tex \,,,\, }}
+  | **       ::  :: Dis        {{ tex * }}
+  | **a      :: :: Dis2 {{ tex *_{ax} }}
+  | ->       ::  :: to        {{ tex \rightarrow }}
+  | forall       ::  :: forall        {{ tex \forall }}
+  | &       ::  :: And        {{ tex \,\&\, }}
+  | type :: :: type {{ tex \mathsf{type} }}
+  | empty :: :: empty  {{ tex \bullet }}
+  | |-                  ::   :: turnstile  {{ tex \vdash }}
+  | =>        :: :: Infer  {{ tex \Rightarrow }}
+  | ==>        :: :: Infer2  {{ tex \Rightarrow }}
+  | <=        :: :: Chk  {{ tex \Leftarrow }}
+  | ~~>        :: :: leads  {{ tex \rightsquigarrow }}
+
+
+
+
+formula :: 'formula_' ::=
+  | judgement                ::   :: judgement
+  | | formula | :: :: multi       {{ tex \overline{[[formula]]}^{i \in 1 .. n}   }}
+  | a ** A in G               ::   :: inG {{ tex [[a]] [[**]] [[A]] \in [[G]] }}
+  | a ** t in gg               ::   :: inG2 {{ tex [[a]] [[**]] [[t]] \in [[gg]] }}
+  | x : A in G               ::   :: invar {{ tex [[x]] : [[A]] \in [[G]] }}
+  | x : t in gg               ::   :: invar2 {{ tex [[x]] : [[t]] \in [[gg]] }}
+  | b '::' K in GG               ::   :: inGG {{ tex [[b]] :: [[K]] \in [[GG]] }}
+  | l1 neq l2 :: :: neq {{ tex [[l1]] \neq [[l2]] }}
+  | A ord  :: :: ord {{ tex [[A]]\, \mathsf{ordinary} }}
+  | e1 = e2 :: :: eq
+  | G |- E => A :: :: ty1
+  | G |- E <= A :: :: ty2
+  | G |- E : A ~~> e :: :: ty3
+  | gg |- t  :: :: wf
+  | gg |- t ** tt :: :: dis
+  | t <: tt :: :: sub
+  | e1 == e2 :: :: eqal   {{ tex [[e1]] \defeq [[e2]] }}
+
+
+defns
+JWF :: '' ::=
+
+defn G |- A :: :: WF :: 'WF_' by
+
+
+--------- :: top
+G |- top
+
+
+--------- :: int
+G |- Int
+
+
+G |- A
+G |- B
+------------- :: arrow
+G |- A -> B
+
+
+G |- A
+------------- :: record
+G |- {l : A}
+
+
+a ** A in G
+-------------- :: var
+G |- a
+
+
+G |- A
+G |- B
+G |- A ** B
+---------------- :: and
+G |- A & B
+
+
+G |- A
+G , a ** A |- B
+-------------------------- :: forall
+G |- forall (a ** A) . B
+
+
+G |- A
+G |- B
+---------------- :: trait
+G |- Trait[A,B]
+
+
+defns
+Disjoint :: '' ::=
+
+defn G |- A ** B :: :: disjoint    :: 'D_'  {{ com Disjointness }} by
+
+
+------------------- :: top
+G |- top ** A
+
+
+------------------- :: topSym
+G |- A ** top
+
+
+
+a ** A in G
+A <: B
+-------------------- :: var
+G |- a ** B
+
+
+a ** A in G
+A <: B
+-------------------- :: varSym
+G |- B ** a
+
+
+
+G , a ** A1 & A2 |- B ** C
+------------------------------------------------- :: forall
+G |- forall (a ** A1) . B ** forall (a ** A2) . C
+
+
+G |- A ** B
+-------------------------- :: rec
+G |- {l : A} ** {l : B}
+
+
+
+l1 neq l2
+-------------------------- :: recn
+G |- {l1 : A} ** {l2 : B}
+
+
+G |- A2 ** B2
+---------------------------- :: arrow
+G |- A1 -> A2 ** B1 -> B2
+
+
+G |- A1 ** B
+G |- A2 ** B
+-------------------- :: andL
+G |- A1 & A2 ** B
+
+
+G |- A ** B1
+G |- A ** B2
+-------------------- :: andR
+G |- A ** B1 & B2
+
+
+A **a B
+-------------------- :: ax
+G |- A ** B
+
+
+
+G |- A2 ** B2
+--------------------------------- :: trait
+G |- Trait[A1, A2] ** Trait[B1, B2]
+
+
+G |- A2 ** B2
+--------------------------------- :: traitArr1
+G |- Trait[A1, A2] ** B1 -> B2
+
+
+G |- A2 ** B2
+--------------------------------- :: traitArr2
+G |- A1 -> A2 ** Trait[B1, B2]
+
+
+
+defns
+Dis :: '' ::=
+
+defn A **a B :: :: dis :: 'Dax_'  by
+
+
+B **a A
+---------- :: sym
+A **a B
+
+
+--------------------- :: intArr
+Int **a A1 -> A2
+
+
+------------------ :: intRec
+Int **a {l : A}
+
+
+
+--------------------------------- :: intForall
+Int **a forall (a ** B1) . B2
+
+
+--------------------------------- :: intTrait
+Int **a Trait[A1,A2]
+
+
+
+------------------------------------ :: arrForall
+A1 -> A2 **a forall (a ** B1). B2
+
+
+
+--------------------- :: arrRec
+A1 -> A2 **a {l : B}
+
+
+-------------------------------------- :: traitForall
+Trait[A1,A2] **a forall (a ** B1) . B2
+
+
+------------------------- :: traitRec
+Trait[A1,A2] **a {l : B}
+
+
+
+------------------------------------ :: forallRec
+forall (a ** A1) . A2 **a {l : B}
+
+
+
+defns
+Subtyping :: '' ::=
+
+defn
+A <: B :: :: subtyping :: Sub_ {{ com Subtyping }} by
+
+
+
+---------- :: top
+A <: top
+
+
+A1 <: A2
+A1 <: A3
+----------------- :: andR
+A1 <: A2 & A3
+
+
+-------------- :: int
+Int <: Int
+
+
+A1 <: A3
+A3 ord
+-------------- :: andL1
+A1 & A2 <: A3
+
+
+A2 <: A3
+A3 ord
+-------------- :: andL2
+A1 & A2 <: A3
+
+
+A <: B
+-------------------- :: rec
+{l : A} <: {l : B}
+
+
+
+-------- :: var
+a <: a
+
+
+B1 <: A1
+A2 <: B2
+-------------------- :: arr
+A1 -> A2 <: B1 -> B2
+
+
+B1 <: B2
+A2 <: A1
+------------------------------------------------ :: forall
+forall (a ** A1). B1 <: forall (a ** A2) . B2
+
+
+B1 <: A1
+A2 <: B2
+--------------------------------- :: trait
+Trait[A1, A2] <: Trait[B1, B2]
+
+
+
+defns
+JSTyping :: '' ::=
+
+defn G  |- E => A ~~> e ::  :: inf :: 'Inf_'
+by
+
+
+
+------------------------- :: top
+G |- top => top ~~> top
+
+
+------------------------- :: int
+G |- ii => Int ~~> ii
+
+
+x : A in G
+------------------------- :: var
+G |- x => A ~~> x
+
+
+G |- E <= A ~~> e
+--------------------------------- :: anno
+G |- E : A => A ~~> e : |A|
+
+
+
+G |- E1 => A1 -> A2 ~~> e1
+G |- E2 <= A1 ~~> e2
+------------------------------ :: app
+G |- E1 E2 => A2 ~~> e1 e2
+
+
+G |- E => forall (a ** B) . C ~~> e
+G |- A
+G |- A ** B
+------------------------------ :: tapp
+G |- E A => [A / a] C ~~> e |A|
+
+
+G |- E1 => A ~~> e1
+G |- E2 => B ~~> e2
+G |- A ** B
+---------------------------------- :: merge
+G |- E1 ,, E2 => A & B ~~> e1 ,, e2
+
+
+G |- E => A ~~> e
+------------------------------------- :: rec
+G |- {l = E} => {l : A} ~~> {l = e}
+
+
+G |- E => {l : A} ~~> e
+--------------------------- :: proj
+G |- E.l => A ~~> e.l
+
+
+
+G |- A
+G , a ** A |- E => B ~~> e
+--------------------------------------------------------------------- :: blam
+G |- blam (a ** A) . E => forall (a ** A) . B ~~> blam (a ** |A|) . e
+
+
+G, x : A |- E1 <= A ~~> e1
+G, x : A |- E2 => B ~~> e2
+---------------------------------------------------------- :: lete
+G |- letrec x : A = E1 in E2 => B ~~> letrec x : |A| = e1 in e2
+
+
+| G |- Ei => Trait[Ai, Bi] ~~> ei |
+| A <: Ai |
+G |- B1 & .. & Bn
+B1 & .. & Bn <: A
+------------------------------------------------------------------------------------------------- :: new
+G |- new [ A ] ( </ Ei // i IN 1..n /> ) => A ~~> letrec self : |A| = </ (ei self) // i IN 1..n />  in self
+
+
+| G, self : B |- Ei => Trait[Bi, Ci] ~~> ei |
+G, self : B |- { </ lj = Ej' // j IN 1..m /> } => C ~~> e
+| B <: Bi |
+G |- C1 & .. & Cn & C
+C1 & .. & Cn & C <: A
+--------------------------------------------------------------------------------------------------------------- :: trait
+G |- trait [ self : B ] inherits </ Ei // i IN 1..n /> { </ lj = Ej' // j IN 1..m /> } : A => Trait[B, A] ~~> lam (self : |B|) . (</ (ei self) // i IN 1..n />)  ,, e
+
+
+
+G |- E1 => Trait[A, B] ~~> e1
+G |- E2 <= A ~~> e2
+-------------------------- :: forward
+G |- E1 ^ E2 => B ~~> e1 e2
+
+
+% defn G  |- E ==> A ~~> e ::  :: inf2 :: 'Inf_'
+% by
+
+
+% | G, self : B |- Ei ==> Trait[Bi, Ci] ~~> ei |
+% G, self : B |- { </ lj = Ej' // j IN 1..m /> } ==> C ~~> e
+% | B <: Bi |
+% G |- C1 & .. & Cn & C
+% C1 & .. & Cn & C <: A
+% --------------------------------------------------------------------------------------------------------------- :: trait
+% G |- trait [ self : B ] inherits </ Ei // i IN 1..n /> { </ lj = Ej' // j IN 1..m /> } : A ==> Trait[B, A] ~~> lam (self : |B|) . (</ (ei self) // i IN 1..n />)  ,, e
+
+
+
+
+
+
+defn G  |- E <= A ~~> e ::  :: chk :: 'Chk_'
+{{ com Source bidirectional typechecking }}
+{{ tex [[G]] [[|-]] [[E]] [[<=]] [[A]] \rulehl{[[~~>]] [[e]]} }}
+by
+
+
+
+G |- A
+G , x : A |- E <= B ~~> e
+-------------------------------------- :: abs
+G |- \ x . E <= A -> B ~~> \x . e
+
+
+
+G |- E => A ~~> e
+A <: B
+G |- B
+-------------------------------- :: sub
+G |- E <= B ~~> e
+
+
+
+defns
+JTyping :: '' ::=
+
+defn gg |- e => t ::  :: infer :: 'TI_'
+by
+
+
+
+------------------------- :: top
+gg |- top => top
+
+
+------------------------- :: int
+gg |- ii => Int
+
+
+x : t in gg
+------------------------- :: var
+gg |- x => t
+
+
+gg |- e <= t
+--------------------------------- :: anno
+gg |- e : t => t
+
+
+
+gg |- e1 => t1 -> t2
+gg |- e2 <= t1
+------------------------------ :: app
+gg |- e1 e2 => t2
+
+
+gg |- e => forall (a ** tt) . t'
+gg |- t
+gg |- t ** tt
+------------------------------ :: tapp
+gg |- e t => [t / a] t'
+
+
+gg |- e1 => t
+gg |- e2 => tt
+gg |- t ** tt
+---------------------------------- :: merge
+gg |- e1 ,, e2 => t & tt
+
+
+gg |- e => t
+------------------------------------- :: rec
+gg |- {l = e} => {l : t}
+
+
+gg |- e => {l : t}
+--------------------------- :: proj
+gg |- e.l => t
+
+
+
+gg |- t
+gg , a ** t |- e => tt
+--------------------------------------------------------------------- :: blam
+gg |- blam (a ** t) . e => forall (a ** t) . tt
+
+
+gg, x : t |- e1 <= t
+gg, x : t |- e2 => tt
+---------------------------------------------------------- :: lete
+gg |- letrec x : t = e1 in e2 => tt
+
+
+
+defn gg  |- e <= t ::  :: tchk :: 'TC_' by
+
+
+
+gg |- t
+gg , x : t |- e <= tt
+-------------------------------------- :: abs
+gg |- \ x . e <= t -> tt
+
+
+
+gg |- e => t
+t <: tt
+gg |- tt
+-------------------------------- :: sub
+gg |- e <= tt

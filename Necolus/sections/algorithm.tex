@@ -1,0 +1,276 @@
+
+\section{Algorithmic Subtyping}
+\label{sec:alg}
+
+This section presents an algorithm that implements the subtyping relation in
+\cref{fig:subtype_decl}. While BCD subtyping is well-known, the
+presence of a transitivity axiom in the rules means that the system is
+not algorithmic. This raises an obvious question: how to obtain an
+algorithm for this subtyping relation? Laurent~\cite{Laurent12note} has shown that simply dropping
+the transitivity rule from the BCD system is not possible without losing expressivity. Hence, this avenue for
+obtaining an algorithm is not available. 
+%Moreover, even if transitivity elimination
+%would be possible, the remaining rules are still highly overlapping, and pose
+%difficulties for an implementation.  
+Instead, we adapt Pierce's decision
+procedure~\cite{pierce1989decision} for a subtyping system (closely
+related to BCD) to obtain a sound and complete algorithm for our
+BCD extension. Our algorithm extends Pierce's decision
+procedure with subtyping of singleton records and
+coercion generation. We prove in Coq that the algorithm is sound and complete with
+respect to the declarative version. At the same time we
+find some errors and missing lemmas in Pierce's original manual proofs.
+
+%The algorithm is implemented in our
+%prototype implementation. \jeremy{should i say more about implementation?}
+
+%See \cref{sec:alg} for the details. 
+%\bruno{The meaning of the paragraph is somewhat obscure to me. After
+%  discussing with Tom, it seems that what may be meant here is that we
+%cannot do cut elimination, which is a common process that you can try
+%for certain systems with subtyping. However Pierce managed to find
+%another way to get a sound/complete algorithmic system. Maybe 
+%the text can be improved.}
+
+
+\subsection{The Subtyping Algorithm}
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+  \drules[A]{$[[fs |- A <: B ~~> c]]$}{Algorithmic subtyping}{and, arr, rcd, top, arrNat, rcdNat, andNOne, andNTwo, nat}
+  \end{small}
+  \caption{Algorithmic subtyping of \name}
+  \label{fig:algorithm}
+\end{figure}
+
+
+\Cref{fig:algorithm} shows the algorithmic subtyping judgement $[[fs |- A <: B ~~> c]]$.
+This judgement is the algorithmic counterpart of the declarative
+judgement $[[A <: fs -> B ~~> c]]$, where the symbol $[[fs]]$ stands for a
+queue of types and labels. Definition~\ref{def:fs} converts a queue to a type:
+\begin{definition} $[[fs -> A]]$ is inductively defined as follows: \label{def:fs}
+  \begin{mathpar}
+    [[ [] -> A]] = [[A]] \and
+    [[ (fs , B) -> A]] = [[fs -> (B -> A)]] \and
+    [[ (fs , {l}) -> A]] = [[fs -> {l : A}]]
+  \end{mathpar}
+\end{definition}
+For instance, if $[[fs]] = [[A]] , [[B]] , \{[[l]]\} $, then $[[fs -> CC]]$ abbreviates $ [[A -> B -> {l : CC}]]$.
+
+The basic idea of $[[fs |- A <: B ~~> c]]$ is to first perform a structural
+analysis of $[[B]]$, which descends into both sides of $[[&]]$'s (\rref{A-and}),
+into the right side of $[[->]]$'s (\rref{A-arr}), and into the fields of records
+(\rref{A-rcd}) until it reaches one of the two base cases, $[[nat]]$ or
+$[[Top]]$. If the base case is $[[Top]]$, then the subtyping holds trivially
+(\rref{A-top}). If the base case is $[[nat]]$, the algorithm performs a
+structural analysis of $[[A]]$, in which $[[fs]]$ plays an important role. The
+left sides of $[[->]]$'s are pushed onto $[[fs]]$ as they are encountered in
+$[[B]]$ and popped off again later, left to right, as $[[->]]$'s are encountered
+in $[[A]]$ (\rref{A-arrNat}). Similarly, the labels are pushed onto $[[fs]]$ as
+they are encountered in $[[B]]$ and popped off again later, left to right, as
+records are encountered in $[[A]]$ (\rref{A-rcdNat}). The remaining rules are
+similar to their declarative counterparts. Let us illustrate the algorithm
+with an example
+derivation (for space reasons we use $[[N]]$ and $[[S]]$ to denote $[[nat]]$ and $[[string]]$ respectively),
+which is essentially the one used by the \lstinline{add} field in \cref{sec:overview}. The
+readers can try to give a corresponding derivation using the declarative
+subtyping and see how \rref{S-trans} plays an essential role there.
+\begin{small}
+\begin{mathpar}
+  \inferrule*[right=\rref*{A-rcd}]
+  { \inferrule*[right=\rref*{A-arr}(\textit{twice})]
+    { \inferrule*[right=\rref*{A-and}]
+      { D \\ D' }
+      { \{ [[l]]  \}, [[N & S]] ,[[N & S]] \vdash [[{l : N -> N -> N} & {l : S -> S -> S} ]] \prec : [[N & S]] }  }
+    { \{ [[l]]  \} \vdash [[{l : N -> N -> N} & {l : S -> S -> S} ]] \prec : [[ N & S -> N & S -> N & S ]]}      }
+  {  [[{l : N -> N -> N} & {l : S -> S -> S}]] \prec : [[{l : N & S -> N & S -> N & S}]]   }
+\end{mathpar}
+\end{small}
+where the sub-derivation $D$ is shown below ($D'$ is similar):
+\begin{small}
+\begin{mathpar}
+\inferrule*[right=\rref*{A-andN1}]
+        { \inferrule*[right=\rref*{A-rcdNat}]
+          { \inferrule*[right=\rref*{A-arrNat}]
+            { \inferrule*{ \dots } { [[N & S]] \prec : [[N]] }
+              \\
+              \inferrule* {\dots} { [[N & S]] \vdash [[N -> N]] \prec : [[N]] }     }
+            {[[N & S]] ,[[N & S]] \vdash [[N -> N -> N]] \prec : [[N]]} }
+          { \{ [[l]]  \}, [[N & S]] ,[[N & S]] \vdash [[{l : N -> N -> N}]] \prec : [[N]] } }
+        { \{ [[l]]  \}, [[N & S]] ,[[N & S]] \vdash [[{l : N -> N -> N} & {l : S -> S -> S} ]] \prec : [[N]] }
+\end{mathpar}
+\end{small}
+Now consider the coercions. Algorithmic subtyping uses the same set of
+coercions as declarative subtyping. However, because algorithmic
+subtyping has a different structure, the rules generate slightly more
+complicated coercions. Two meta-functions $\llbracket \cdot \rrbracket_{\top}$
+and $\llbracket \cdot \rrbracket_{\&}$ used in \rref{A-top,A-and} respectively,
+are meant to generate correct forms of coercions. They are defined recursively
+on $[[fs]]$ and are shown in \cref{fig:coercion}.
+
+\begin{figure}[t]
+    \centering
+    \begin{small}
+    \begin{subfigure}[b]{0.5\textwidth}
+      \begin{align*}
+        [[ < [] >1 ]] &=  [[top]] \\
+        [[ < { l } , fs >1 ]] &= [[ {l : < fs >1} o < l >  ]] \\
+        [[ < A , fs >1 ]] &= [[(top -> < fs >1) o (topArr o top)]]
+      \end{align*}
+    \end{subfigure} ~
+    \begin{subfigure}[b]{0.45\textwidth}
+      \begin{align*}
+        [[ < [] >2 ]] &=  [[id]] \\
+        [[ < { l } , fs >2 ]] &= [[ {l : < fs >2} o distRcd l  ]] \\
+        [[ < A , fs >2 ]] &= [[(id -> < fs >2) o distArr]]
+      \end{align*}
+    \end{subfigure}
+    \end{small}
+    \caption{Meta-functions of coercions}\label{fig:coercion}
+\end{figure}
+
+\subsection{Correctness of the Algorithm}
+
+To establish the correctness of the algorithm, we must show that the algorithm
+is both sound and complete with respect to the declarative specification. While
+soundness follows quite easily, completeness is much harder. The proof of
+completeness essentially follows that of Pierce~\cite{pierce1989decision}
+%%\footnote{
+%%While transferring \cite{pierce1989decision}'s manual proofs to Coq,
+%%we discovered several errors, which will be reported along the way.}
+in that we
+need to show the algorithmic subtyping is reflexive and
+transitive. 
+
+
+\subparagraph{Soundness of the Algorithm.}
+
+% The following two lemmas connect the declarative subtyping with the meta-functions.
+
+% \begin{lemma} \label{lemma:top}
+%   $[[ Top <: fs -> Top ~~> < fs >1]]$
+% \end{lemma}
+% \begin{proof}
+%   By induction on the length of $[[fs]]$.
+% \end{proof}
+
+% \begin{lemma} \label{lemma:and}
+%   $[[(fs -> A) & (fs -> B) <: fs -> (A & B) ~~> < fs >2]]$
+% \end{lemma}
+% \begin{proof}
+%   By induction on the length of $[[fs]]$.
+% \end{proof}
+
+The proof of soundness is straightforward.
+\begin{theorem}[Soundness] \label{thm:soundness}
+  If $[[ fs |- A <: B ~~> c]]$ then $[[A]] <: [[fs]] \rightarrow [[B]] [[~~>]] [[c]]$.
+\end{theorem}
+\begin{proof}
+  By induction on the derivation of the algorithmic subtyping.
+  % and applying \cref{lemma:top,lemma:and} where appropriate.
+\end{proof}
+
+
+\subparagraph{Completeness of the Algorithm.}
+
+
+\newcommand{\U}[1]{\mathcal{U}(#1)}
+
+Completeness, however, is much harder. The reason is that, due to the use of
+$[[fs]]$, reflexivity and transitivity are not entirely obvious. We need to
+strengthen the induction hypothesis by introducing the notion of a set,
+$\U{[[A]]}$, of ``reflexive supertypes'' of $[[A]]$, as defined below:
+\begin{mathpar}
+  \U{[[Top]]} \defeq \{ [[Top]]  \} \and
+  \U{[[nat]]} \defeq \{ [[nat]]  \} \and
+  \U{[[{l : A}]]} \defeq \{ [[{l : B}]] \mid [[B]] \in \U{[[A]]}  \} \and
+  \U{[[A & B]]} \defeq \U{[[A]]} \cup \U{[[B]]} \cup \{ [[A & B]] \} \and
+  \U{[[A -> B]]} \defeq \{ [[A -> CC]] \mid [[CC]] \in \U{[[B]]} \}
+\end{mathpar}
+We show two lemmas about $\U{[[A]]}$ that are crucial in the subsequent proofs.
+\begin{lemma} \label{lemma:set_refl}
+  $[[A]] \in \U{[[A]]}$
+\end{lemma}
+\begin{proof}
+  By induction on the structure of $[[A]]$.
+\end{proof}
+
+\begin{lemma} \label{lemma:set_trans}
+  If $[[A]] \in \U{[[B]]}$ and $[[B]] \in \U{[[CC]]}$, then $[[A]] \in \U{[[CC]]}$.
+\end{lemma}
+\begin{proof}
+  By induction on the structure of $[[B]]$.
+\end{proof}
+
+\begin{remark}
+  Lemma~\ref{lemma:set_trans} is not found in Pierce's proofs~\cite{pierce1989decision}, which is
+  crucial in Lemma~\ref{lemma:refl0}, from which reflexivity (Lemma~\ref{lemma:refl})
+  follows immediately.
+\end{remark}
+
+% Next we show the following lemma from which reflexivity (Lemma~\ref{lemma:refl})
+
+\begin{lemma} \label{lemma:refl0}
+  If $[[fs -> B]] \in \U{[[A]]}$ then there exists $[[c]]$ such that $[[fs |- A <: B ~~> c]]$.
+\end{lemma}
+\begin{proof}
+  By induction on $\mathsf{size}([[A]]) + \mathsf{size}([[B]]) + \mathsf{size}([[fs]])$.
+\end{proof}
+% \begin{remark}
+%   \cite{pierce1989decision}'s proof is wrong in one case~\cite[pp.~10, Case~ii]{pierce1989decision} because we need \cref{lemma:set_trans} to be able
+%   to apply the inductive hypothesis.
+% \end{remark}
+
+Now it immediately follows that the algorithmic subtyping is reflexive.
+
+\begin{lemma}[Reflexivity] \label{lemma:refl}
+  For every $[[A]]$ there exists $[[c]]$ such that $[[ [] |- A <: A ~~> c]]$.
+\end{lemma}
+\begin{proof}
+  Immediate from Lemma~\ref{lemma:set_refl} and Lemma~\ref{lemma:refl0}.
+\end{proof}
+
+We omit the details of the proof of transitivity.
+%The proof of transitivity is, to quote \cite{pierce1989decision}, typically
+%``the hardest single piece'' of metatheory. We omit the details here for lack of space and
+%refer the interested reader to our Coq development.
+
+\begin{lemma}[Transitivity] \label{lemma:trans}
+  If $[[ [] |- A1 <: A2 ~~> c1]]$ and $[[ [] |- A2 <: A3 ~~> c2]]$, then there
+  exists $[[c]]$ such that $[[ [] |- A1 <: A3 ~~> c]]$.
+\end{lemma}
+
+With reflexivity and transitivity in position, we show the main theorem.
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.5,right=#1,#2]
+    {#3}
+    {#4}
+}
+\begin{theorem}[Completeness] \label{thm:complete}
+  If $[[A <: B ~~> c]]$ then there exists $[[c']]$ such that $[[ [] |- A <: B ~~> c']]$.
+\end{theorem}
+\begin{proof}
+  By induction on the derivation of the declarative subtyping and applying \cref{lemma:refl,lemma:trans} where appropriate.
+\end{proof}
+\begin{remark}
+  Pierce's proof is wrong~\cite[pp.~20, Case~F]{pierce1989decision} in the case
+  \begin{mathpar}
+  \drule{S-arr}
+  \end{mathpar}
+  where he concludes from the inductive
+  hypotheses $[[ [] |- B1 <: A1]]$ and $[[ [] |- A2 <: B2]]$ that $[[ [] |- A1 -> A2 <: B1 -> B2]]$ (rules 6a and 3).
+  However his rule 6a (our \rref{A-arrNat}) only works for \textit{primitive types}, and is thus not applicable in this case. Instead we
+  need a few technical lemmas to support the argument.
+\end{remark}
+
+\begin{remark}
+  It is worth pointing out that the two coercions $[[c]]$ and $[[c']]$ in
+  Theorem~\ref{thm:complete} are contextually equivalent, which follows from
+  Theorem~\ref{thm:soundness} and Corollary~\ref{lemma:coercion_same}.
+\end{remark}
+
+% Local Variables:
+% org-ref-default-bibliography: ../paper.bib
+% End:

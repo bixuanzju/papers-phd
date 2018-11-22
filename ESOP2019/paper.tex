@@ -1,0 +1,182 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.20 of 2017/10/04
+%
+\documentclass[runningheads]{llncs}
+\usepackage{llncsdoc}
+%
+\usepackage{graphicx}
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following line
+% to display URLs in blue roman font according to Springer's eBook style:
+% \renewcommand\UrlFont{\color{blue}\rmfamily}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Load up my personal packages
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[numbers,sort]{natbib}
+\input{packages.tex}
+\input{pl-theory.tex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Hyperlinks
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[capitalise]{cleveref}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Ott includes
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{ottalt}
+\inputott{ott-rules}
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.6,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Revision tool
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \newcommand\mynote[3]{\textcolor{#2}{#1: #3}}
+% \newcommand\bruno[1]{\mynote{Bruno}{red}{#1}}
+% \newcommand\tom[1]{\mynote{Tom}{blue}{#1}}
+% \newcommand\ningning[1]{\mynote{Ningning}{orange}{#1}}
+% \newcommand\jeremy[1]{\mynote{Jeremy}{purple}{#1}}
+
+
+
+\begin{document}
+%
+\title{Distributive Disjoint Polymorphism for Compositional Programming}
+%
+\titlerunning{Distributive Disjoint Polymorphism}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Xuan Bi\inst{1} \and
+Ningning Xie\inst{1} \and
+Bruno C. d. S. Oliveira\inst{1} \and
+Tom Schrijvers\inst{2}}
+%
+\authorrunning{X.\,Bi et al.}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{The University of Hong Kong, Hong Kong, China \\
+\email{\{xbi,nnxie,bruno\}@cs.hku.hk} \and
+KU Leuven, Leuven, Belgium \\
+\email{tom.schrijvers@cs.kuleuven.be}}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+
+\begin{comment}
+Compositionality is a desirable property in programming
+designs. Broadly defined, compositionality is the principle that a
+system should be built by composing smaller subsystems.
+Programming techniques such as \emph{shallow embeddings} of
+Domain Specific Languages (DSLs),  \emph{finally tagless} or \emph{object algebras}
+are built on the principle of compositionality.
+However, programming languages often only support well simple
+compositional designs, but language support for more sophisticated
+compositional designs is lacking.
+
+In this paper we present a calculus and polymorphic type system with \emph{(disjoint)
+intersection types}, called \fnamee,
+that supports a broader notion of compositional designs, and enables the
+development of highly modular and reusable programs. \fnamee is a
+generalization and extension of Alpuim et al. \fname calculus,
+which proposed the idea of \emph{disjoint polymorphism}.
+The main novelty of \fnamee is a novel subtyping algorithm with
+distributivity laws on types. Distributivity plays a fundamental role
+in improving compositional designs, by enabling the automatic
+composition of multiple operations/interpretations. The main technical
+challenge is the proof of coherence for \fnamee as impredicativity makes it
+hard to develop a well-founded logical relation for coherence.
+However, by restricting the system to predicative instantiations only
+we are able to develop a suitable logical relation and show
+coherence.
+We illustrate the use of the calculus to model highly modular
+interpretations of DSLs, that can be smoothly composed with
+the merge operator of \fnamee. Furthermore, we provide a detailed
+comparison between \emph{distributive disjoint polymorphism} and
+\emph{row types}.
+\end{comment}
+
+Popular programming techniques such as \emph{shallow embeddings} of Domain
+Specific Languages (DSLs), \emph{finally tagless} or \emph{object
+  algebras} are built on the principle of \emph{compositionality}.  However,
+existing programming languages only support simple compositional designs well,
+and have limited support for more sophisticated ones.
+
+This paper presents the \fnamee calculus, which supports
+highly modular and compositional designs that
+improve on existing techniques. These improvements are due to the
+combination of three features: \emph{disjoint intersection
+  types} with a \emph{merge operator}; \emph{parametric (disjoint)
+  polymorphism}; and \emph{BCD-style distributive subtyping}.  The
+main technical challenge is  \fnamee's proof of coherence. A
+naive adaptation of ideas used in System F's \emph{parametricity} to
+\emph{canonicity} (the logical relation used by \fnamee to prove coherence) results in an ill-founded logical relation. To solve the
+problem our canonicity relation employs a different technique based on
+immediate substitutions and a restriction to predicative
+instantiations. Besides coherence, we show
+several other important meta-theoretical results, such as type-safety, 
+sound and complete algorithmic subtyping, and
+decidability of the type system. Remarkably, unlike 
+\fsub's \emph{bounded polymorphism}, disjoint polymorphism
+in \fnamee supports decidable type-checking.
+
+
+\begin{comment}
+\fnamee  is a
+generalization and extension of Alpuim et al. \fname calculus,
+which proposed the idea of \emph{disjoint polymorphism}.
+The main novelty of \fnamee is a novel polymorphic subtyping algorithm with
+distributivity laws on types. Distributivity plays a fundamental role
+in improving compositional designs, by enabling the automatic
+composition of multiple operations/interpretations.
+The main technical
+challenge is the proof of coherence for \fnamee as impredicativity makes it
+hard to develop a well-founded logical relation for coherence.
+However, by restricting the system to predicative instantiations only
+we are able to develop a suitable logical relation and show
+coherence.
+We illustrate the use of the calculus to model highly modular
+interpretations of DSLs, that can be smoothly composed with
+the merge operator of \fnamee. Furthermore, we provide a detailed
+comparison between \emph{distributive disjoint polymorphism} and \emph{row types}.
+\end{comment}
+
+% \keywords{First keyword  \and Second keyword \and Another keyword.}
+\end{abstract}
+%
+%
+%
+\input{Sources/introduction}
+\input{Sources/overview}
+\input{Sources/typesystem.mng}
+\input{Sources/coherence.mng}
+% \input{Sources/row.mng}
+\input{Sources/related.mng}
+\input{Sources/conclusion}
+
+\bibliographystyle{splncs04}
+\bibliography{paper}
+
+
+\newpage
+\appendix
+\input{Sources/translation.mng}
+
+
+\end{document}

@@ -1,0 +1,4 @@
+@default_files = ('paper.tex');
+
+$pdflatex= 'pdflatex -synctex=1 --shell-escape %O %S';
+$pdf_mode = 1;

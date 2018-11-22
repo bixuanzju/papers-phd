@@ -1,0 +1,188 @@
+ESOP '18 Paper #2 Reviews and Comments
+===========================================================================
+Paper #40 Coherent Nested Composition with Disjoint Intersection Types
+
+
+Review #40A
+===========================================================================
+
+Overall merit
+-------------
+A. Accept (Good paper. I will champion it at the PC meeting.)
+
+Reviewer expertise
+------------------
+X. Expert
+
+Paper summary
+-------------
+This paper presents λi+, a calculus with disjoint intersection types that extends prior work with more expressiveness. The additional expressiveness comes from relaxed disjointness conditions as well as additional subtyping rules (based on/extended from Barendregt et al, aka BCD sub tying). This expressiveness allows λi+ to encode examples of nested composition, such as Ernst’s family polymorphism based solution to the Expression problem.
+
+The technical challenge addressed by this paper is that of maintaining the coherence of the calculus. The authors observe that purely syntactic proof techniques are not adequate in this setting, and therefore prove coherence semantically, through logical relations. Because the semantics of λi+ are given by translation to a calculus without intersections but with pairs and coercions, the proof of coherence must take into account the fact that target terms can be ambiguous despite the fact that terms that come from elaboration of λi+ terms cannot. This leads the authors to reason about source and target contexts, and have an heterogeneous relation. The main structure and interesting insights of the proofs are all presented in the paper, with details postponed to appendix.
+
+Finally, the paper also presents an algorithmic subtyping relation, which paves the way for an actual implementation that the authors have developed. The algorithmic presentation is proved to be sound and complete. The technical insight here is an adaptation of Pierce’s technique, with some tweaks. The proofs are mechanized in Coq, which has the nice consequence of leading the authors to discover missing lemmas and oversights in Pierce’s manual proof.
+
+The paper concludes with an extensive discussion of related work and possible extensions towards a more full-fledged language.
+
+Comments for author
+-------------------
+I find this article extremely well written and compelling. The λi+ calculus is likely to serve as the cornerstone of further developments on the foundations of advanced OO languages, and sheds interesting light on the subtleties associated with intersection types. The calculus presented here is both simpler, more elegant, and more powerful than prior work. The need for a semantic proof technique is also well-motivated and valuable. The presentation is technical but written in a very accessible manner, communicating the key insights that allowed both the design and the proofs to go through.
+
+The weakest point in the presentation is the description of algorithmic subtyping. The writing does not manage to communicate clearly the intuition about how (and why!) the algorithm works.
+
+
+**Questions:**
+
+3.2
+- why are distributivity rules only allowed in one direction? (eg. why isn’t A1 → A2 & A3 <: (A1 → A2) & (A1 → A3) also valid?)
+
+Fig7
+- why require termination in the formulation of the logical relation? (E[[t1;t2]])
+more relaxed formulations (using implication(s) instead of conjunction) would be sufficient, right?
+
+
+**Suggestions:**
+
+2.2.
+- explain that one cannot define implLangNegEval by composing the two existing implLangEval and implLangNeg directly (disjointness requirement)
+- give an intuition about why gbeta does not relate families through subtyping
+- space permitting, it would help to have a summary diagram with all the interfaces/implementations and their relations (impl-of, composition, subtyping) — it’s kind of easy to get lost with all the components involved with similarly-sounding names
+
+2.3.
+- recall that 1,,2 + 3 is well-typed because of subtyping
+- hint at why allowing overlapping at the type level can be interesting/helpful (ie. is the relaxation of disjointness purely motivated by meta-theoretical reasons?)
+
+2.4
+- recall that λi has no BCD subtyping
+
+5.1
+- add a quick example to illustrate L → A and its use.
+
+5.2
+- if space is missing to enhance the presentation (may it be for 5.1 or for 2), I would suggest to skip the details about why Pierce’s proof has mistakes. A footnote and a pointer to some external resource would be enough. The central point of the paper is not to illustrate those mistakes, but it is to properly communicate how algorithmic subtyping works, for instance.
+
+
+**Bug/details:**
+
+- Definition 3, the second occurrence of ⇔1 should be ⇔2 (premise about E2)
+- Title of 5.1 is weird (should it be “The Subtyping Algorithm”?)
+
+
+
+Review #40B
+===========================================================================
+
+Overall merit
+-------------
+C. Weak reject (Weak paper, though I will not fight strongly against it.)
+
+Reviewer expertise
+------------------
+X. Expert
+
+Paper summary
+-------------
+This paper introduces a lambda calculus with disjoint intersection types and an explicit merge operator. It allows for nested composition, i.e., intersection distributes over arrows and records and merging applies recursively to record components and function results accordingly. The semantics is defined by elaboration into a simply-typed lambda calculus with coercions.
+
+The main technical contribution of the paper is proving that this calculus is coherent, i.e., although subtyping is coercive and a given subtyping relation can often be derived in arbitrary many ways, all these derivations yield contextually equivalent elaboration terms. This result is proved by adopting existing logical relation techniques.
+
+
+Pro:
+
+* Expressive but pleasantly simple calculus
+* Interesting application of logical relations
+* Proofs are mechanized in Coq
+* Well-presented
+
+Con:
+
+* Some theorems are clearly stated wrong; in particular, the type soundness statement holds vacuously
+* Subtyping necessarily is coercive in this approach, which reduces its attraction for a broad range of languages
+* Elaboration is not fully abstract
+
+To a large part, this is a nice paper. The calculus is attractive, much of the formal development looks reasonable (and is mechanized), the paper is well-written. The approach taken in this paper indeed makes disjoint intersection types appear more attractive than in previous systems.
+
+However, I have a few quibbles. First, the approach relies on deep coercive subtyping in a way that may be (a) expensive and (b) will probably not interact well with features like mutable state (e.g., an efficient representation of objects with mutable fields).
+
+Moreover, the semantics seemingly can only be defined by elaboration, and this elaboration isn’t even fully abstract. The lack of full abstraction is the root of the complications with defining contextual equivalence that the paper is going through, but it may potentially have other undesirable consequences as well.
+
+Lastly, some of the Theorems are bogus as stated. For some it is probably just an oversight regarding inclusion of the necessary preconditions (I assume the Coq development has them). However, the Type Safety theorem for the target language is plain broken in the sense that it doesn’t capture the relevant property at all and in fact is vacuously true.
+
+The most relevant technical parts of the paper seem fine, though.
+
+Comments for author
+-------------------
+Sec. 3.3:
+
+* I would suggest including the definition of A * B, even if it is unremarkable. It is central to the system, and you already need it for the explanations in Section 4.2.
+
+Sec 3.4:
+
+* Your statement of Type Safety (Theorem 1) is broken. It neither includes the Preservation part, nor does it state Progress correctly. In particular, the conclusion is vacuously true by picking e’’ = e’. And even if ->* is replaced by —> or ->+ there is nothing implying that e’’ isn’t a stuck term.
+
+Sec 4.1:
+
+* Example 1 seems more complicated than necessary, since the simplest way to type 3 as Nat is merely using rule T-Lit (which is also needed for the shown cases).
+
+* Example 2 is demonstrating that your elaboration is not fully abstract.
+
+Sec 4.3:
+
+* Proof of Lemma 6, “to show that A is unique”, did you mean B?
+
+Sec. 4.4:
+
+* Corollaries 1-3 cannot possibly be correct as stated. They are missing all relevant preconditions regarding the relation between Gamma, E_i, and A.
+
+Sec 3 and 4:
+
+* It would improve the flow of the paper if you cut down on the repeated references to lambda-i. In most cases they aren’t relevant or helpful to understanding the explanations. Wouldn’t it be sufficient to compare to it in the Intro or Related Work section and drop comparisons elsewhere?
+
+Sec 6:
+
+* Dreyer & Rossberg’s MixML (ICFP ’08) may be related as well. Notably, it supports a form of explicit disjoint merge with nested composition and subtyping; like lambda-i+ it is defined by elaboration.
+
+
+
+Review #40C
+===========================================================================
+
+Overall merit
+-------------
+C. Weak reject (Weak paper, though I will not fight strongly against it.)
+
+Reviewer expertise
+------------------
+Y. Knowledgeable
+
+Paper summary
+-------------
+This paper presents a system of disjoint intersection types supporting nested composition and subtyping.
+This is inspired by previous works on disjoint intersection types [1] by the authors. The system in this paper differs mainly in two ways from the one in [1]:
+i) it supports a more general form of subtyping, including distributivity rules for intersection wrt function types,
+ii) the  disjointness property is not enforced for every intersection type but only for the one involved in a merge.
+Because of these modifications, the coherence syntactic proof of [1] needs to be revised. For this task the authors adapt an approach based on a logical relation recently introduced [2].
+
+[1]B. C. d. S. Oliveira, Z. Shi, and J. Alpuim. Disjoint intersection types. In ICFP, 2016.
+[2]D. Biernacki and P. Polesiuk. Logical relations for coherence of effect subtyping.
+In LIPIcs, 2015.
+
+Comments for author
+-------------------
+To better evaluate this paper, I think it is worth to separate the three main contributions of the system that the paper presents:
+1-a richer subtyping relation than the one in [1] which allows to have nested composition,
+2-a relaxed enforcement of the disjointness property wrt to [1],
+3-a proof of coherence by logical relations adapting the method from [2].
+
+The main issues I have with this paper concerns 1. In fact, the subtyping relation that the current system supports differs from the one in [1] in the support it offers for distributivity of the intersection with respect to the other type constructions. As the authors discuss, this kind of distributivity laws has been well known from many years. These are the laws making intersection types also semantics tools rather than just rigid syntactic tools. Because of this it is quite surprising that the authors previous system, on which this is built, didn’t use them and that the current paper has to fix this situation. In some sense, it seems like the paper is trying to rectify a previous mistake. If I am misunderstanding the difference between the two approaches, please correct me in the rebuttal.
+
+The second issue I have with the paper is that 2 is quite unrelated to 1. If I understand correctly, one could have 2 without 1. Similarly to the point before, 2 is about relaxing the definition of disjointness given in [1]. The way this is relaxed is by just requiring disjointness in the merge operation. While this may be practically relevant but it doesn’t seems like a a great contribution. Once again the feeling I have is that the authors are trying to rectify some design choices from previous works.
+
+The third issue I have is about the logical relations methods used by the authors. This is an adaptation of the method proposed recently in [2], and inspired by old works on coherence of subtyping. I don’t see a clear contribution in solving the difficulties involved in adapting this technique to the current setting. It is normal to have differences when one try to use logical relations designed for a slightly different goal but these differences seems to require quite straightforward changes. Again, please correct me in the rebuttal if you think I am misunderstanding the difficulties.
+
+Overall, although I enjoyed reading this paper, I think that the paper contains several small interesting contributions/observations/improvements but that taken all together they just give small improvements with respect to previous works.
+
+An additional small issue I have is about the other claims of the paper. In p4 the paper claims as contributions an implementation and a coq formalization. Without a discussion of them in the paper, I don’t see a point in putting them here. Is there anything interesting that you learnt in implementing and formalize them? If yes, discuss it in the paper. If not, then they do not really strengthen your argument.
+
+You may also want to look at this recent paper:
+Yizhou Zhang, Andrew C. Myers: Familia: unifying interfaces, type classes, and family polymorphism. PACMPL 1(OOPSLA): 70:1-70:31 (2017)

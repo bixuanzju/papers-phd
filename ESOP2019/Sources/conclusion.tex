@@ -1,0 +1,23 @@
+
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+
+We have proposed \fnamee, a type-safe and coherent calculus with disjoint
+intersection types, BCD subtyping and parametric polymorphism. \fnamee improves
+the state-of-art of compositional designs, and enables the development of highly
+modular and reusable programs. One interesting and useful further extension
+would be implicit polymorphism. For that we want to combine
+Dunfield and Krishnaswami's approach~\cite{dunfield2013complete} with our bidirectional type system.
+We would also like to study the parametricity of \fnamee. As we have seen in
+\cref{sec:failed:lr}, it is not at all obvious how to extend the standard
+logical relation of System F to account for disjointness, and avoid potential
+circularity due to impredicativity. A promising solution is to use step-indexed
+logical relations~\cite{ahmed2006step}. 
+% TOM: This sentence is broken. Do we even need it?
+% We have yet investigated further on that direction.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: "../paper.bib"
+%%% End:

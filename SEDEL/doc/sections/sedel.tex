@@ -1,0 +1,360 @@
+\section{Object Algebras and Extensible Visitors in \name}
+\label{sec:OA}
+
+This section shows that \name's features are enough for encoding extensible
+designs for Object Algebras and Extensible Visitors that have been presented in
+mainstream languages. Moreover \name addresses limitations of those languages
+mentioned in Section~\ref{sec:critique}, making those designs significantly
+simpler and convenient to use. There are two main advantages of \name over
+existing languages:
+\begin{enumerate}
+\item \name does not couple inheritance and subtyping. Moreover
+\name supports contravariant parameter types in the subtyping
+relation. This enables \name to account for the \emph{correct
+subtyping relations} between datatypes modelled with Object Algebras
+and Extensible Visitors.
+\item \name supports an expressive form of dynamic inheritance. This form
+  of inheritance is sufficient to directly express (delegation-based) composition
+  operators for Object Algebras~\cite{oliveira2012extensibility}, without any boilerplate or meta-programming.
+\end{enumerate}
+
+These two features avoid the use of low-level (and type-unsafe) programming
+techniques, and make the designs less reliant on advanced
+features of generics.
+
+
+\subsection{First-Class Object Algebras Values: A Case for Inheritance
+is not Subtyping}
+\label{sec:objectalgebra}
+
+\cite{oliveira2012extensibility} proposed a design pattern that can solve the
+Expression Problem~\cite{wadler1998expression} in languages like Java. An
+advantage of the pattern over previous solutions is that it is relatively
+lightweight in terms of type system features. However, a problem with Object
+Algebras is that it is hard to pass values built with Object Algebras around,
+since there are no concrete expressions/AST types. This problem happens, not
+because this is a fundamental limitation of Object Algebras, but because the
+type systems of OO languages like Java or Scala are too restricted to express
+the types of first-class Object Algebra values directly. Fortunately \name has no
+such restriction as illustrated next.
+
+\paragraph{Simple expressions}
+To start, we begin with a very simple system modelling arithmetic expressions and
+evaluation. The initial system constitutes expressions with two variants
+(literals and additions), as depicted below:
+\lstinputlisting[linerange=4-9]{../../examples/application.sl}% APPLY:linerange=ALGEBRA_DEF
+
+\noindent The type \lstinline{ExpAlg[E]}, constitutes the so-called Object
+Algebra interface. A concrete Object Algebra will implement such an interface by
+instantiating the type parameter with a type that constructs objects for a
+particular purpose.
+
+% The first component abstracts over the type of literal
+% expressions (\lstinline{Int -> E}). The second component abstracts over the type
+% of addition expression (\lstinline{E -> E -> E}).
+
+\paragraph{Operations.} An interesting operation over expressions is
+evaluation. The first step is to choose a suitable concrete type for
+instantiating the type parameter \lstinline{E}. One such suitable type is:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=EVAL_DEF
+Using \lstinline{IEval}, we can define a trait that implements the evaluation
+rule for each variant:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=EVAL_IMPL
+
+\paragraph{Second-class Object Algebra Values} In the original pattern
+proposed by \cite{oliveira2012extensibility}, concrete values are built with
+functions that abstract over concrete Object Algebras. For example:
+
+\lstinputlisting[linerange=-]{}% APPLY:linerange=MKVALUE_DEF
+
+\noindent builds an expression that adds $2$ and $3$. One way to
+interpret this code is that Object Algebras act as \emph{factories}
+that build values of some \emph{abstract} type \lstinline{E}. However
+suppose we wanted to express something like:
+
+\begin{lstlisting}
+def eval (e : Exp) : Double = ...
+\end{lstlisting}
+
+\noindent where \lstinline{Exp} here is supposed to represent a
+concrete type for values built using Object Algebras. Unfortunately, in languages
+such as Java, it is hard to define such concrete type for values
+without giving up extensibility and the expected subtyping  relations.
+
+\paragraph{First-class Object Algebra values in \name}
+In \name the actual type of arithmetic expressions is:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=CHURCH_DEF
+An attentive reader may immediately recognize this is a variant of the \textsc{Visitor}
+pattern. Indeed, as already noted by \cite{oliveira2012extensibility}, Object
+Algebras are closely related to internal visitors~\cite{Oliveira_2008}. However, \emph{Object
+Algebras in languages like Java or Scala do not define the type
+\lstinline{Exp} because this would preclude extensibility in those
+languages}. Nevertheless in \name it is still possible to define
+\lstinline{Exp} and retain extensibility. In essence, the type
+\lstinline{Exp} simply encapsulates the type
+of the \lstinline{mkExp} method. With \lstinline{Exp}, the expression \lstinline{2 + 3} is
+built as:
+
+\lstinputlisting[linerange=-]{}% APPLY:linerange=EXPRESSION1_EG
+
+\noindent \name provides a lightweight syntax for writing first-class functions,
+e.g., \lstinline{\x -> x + 1}, and big lambda (\lstinline{/\}) to introduce type
+variables. Note that the code is almost the same as before, but the expression
+now has a concrete type, rather than being a function. With \lstinline{Exp} we
+can easily abstract over values, as we will see later.
+
+
+\paragraph{Add a subtraction variant.} Interesting things happen when a new
+variant, such as subtraction is added. To do so, we need to extend both
+\lstinline{ExpAlg[E]} , \lstinline{evalAlg} and create a more refined type for
+expressions with subtraction:
+
+\lstinputlisting[linerange=33-39]{../../examples/application.sl}% APPLY:linerange=SUB_DEF
+
+\noindent Firstly, \lstinline{SubExpAlg[E]} defines an extended algebra interface that
+contains the variants of the original plus the new subtraction variant.
+Intersection types are used to model subtyping. Secondly, \lstinline{subEvalAlg}
+inherits from \lstinline{evalAlg} and complements it with the subtraction case.
+Finally, a new type of expressions (\lstinline{ExtExp}) with subtraction is
+needed. It is important to note that the \lstinline{accept} method now takes the
+new algebra \lstinline{SubExpAlg[E]} as argument.
+
+\paragraph{Inheritance is not subtyping.} In the presence of subtyping, there
+are interesting subtyping relations between ASTs and their
+extensions~\cite{oliveira09modular}. Interestingly in the new system, subtyping
+follows the opposite direction of the extension. In other words, subtyping is
+contravariant with respect to the extension. First note that
+\lstinline{SubExpAlg[E]} appears in a parameter position of \lstinline{accept}
+and the function constructor is \textit{contravariant} in parameter types. Thus
+\lstinline{ExtExp} should be a \textit{supertype} of \lstinline{Exp}. By
+contrast, in common OO languages, subtyping and inheritance always go along
+together. For example, Java/Scala forbid any kind of type-refinement on method
+parameter types. The consequence of this is that in those languages, it is
+impossible to express that \lstinline{ExtExp} is both an extension and a
+supertype of \lstinline{Exp}. In \name, however, \lstinline{ExtExp} is indeed a supertype
+of \lstinline{Exp}.
+
+\paragraph{Add a new operation.} The second type of extension is adding a new
+operation, such as pretty printing. Similar to evaluation, the interface of the
+pretty printing feature is modelled as:
+\lstinputlisting[linerange=22-28]{../../examples/application.sl}% APPLY:linerange=PRINT_DEF
+The implementation is straightforward:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=PRINT_IMPL
+
+\paragraph{Abstracting over Object Algebra values.} We now can abstract over
+values of \lstinline{Exp} and \lstinline{ExtExp}. For example the evaluator and
+pretty-printer for expressions with subtraction (\lstinline{ExtExp}) are defined
+as follows:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=EVAL_PRINT
+To test our functions we create some values of type \lstinline{ExtExp} as
+follows:
+%We define two expressions, one of type \lstinline{Exp}, the other
+%\lstinline{ExtExp}:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=EXPRESSION2_EG
+Notice how we reuse \lstinline{e1} in the definition of
+\lstinline{e2}, even though they have \emph{different types}. This is
+possible by calling the \lstinline{accept}
+method of \lstinline{Exp} on a subtype (\lstinline{SubExpAlg})
+of \lstinline{ExpAlg}.
+
+\paragraph{Client code}
+The following example illustrates a simple test program of the
+functionality, using \lstinline{print} and \lstinline{eval}, as well
+as the values defined previously:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=VISITOR_EG
+
+\noindent Note how \lstinline{print} and \lstinline{eval} can be
+safely applied to \lstinline{e1} (of type \lstinline{Exp}) since
+\lstinline{Exp} is a \emph{subtype} of \lstinline{ExtExp}.
+
+\subsection{Native Dynamic Object Algebra Composition Support}
+\label{sec:dynamic}
+
+When programming with Object Algebras, oftentimes it is
+necessary to pack multiple operations in the same object. For example,
+in the simple language we have been developing it may be useful to
+create an object that contains both printing and evaluation.
+%The solution to the Expression Problem presented so far has a wrinkle in its usage. To be able to call
+%different operations from the same expression \lstinline{e}, we need to make two
+%copies \lstinline{o1} and \lstinline{o2}: one is used for printing, while the
+%other is used for evaluation. A better approach is to allow a single object
+%to be created that supports both the printing and evaluation features.
+%Unfortunately, dynamic composition of algebras is non-trivial.
+\cite{oliveira2012extensibility} addressed this problem by proposing
+\textit{Object Algebra combinators} that combine multiple algebras into one.
+However, as they noted, such combinators written in Java are difficult to use in
+practice, and they require significant amounts of boilerplate. Improved variants
+of Object Algebra combinators have been encoded in Scala using intersection
+types and an encoding of the merge construct~\cite{oliveira2013feature,
+  rendel14attributes}. Unfortunately, the Scala encoding of the merge construct
+is quite complex as it relies on low-level type-unsafe programming features such
+as dynamic proxies, reflection or other meta-programming techniques. In \name
+there is no need for such complex encoding, as the merge construct is natively
+supported. This allows type-safe, coherent and boilerplate-free composition of
+Object Algebras.
+
+% \paragraph{Merge in \name} Section~\ref{sec:scala-merge} points out that in Scala
+% intersection types are not completely first class, since it is hard to
+% build values of intersections with unknown components. In \name,
+% however, this is trivial. The \lstinline{merge} operation discussed
+% in Section~\ref{sec:scala-merge} can be written as:
+% \lstinputlisting[linerange=4-4]{../../examples/merge.sl}% APPLY:linerange=MERGE_EG
+
+% \noindent From the typing point of view, the difference between
+% \lstinline{merge} in Scala and \name is that the type variable
+% \lstinline{B} now has a \emph{disjointness constraint}. The notation
+% \lstinline{B * A} means that the type variable \lstinline{B} can be instantiated
+% to any types that are disjoint to the type \lstinline{A}. This is
+% crutial to ensure that the composition between \lstinline{x} and \lstinline{y}
+% is well-formed. That is, there are no conflicts between the two objects.
+
+\subsubsection{Boilerplate-free composition of Object Algebras}
+%An acute reader may have smelled some boilerplate code in the definition of
+%\lstinline{combine}. After all, \lstinline{combine} just invokes the
+%corresponding method on the arguments, which is solely driven by the types of
+%the two input algebras and the resulting algebra.
+The merge construct (cf. Section~\ref{sec:merge-construct}) in \name is quite
+powerful. Using trait inheritance (which is just syntactic sugar to the merge
+construct) it is possible to compose two Object Algebras in a trivial way:
+
+%is, in general, the type
+%system behind \name is powerful enough to derive such definition for us:
+%\lstinline{combine} is no more than just the merge of two algebras!
+
+\lstinputlisting[linerange=50-50]{../../examples/visitor3.sl}% APPLY:linerange=COMBINE_DEF
+
+That is it. None of the boilerplate in other approaches~\cite{oliveira2012extensibility}, or type-unsafe
+meta-programming techniques~\cite{oliveira2013feature,rendel14attributes} of other approaches are needed! Three points are
+worth noting: 1) \lstinline{combine} relies on \textit{dynamic inheritance}.
+Notice how we let \lstinline{combine} inherit \lstinline{f & g}, for which the
+implementation is unknown statically; 2) \name supports multiple inheritance of
+traits with the same type: both \lstinline{f} and \lstinline{g} are traits of
+the \emph{same} subtraction algebra \lstinline{SubExpAlg} and 3) disjointness
+constraint (\lstinline{B * A}) is \textit{crucial} to make sure two Object
+Algebras (\lstinline{f} and \lstinline{g}) are disjoint in order to avoid
+conflicts when being composed. Type systems for many OO languages are too
+inflexible to express this kind of flexible and dynamic inheritance. \name hits
+a sweet spot in the design space of being dynamic, while retaining much
+of the flexibility of dynamic languages, and without sacrificing the type-safety and
+coherence guarantees.
+
+With \lstinline{combine} at hand, we can finally have an object \lstinline{o}
+that is able to print and evaluate at the same time:
+
+\lstinputlisting[linerange=58-61]{../../examples/visitor3.sl}% APPLY:linerange=COMBINE1_TEST
+
+
+\begin{comment}
+which is of type
+\lstinline{Exp}, to \lstinline{sub}, which expects a value of type
+\lstinline{ExtExp}. This works precisely because \lstinline{Exp} is a
+\textit{subtype} of \lstinline{ExtExp}. An acute reader by now may find an issue
+about code reuse, i.e., we cannot reuse constructors! For example, the following
+is rejected:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=EXPRESSION_WRONG
+Instead, \lstinline{e3} should be written as follow:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=EXPRESSION_CORRECT
+Although, admittedly, creating expressions like this is slightly more
+cumbersome.
+\end{comment}
+
+
+\begin{comment}
+The combinator is defined by the \lstinline{combine} trait, which takes two
+algebras to create a combined algebra. It does so by appropriately delegating
+behaviours in each component algebra to the combined algebra.
+
+\lstinputlisting[linerange=-]{}% APPLY:linerange=COMBINE1_DEF
+
+\bruno{Well, the previous subsection already introduces parametric
+  polymorphism, so this discussion comes too late!}
+Something new appears the above trait declaration. \name supports parametric
+polymorphism. In \name, type variables use uppercase letters. Following the work
+of~\cite{alpuimdisjoint}, \name uses an extension to universal quantification
+called \textit{disjoint quantification}, where a type variable can be
+constrained so that it is disjoint with a given type (\lstinline{B * A} for
+example). Parametric polymorphism is need because \lstinline{combine} must
+compose algebras with arbitrary type parameters. A disjointness constraint is
+needed to ensure that two input algebras build values of disjoint types
+(otherwise ambiguity could arise).
+\end{comment}
+
+\begin{comment}
+\paragraph{Data constructors.} Using \lstinline{Exp} the two data constructors
+are defined as follows:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=DC_DEF
+% Note that the notation \lstinline{/\E} is type abstraction: it introduces a type
+% variable in the environment.
+\end{comment}
+
+\begin{comment}
+In a
+latter paper, Oliveira et al.~\cite{} noted some limitations of the
+original design pattern and proposed some new techniques
+that generalized the original pattern, allowing it to express
+programs in a Feature-Oriented Programming~\cite{} style. Key
+to these techniques was the ability to dynamically compose
+Object Algebras.
+
+Unfortunately, dynamic composition of Object Algebras
+is non-trivial. At the type-level it is possible to express the
+resulting type of the composition using intersection types.
+Thus, it is still possible to solve that part problem nicely in a
+language like Scala (which has basic support for intersection
+types). However, the dynamic composition itself cannot be
+easily encoded in Scala. The fundamental issue is that Scala
+lacks a merge operator (see the discussion in Section~\ref{}).
+Although both Oliveira et al.~\cite{} and Rendell et al.~\cite{}
+have shown that such a merge operator can be encoded in
+Scala, the encoding fundamentally relies in low-level programming
+techniques such as dynamic proxies, reflection or
+meta-programming.
+
+Because \name supports a merge operator natively, dynamic
+Object Algebra composition becomes easy to encode. The
+remainder of this section shows how Object Algebras and
+Object Algebra composition can be encoded in \name. We will
+illustrate this point step-by-step by solving the Expression
+Problem~\cite{}.
+
+\name provides two main advantages:
+
+\begin{itemize}
+
+\item {\bf First-class Object Algebra values:} Due to the separation
+  of inheritance and subtyping, \name can express first-class Object
+  Algebra values. The key aspect is that AST extensions become
+  supertypes of the original ASTs. This is unexpressible in many
+  languages, but expressible in \name.
+
+\item {\bf Built-in composition for Object Algebras:} The inheritance
+  mechanisms of \name can express Object Algebra delegation-based composition operators~\cite{}
+  directly. This is in contrast to previous work, where such operators
+  have to be encoded, with significant amounts of boilerplate, with
+  either pairs or intersection types. Moreover, the built-in support
+  for composition operators \emph{guarantees} safe and unambiguous
+  composition, which is not guaranteed in previous work.
+
+\end{itemize}
+
+Various solutions to the Expression Problem~\cite{wadler1998expression} in the
+literature~\cite{finally-tagless,oliveira09modular,DelawareOS13,oliveira2012extensibility,
+  swierstra:la-carte} are closely related to type-theoretic encodings of
+datatypes. Indeed, variants of the same idea keep appearing in different
+programming languages, because the encoding of the idea needs to exploit the
+particular features of the programming language (or theorem prover).
+Unfortunately language-specific constructs obscure the key ideas behind those
+solutions. In this section we presents \name's solution to the Expression
+Problem that intends to capture the key ideas of various solutions in the
+literature.
+
+\subsection{Extensibility and Subtyping}
+\label{sec:extensibility}
+\end{comment}
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% End:

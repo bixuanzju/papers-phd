@@ -1,0 +1,421 @@
+
+\section{Declarative System}
+
+
+\begin{center}
+\begin{tabular}{lrcl} \toprule
+  Types & $[[A]], [[B]]$ & \syndef & $[[int]] \mid [[a]] \mid [[A -> B]] \mid [[\/ a. A]] \mid [[unknown]] \mid [[static]] \mid [[gradual]] $ \\
+  Monotypes & $[[t]], [[s]]$ & \syndef & $ [[int]] \mid [[a]] \mid [[t -> s]] \mid [[static]] \mid [[gradual]]$ \\
+  Castable Types & $[[gc]]$ & \syndef & $ [[int]] \mid [[a]] \mid [[gc1 -> gc2]] \mid [[\/ a. gc]] \mid [[unknown]] \mid [[gradual]] $ \\
+  Castable Monotypes & $[[tc]]$ & \syndef & $ [[int]] \mid [[a]] \mid [[tc1 -> tc2]] \mid [[gradual]]$ \\
+
+  Contexts & $[[dd]]$ & \syndef & $[[empty]] \mid [[dd, x: A]] \mid [[dd, a]] $ \\
+  Colored Types & $[[A]], [[B]]$ & \syndef & $ [[r@(int)]] \mid [[b@(int)]] \mid [[r@(a)]] \mid [[b@(a)]] \mid [[A -> B]] \mid [[r@ \/ a . A]] \mid [[b@ \/ a. A]] \mid [[b@(unknown)]] \mid [[r@(static)]] \mid [[r@(gradual)]] \mid [[b@(gradual)]]$\\
+  Blue Castable Types & $[[b@(gc)]]$ & \syndef & $ [[b@(int)]] \mid [[b@(a)]] \mid [[b@(gc1) -> b@(gc2)]] \mid [[b@ \/ a. b@(gc)]] \mid [[b@(unknown)]] \mid [[b@(gradual)]] $ \\
+  Blue Monotypes & $[[b@(t)]]$ & \syndef & $ [[b@(int)]] \mid [[b@(a)]] \mid [[b@(t -> s)]] \mid [[b@(gradual)]]$ \\
+  Red Monotypes & $[[r@(t)]]$ & \syndef & $ [[r@(int)]] \mid [[r@(a)]] \mid [[ r@(t)  -> r@(s)]] \mid [[ r@(t) -> b@(s) ]] \mid [[ b@(t) ->  r@(s) ]] \mid [[r@(static)]] \mid [[r@(gradual)]]$ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.7]
+    {#3}
+    {#4}
+}
+
+\drules[dconsist]{$ [[ A ~ B ]] $}{Type Consistent}{refl, unknownR, unknownL, arrow, forall}
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.7,right=\scriptsize{#1}]
+    {#3}
+    {#4}
+}
+
+\drules[s]{$ [[dd |- A <: B ]] $}{Subtyping}{forallR, forallLr, forallLb, tvarr, tvarb, intr, intb, arrow,
+  unknown, spar, gparr, gparb}
+
+
+% \begin{definition}[Specification of Consistent Subtyping]
+%   \begin{mathpar}
+%   \drule{cs-spec}
+%   \end{mathpar}
+% \end{definition}
+
+\drules[cs]{$ [[dd |- A <~ B ]] $}{Consistent Subtyping}{forallR, forallL, arrow, tvar, int, unknownL, unknownR, spar, gpar}
+
+\drules[]{$ [[dd |- e : A ~~> pe]] $}{Typing}{var, int, gen, lamann, lam, app}
+
+\drules[m]{$ [[dd |- A |> A1 -> A2]] $}{Matching}{forall, arr, unknown}
+
+
+\section{Target: PBC}
+
+\begin{center}
+\begin{tabular}{lrcl} \toprule
+  Terms & $[[pe]]$ & \syndef & $[[x]] \mid [[n]] \mid [[\x : A. pe]] \mid [[/\a. pe]] \mid [[pe1 pe2]] \mid [[<A `-> B> pe]] $
+  \\ \bottomrule
+\end{tabular}
+\end{center}
+
+
+\clearpage
+\section{Metatheory}
+
+% \renewcommand{\hlmath}{}
+
+\begin{definition}[Substitution]
+  \begin{enumerate}
+    \item Gradual type parameter substitution $\gsubst :: [[gradual]] \to [[tc]]$
+    \item Static type parameter substitution $\ssubst :: [[static]] \to [[t]]$
+    \item Type parameter Substitution $\psubst = \gsubst \cup \ssubst$
+  \end{enumerate}
+\end{definition}
+
+\ningning{Note substitution ranges are monotypes.}
+
+\begin{definition}[Translation Pre-order]
+  Suppose $[[dd |- e : A ~~> pe1]]$ and $[[dd |- e : A ~~> pe2]]$,
+  we define $[[pe1]] \leq [[pe2]]$ to mean $[[pe2]] = [[S(pe1)]]$ for
+  some $[[S]]$.
+\end{definition}
+
+
+\begin{proposition}
+  If $[[ pe1 ]] \leq [[pe2]]$ and $[[ pe2 ]] \leq [[pe1]]$, then $[[pe1]]$ and $[[pe2]]$
+  are equal up to $\alpha$-renaming of type parameters.
+\end{proposition}
+
+ 
+\begin{definition}[Representative Translation]
+  $[[pe]]$ is a representative translation of a typing derivation $[[dd |- e : A
+  ~~> pe]]$ if and only if for any other translation $[[dd |- e : A ~~> pe']]$ such that $[[pe']]
+  \leq [[pe]]$, we have $[[pe]] \leq [[pe']]$. From now on we use $[[rpe]]$ to
+  denote a representative translation.
+\end{definition}
+
+\begin{definition}[Measurements of Translation]
+  There are three measurements of a translation $[[pe]]$,
+  \begin{enumerate}
+  \item $[[ ||pe||e]]$, the size of the expression 
+  \item $[[ ||pe||s ]]$, the number of distinct static type parameters in $[[pe]]$
+  \item $[[ ||pe||g ]]$, the number of distinct gradual type parameters in $[[pe]]$
+  \end{enumerate}
+  We use $[[ ||pe|| ]]$ to denote the lexicographical order of the triple
+  $([[ ||pe||e ]], -[[ ||pe||s ]], -[[ ||pe||g ]])$.
+\end{definition}
+
+\begin{definition}[Size of types]
+
+  \begin{align*}
+    [[ || int ||  ]] &= 1 \\
+    [[ || a ||  ]] &= 1 \\
+    [[ || A -> B  ||  ]] &= [[ || A || ]] + [[ || B || ]] + 1 \\
+    [[ || \/a . A ||  ]] &= [[ || A || ]] + 1 \\
+    [[ || unknown ||  ]] &= 1 \\
+    [[ || static ||  ]] &= 1 \\
+    [[ || gradual ||  ]] &= 1
+  \end{align*}
+
+\end{definition}
+
+
+\begin{definition}[Size of expressions]
+
+  \begin{align*}
+    [[ || x ||e  ]] &= 1 \\
+    [[ || n ||e  ]] &= 1 \\
+    [[ || \x : A . pe ||e  ]] &= [[ || A || ]] + [[ || pe ||e ]] + 1 \\
+    [[ || /\ a. pe ||e  ]] &= [[ || pe ||e ]] + 1 \\
+    [[ || pe1 pe2 ||e  ]] &= [[ || pe1 ||e ]] + [[  || pe2 ||e ]] + 1 \\
+    [[ || < A `-> B> pe ||e  ]] &= [[ || pe ||e ]] + [[  || A || ]] + [[  || B || ]] + 1 \\
+  \end{align*}
+
+\end{definition}
+
+
+\begin{lemma} \label{lemma:size_e}
+  If $[[dd |- e : A ~~> pe]]$ then $[[ || pe ||e    ]] \geq [[ || e ||e   ]]  $.
+\end{lemma}
+\begin{proof}
+  Immediate by inspecting each typing rule.
+\end{proof}
+
+\begin{corollary} \label{lemma:decrease_stop}
+  If $[[dd |- e : A ~~> pe]]$ then $[[ || pe ||   ]] > ([[ || e ||e ]], -[[ || e ||e ]], -[[ || e ||e ]] )  $.
+\end{corollary}
+\begin{proof}
+  By \cref{lemma:size_e} and note that $ [[ || pe ||e   ]] > [[  || pe ||s  ]] $ and $ [[ || pe ||e   ]] > [[  || pe ||g  ]] $
+\end{proof}
+
+
+\begin{lemma} \label{lemma:type_decrease}
+  $[[ || A || ]] \leq [[ || S(A) || ]]  $.
+\end{lemma}
+\begin{proof}
+  By induction on the structure of $[[A]]$. The interesting cases are $[[ A ]] = [[static]]$ and
+  $[[ A ]] = [[gradual]]$. When $[[ A ]] = [[static]]$, $[[ S(A) ]] = [[t]]$
+  for some monotype $[[t]]$ and it is immediate that $[[ || static ||  ]]  \leq [[ || t || ]] $
+  (note that $[[ || static ||  ]] < [[ || gradual ||  ]] $ by definition).
+\end{proof}
+
+
+\begin{lemma}[Substitution Decreases Measurement]
+  \label{lemma:subst_dec_measure}
+  If $[[pe1]] \leq [[pe2]]$, then $ {[[ ||pe1|| ]]} \leq [[ ||pe2|| ]]$; unless
+  $[[pe2]] \leq [[pe1]]$ also holds, otherwise we have $[[ ||pe1|| ]] < [[ ||pe2|| ]]$.
+\end{lemma}
+\begin{proof}
+  Since $[[ pe1  ]] \leq [[  pe2  ]]$, we know $[[ pe2  ]] = [[ S(pe1)  ]]$ for some $[[S]]$. By induction on
+  the structure of $[[pe1]]$.
+
+  \begin{itemize}
+  \item Case $[[pe1]] = [[  \x : A . pe ]]$. We have
+    $[[ pe2  ]] = [[  \x : S(A) . S(pe)  ]]$. By \cref{lemma:type_decrease} we have $[[ || A || ]] \leq [[ || S(A) || ]]$.
+    By i.h., we have $[[ || pe ||  ]] \leq [[ || S(pe) ||  ]]$. Therefore $[[ || \x : A . pe ||    ]] \leq [[ || \x : S(A) . S(pe) ||  ]]$.
+  \item Case $[[pe1]] = [[ < A `-> B > pe  ]]$. We have
+    $[[pe2]] = [[ < S(A) `-> S(B) > S(pe)  ]]$.  By \cref{lemma:type_decrease} we have $[[ || A || ]] \leq [[ || S(A) || ]]$
+    and $[[ || B || ]] \leq [[ || S(B) || ]]$. By i.h., we have $[[ || pe ||  ]] \leq [[ || S(pe) ||  ]]$.
+    Therefore $[[  || < A `-> B > pe ||  ]] \leq [[ || < S(A) `-> S(B) > S(pe)  ||   ]]$.
+
+  \item The rest of cases are immediate.
+  \end{itemize}
+
+\end{proof}
+
+
+\begin{lemma}[Representative Translation for Typing]
+  For any typing derivation that $[[dd |- e : A]]$, there exists at least one representative
+  translation $r$ such that $[[dd |- e : A ~~> rpe]]$.
+\end{lemma}
+\begin{proof}
+We already know that at least one translation $[[pe]] = [[pe1]]$ exists
+for every typing derivation. If $[[pe1]]$ is a representative translation then we
+are done. Otherwise there exists another translation $[[pe2]]$ such that
+$[[pe2]] \leq [[pe1]]$ and $ [[pe1]] \not \leq [[pe2]]$. By
+\cref{lemma:subst_dec_measure}, we have $[[||pe2||]] < [[ ||pe1|| ]]$. We continue
+with $[[pe]] = [[pe2]]$, and get a strictly decreasing sequence $[[ || pe1 ||  ]], [[ || pe2 || ]], \dots$.
+By \cref{lemma:decrease_stop}, we know this sequence cannot be infinite long. Suppose it ends at $[[ || pen || ]]$,
+by the construction of the sequence, we know that $[[pen]]$ is a representative translation of $[[e]]$.
+\end{proof}
+
+
+\begin{conjecture}[Property of Representative Translation] \label{lemma:repr}
+  If $[[empty |- e : A ~~> pe]]$, $\erasetp s \Downarrow v$, then we
+  have $[[empty |- e : A ~~> rpe]]$, and $\erasetp r \Downarrow v'$.
+\end{conjecture}
+
+\ningning{shall we focus on values of type integer?}
+
+\begin{definition}[Erasure of Type Parameters]
+  \begin{center}
+\begin{tabular}{p{5cm}l}
+  $\erasetp \nat = \nat $ &
+  $\erasetp a = a $ \\
+  $\erasetp {A \to B} = \erasetp A \to \erasetp B $ &
+  $\erasetp {\forall a. A} = \forall a. \erasetp A$ \\
+  $\erasetp {\unknown} = \unknown  $&
+  $\erasetp {\static} = \nat  $\\
+  $\erasetp {\gradual} = \unknown  $\\
+\end{tabular}
+
+  \end{center}
+\end{definition}
+
+
+\begin{corollary}[Coherence up to cast errors]
+  Suppose $[[ empty |- e : int ~~> pe1 ]]$ and $[[ empty |- e : int ~~> pe2 ]]$, if $| [[ pe1 ]] | \Downarrow [[n]]$
+  then either $ | [[  pe2  ]] | \Downarrow n$ or $ | [[  pe2  ]] | \Downarrow \blamev$.
+\end{corollary}
+\jeremy{maybe Conjecture~\ref{lemma:repr} is enough to prove it? }
+
+
+\begin{conjecture}[Dynamic Gradual Guarantee]
+  Suppose $e' \lessp e$,
+  \begin{enumerate}
+  \item If $[[empty |- e : A ~~> rpe]]$, $\erasetp {r} \Downarrow v$,
+    then for some $B$ and $r'$, we have $[[ empty |- e' : B ~~> rpe']]$,
+    and $B \lessp A$,
+    and $\erasetp {r'} \Downarrow v'$,
+    and $v' \lessp v$.
+  \item If $[[empty |- e' : B ~~> rpe']]$, $\erasetp {r'} \Downarrow v'$,
+    then for some $A$ and $[[rpe]]$, we have $ [[empty |- e : A ~~> rpe]]$,
+    and $B \lessp A$. Moreover,
+    $\erasetp r \Downarrow v$ and $v' \lessp v$,
+    or $\erasetp r \Downarrow \blamev$.
+  \end{enumerate}
+\end{conjecture}
+
+
+
+\section{Efficient (Almost) Typed Encodings of ADTs}
+
+
+\begin{itemize}
+\item Scott encodings of simple first-order ADTs (e.g. naturals)
+\item Parigot encodings improves Scott encodings with recursive schemes, but
+  occupies exponential space, whereas Church encoding only occupies linear
+  space.
+\item An alternative encoding which retains constant-time destructors but also
+  occupies linear space.
+\item Parametric ADTs also possible?
+\item Typing rules
+\end{itemize}
+
+\begin{example}[Scott Encoding of Naturals]
+\begin{align*}
+  [[nat]] &\triangleq [[  \/a. a -> (unknown -> a) -> a ]] \\
+  \mathsf{zero} &\triangleq [[ \x . \f . x  ]] \\
+  \mathsf{succ} &\triangleq [[ \y : nat . \x . \f . f y ]]
+\end{align*}
+\end{example}
+Scott encodings give constant-time destructors (e.g., predecessor), but one has to
+get recursion somewhere. Since our calculus admits untyped lambda calculus, we
+could use a fixed point combinator.
+
+\begin{example}[Parigot Encoding of Naturals]
+\begin{align*}
+  [[nat]] &\triangleq [[  \/a. a -> (unknown -> a -> a) -> a ]] \\
+  \mathsf{zero} &\triangleq [[ \x . \f . x  ]] \\
+  \mathsf{succ} &\triangleq [[ \y : nat . \x . \f . f y (y x f) ]]
+\end{align*}
+\end{example}
+Parigot encodings give primitive recursion, apart form constant-time
+destructors, but at the cost of exponential space complexity (notice in
+$\mathsf{succ}$ there are two occurances of $[[y]]$).
+
+Both Scott and Parigot encodings are typable in System F with positive recursive
+types, which is strong normalizing.
+
+\begin{example}[Alternative Encoding of Naturals]
+\begin{align*}
+  [[nat]] &\triangleq [[  \/a. a -> (unknown -> (unknown -> a) -> a) -> a ]] \\
+  \mathsf{zero} &\triangleq [[ \x . \f . x  ]] \\
+  \mathsf{succ} &\triangleq [[ \y : nat . \x . \f .  f y (\g . g x f) ]]
+\end{align*}
+\end{example}
+This encoding enjoys constant-time destructors, linear space complexity, and
+primitive recursion.
+The static version is $[[ mu b . \/ a . a -> (b -> (b -> a) -> a) -> a ]]$,
+which can only be expressed in System F with
+general recursive types (notice the second $[[b]]$ appears in a negative position).
+
+
+
+
+
+\section{Algorithmic System}
+
+\begin{center}
+\begin{tabular}{lrcl} \toprule
+  Expressions & $[[ae]]$ & \syndef & $[[x]] \mid [[n]] \mid [[\x : aA . ae]] \mid [[\x . ae]] \mid [[ae1 ae2]] \mid [[ae : aA]] $ \\
+  Existential variables & $[[evar]]$ & \syndef & $[[sa]]  \mid [[ga]]  $   \\
+  Types & $[[aA]], [[aB]]$ & \syndef & $ [[int]] \mid [[a]] \mid [[evar]] \mid [[aA -> aB]] \mid [[\/ a. aA]] \mid [[unknown]] \mid [[static]] \mid [[gradual]] $ \\
+  Static Types & $[[aT]]$ & \syndef & $ [[int]] \mid [[a]] \mid [[evar]] \mid [[aT1 -> aT2]] \mid [[\/ a. aT]] \mid [[static]] \mid [[gradual]] $ \\
+  Monotypes & $[[at]], [[as]]$ & \syndef & $ [[int]] \mid [[a]] \mid [[evar]] \mid [[at -> as]] \mid [[static]] \mid [[gradual]]$ \\
+  Castable Monotypes & $[[atc]]$ & \syndef & $ [[int]] \mid [[a]] \mid [[evar]] \mid [[atc1 -> atc2]] \mid [[gradual]]$ \\
+  Castable Types & $[[agc]]$ & \syndef & $ [[int]] \mid [[a]] \mid [[evar]] \mid [[agc1 -> agc2]] \mid [[\/ a. agc]] \mid [[unknown]] \mid [[gradual]] $ \\
+  Static Castable Types & $[[asc]]$ & \syndef & $ [[int]] \mid [[a]] \mid [[evar]] \mid [[asc1 -> asc2]] \mid [[\/ a. asc]] \mid [[gradual]] $ \\
+  Contexts & $[[GG]], [[DD]], [[TT]]$ & \syndef & $[[empty]] \mid [[GG , x : aA]] \mid [[GG , a]] \mid [[GG , evar]] \mid [[GG, evar = at]] $ \\
+  Complete Contexts & $[[OO]]$ & \syndef & $[[empty]] \mid [[OO , x : aA]] \mid [[OO , a]] \mid [[OO, evar = at]]$ \\ \bottomrule
+\end{tabular}
+\end{center}
+
+
+
+\begin{definition}[Existential variable contamination] \label{def:contamination}
+  \begin{align*}
+    [[ [aA] empty    ]] &= [[empty]] \\
+    [[ [aA] (GG, x : aA)  ]] &= [[ [aA] GG , x : aA     ]] \\
+    [[ [aA] (GG, a)  ]] &= [[ [aA] GG , a     ]] \\
+    [[ [aA] (GG, sa)  ]] &= [[ [aA] GG , ga , sa = ga  ]]  \quad \text{if $[[sa in fv(aA)]]$ }    \\
+    [[ [aA] (GG, ga)  ]] &= [[ [aA] GG , ga     ]] \\
+    [[ [aA] (GG, evar = at)  ]] &= [[ [aA] GG , evar = at     ]] \\
+  \end{align*}
+\end{definition}
+
+
+
+\drules[ad]{$ [[GG |- aA ]] $}{Well-formedness of types}{int, unknown, static, gradual, tvar, evar, solvedEvar, arrow, forall}
+
+\drules[wf]{$ [[ |- GG ]] $}{Well-formedness of algorithmic contexts}{empty, var, tvar, evar, solvedEvar}
+
+\drules[as]{$ [[GG |- aA <~ aB -| DD ]] $}{Algorithmic Consistent Subtyping}{tvar, evar, int, arrow, forallR, forallL, spar, gpar, unknownL, unknownR, instL, instR}
+
+\drules[instl]{$ [[ GG |- evar <~~ aA -| DD   ]] $}{Instantiation I}{solveS, solveG, solveUS, solveUG, reachSGOne, reachSGTwo, reachOtherwise, arr, forallR}
+
+\drules[instr]{$ [[ GG |- aA <~~ evar -| DD   ]] $}{Instantiation II}{solveS, solveG, solveUS, solveUG, reachSGOne, reachSGTwo, reachOtherwise, arr, forallL}
+
+\drules[inf]{$ [[ GG |- ae => aA -| DD ]] $}{Inference}{var, int, lamann, lam, anno, app}
+
+\drules[chk]{$ [[ GG |- ae <= aA -| DD ]] $}{Checking}{lam, gen, sub}
+
+\drules[am]{$ [[ GG |- aA |> aA1 -> aA2 -| DD ]] $}{Algorithmic Matching}{forall, arr, unknown, var}
+
+\drules[ext]{$ [[ GG --> DD  ]] $}{Context extension}{id, var, tvar, evar, solvedEvar, solveS, solveG, add, addSolveS, addSolveG}
+
+
+
+\clearpage
+
+
+\section{Metatheory}
+
+\begin{restatable}[Instantiation Soundness]{mtheorem}{instsoundness} \label{thm:inst_soundness}%
+  Given $[[ DD --> OO ]]$ and $[[ [GG]aA = aA ]]$ and  $[[evar notin fv(aA)]]$:
+
+  \begin{enumerate}
+  \item If $[[GG |- evar <~~  aA -| DD ]]$ then $[[  [OO]DD |- [OO]evar <~ [OO]aA  ]] $.
+  \item If $[[GG |- aA <~~ evar -| DD ]]$ then $[[  [OO]DD |- [OO]aA <~ [OO]evar  ]] $.
+  \end{enumerate}
+\end{restatable}
+
+
+\begin{restatable}[Soundness of Algorithmic Consistent Subtyping]{mtheorem}{subsoundness} \label{thm:sub_soundness}%
+  If $[[  GG |- aA <~ aB -| DD ]]$ where $[[ [GG]aA = aA  ]]$ and $[[  [GG] aB = aB  ]]$ and $[[  DD --> OO ]]$ then
+  $[[  [OO]DD |- [OO]aA <~ [OO]aB   ]]$.
+\end{restatable}
+
+
+
+\begin{restatable}[Soundness of Algorithmic Typing]{mtheorem}{typingsoundness} \label{thm:type_sound}%
+  Given $[[DD --> OO]]$:
+  \begin{enumerate}
+  \item If $[[  GG |- ae => aA -| DD  ]]$ then $\exists [[e']]$ such that $ [[  [OO]DD |- e' : [OO] aA  ]]   $ and $\erase{[[ae]]} = \erase{[[e']]}$.
+  \item If $[[  GG |- ae <= aA -| DD  ]]$ then $\exists [[e']]$ such that $ [[  [OO]DD |- e' : [OO] aA  ]]   $ and $\erase{[[ae]]} = \erase{[[e']]}$.
+  \end{enumerate}
+\end{restatable}
+
+\begin{restatable}[Instantiation Completeness]{mtheorem}{instcomplete} \label{thm:inst_complete}
+  Given $[[GG --> OO]]$ and $[[aA = [GG]aA]]$ and $[[evar]] \notin \textsc{unsolved}([[GG]]) $ and $[[  evar notin fv(aA)  ]]$:
+  \begin{enumerate}
+  \item If $[[ [OO]GG |- [OO] evar <~ [OO]aA   ]]$ then there are $[[DD]], [[OO']]$ such that $[[OO --> OO']]$
+    and $[[DD --> OO']]$ and $[[GG |- evar <~~ aA -| DD]]$.
+  \item If $[[ [OO]GG |- [OO]aA  <~ [OO] evar  ]]$ then there are $[[DD]], [[OO']]$ such that $[[OO --> OO']]$
+    and $[[DD --> OO']]$ and $[[GG |- aA <~~ evar -| DD]]$.
+  \end{enumerate}
+
+\end{restatable}
+
+
+\begin{restatable}[Generalized Completeness of Consistent Subtyping]{mtheorem}{subcomplete} \label{thm:sub_completeness}
+  If $[[ GG --> OO  ]]$ and $[[ GG |- aA  ]]$ and $[[ GG |- aB  ]]$ and $[[  [OO]GG |- [OO]aA <~ [OO]aB  ]]$ then
+  there exist $[[DD]]$ and $[[OO']]$ such that $[[DD --> OO']]$ and $[[OO --> OO']]$ and $[[  GG |- [GG]aA <~ [GG]aB -| DD ]]$.
+\end{restatable}
+
+
+\begin{restatable}[Matching Completeness]{mtheorem}{matchcomplete} \label{thm:match_complete}%
+  Given $[[ GG --> OO  ]]$ and $[[ GG |- aA  ]]$, if
+  $[[ [OO]GG |- [OO]aA |> A1 -> A2  ]]$
+  then there exist $[[DD]]$, $[[OO']]$, $[[aA1']]$ and $[[aA2']]$ such that $[[ GG |- [GG]aA |> aA1' -> aA2' -| DD   ]]$
+  and $[[ DD --> OO'  ]]$ and $[[ OO --> OO'  ]]$ and $[[A1]] = [[ [OO']aA1'  ]]$ and $[[A2]] = [[ [OO']aA2'  ]]$.
+\end{restatable}
+
+
+
+\begin{restatable}[Completeness of Algorithmic Typing]{mtheorem}{typingcomplete}
+  Given $[[GG --> OO]]$ and $[[GG |- aA]]$, if $[[ [OO]GG |- e : A ]]$ then there exist $[[DD]]$, $[[OO']]$, $[[aA']]$ and $[[ae']]$
+  such that $[[DD --> OO']]$ and $[[OO --> OO']]$ and $[[  GG |- ae' => aA' -| DD  ]]$ and $[[A]] = [[ [OO']aA'  ]]$ and $\erase{[[e]]} = \erase{[[ae']]}$.
+\end{restatable}
+

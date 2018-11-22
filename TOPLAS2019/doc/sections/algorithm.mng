@@ -1,0 +1,610 @@
+\section{Algorithmic Type System}
+\label{sec:algorithm}
+
+% The declarative type system in \cref{sec:type-system} serves as a good
+% specification for how typing should behave. It remains to see whether this
+% specification delivers an algorithm. The main challenge lies in the rules \rref{CS-ForallL} in
+% \cref{fig:decl:conssub} and rule \rref{M-Forall} in
+% \cref{fig:decl-typing}, which both need to guess a monotype.
+
+% \bruno{why are we not highlightinh the differences in gray anymore?}
+In this section we give a bidirectional account of the algorithmic type system
+that implements the declarative specification.
+The algorithm is largely inspired
+by the algorithmic bidirectional system of \citet{dunfield2013complete}
+(henceforth DK system). However our algorithmic system differs from theirs in
+three aspects: (1) the addition of the unknown type $\unknown$; (2) the use of
+the matching judgment; and 3) the approach of \emph{gradual inference only
+  producing static types}~\citep{garcia2015principal}. We then prove that our
+algorithm is both sound and complete with respect to the declarative type
+system. Full proofs can be found in the appendix. We also provide an
+implementation, which can be found in the supplementary materials.\footnote{Note that the proofs in the appendix and the implementation are for
+  the extended system in \cref{sec:advanced-extension}, which subsumes the
+  algorithmic system presented in this section.}
+
+\paragraph{Algorithmic Contexts.}
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+\begin{tabular}{lrcl} \toprule
+  Expressions & $e$ & \syndef & $\ottmv{x} \mid \ottmv{n} \mid \lambda  \ottmv{x}  \ottsym{:}  A  .\,  e  \mid  \lambda  \ottmv{x}  .\,  e \mid e_{{\mathrm{1}}} \, e_{{\mathrm{2}}} \mid e  \ottsym{:}  A \mid \ottkw{let} \, \ottmv{x}  \ottsym{=}  e_{{\mathrm{1}}} \, \ottkw{in} \, e_{{\mathrm{2}}} $ \\
+  Types & $A, B$ & \syndef & $  \mathsf{Int}  \mid \ottmv{a} \mid \widehat{a} \mid A  \rightarrow  B \mid \forall  \ottmv{a}  .\,  A \mid  \star  $ \\
+  Monotypes & $\tau, \sigma$ & \syndef & $  \mathsf{Int}  \mid \ottmv{a} \mid \widehat{a} \mid \tau  \rightarrow  \sigma $ \\
+  Algorithmic Contexts & $\Gamma, \Delta, \Theta$ & \syndef & $ \bullet  \mid \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A \mid \Gamma  \ottsym{,}  \ottmv{a} \mid \Gamma  \ottsym{,}  \widehat{a} \mid \Gamma  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau \mid \Gamma  \ottsym{,}   \blacktriangleright_{ \widehat{a} }  $ \\
+  Complete Contexts & $\Omega$ & \syndef & $ \bullet  \mid \Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  A \mid \Omega  \ottsym{,}  \ottmv{a} \mid \Omega  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau \mid \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{a} }    $ \\ \bottomrule
+\end{tabular}
+  \end{small}
+\caption{Syntax of the algorithmic system}
+\label{fig:algo-syntax}
+\end{figure}
+
+
+\Cref{fig:algo-syntax} shows the syntax of the algorithmic system. A
+noticeable difference are the
+algorithmic contexts $\Gamma$, which are represented as an
+\emph{ordered} list containing declarations of type variables $\ottmv{a}$ and term
+variables $\ottmv{x}  \ottsym{:}  A$. Unlike declarative contexts, algorithmic contexts also
+contain declarations of existential type variables $\widehat{a}$, which can be either
+unsolved (written $\widehat{a}$) or solved to some monotype (written $\widehat{a}  \ottsym{=}  \tau$). Finally, algorithmic contexts
+include a \textit{marker} $ \blacktriangleright_{ \widehat{a} } $ (read ``marker $\widehat{a}$'' ), which is used to delineate existential variables created by the algorithm. We will have more
+to say about markers when we examine the rules.
+Complete contexts $\Omega$ are the same as contexts, except that they contain no unsolved variables.
+
+Apart from expressions in the declarative system, we add annotated expressions
+$e  \ottsym{:}  A$. The well-formedness judgments for types and contexts are shown in \cref{fig:well-formedness}.
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+
+\drules[ad]{$ \Gamma  \vdash  A $}{Well-formedness of types}{int, unknown, tvar, evar, solved, arrow, forall}
+
+\drules[wf]{$ \vdash  \Gamma $}{Well-formedness of algorithmic contexts}{empty, var, tvar, evar, solved, marker}
+
+  \end{small}
+  \caption{Well-formedness of types and contexts in the algorithmic system}
+  \label{fig:well-formedness}
+\end{figure}
+
+\paragraph{Notational convenience}
+Following DK system, we use contexts as substitutions on
+types. We write $\ottsym{[}  \Gamma  \ottsym{]}  A$ to mean $\Gamma$ applied as a
+substitution to type $A$. We also use a hole notation, which is useful when
+manipulating contexts by inserting and replacing declarations in the middle. The
+hole notation is used extensively in proving soundness and completeness. For
+example, $\Gamma [ \Theta   ]$ means $\Gamma$ has the form $\Gamma_L, \Theta, \Gamma_R$;
+if we have $\Gamma  \ottsym{[}  \widehat{a}  \ottsym{]} = \ottsym{(}  \Gamma_L  \ottsym{,}  \widehat{a}  \ottsym{,}  \Gamma_R  \ottsym{)}$, then
+$\Gamma  \ottsym{[}  \widehat{a}  \ottsym{=}  \tau  \ottsym{]} = \ottsym{(}  \Gamma_L  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau  \ottsym{,}  \Gamma_R  \ottsym{)} $. Occasionally,
+we will see a context with two \emph{ordered} holes, e.g., $\Gamma = \Gamma_{{\mathrm{0}}}  \ottsym{[}  \Theta_{{\mathrm{1}}}  \ottsym{]}  \ottsym{[}  \Theta_{{\mathrm{2}}}  \ottsym{]}$ means $\Gamma$ has the form
+$\Gamma_L  \ottsym{,}  \Theta_{{\mathrm{1}}}  \ottsym{,}  \Gamma_M  \ottsym{,}  \Theta_{{\mathrm{2}}}  \ottsym{,}  \Gamma_R$.
+
+\paragraph{Input and output contexts}
+The algorithmic system, compared with the declarative system, includes similar
+judgment forms, except that we replace the declarative context $\Psi$ with an
+algorithmic context $\Gamma$ (the \emph{input context}), and add an
+\emph{output context} $\Delta$ after a backward turnstile, e.g.,
+$\Gamma  \vdash  A  \lesssim  B  \dashv  \Delta$ is the judgment form for the
+algorithmic consistent subtyping. All algorithmic rules manipulate input and
+output contexts in a way that is consistent with the notion of
+\emph{context extension}, which will be described in \cref{sec:ctxt:extension}.
+
+We start with the explanation of the algorithmic consistent subtyping as it
+involves manipulating existential type variables explicitly (and solving them if
+possible).
+
+\subsection{Algorithmic Consistent Subtyping}
+\label{sec:algo:subtype}
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+
+\drules[as]{$ \Gamma  \vdash  A  \lesssim  B  \dashv  \Delta $}{Under input context $\Gamma$, $A$ is a consistent subtype of $B$, with output context $\Delta$}{tvar, int, evar, unknownL, unknownR, arrow, forallR, forallL,  instL, instR}
+
+  \end{small}
+  \caption{Algorithmic consistent subtyping}
+  \label{fig:algo:subtype}
+\end{figure}
+
+\Cref{fig:algo:subtype} presents the rules of algorithmic consistent subtyping
+$\Gamma  \vdash  A  \lesssim  B  \dashv  \Delta$, which says that under input context $\Gamma$,
+$A$ is a consistent subtype of $B$, with output context $\Delta$. The
+first five rules do not manipulate contexts, but illustrate how contexts are
+propagated.
+
+\Rref{as-tvar,as-int} do not involve existential variables, so the output
+contexts remain unchanged. \Rref{as-evar} says that any unsolved existential
+variable is a consistent subtype of itself. The output is still the same as the
+input context as the rule gives no clue as to what is the solution of that
+existential variable. \Rref{as-unknownL,as-unknownR} are the 
+counterparts of \rref{cs-unknownL,cs-unknownR}.
+
+\Rref{as-arrow} is a natural extension of its declarative counterpart. The
+output context of the first premise is used by the second premise, and the
+output context of the second premise is the output context of the conclusion.
+Note that we do not simply check $\ottnt{A_{{\mathrm{2}}}}  \lesssim  \ottnt{B_{{\mathrm{2}}}}$, but apply $\Theta$ (the input
+context of the second premise) to both types (e.g., $\ottsym{[}  \Theta  \ottsym{]}  A_{{\mathrm{2}}}$). This is to
+maintain an important invariant: whenever $\Gamma  \vdash  A  \lesssim  B  \dashv  \Delta$ holds, the types $A$ and $B$ are fully applied under input context
+$\Gamma$ (they contain no existential variables already solved in $\Gamma$). The
+same invariant applies to every algorithmic judgment.
+
+
+\Rref{as-forallR}, similar to the declarative rule \rref*{cs-forallR}, adds $\ottmv{a}$ to the input context.
+Note that the output context of the premise allows additional existential variables to appear
+after the type variable $\ottmv{a}$, in a trailing context $\Theta$. These existential variables
+could depend on $\ottmv{a}$; since $\ottmv{a}$
+goes out of scope in the conclusion, we need to drop them from
+the concluding output, resulting in $\Delta$.
+The next rule is essential to eliminating the guessing work. Instead of
+guessing a monotype $\tau$ out of thin air, \rref{as-forallL} generates a fresh
+existential variable $\widehat{a}$, and replaces $\ottmv{a}$ with $\widehat{a}$ in the
+body $A$. The new existential variable $\widehat{a}$ is then added to the input context,
+just before the
+marker $ \blacktriangleright_{ \widehat{a} } $. The output context ($\Delta  \ottsym{,}   \blacktriangleright_{ \widehat{a} }   \ottsym{,}  \Theta$) allows additional existential variables to
+appear after $ \blacktriangleright_{ \widehat{a} } $ in $\Theta$.
+For the same reasons as in \rref{as-forallR}, we drop them from the output context.
+A central idea behind these two rules is that we defer the decision of picking a
+monotype for a type variable, and hope that it could be solved later when we
+have more information at hand. As a side note, when both types are universal quantifiers,
+then either \rref{as-forallR} or \rref*{as-forallL} could be tried.
+In practice, one can apply \rref{as-forallR} eagerly as it is invertible.
+
+
+The last two rules (\rref*{as-instL,as-instR}) are specific to the algorithm,
+thus having no counterparts in the declarative version. They both check
+consistent subtyping with an unsolved existential variable on one side and an
+arbitrary type on the other side. Apart from checking that the existential
+variable does not occur in the type $A$, both rules do not directly solve the
+existential variables, but leave the real work to the instantiation judgment.
+
+\subsection{Instantiation}
+\label{sec:algo:instantiate}
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+
+\drules[instl]{$ \Gamma  \vdash  \widehat{a}  \lessapprox  A  \dashv  \Delta $}{Under input context $\Gamma$, instantiate $\widehat{a}$ such that $\widehat{a}  \lesssim  A$, with output context $\Delta$}{solve, solveU, reach, forallR, arr}
+
+\drules[instr]{$ \Gamma  \vdash  A  \lessapprox  \widehat{a}  \dashv  \Delta $}{Under input context $\Gamma$, instantiate $\widehat{a}$ such that $A  \lesssim  \widehat{a}$, with output context $\Delta$}{solve, solveU, reach, forallL, arr}
+
+  \end{small}
+  \caption{Algorithmic instantiation}
+  \label{fig:algo:instantiate}
+\end{figure}
+
+% A central idea of the algorithmic system is to defer the decision of picking a
+% monotype to as late as possible.
+Two symmetric judgments $\Gamma  \vdash  \widehat{a}  \lessapprox  A  \dashv  \Delta$ and $\Gamma  \vdash  A  \lessapprox  \widehat{a}  \dashv  \Delta$
+defined in \cref{fig:algo:instantiate} instantiate unsolved
+existential variables. They read ``under input context $\Gamma$, instantiate $\widehat{a}$ to a consistent
+subtype (or supertype) of $A$, with output context $\Delta$''. The judgments are extended naturally from
+DK system, whose original inspiration comes from
+\citet{cardelli1993implementation}. Since these two judgments are mutually
+defined, we discuss them together.
+% , and omit symmetric rules when convenient.
+
+\Rref{instl-solve} is the simplest one -- when an existential variable meets a
+monotype -- where we simply set the solution of $\widehat{a}$ to the monotype
+$\tau$ in the output context. We also need to check that the monotype $\tau$
+is well-formed under the prefix context $\Gamma$.
+
+\Rref{instl-solveU} is similar to \rref{as-unknownR} in that we put no
+constraint\footnote{As we will see in \cref{sec:advanced-extension} where we
+  present a more refined system, the ``no constraint'' statement is not entirely
+  true. } on $\genA$ when it meets the unknown type $\unknown$. This design
+decision reflects the point that type inference only produces static
+types~\citep{garcia2015principal}.
+
+
+\Rref{instl-reach} deals with the situation where two existential variables
+meet. Recall that $\Gamma  \ottsym{[}  \widehat{a}  \ottsym{]}  \ottsym{[}  \widehat{b}  \ottsym{]}$ denotes a context where some unsolved existential
+variable $\widehat{a}$ is declared before $\widehat{b}$. In this situation, the only logical
+thing we can do is to set the solution of one existential variable to the other
+one, depending on which one is declared before. For example, in the output
+context of \rref{instl-reach}, we have $\widehat{b} = \widehat{a}$ because in the input
+context, $\widehat{a}$ is declared before $\widehat{b}$.
+
+\Rref{instl-forallR} is the instantiation version of \rref{as-forallR}.
+Since our system is predicative, $\widehat{a}$ cannot be instantiated to $\forall  \ottmv{b}  .\,  \ottnt{B}$,
+but we can decompose $\forall  \ottmv{b}  .\,  \ottnt{B}$ in the same way as in \rref{as-forallR}.
+\Rref{instr-forallL} is the instantiation version of \rref{as-forallL}.
+
+\Rref{instl-arr} applies when $\widehat{a}$ meets an arrow type. It
+follows that the solution must also be an arrow type.
+This is why, in the first premise, we generate two fresh existential variables
+$\widehat{a}_{{\mathrm{1}}}$ and $\widehat{a}_{{\mathrm{2}}}$, and insert them just before $\widehat{a}$
+in the input context, so that we can solve $\widehat{a}$ to $\widehat{a}_{{\mathrm{1}}}  \rightarrow  \widehat{a}_{{\mathrm{2}}}$.
+Note that the first premise $A_{{\mathrm{1}}}  \lessapprox  \widehat{a}_{{\mathrm{1}}}$ switches to the other instantiation judgment.
+
+
+% \paragraph{Example}
+
+% We show a derivation of $\Gamma[\genA] \vdash \forall b. b \to \unknown \unif
+% \genA$ to demonstrate the interplay between instantiation, quantifiers and the
+% unknown type:
+% \[
+%   \inferrule*[right=InstRAllL]
+%       {
+%         \inferrule*[right=InstRArr]
+%         {
+%           \inferrule*[right=InstLReach]{ }{\Gamma', \genB \vdash \genA_1 \unif \genB \dashv \Gamma' , \genB = \genA_1} \\
+%           \inferrule*[right=InstRSolveU]{ }{\Gamma', \genB = \genA_1 \vdash \unknown \unif \genA_2 \dashv \Gamma', \genB = \genA_1}
+%         }
+%         {
+%           \Gamma[\genA], \genB \vdash \genB \to \unknown \unif \genA \dashv \Gamma', \genB = \genA_1
+%         }
+%       }
+%       {
+%         \Gamma[\genA] \vdash \forall b. b \to \unknown \unif \genA \dashv \Gamma', \genB = \genA_1
+%       }
+% \]
+% where $\Gamma' = \Gamma[\genA_2, \genA_1, \genA = \genA_1 \to \genA_2]$. Note
+% that in the output context, $\genA$ is solved to $\genA_1 \to \genA_2$, and
+% $\genA_2$ remains unsolved because the unknown type $\unknown$ puts no
+% constraint on it. Essentially this means that the solution of $\genA$ can be any
+% function, which is intuitively correct since $\forall b. b \to \unknown$ can be
+% interpreted, from the parametricity point of view, as any function.
+
+\subsection{Algorithmic Typing}
+\label{sec:algo:typing}
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+
+
+\drules[inf]{$ \Gamma  \vdash  e  \Rightarrow  A  \dashv  \Delta $}{Under input context $\Gamma$, $e$ infers output type $A$, with output context $\Delta$}{var, int, anno, lamann, lam, let, app}
+
+\drules[chk]{$ \Gamma  \vdash  e  \Leftarrow  A  \dashv  \Delta $}{Under input context $\Gamma$, $e$ checks against input type $A$, with output context $\Delta$}{lam, gen, sub}
+
+\drules[am]{$ \Gamma  \vdash  A  \triangleright  A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}  \dashv  \Delta $}{Under input context $\Gamma$, $A$ matches output type $A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}$, with output context $\Delta$}{forall, arr, unknown, var}
+
+  \end{small}
+  \caption{Algorithmic typing}
+  \label{fig:algo:typing}
+\end{figure}
+
+We now turn to the algorithmic typing rules in \cref{fig:algo:typing}. Because
+general type inference for System F is undecidable~\citep{WELLS1999111}, our algorithmic
+system uses bidirectional type checking to accommodate (first-class)
+polymorphism. Traditionally, two modes are employed in bidirectional systems:
+the checking mode $\Gamma  \vdash  e  \Leftarrow  A  \dashv  \Theta$, which takes a term $e$ and a type $A$ as
+input, and ensures that the term $e$ checks against $A$; the
+inference mode $\Gamma  \vdash  e  \Rightarrow  A  \dashv  \Theta$, which takes a term $e$ and
+produces a type $A$. We first discuss rules in the inference mode.
+
+\Rref{inf-var,inf-int} do not generate any new information and simply propagate
+the input context. \Rref{inf-anno} is standard, switching to the checking
+mode in the premise.
+
+In \rref{inf-lamann}, we generate a fresh existential variable $\widehat{b}$ for
+the function codomain, and check the function body against $\widehat{b}$. Note that
+it is tempting to write $\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \vdash  e  \Rightarrow  B  \dashv  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{,}  \Theta$ as the
+premise (in the hope of better matching its declarative counterpart \rref{lamann}), which has
+a subtle consequence. Consider the expression $\lambda  \ottmv{x}  \ottsym{:}  \mathsf{Int}  .\,  \lambda  \ottmv{y}  .\,  \ottmv{y}$. Under
+the new premise, this is untypable because of
+$\bullet  \vdash  \lambda  \ottmv{x}  \ottsym{:}  \mathsf{Int}  .\,  \lambda  \ottmv{y}  .\,  \ottmv{y}  \Rightarrow  \mathsf{Int}  \rightarrow  \widehat{a}  \rightarrow  \widehat{a}  \dashv  \bullet$ where $\widehat{a}$ is not found
+in the output context. This explains why we put $\widehat{b}$ \emph{before} $ \ottmv{x}  \ottsym{:}  A  $
+so that it remains in the output context $\Delta$.
+\Rref{inf-lam}, which corresponds to \rref{lam}, one of the
+guessing rules, is similar to \rref{inf-lamann}. As with the other algorithmic
+rules that eliminate guessing, we create new existential variables $\widehat{a}$
+(for function domain) and $\widehat{b}$ (for function codomain) and check the function body against $\widehat{b}$.
+\Rref{inf-let} is similar to \rref{inf-lamann}.
+
+\paragraph{Algorithmic Matching}
+\Rref{inf-app} (which differs significantly from that of \cite{dunfield2013complete}) deserves
+attention. It relies on the algorithmic matching judgment $\Gamma  \vdash  A  \triangleright  A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}  \dashv  \Delta$. The matching judgment algorithmically synthesizes an arrow type from an
+arbitrary type. \Rref{am-forall} replaces $a$ with a fresh existential variable
+$\widehat{a}$, thus eliminating guessing. \Rref{am-arr,am-unknown} correspond
+directly to the declarative rules. \Rref{am-var}, which has no corresponding
+declarative version, is similar to \rref{instl-arr}/\rref*{instr-arr}: we create
+$\widehat{a}_{{\mathrm{1}}}$ and $\widehat{a}_{{\mathrm{2}}}$ and solve $\widehat{a} $ to $ \widehat{a}_{{\mathrm{1}}}  \rightarrow  \widehat{a}_{{\mathrm{2}}}$ in the output context.
+
+Back to the \rref{inf-app}. This rule first infers the type of $\ottnt{e_{{\mathrm{1}}}}$, producing an output
+context $\Theta_{{\mathrm{1}}}$. Then it applies $\Theta_{{\mathrm{1}}}$ to $A$ and goes into the matching
+judgment, which delivers an arrow type $A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}$ and another output
+context $\Theta_{{\mathrm{2}}}$. $\Theta_{{\mathrm{2}}}$ is used as the input context when checking $\ottnt{e_{{\mathrm{2}}}}$
+against $\ottsym{[}  \Theta_{{\mathrm{2}}}  \ottsym{]}  A_{{\mathrm{1}}}$, where we go into the checking mode.
+
+
+Rules in the checking mode are quite standard. \Rref{chk-lam} checks against
+$A  \rightarrow  B$. \Rref{chk-gen}, like the declarative \rref{gen},
+adds a type variable $\ottmv{a}$ to the input context. % In both rules, the trailing
+% context is discarded, since $\ottmv{x}$ and $\ottmv{a}$ go out of scope in the
+% conclusion.
+\Rref{chk-sub} uses the algorithmic consistent subtyping judgment.
+
+
+
+\subsection{Decidability}
+
+Our algorithmic system is decidable. It is not at all obvious to see
+why this is the case, as many rules
+are not strictly structural (e.g., many rules have $\ottsym{[}  \Gamma  \ottsym{]}  A$ in the
+premises). This implies that we need a more sophisticated measure to
+support the argument. Since the typing rules (\cref{fig:algo:typing}) depend on
+the consistent subtyping rules (\cref{fig:algo:subtype}), which in turn depends
+on the instantiation rules (\cref{fig:algo:instantiate}), to show the
+decidability of the typing judgment, we need to show that the instantiation and
+consistent subtyping judgments are decidable. The proof strategy mostly follows
+that of the DK system. Here only highlights of the proofs are given; the full proofs can be found
+in \cref{app:decidable}.
+
+
+
+\paragraph{Decidability of Instantiation}
+
+The basic idea is that we need to show $A$ in the instantiation judgments
+$\Gamma  \vdash  \widehat{a}  \lessapprox  A  \dashv  \Delta$ and $\Gamma  \vdash  A  \lessapprox  \widehat{a}  \dashv  \Delta$ always gets
+smaller. Most of the rules are structural and thus easy to verify (e.g.,
+\rref{instl-forallR}); the non-trivial cases are \rref{instl-arr,instr-arr}
+where context applications appear in the premises. The key observation there
+is that the instantiation rules preserve the size of (substituted) types.
+The formal statement of decidability of instantiation needs a few
+pre-conditions: assuming $\widehat{a}$ is unsolved in the input context
+$\Gamma$, that $A$ is well-formed under the context $\Gamma$, that $A$
+is fully applied under the input context $\Gamma$ ($\ottsym{[}  \Gamma  \ottsym{]}  A = A$), and
+that $\widehat{a}$ does not occur in $A$. Those conditions are actually met
+when instantiation is invoked: \rref{chk-sub} applies the input context, and the
+subtyping rules apply input context when needed.
+
+\begin{restatable}[Decidability of Instantiation]{theorem}{decInstan}
+  If $\Gamma  = \Gamma_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}  \ottsym{]}  $ and $\Gamma  \vdash  A$ such that $\ottsym{[}  \Gamma  \ottsym{]}  A = A$ and $ \widehat{a}  \notin \textsc{fv} (  A  ) $ then:
+  \begin{enumerate}
+  \item Either there exists $\Delta$ such that $\Gamma  \vdash  \widehat{a}  \lessapprox  A  \dashv  \Delta$, or not.
+  \item Either there exists $\Delta$ such that $\Gamma  \vdash  A  \lessapprox  \widehat{a}  \dashv  \Delta$, or not.
+  \end{enumerate}
+\end{restatable}
+
+
+\paragraph{Decidability of Algorithmic Consistent Subtyping}
+
+Proving decidability of the algorithmic consistent subtyping is a bit more
+involved, as the induction measure consists of several parts.
+We measure the judgment $\Gamma  \vdash  A  \lesssim  B  \dashv  \Delta$ lexicographically by
+\begin{enumerate}[(M1)]
+\item the number of $\forall$-quantifiers in $A$ and $B$;
+\item \hl{the number of unknown types in $A$ and $B$;}
+\item $| \textsc{unsolved}(\Gamma) |$: the number of unsolved existential
+  variables in $\Gamma$;
+\item $| \Gamma  \vdash  A | + | \Gamma  \vdash  B   |$.
+\end{enumerate}
+Notice that because of our gradual setting, we also need to measure the number
+of unknown types (M2). This is a key difference from the DK system.
+We refer the reader to \cref{app:decidable} for more details.
+For (M4), we
+use \emph{contextual size}---the size of well-formed types under certain
+contexts, which penalizes solved variables (*).
+
+\begin{definition}[Contextual Size] \leavevmode
+  \begin{center}
+  \begin{tabular}{llll}
+    $|  \Gamma  \vdash  \mathsf{Int} |$     &=&  $1$ \\
+    $| \Gamma  \vdash  \star    |$  &=&  $1$ \\
+    $|  \Gamma  \vdash  \ottmv{a}  |$    &=&  $1$ \\
+    $|  \Gamma  \vdash  \widehat{a}  |$    &=&  $1$ \\
+    $|  \Gamma  \ottsym{[}  \widehat{a}  \ottsym{=}  \tau  \ottsym{]}  \vdash  \widehat{a} |$    &=&  $1 + | \Gamma  \ottsym{[}  \widehat{a}  \ottsym{=}  \tau  \ottsym{]}  \vdash  \tau   | $ & $(*)$ \\
+    $|  \Gamma  \vdash  \forall  \ottmv{a}  .\,  A |$    &=&  $1 + | \Gamma  \ottsym{,}  \ottmv{a}  \vdash  A   | $ \\
+    $|  \Gamma  \vdash  A  \rightarrow  B |$    &=&  $1 + | \Gamma  \vdash  A   | + | \Gamma  \vdash  B | $ \\
+  \end{tabular}
+\end{center}
+\end{definition}
+
+
+\begin{restatable}[Decidability of Algorithmic Consistent Subtyping]{theorem}{decsubtype} \label{thm:decsubtype}
+  Given a context $\Gamma$ and types $A$, $B$ such that $\Gamma  \vdash  A$ and
+  $\Gamma  \vdash  B$ and $\ottsym{[}  \Gamma  \ottsym{]}  A = A$ and $\ottsym{[}  \Gamma  \ottsym{]}  B = B$, it is decidable whether there exists $\Delta$ such that $\Gamma  \vdash  A  \lesssim  B  \dashv  \Delta$.
+\end{restatable}
+
+
+\paragraph{Decidability of Algorithmic Typing}
+
+
+Similar to proving decidability of algorithmic consistent subtyping, the key is
+to come up with a correct measure. Since the typing rules depend on the matching
+judgment, we first show decidability of the algorithmic matching.
+
+\begin{restatable}[Decidability of Algorithmic Matching]{lemma}{decmatch} \label{lemma:decmatch}%
+
+  Given a context $\Gamma$ and a type $A$ it is decidable whether there
+  exist types $A_{{\mathrm{1}}}$, $A_{{\mathrm{2}}}$ and a context $\Delta$ such that $\Gamma  \vdash  A  \triangleright  A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}  \dashv  \Delta$.
+\end{restatable}
+
+Now we are ready to show decidability of typing. The proof is obtained by
+induction on the lexicographically ordered triple: size of $e$, typing
+judgment (where the inference mode $ \Rightarrow $ is considered smaller than the
+checking mode $ \Leftarrow $) and contextual size.
+\begin{center}
+\begin{tabular}{lllll}
+  \multirow{2}{*}{$ \Big \langle$} & \multirow{2}{*}{$e,$} & $ \Rightarrow $ & \multirow{2}{*}{$| \Gamma  \vdash  A |$} & \multirow{2}{*}{$\Big \rangle$} \\
+                                   &                    & $ \Leftarrow ,$ &  &
+\end{tabular}
+\end{center}
+The above measure is much simpler than the corresponding one in the DK system,
+where they also need to consider the application judgment together with the
+inference and checking judgments. This shows another benefit (besides the
+independence from typing) of adopting the matching judgment.
+
+\begin{restatable}[Decidability of Algorithmic Typing]{theorem}{dectyping} \leavevmode
+  \begin{enumerate}
+  \item Inference: Given  a context $\Gamma$ and a term $e$, it is decidable whether
+    there exist a type $A$ and a context $\Delta$ such that $\Gamma  \vdash  e  \Rightarrow  A  \dashv  \Delta$.
+  \item Checking: Given a context $\Gamma$, a term $e$ and a type $B$
+    such that $\Gamma  \vdash  B$, it is decidable whether there exists a context
+    $\Delta$ such that $\Gamma  \vdash  e  \Leftarrow  B  \dashv  \Delta$.
+  \end{enumerate}
+\end{restatable}
+
+
+\section{Soundness and Completeness}
+\label{sec:sound:complete}
+
+To be confident that our algorithmic type system and the declarative type system
+agree with each other, we need to prove that the algorithmic rules are sound and
+complete with respect to the declarative specification. Before we give the
+formal statements of the soundness and completeness theorems, we need a
+meta-theoretical device, called \emph{context
+  extension}~\cite{dunfield2013complete}, to capture a notion of
+information increase from input contexts to output contexts.
+
+\subsection{Context Extension}
+\label{sec:ctxt:extension}
+
+
+A context extension judgment $\Gamma \exto \Delta$ reads ``$\Gamma$ is extended
+by $\Delta$''. Intuitively, this judgment says that $\Delta$ has at least as
+much information as $\Gamma$: some unsolved existential variables in $\Gamma$
+may be solved in $\Delta$. The full inductive definition can be found
+\cref{fig:ctxt-extension}. We refer the reader to \citet[][Section
+4]{dunfield2013complete} for further explanation of context extension.
+
+
+\begin{figure}[t]
+  \centering
+
+  \begin{small}
+\drules[ext]{$ \Gamma  \longrightarrow  \Delta $}{Context extension}{id, var, tvar, evar, solved, solve, add, addSolve, marker}
+  \end{small}
+  
+
+\caption{Context extension}
+\label{fig:ctxt-extension}
+\end{figure}
+
+
+% \subsection{Completeness and Soundness}
+
+% We prove that the algorithmic rules are sound and complete with
+% respect to the declarative specifications. We need an auxiliary judgment
+% $\Gamma \exto \Delta$ that captures a notion of information increase from input
+% contexts $\Gamma$ to output contexts $\Delta$~\citep{dunfield2013complete}.
+
+\subsection{Soundness}
+
+Roughly speaking, soundness of the algorithmic system says
+that given a derivation of an algorithmic judgment with input context
+$\Gamma$, output context $\Delta$, and a complete context $\Omega$
+that extends $\Delta$, applying $\Omega$ throughout the given algorithmic judgment
+should yield a derivable declarative judgment. For example, let us consider
+an algorithmic typing judgment $\bullet  \vdash  \lambda  \ottmv{x}  .\,  \ottmv{x}  \Rightarrow  \widehat{a}  \rightarrow  \widehat{a}  \dashv  \widehat{a}$, and any complete context, say, $\Omega = (\widehat{a}  \ottsym{=}  \mathsf{Int})$,
+then applying $\Omega$ to the above judgment yields $\bullet  \vdash  \lambda  \ottmv{x}  .\,  \ottmv{x}  \ottsym{:}  \mathsf{Int}  \rightarrow  \mathsf{Int}$, which is derivable in the declarative system.
+
+However there is one complication: applying $\Omega$ to the algorithmic expression does not necessarily yield a typable declarative expression.
+For example, by \rref{chk-lam} we have $\lambda  \ottmv{x}  .\,  \ottmv{x} \Leftarrow \ottsym{(}  \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \ottmv{a}  \ottsym{)}  \rightarrow  \ottsym{(}  \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \ottmv{a}  \ottsym{)}   $,
+but $\lambda  \ottmv{x}  .\,  \ottmv{x}$ itself cannot have type
+$\ottsym{(}  \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \ottmv{a}  \ottsym{)}  \rightarrow  \ottsym{(}  \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \ottmv{a}  \ottsym{)}$ in the declarative system. To
+circumvent that, we add an annotation to the lambda abstraction, resulting in
+$\lambda  \ottmv{x}  \ottsym{:}  \ottsym{(}  \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \ottmv{a}  \ottsym{)}  .\,  \ottmv{x}$, which is typeable in the declarative system with
+the same type. To relate $\lambda  \ottmv{x}  .\,  \ottmv{x}$ and $\lambda  \ottmv{x}  \ottsym{:}  \ottsym{(}  \forall  \ottmv{a}  .\,  \ottmv{a}  \rightarrow  \ottmv{a}  \ottsym{)}  .\,  \ottmv{x}$, we
+erase all annotations on both expressions. 
+\begin{definition}[Type annotation erasure] The erasure function is denoted as
+  $\erase{\cdot}$, and defined as follows:
+\begin{center}
+\begin{tabular}{p{5cm}l}
+    $\erase{x} = x $&
+    $\erase{n} = n $\\
+    $\erase{\blam{x}{A}{e}} = \erlam{x}{\erase{e}} $&
+    $\erase{\erlam{x}{e}} = \erlam{x}{\erase{e}} $\\
+    $\erase{e_1 ~ e_2} = \erase{e_1} ~ \erase{e_2} $&
+    $\erase{e : A } = \erase{e}$
+\end{tabular}
+\end{center}
+\end{definition}
+
+
+
+\begin{restatable}[Instantiation Soundness]{theorem}{instsoundness} \label{thm:inst_soundness}%
+  Given $\Delta  \longrightarrow  \Omega$ and $\ottsym{[}  \Gamma  \ottsym{]}  A  \ottsym{=}  A$ and  $ \widehat{a}  \notin \textsc{fv} (  A  ) $:
+
+  \begin{enumerate}
+  \item If $\Gamma  \vdash  \widehat{a}  \lessapprox  A  \dashv  \Delta$ then $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  A $.
+  \item If $\Gamma  \vdash  A  \lessapprox  \widehat{a}  \dashv  \Delta$ then $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a} $.
+  \end{enumerate}
+\end{restatable}
+
+Notice that the declarative judgment uses $\ottsym{[}  \Omega  \ottsym{]}  \Delta$, an
+operation that applies a complete context $\Omega$ to the algorithmic context
+$\Delta$, essentially plugging in all known solutions and removing all
+declarations of existential variables (both solved and unsolved), resulting in a
+declarative context.
+
+With instantiation soundness, next we show that the algorithmic consistent
+subtyping is sound:
+
+\begin{restatable}[Soundness of Algorithmic Consistent Subtyping]{theorem}{subsoundness} \label{thm:sub_soundness}%
+  If $\Gamma  \vdash  A  \lesssim  B  \dashv  \Delta$ where $\ottsym{[}  \Gamma  \ottsym{]}  A  \ottsym{=}  A$ and $\ottsym{[}  \Gamma  \ottsym{]}  B  \ottsym{=}  B$ and $\Delta  \longrightarrow  \Omega$ then
+  $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B$.
+\end{restatable}
+
+Finally the soundness theorem of algorithmic typing is:
+
+\begin{restatable}[Soundness of Algorithmic Typing]{theorem}{typingsoundness} \label{thm:type_sound}%
+  Given $\Delta  \longrightarrow  \Omega$:
+  \begin{enumerate}
+  \item If $\Gamma  \vdash  e  \Rightarrow  A  \dashv  \Delta$ then $\exists \ottnt{e'}$ such that $ \ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A   $ and $\erase{e} = \erase{\ottnt{e'}}$.
+  \item If $\Gamma  \vdash  e  \Leftarrow  A  \dashv  \Delta$ then $\exists \ottnt{e'}$ such that $ \ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A   $ and $\erase{e} = \erase{\ottnt{e'}}$.
+  \end{enumerate}
+\end{restatable}
+
+\subsection{Completeness}
+
+Completeness of the algorithmic system is the reverse of soundness: given a
+declarative judgment of the form $\ottsym{[}  \Omega  \ottsym{]}  \Gamma \vdash
+\ctxsubst{\Omega} \dots $, we want to get an algorithmic derivation of $\Gamma
+\vdash \dots \dashv \Delta$. It turns out that completeness is a bit trickier to
+state in that the algorithmic rules generate existential variables on the fly,
+so $\Delta$ could contain unsolved existential variables that are not found in
+$\Gamma$, nor in $\Omega$. Therefore the completeness proof must produce another
+complete context $\Omega'$ that extends both the output context $\Delta$, and
+the given complete context $\Omega$. As with soundness, we need erasure to
+relate both expressions.
+
+
+\begin{restatable}[Instantiation Completeness]{theorem}{instcomplete} \label{thm:inst_complete}
+  Given $\Gamma  \longrightarrow  \Omega$ and $A  \ottsym{=}  \ottsym{[}  \Gamma  \ottsym{]}  A$ and $\widehat{a} \notin \textsc{unsolved}(\Gamma) $ and $ \widehat{a}  \notin \textsc{fv} (  A  ) $:
+  \begin{enumerate}
+  \item If $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  A$ then there are $\Delta, \Omega'$ such that $\Omega  \longrightarrow  \Omega'$
+    and $\Delta  \longrightarrow  \Omega'$ and $\Gamma  \vdash  \widehat{a}  \lessapprox  A  \dashv  \Delta$.
+  \item If $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$ then there are $\Delta, \Omega'$ such that $\Omega  \longrightarrow  \Omega'$
+    and $\Delta  \longrightarrow  \Omega'$ and $\Gamma  \vdash  A  \lessapprox  \widehat{a}  \dashv  \Delta$.
+  \end{enumerate}
+
+\end{restatable}
+
+Next is the completeness of consistent subtyping:
+
+\begin{restatable}[Generalized Completeness of Consistent Subtyping]{theorem}{subcomplete} \label{thm:sub_completeness}
+  If $\Gamma  \longrightarrow  \Omega$ and $\Gamma  \vdash  A$ and $\Gamma  \vdash  B$ and $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B$ then
+  there exist $\Delta$ and $\Omega'$ such that $\Delta  \longrightarrow  \Omega'$ and $\Omega  \longrightarrow  \Omega'$ and $\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  B  \dashv  \Delta$.
+\end{restatable}
+
+We prove that the algorithmic matching is complete with respect to the
+declarative matching:
+
+
+\begin{restatable}[Matching Completeness]{theorem}{matchcomplete} \label{thm:match_complete}%
+  Given $\Gamma  \longrightarrow  \Omega$ and $\Gamma  \vdash  A$, if
+  $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \triangleright  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}$
+  then there exist $\Delta$, $\Omega'$, $A'_{{\mathrm{1}}}$ and $A'_{{\mathrm{2}}}$ such that $\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A  \triangleright  A'_{{\mathrm{1}}}  \rightarrow  A'_{{\mathrm{2}}}  \dashv  \Delta$
+  and $\Delta  \longrightarrow  \Omega'$ and $\Omega  \longrightarrow  \Omega'$ and $\ottnt{A_{{\mathrm{1}}}} = \ottsym{[}  \Omega'  \ottsym{]}  A'_{{\mathrm{1}}}$ and $\ottnt{A_{{\mathrm{2}}}} = \ottsym{[}  \Omega'  \ottsym{]}  A'_{{\mathrm{2}}}$.
+\end{restatable}
+
+
+Finally here is the completeness theorem of the algorithmic typing:
+
+\begin{restatable}[Completeness of Algorithmic Typing]{theorem}{typingcomplete}
+  \label{thm:type_complete}
+  Given $\Gamma  \longrightarrow  \Omega$ and $\Gamma  \vdash  A$, if $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{A}$ then there exist $\Delta$, $\Omega'$, $A'$ and $e'$
+  such that $\Delta  \longrightarrow  \Omega'$ and $\Omega  \longrightarrow  \Omega'$ and $\Gamma  \vdash  e'  \Rightarrow  A'  \dashv  \Delta$ and $\ottnt{A} = \ottsym{[}  \Omega'  \ottsym{]}  A'$ and $\erase{\ottnt{e}} = \erase{e'}$.
+\end{restatable}
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: "../paper.bib"
+%%% End:

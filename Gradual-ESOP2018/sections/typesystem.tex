@@ -1,0 +1,304 @@
+\section{Gradually Typed Implicit Polymorphism}
+\label{sec:type-system}
+
+In \cref{sec:exploration} we introduced the consistent
+subtyping relation that accommodates polymorphic types. In
+this section we continue with the development by giving a declarative
+type system for predicative implicit polymorphism that employs the consistent
+subtyping relation. The declarative system itself is already quite
+interesting as it is equipped with both higher-rank polymorphism and
+the unknown type.
+% Moreover, unlike non-gradual type systems with
+% higher-rank polymorphism, guessed types affect runtime behaviour if
+% used by the implicit casts, which raises concerns with respect to
+% coherency. Our response to those concerns is given in \cref{subsec:algo:discuss},
+% after we give a simple
+% algorithm that implements the declarative system
+% (\cref{sec:algorithm}) and discuss soundness and completeness.
+The syntax of expressions in the declarative system is given below:
+\[
+  \text{Expressions}\quad e ::= x \mid n \mid \blam x A e \mid \erlam x e \mid e~e
+\]
+% Meta-variable $e$ ranges over expressions.
+% Expressions are either variables $x$, integers $n$, annotated lambda
+% abstractions $\blam x A e$, un-annotated lambda abstractions $\erlam x e$ or
+% applications $e_1 ~ e_2$.
+
+% We write $A$, $B$ for
+% types. Types are either the integer type $\nat$, type variables $a$, functions
+% types $A \to B$, universal quantification $\forall a. A$, or the unknown type
+% $\unknown$. Though we only have one base type $\nat$, we also use $\bool$ for
+% the purpose of illustration. Monotypes $\tau$ contain all types other than the
+% universal quantifier and the unknown type. Contexts $\dctx$ is an \textit{ordered} list
+% that record types for term variables,
+% and all type variables with the expected well-formedness
+% condition.
+
+\subsection{Typing in Detail}
+
+\Cref{fig:decl-typing} gives the typing rules for our declarative system
+(the reader is advised to ignore the gray-shaded parts for now). Rule \rul{Var}
+extracts the type of the variable from the typing context. Rule \rul{Nat} always
+infers integer types. Rule \rul{LamAnn} puts $x$ with type annotation $A$ into
+the context, and continues type checking the body $e$. Rule \rul{Lam} assigns a
+monotype $\tau$ to $x$, and continues type checking the body $e$. Gradual types
+and polymorphic types are introduced via annotations explicitly.
+Rule \rul{Gen} puts a fresh type variable $a$ into the type context and generalizes
+the typing result $A$ to $\forall a. A$.
+Rule \rul{App} first
+infers the type of $e_1$, then the matching judgment $\tprematch A \match A_1
+\to A_2$ extracts the domain type $A_1$ and the codomain type $A_2$ from type
+$A$. The type $A_3$ of the argument $e_2$ is then compared with $A_1$ using the
+consistent subtyping judgment.
+
+\renewcommand{\trto}[1]{\hlmath{\rightsquigarrow{#1}}}
+\begin{figure}[t]
+  \begin{small}
+  \begin{mathpar}
+    \framebox{$\tpreinf e : A \trto s$} \\
+    \DVar \and \DNat \and \DGen
+    \and \DLamAnnA
+    \and \DLam
+    \and \DApp
+  \end{mathpar}
+  \begin{mathpar}
+    \framebox{$\tprematch A \match A_1 \to A_2$} \\
+    \MMC \\ \MMA \and \MMB
+  \end{mathpar}
+
+  \end{small}
+  \caption{Declarative typing}
+  \label{fig:decl-typing}
+\end{figure}
+
+\paragraph{Matching.} The matching judgment of
+\citet{siek2015refined} can be extended to polymorphic types naturally,
+resulting in $\tprematch A \match A_1 \to A_2$. In \rul{M-Forall}, a monotype
+$\tau$ is guessed to instantiate the universal quantifier $a$. This rule is
+inspired by the \textit{application judgment} $\Phi \vdash A \bullet e
+\Rightarrow C$~\citep{dunfield2013complete}, which says that if we apply a term
+of type $A$ to an argument $e$, we get something of type $C$. If $A$ is a
+polymorphic type, the judgment works by guessing instantiations
+until it reaches an arrow type. Matching further simplifies the
+application judgment, since it is independent of typing. Rule \rul{M-Arr} and \rul{M-Unknown}
+are the same as \citet{siek2015refined}. \rul{M-Arr} returns the domain type $A_1$
+and range type $A_2$ as expected. If the input is $\unknown$, then
+\rul{M-Unknown} returns $\unknown$ as both the type for the domain and the range.
+
+Note that matching saves us from having a subsumption rule (\rul{Sub} in
+\cref{fig:original-typing}).
+% which is included in the original Odersky-L{\"a}ufer type system.
+the subsumption rule is incompatible with consistent subtyping, since the latter
+is not transitive. A discussion of a subsumption rule based on normal
+  subtyping can be found in the appendix.
+% applying the subsumption rule twice, once to $\unknown$, and once to any type we want.
+
+
+\renewcommand{\trto}[1]{\rightsquigarrow{#1}}
+\subsection{Type-directed Translation}
+\label{sec:type:trans}
+
+We give the dynamic semantics of our language by translating it to \pbc. Below
+we show a subset of the terms in \pbc that are used in the translation:
+\[
+  \text{Terms}\quad s ::= x \mid n \mid \blam x A s \mid \Lambda a. s \mid s_1~s_2 \mid \cast A B s
+\]
+A cast $\cast A B {s}$ converts the value of term $s$ from type $A$ to type $B$.
+A cast from $A$ to $B$ is permitted only if the types are \textit{compatible},
+written $A \pbccons B$, as briefly mentioned in
+\cref{subsec:consistency-subtyping}. The syntax of types in \pbc is the
+same as ours.
+
+The translation is given in the gray-shaded parts in \cref{fig:decl-typing}. The
+only interesting case here is to insert explicit casts in the application rule.
+Note that there is no need to translate matching or consistent subtyping,
+instead we insert the source and target types of a cast directly in the
+translated expressions, thanks to the following two lemmas:
+
+\begin{clemma}[$\match$ to $\pbccons$]%Compatibility of Matching]
+  \label{lemma:comp-match}
+  If $\tprematch A \match A_1 \to A_2$, then $A \pbccons A_1 \to A_2$.
+\end{clemma}
+
+\begin{clemma}[$\tconssub$ to $\pbccons$]%[Compatibility of Consistent Subtyping]
+  \label{lemma:comp-conssub}
+  If $\tpreconssub A \tconssub B$, then $A \pbccons B$.
+\end{clemma}
+
+In order to show the correctness of the translation, we prove that our
+translation always produces well-typed expressions in \pbc. By
+\cref{lemma:comp-match,lemma:comp-conssub}, we have the following theorem:
+
+\begin{ctheorem}[Type Safety]
+  \label{lemma:type-safety}
+  If $\tpreinf e : A \trto s$, then $\dctx \bypinf s : A$.
+\end{ctheorem}
+
+\paragraph{Parametricity.} An important semantic property of polymorphic types is
+\textit{relational parametricity}~\citep{reynolds1983types}. The parametricity
+property says that all instances of a polymorphic function should
+behave \textit{uniformly}. % In other words, functions cannot inspect into a type
+% variable, and act differently for different instances of the type variable.
+A classic example is a function with the type $\forall a . a \to a$. The
+parametricity property guarantees that a value of this type must be either the
+identity function (i.e., $\lambda x . x$) or the undefined function (one which
+never returns a value). However, with the addition of the unknown type
+$\unknown$, careful measures are to be taken to ensure parametricity. This is
+exactly the circumstance that \pbc was designed to address. \citet{amal2017blame}
+proved that \pbc satisfies relational parametricity. Based on their result, and
+by \cref{lemma:type-safety}, parametricity is preserved in our system.
+
+\paragraph{Ambiguity from Casts.}
+
+The translation does not always produce a unique target expression.
+This is because when we guess a monotype $\tau$ in rule \rul{M-Forall} and
+\rul{CS-ForallL}, we could have different choices, which inevitably leads to
+different types. Unlike (non-gradual) polymorphic type systems
+\citep{jones2007practical, dunfield2013complete}, the choice of monotypes could affect
+runtime behaviour of the translated programs, since they could appear inside the
+explicit casts. For example, the following shows two possible translations for
+the same source expression $\blam x \unknown {f ~ x}$, where the type of $f$ is
+instantiated to $\nat \to \nat$ and $\bool \to \bool$, respectively:
+\begin{small}
+\begin{align*}
+  f: \forall a. a \to a &\byinf (\blam x \unknown {f ~ x})
+                          : \unknown \to \nat \\
+                          &\trto (\blam x \unknown (\cast {\forall a. a \to a} {\nat \to \nat} f) ~
+                          (\hlmath{\cast \unknown \nat} x))
+  \\
+  f: \forall a. a \to a &\byinf (\blam x \unknown {f ~ x})
+                          : \unknown \to \bool \\
+                          &\trto (\blam x \unknown (\cast {\forall a. a \to a} {\bool \to \bool} f) ~
+                          (\hlmath{\cast \unknown \bool} x))
+\end{align*}
+\end{small}
+If we apply $\blam x \unknown {f ~ x}$ to $3$, which is fine
+since the function can take any input, the first translation runs smoothly in
+\pbc, while the second one will raise a cast error ($\nat$ cannot be cast to
+$\bool$). Similarly, if we apply it to $\truee$, then the second succeeds while
+the first fails. The culprit lies in the highlighted parts where any
+instantiation of $a$ would be put inside the explicit cast. More generally, any
+choice introduces an explicit cast to that type in the translation, which causes
+a runtime cast error if the function is applied to a value whose type does not
+match the guessed type. Note that this does not compromise the type safety of
+the translated expressions, since cast errors are part of the type safety
+guarantees.
+
+\paragraph{Coherence.}
+
+The ambiguity of translation seems to imply that the declarative system is
+\textit{incoherent}. A semantics
+is coherent if distinct typing derivations of the same typing judgment possess
+the same meaning~\citep{Reynolds_coherence}. We argue that the declarative
+system is ``coherent up to cast errors'' in the sense that a well-typed program
+produces a unique value, or results in a cast error. In the above example,
+whatever the translation might be, applying $\blam x \unknown {f ~ x}$ to $3$
+either results in a cast error, or produces $3$, nothing else.
+
+This discrepancy is due to the guessing nature of the \textit{declarative}
+system. As far as the declarative system is concerned, both $\nat \to \nat$ and
+$\bool \to \bool$ are equally acceptable. But this is not the case at runtime.
+The acute reader may have found that the \textit{only} appropriate choice is to
+instantiate $f$ to $\unknown \to \unknown$. However, as specified by rule
+\rul{M-Forall} in \cref{fig:decl-typing}, we can only instantiate type variables
+to monotypes, but $\unknown$ is \textit{not} a monotype! We will get back to
+this issue in \cref{subsec:algo:discuss} after we present the corresponding
+algorithmic system in \cref{sec:algorithm}.
+
+
+\subsection{Correctness Criteria}
+\label{sec:criteria}
+
+% \bruno{You should replace uses of ``the rule SUB'' in the paper by
+%   ``the subsumption rule''.}
+\citet{siek2015refined} present a set of properties that a well-designed gradual
+typing calculus must have, which they call the refined criteria. Among all the
+criteria, those related to the static aspects of gradual typing are well
+summarized by \citet{cimini2016gradualizer}. Here we review those criteria and
+adapt them to our notation. We have proved in Coq that our type system satisfies
+all these criteria.
+
+\begin{clemma}[Correctness Criteria]\leavevmode
+  \begin{itemize}
+  \item \textbf{Conservative extension:}
+    for all static $\dctx$, $e$, and $A$,
+    \begin{itemize}
+    \item if $\dctx \byhinf e : A $,
+      then there exists $B$,
+      such that $\dctx \byinf e : B$,
+      and $\tpresub B \tsub A$.
+    \item if $\dctx \byinf e : A$,
+      then $\dctx \byhinf e : A $
+    \end{itemize}
+  \item \textbf{Monotonicity w.r.t. precision:}
+    for all $\dctx, e, e', A$,
+    if $\dctx \byinf e : A$,
+    and $e' \lessp e$,
+    then $\dctx \byinf e' : B$,
+    and $B \lessp A$ for some B.
+  \item \textbf{Type Preservation of cast insertion:}
+    for all $\dctx, e, A$,
+    if $\dctx \byinf e : A$,
+    then $\dctx \byinf e : A \trto s$,
+    and $\dctx \bypinf s : A$ for some $s$.
+  \item \textbf{Monotonicity of cast insertion:}
+    for all $\dctx, e_1, e_2, e_1', e_2', A$,
+    if $\dctx \byinf e_1 : A \trto e_1'$,
+    and $\dctx \byinf e_2 : A \trto e_2'$,
+    and $e_1 \lessp e_2$,
+    then $\dctx \ctxsplit \dctx \bylessp e_1' \lesspp e_2'$.
+  \end{itemize}
+\end{clemma}
+
+
+The first criterion states that the gradual type system should be a conservative
+extension of the original system. In other words, a \textit{static} program that
+is typeable in the Odersky-L{\"a}ufer type system if and only if it is typeable
+in the gradual type system. A static program is one that does not contain any
+type $\unknown$\footnote{Note that the term \textit{static} has appeared several
+  times with different meanings.}. However since our gradual type system does
+not have the subsumption rule, it produces more general types.
+% It also
+% ensures that ill-typed programs of the original language remain so in the
+% gradual type system.
+
+The second criterion states that if a typeable expression loses some type
+information, it remains typeable. This criterion depends on the definition of
+the precision relation, written $A \lessp B$, which is given in the appendix.
+The relation intuitively captures a notion of types containing more or less
+unknown types ($\unknown$). The precision relation over types lifts to programs,
+i.e., $e_1 \lessp e_2$ means that $e_1$ and $e_2$ are the same program except
+that $e_2$ has more unknown types.
+
+The first two criteria are fundamental to gradual typing. They explain for
+example why these two programs $(\blam x \nat {x + 1})$ and $(\blam x \unknown
+{x + 1})$ are typeable, as the former is typeable in the Odersky-L{\"a}ufer type
+system and the latter is a less-precise version of it.
+
+The last two criteria relate the compilation to the cast calculus. The third
+criterion is essentially the same as \cref{lemma:type-safety}, given that a
+target expression should always exist, which can be easily seen from
+\cref{fig:decl-typing}. The last criterion ensures that the translation must be
+monotonic over the precision relation $\lessp$.
+
+As for the dynamic guarantee, things become a bit murky for two reasons: (1) as
+we discussed before, our declarative system is incoherent in that the runtime
+behaviour of the same source program can vary depending on the particular
+translation; (2) it is still unknown whether dynamic guarantee holds in \pbc. We
+will have more discussion on the dynamic guarantee in \cref{subsec:dynamic}.
+
+
+
+
+% since it is
+% unknown whether it holds in \pbc. According to \citet{yuu2017poly} (where they
+% have System F$_C$ which is similar to \pbc), the difficulty lies in the definition
+% of term precision that preserves the semantics.
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: ../paper.bib
+%%% End:

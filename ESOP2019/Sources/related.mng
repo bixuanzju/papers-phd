@@ -1,0 +1,281 @@
+%%% !!! WARNING: AUTO GENERATED. DO NOT MODIFY !!! %%%
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Coherence.}
+
+In calculi featuring coercive subtyping, a semantics that interprets the
+subtyping judgment by introducing explicit coercions is typically defined on
+typing derivations rather than on typing judgments. A natural question that
+arises for such systems is whether the semantics is \emph{coherent}, i.e.,
+distinct typing derivations of the same typing judgment possess the same
+meaning. Since Reynolds~\cite{Reynolds_1991} proved the coherence of a calculus with
+intersection types, % based on the denotational semantics for intersection types,
+many researchers have studied the problem of coherence in a variety of typed
+calculi. Two approaches are commonly found in the literature.
+The first approach is to find a normal form for a representation of
+the derivation and show that normal forms are unique for a given typing
+judgment~\cite{Breazu_Tannen_1991,Curien_1992,SCHWINGHAMMER_2008}.
+However, this approach cannot be directly applied to Curry-style
+calculi (where the lambda abstractions are not type annotated).
+% Also this line of reasoning cannot be used when the calculus has general recursion.
+Biernacki and Polesiuk~\cite{biernacki2015logical} considered the coherence
+problem of coercion semantics. Their criterion for coherence of the translation
+is \emph{contextual equivalence} in the target calculus. % They presented a
+% construction of logical relations for establishing so constructed coherence for
+% coercion semantics, showing that this approach is applicable in a variety of
+% calculi, including delimited continuations and control-effect subtyping.
+Inspired by this approach, Bi et al.~\cite{bi_et_al:LIPIcs:2018:9227} proposed the canonicity relation
+to prove coherence for a calculus with disjoint intersection types and BCD
+subtyping. As we have shown in \cref{sec:coherence:poly}, constructing a
+suitable logical relation for \fnamee is challenging. On the one hand, the
+original approach by Alpuim et al.~\cite{alpuimdisjoint} in \fname does not work
+any more due to the addition of BCD subtyping. On the other hand, simply
+combining System F's logical relation with \namee's canonicity relation does not
+work as expected, due to the issue of well-foundedness. To solve the problem, we
+employ immediate substitutions and a restriction to predicative instantiations.
+%Our work is the first to use logical relations to show coherence for a
+%rich calculus with
+%disjoint intersection types, a merge operator, BCD subtyping and
+%parametric polymorphism.
+
+
+
+% \bruno{Drop most of what follows and focus
+% on summarizing the challenges of adding disjoint quantification.}
+
+% BCD subtyping in our setting poses a non-trivial complication over
+% their simple structural subtyping. Indeed, because any two
+% coercions between given types are behaviorally equivalent in the target
+% language, their coherence reasoning can all take place in the target language.
+% This is not true in our setting, where some coercions can be distinguished by
+% arbitrary target programs, but not those that are elaborations of source
+% programs. % (e.g., $  \lambda \ottmv{x} .\, \pi_1 \, \ottmv{x}  $ and $  \lambda \ottmv{x} .\, \pi_2 \, \ottmv{x}  $ should be equated in
+% % our setting.)
+% Hence, we have to restrict our reasoning to the latter class,
+% which is reflected in a more complicated notion of contextual equivalence and
+% our logical relation's non-trivial treatment of pairs.
+
+\paragraph{BCD subtyping and decidability.}
+
+The BCD type system was first introduced by Barendregt et
+al.~\cite{Barendregt_1983} to characterize exactly the strongly normalizing
+terms. The BCD type system features a powerful subtyping relation, which serves
+as a base for our subtyping relation.
+% Bessai el at.\cite{DBLP:journals/corr/BessaiDDCd15} show how to type classes and mixins in a
+% BCD-style record calculus with a merge-like operator~\cite{bracha1990mixin}
+% that only operates on records, and they only study a type assignment system.
+The decidability of BCD subtyping has been shown in several
+works~\cite{pierce1989decision, Kurata_1995, Rehof_2011, Statman_2015}.
+Laurent~\cite{laurent2012intersection} formalized the relation in Coq in order
+to eliminate transitivity cuts from it, but his formalization does not deliver
+an algorithm. Only recently, Laurent~\cite{Laurent18b} presented a general way of
+defining a BCD-like subtyping relation extended with generic
+contravariant/covariant type constructors that enjoys the ``sub-formula
+property''. Our Coq formalization extends the approach used in \namee,
+which follows a different idea based on Pierce's
+decision procedure~\cite{pierce1989decision},
+with parametric (disjoint) polymorphism and corresponding
+distributivity rules. More recently,
+Muehlboeck and Tate~\cite{muehlboeck2018empowering} presented a
+decidable algorithmic system (proved in Coq)
+with union and intersection types. Similar to \fnamee,
+their system also has distributive subtyping rules. They also 
+discussed the addition of polymorphism, but left a Coq formalization
+for future work. In their work they regard intersections of disjoint
+types (e.g., $\mathsf{String}  \, \& \,  \mathsf{Int}$) as uninhabitable, which is different
+from our interpretation. 
+As a consequence, coherence is a non-issue for them.
+
+
+
+
+\paragraph{Intersection types, the merge operator and polymorphism.}
+
+Forsythe~\cite{reynolds1988preliminary} has intersection types and a merge-like
+operator. However to ensure coherence, various restrictions were added to limit
+the use of merges. In Forsythe merges cannot contain more than one function.
+% whereas our merges do not have this restriction.
+Castagna et al.~\cite{Castagna_1992} proposed a coherent calculus $\lambda \&$ to study
+overloaded functions. $\lambda \&$ has a special merge operator
+that works on functions only. % Like ours, they also impose well-formedness
+% conditions on the formation of a (functional) merge. However, those conditions
+% operate on function types only, and it is not clear how to generalize them to
+% arbitrary types.
+Dunfield proposed a calculus~\cite{dunfield2014elaborating}
+(which we call \dname) that shows significant expressiveness of type systems
+with unrestricted intersection types and a (unrestricted) merge operator.
+However, because of his unrestricted merge operator (allowing $  1   \, ,, \,   2  $), his calculus lacks coherence.
+Blaauwbroek's \lname~\cite{lasselambda} enriched \dname with BCD subtyping and
+computational effects, but he did not address coherence.
+The coherence issue for a calculus similar to \dname was first addressed in
+\oname~\cite{oliveira2016disjoint} with the notion of disjointness,
+but at the cost of dropping unrestricted intersections, and a strict
+notion of coherence (based on $\alpha$-equivalence). Later Bi et
+al.~\cite{bi_et_al:LIPIcs:2018:9227} improved calculi with disjoint intersection
+types by removing several restrictions, adopted BCD subtyping
+and a semantic notion of coherence (based on contextual equivalence)
+proved using canonicity. The combination of intersection types, a merge operator and
+parametric polymorphism, while achieving coherence was first studied in
+\fname~\cite{alpuimdisjoint}, which serves as a foundation for \fnamee. However,
+\fname suffered the same problems as \oname. 
+Additionally in \fname a bottom type is problematic due
+to interactions with disjoint polymorphism and the lack of
+unrestricted intersections. The issues can be illustrated with the 
+well-typed \fnamee expression $  \Lambda (  \alpha   *   \bot  ) .\,  \lambda \ottmv{x}  :  \alpha  .\, \ottmv{x}    \, ,, \,  \ottmv{x} $.
+In this expression the type of $ \ottmv{x}  \, ,, \,  \ottmv{x} $ is
+$\alpha  \, \& \,  \alpha$. Such a merge does not violate disjointness because
+the only types that $\alpha$ can be instantiated with are top-like, and
+top-like types do not introduce incoherence.
+In \fname a type variable $\alpha$ can never be disjoint to another
+type that contains $\alpha$, but (as the previous expression shows)
+the addition of a bottom type allows
+expressions where such (strict) condition does not hold.
+In this work, we removed those
+restrictions, extended BCD subtyping with polymorphism, and proposed a more
+powerful logical relation for proving coherence. \Cref{fig:compare} summarizes
+the main differences between the aforementioned calculi.
+
+
+\newcommand{\tikzcircle}[2][black,fill=black]{\tikz[baseline=-0.5ex]\draw[#1,radius=#2] (0,0) circle ;}%
+\newcommand{\halfcircle}{\tikz[baseline=-0.5ex]{\draw[black, fill=white] (0, 0.07) arc (90:270:0.07); \draw[black, fill=black](0, -0.07) arc (-90:90:0.07);}}
+\newcommand{\emptycircle}{\tikzcircle[black,fill=white]{2pt}\xspace}
+\newcommand{\fullcircle}{\tikzcircle{2pt}\xspace}
+
+\begin{figure}[t]
+  \centering
+  \newcolumntype{L}{>{\raggedright\arraybackslash}p{4cm}}
+  \newcolumntype{C}{>{\centering\arraybackslash}p{1.2cm}}
+\begin{tabular}{LCCCCCC} \toprule
+  & \dname~\cite{dunfield2014elaborating} & \oname~\cite{oliveira2016disjoint} & \lname~\cite{lasselambda}  & \namee~\cite{bi_et_al:LIPIcs:2018:9227} & \fname~\cite{alpuimdisjoint}  & \fnamee \\ \midrule
+Disjointness &  \emptycircle &  \fullcircle &  \emptycircle  &    \fullcircle   & \fullcircle   &   \fullcircle   \\
+Unrestricted intersections &  \fullcircle &  \emptycircle &  \fullcircle  &  \fullcircle &   \emptycircle   &   \fullcircle   \\
+BCD subtyping &  \emptycircle & \emptycircle &  \fullcircle  &  \fullcircle             &  \emptycircle         &  \fullcircle  \\
+Polymorphism  &  \emptycircle &  \emptycircle  &  \emptycircle  &  \emptycircle &  \fullcircle  &  \fullcircle \\
+Coherence &  \emptycircle &  \halfcircle &  \emptycircle  &  \fullcircle &   \halfcircle   &   \fullcircle   \\
+Bottom type &  \emptycircle & \emptycircle &  \fullcircle  &  \emptycircle &  \emptycircle & \fullcircle   \\
+  \bottomrule
+\end{tabular}
+\caption{Summary of intersection calculi (\fullcircle $=$ yes, \emptycircle $=$ no, \protect\halfcircle\ $=$ syntactic coherence)}
+  \label{fig:compare}
+\end{figure}
+
+
+
+%%\paragraph{Other forms of intersection types.}
+
+There are also several other calculi with intersections and polymorphism. Pierce
+proposed $\mathsf{F}_{\land}$~\cite{pierce1991programming}, a calculus combining
+intersection types and bounded quantification. Pierce translates
+$\mathsf{F}_{\land}$ to System F extended with products, but he left coherence
+as a conjecture. More recently, Castagna et al.~\cite{castagna2014polymorphic}
+proposed a polymorphic calculus with set-theoretic type connectives
+(intersections, unions, negations). But their calculus does not include a merge
+operator. Castagna and Lanvin also proposed a gradual type
+system~\cite{Castagna_2017} with intersection and union types, but also without
+a merge operator.
+% Moreover, their intersections are only used between function types,
+% allowing overloading of types. Also they adopted the \emph{semantic} approach
+% for defining the subtyping relation. The benefit of this approach, compared with
+% the more used \emph{syntactic} approach, is that the subtyping relation is by
+% definition \emph{complete}. In that regard, their subtyping relation thus
+% completely subsumes BCD subtyping.
+%Bi and Oliveira recently proposed
+%a typed model~\cite{bi_et_al:LIPIcs:2018:9214} for first-class traits
+%using an elaboration into \fname. Our implementation is built on \sedel extended
+%with BCD-style subtyping.
+
+
+% They also
+% showed that dynamic inheritance, self-references and abstract methods can all be
+% encoded by employing ideas from the denotational model of
+% inheritance~\cite{cook1989denotational}.
+
+
+% \subsection{Intersection Types and Multiple Inheritance}
+
+% Compagnoni and Pierce~\cite{compagnoni1996higher} proposed a lambda calculus
+% $\mathsf{F}_{\land}^{\omega}$, an extension of System $\mathsf{F}^{\omega}$ with
+% intersection types to model multiple inheritance. $\mathsf{F}_{\land}^{\omega}$
+% allows arbitrary finite intersections, where all the type members must have the
+% same kind. On the language side, modern object-oriented languages such as Scala, TypeScript,
+% Flow, Ceylon, and Grace have adopted some form of intersection types. Notably,
+% the DOT calculus~\cite{amin2012dependent,Rompf_2016}---a new type-theoretic
+% foundation for Scala---has a native support for intersection types. Generally
+% speaking, the most significant difference between our calculi and those
+% languages/calculi is that they do not have an explicit introduction form of
+% intersection types, like our merge operator. The lack of a native merge operator
+% leads to some awkward and type-unsafe solutions for defining a merge operator in
+% those languages. As noted by \cite{alpuimdisjoint}, one important use of
+% intersection types in TypeScript is the following function:
+% \begin{lstlisting}[language=JavaScript]
+% function extend<T, U>(first: T, second : U) : T & U {...}
+% \end{lstlisting}
+% which is analogous to our merge operator in that it takes two objects and
+% produces an object with the intersection of the types of the argument objects.
+% The implementation of \lstinline{extend} relies on low-level (and type-unsafe)
+% features of JavaScript. Similar encodings have also been proposed for Scala to
+% enable applications where the merge operator plays a fundamental
+% role~\cite{oliveira2013feature, rendel14attributes}. As we have shown in
+% \cref{sec:poly:motivation}, with disjointness constraints and a built-in merge
+% operator, a type-safe and conflict-free \lstinline{extend} function can be
+% naturally defined.
+
+
+
+\paragraph{Row polymorphism and bounded polymorphism.}
+
+Row polymorphism was originally proposed by Wand~\cite{wand1987complete}
+as a mechanism to enable type inference for a simple object-oriented language
+based on recursive records. These ideas were later adopted into type systems for
+extensible records~\cite{Harper:1991:RCB:99583.99603, leijen2005extensible, gaster1996polymorphic}.
+% Cardelli and
+% Mitchell~\cite{cardelli1989operations} define three primitive operations on
+% records: \emph{selection}, \emph{restriction} and \emph{extension}.
+Our merge operator can be seen as a generalization of record
+extension/concatenation, and selection is also built-in. In contrast
+to most record calculi, restriction is not a primitive operation in \fnamee,
+but can be simulated via subtyping. Disjoint quantification can 
+simulate the \emph{lacks} predicate often present in systems
+with row polymorphism.
+Recently Morris and McKinna presented a
+typed language~\cite{morrisrow}, generalizing and abstracting existing systems
+of row types and row polymorphism.
+Alpuim et al.~\cite{alpuimdisjoint}
+informally studied the relationship between row polymorphism and disjoint
+polymorphism, but it would be interesting to study such relationship more
+formally. The work of  Morris and McKinna may be interesting for such
+study in that it gives a general framework for row type systems.
+
+Bounded quantification is currently the dominant mechanism in major mainstream object-oriented languages 
+supporting both subtyping and polymorphism.
+% , and it features in essentially all
+% major mainstream OO languages.
+\fsub~\cite{cardelli1985understanding} provides a
+simple model for bounded quantification, but type-checking in full \fsub is
+proved to be undecidable~\cite{pierce1994bounded}.
+Pierce's thesis~\cite{pierce1991programming} discussed the relationship between calculi
+with simple polymorphism and intersection types and bounded quantification. He
+observed that there is a way to ``encode'' many forms of bounded quantification
+in a system with intersections and pure (unbounded) second-order
+polymorphism. That encoding can be easily adapted to \fnamee:
+{\small
+\[
+ \forall (  \alpha   <:   \ottnt{A}  ) .\,  \ottnt{B}  \defeq  \forall (  \alpha   *   \top  ) .\, \ottsym{(}   [  \ottnt{A}  \, \& \,  \alpha  /  \alpha  ]  \ottnt{B}   \ottsym{)} 
+\]
+}%
+The idea is to replace bounded quantification by (unrestricted)
+universal quantification and all occurrences of $\alpha$
+by $\ottnt{A}  \, \& \,  \alpha$ in the body. Such an encoding seems to indicate
+that \fnamee could be used as a decidable alternative to (full) \fsub. 
+It is worthwhile to note that this encoding does not
+work in \fname because $\ottnt{A}  \, \& \,  \alpha$ is not well-formed ($\alpha$ is not
+disjoint to $\ottnt{A}$). In other words, the encoding requires
+unrestricted intersections.
+
+
+% Local Variables:
+% org-ref-default-bibliography: "../paper.bib"
+% TeX-master: "../paper"
+% End:

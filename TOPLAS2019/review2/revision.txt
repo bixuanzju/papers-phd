@@ -1,0 +1,141 @@
+
+From Associate Editor Jeffrey Foster:
+
+Recommendation #1: Minor Revision
+
+Associate Editor
+Comments for Author:
+Thank you for your careful revision. The reviewers have just a few more small
+comments that should be addressed. Hence I am recommending that you prepare a
+minor revision that addresses the reviewers' suggestions and resubmit the paper.
+
+Note: I passed on the revised appendix to the reviewer who asked for it, and
+that reviewer is satisfied with the improved appendix. So nothing further is
+needed to address that comment, except fixing the broken reference.
+
+------------------------
+
+From the reviewers:
+
+Referee: 1
+
+Comments to the Author
+
+The authors have satisfactorily addressed most of the issues I raised.
+
+I have one major comment (at the end), and a few minor comments on the updated version:
+
+14, footnote 8: I would not say "interpretation": this is not about two
+different interpretations of a concept, but two different (and, unfortunately,
+opposite) notations.
+
+Reply: Fixed. We use "notation" rather than "interpretation" as suggested.
+
+26 line 35: "measure metric" should be "measure".
+
+Reply: Fixed.
+
+26 line 39: "the full proofs can be found in ??"; similar problem at 39 line 15
+
+Reply: Fixed.
+
+39 line 41: "when comparing two judgments of typing terms of the same size": the
+first "of" should be deleted.
+
+Reply: Fixed
+
+(This paragraph seems rather closely paraphrased from a similar section of
+Dunfield and Krishnaswami (2013); it is safer to write prose from scratch, and
+then compare to prior work, than to paraphrase directly.)
+
+Reply: Fixed
+
+Major comment:
+
+The appendix seems to be absent in the revised version. I would like to verify
+that the authors made some changes to proofs that they mentioned in their
+response, but cannot. At least, the references to the appendix should not appear
+as "??".
+
+Reply: Fixed. We attached the appendix and all references to the appendix are fixed.
+
+Referee: 2
+
+Comments to the Author
+
+I am almost entirely satisfied with the changes.
+
+My final comment is that footnote 3 reads as a non­sequitur now:
+
+"In a type system with impure features, such as non­termination or exceptions,
+the encoded types can have valid inhabitants with side­effects. However, that is
+beyond the scope of this paper"
+
+What is beyond the scope of the paper? I would just say instead that the caveat
+to saying polymorphism means certain builtin datatypes can be avoided is that
+you only get the *lazy* version of those datatypes.
+
+TODO
+
+Referee: 3
+
+Comments to the Author
+
+Important Issues
+================
+
+p. 6
+"Definition 2.2 (Declarative Consistent Subtyping of Siek and Taha [2007])"
+
+This is still confusing because of the above phrase "of Siek and Taha [2007]".
+This is not a definition in Siek and Taha [2007], it is a proposition.
+Basically, you need to make it clear that *you* are creating a strawman
+definition based on Siek and Taha's Proposition 2, which is helpful to *you*
+because generalizing it leads to your definition of consistent subtyping. The
+distinction is that it is *your* choice to treat Prop. 2 like a definition, not
+Siek and Taha's. You should say that you're creating a strawman and explain why,
+and edit Definition 2.2 to instead say:
+
+"Definition 2.2 (Strawman for Declarative Consistent Subtyping)"
+
+Reply: Fixed. We made the change as suggested.
+
+p. 11
+
+Similarly, the sentence "Unfortunately, the original declarative definition of
+Siek and Taha (Definition 2.2) does not work well with our definitions of
+consistency and subtyping for polymorphic types." is again incorrect because it
+was a proposition, not a definition, in their work. Also, the phrasing sounds
+like you're blaming Siek and Taha for something they didn't do. Instead, write
+something like "The strawman version of consistent subtyping (Definition 2.2)
+does not work well with our definitions of consistency and subtyping for
+polymorphic types."
+
+Reply: Fixed. We made the change as suggested.
+
+Minor Edits
+===========
+
+p. 1
+
+"The algorithmic version employs techniques developed by Dunfield and
+Krishnaswami on higher­rank polymorphism to deal with instantiation."
+==> change "on" to "for"
+"The algorithmic version employs techniques developed by Dunfield and
+Krishnaswami for higher­rank polymorphism to deal with instantiation."
+
+Reply: Fixed.
+
+"Python [Vitousek et al. 2014]" You should also cite MyPy.
+
+Reply: Fixed. We added the citation as suggested.
+
+p. 11
+
+"One of our design principles is that subtyping and consistency and orthogonal
+..."
+==> change "and" to "are"
+"One of our design principles is that subtyping and consistency are orthogonal
+..."
+
+Reply: Fixed.

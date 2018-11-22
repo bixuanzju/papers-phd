@@ -1,0 +1,143 @@
+\section{Background}
+\label{sec:background}
+
+In this section we review a simple gradually typed language with
+objects~\citep{siek2007gradual}, to introduce the concept of consistent
+subtyping. We also briefly talk about the \citeauthor{odersky1996putting} type system for
+higher-rank types~\citep{odersky1996putting}, which serves as the original
+language on which our gradually typed calculus with implicit 
+higher-rank polymorphism is based.
+
+
+\subsection{Gradual Subtyping}
+
+\begin{figure}[t]
+  \begin{small}
+
+  \begin{mathpar}
+    \framebox{$A \tsub B$}\\
+    \ObSInt \and \ObSBool \and \ObSFloat \and
+    \ObSIntFloat \\ \ObFun \and
+    \ObSRecord \and \ObSUnknown
+  \end{mathpar}
+
+  \begin{mathpar}
+    \framebox{$A \sim B$}\\
+    \ObCRefl \and \ObCUnknownR \and
+    \ObCUnknownL \and \ObCC \and \ObCRecord
+  \end{mathpar}
+
+  \end{small}
+
+  \caption{Subtyping and type consistency in \obb}
+  \label{fig:objects}
+\end{figure}
+
+\citet{siek2007gradual} developed a gradual type system for object-oriented
+languages that they call \obb. Central to gradual typing is the concept of
+\emph{consistency} (written $\sim$) between gradual types, which are types
+that may involve the unknown type $ \star $. The intuition is that consistency
+relaxes the structure of a type system to tolerate unknown positions in a
+gradual type. They also defined the subtyping relation in a way that static type
+safety is preserved. Their key insight is that the unknown type $ \star $ is
+neutral to subtyping, with only $\star  \ottsym{<:}  \star$. Both relations are
+defined in \cref{fig:objects}.
+
+A primary contribution of their work is to show that consistency and subtyping
+are orthogonal. However, the orthogonality of consistency and subtyping does not
+lead to a deterministic relation.
+% To compose subtyping and consistency,
+Thus \citeauthor{siek2007gradual} defined \emph{consistent subtyping} (written
+$ \lesssim $) based on a \emph{restriction operator}, written $\mask A B$ that
+``masks off'' the parts of type $A$ that are unknown in type $B$. For example,
+$\mask {\nat \to \nat} {\bool \to \unknown} = \nat \to \unknown$, and $\mask
+{\bool \to \unknown} {\nat \to \nat} = {\bool \to \unknown}$. The definition of
+the restriction operator is given below:
+
+\begin{small}
+\begin{align*}
+   \mask A B = & \kw{case}~(A, B)~\kw{of}  \\
+               & \mid (\_, \unknown) \Rightarrow \unknown \\
+               & \mid (A_1 \to A_2, B_1 \to B_2)  \Rightarrow  \mask {A_1} {B_1} \to \mask {A_2} {B_2} \\
+               & \mid ([l_1: A_1,...,l_n:A_n], [l_1:B_1,...,l_m:B_m])~\kw{if}~n \leq m \Rightarrow
+                [l_1 : \mask {A_1} {B_1}, ..., l_n : \mask {A_n} {B_n}]\\
+               & \mid ([l_1: A_1,...,l_n:A_n], [l_1:B_1,...,l_m:B_m])~\kw{if}~n > m \Rightarrow  [l_1 : \mask {A_1} {B_1}, ..., l_m : \mask {A_m} {B_m},...,l_n:A_n ]\\
+               & \mid (\_, \_) \Rightarrow A
+\end{align*}
+\end{small}
+
+With the restriction operator, consistent subtyping is simply defined as:
+
+\begin{definition}[Algorithmic Consistent Subtyping of \citet{siek2007gradual}] \label{def:algo-old-decl-conssub}
+$A \tconssub B \equiv \mask A B \tsub \mask B A$.
+\end{definition}
+
+Later they show a proposition that consistent subtyping is equivalent to two
+declarative definitions, which we refer to as the strawman for \emph{declarative}
+consistent subtyping because it servers as a good guideline on superimposing
+consistency and subtyping. Both definitions are non-deterministic because of
+the intermediate type $C$.
+
+\begin{definition}[Strawman for Declarative Consistent Subtyping] \label{def:old-decl-conssub}
+The following two are equivalent:
+\begin{enumerate}
+\item $\ottnt{A}  \lesssim  \ottnt{B}$ if and only if $\ottnt{A}  \sim  \ottnt{C}$ and $\ottnt{C}  \ottsym{<:}  \ottnt{B}$ for some $C$.
+\item $\ottnt{A}  \lesssim  \ottnt{B}$ if and only if $\ottnt{A}  \ottsym{<:}  \ottnt{C}$ and $\ottnt{C}  \sim  \ottnt{B}$ for some $C$.
+\end{enumerate}
+\end{definition}
+
+In our later discussion, it will always be clear which definition we are referring
+to. For example, we focus more on \cref{def:old-decl-conssub} in
+\cref{subsec:towards-conssub}, and more on \cref{def:algo-old-decl-conssub} in
+\cref{subsec:conssub-wo-exist}.
+
+
+\subsection{The Odersky-L{\"a}ufer Type System}
+
+\begin{figure}[t]
+  \begin{small}
+    \centering
+    \begin{tabular}{lrcl} \toprule
+      Types & $\ottnt{A}, \ottnt{B}$ & $\Coloneqq$ & $ \mathsf{Int}  \mid \ottmv{a} \mid \ottnt{A}  \rightarrow  \ottnt{B} \mid \forall  \ottmv{a}  .\,  \ottnt{A}  $ \\
+      Monotypes & $\tau, \sigma$ & $\Coloneqq$ & $  \mathsf{Int}  \mid \ottmv{a} \mid \tau  \rightarrow  \sigma $ \\
+      Terms & $\ottnt{e}$ & $\Coloneqq$ & $ \ottmv{x}  \mid \ottmv{n}  \mid \lambda  \ottmv{x}  \ottsym{:}  \ottnt{A}  .\,  \ottnt{e} \mid \lambda  \ottmv{x}  .\,  \ottnt{e} \mid \ottnt{e_{{\mathrm{1}}}} \, \ottnt{e_{{\mathrm{2}}}} \mid \ottkw{let} \, \ottmv{x}  \ottsym{=}  \ottnt{e_{{\mathrm{1}}}} \, \ottkw{in} \, \ottnt{e_{{\mathrm{2}}}} $ \\
+      Contexts & $\Psi$ & $\Coloneqq$ & $  \bullet   \mid \Psi  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottnt{A}  \mid \Psi  \ottsym{,}  \ottmv{a}$ \\
+      \bottomrule
+    \end{tabular}
+
+    \drules[u]{$ \Psi  \vdash^\mathit{OL}  \ottnt{e}  \ottsym{:}  \ottnt{A} $}{Typing}{var, int, lamann, lam, app, sub, gen, let}
+
+    \drules[s]{$ \Psi  \vdash  \ottnt{A}  \ottsym{<:}  \ottnt{B} $}{Subtyping}{tvar, int, arrow, forallL, forallR}
+
+  \end{small}
+  \caption{Syntax and static semantics of the Odersky-L{\"a}ufer type system.}
+  \label{fig:original-typing}
+\end{figure}
+
+
+The calculus we are combining gradual typing with is the well-established
+predicative type system for higher-rank types proposed by
+\citet{odersky1996putting}.
+
+The syntax of the type system, along with the typing and subtyping judgments is
+given in \cref{fig:original-typing}. An implicit assumption throughout the paper
+is that variables in contexts are distinct. Most typing rules are standard.
+The \rref{u-sub} (the subsumption rule) allows us to convert the type $\ottnt{A_{{\mathrm{1}}}}$
+of an expression $\ottnt{e}$ to some 
+supertype $\ottnt{A_{{\mathrm{2}}}}$. The \rref{u-gen} generalizes type variables to polymorphic
+types. These two rules can be applied anywhere.
+Most subtyping rules are standard as well. \Rref{s-forallL} guesses a monotype
+$\tau$ to instantiate the type variable $\ottmv{a}$, and the subtyping relation
+holds if the the instantiated type $\ottnt{A}  \ottsym{[}  \ottmv{a}  \mapsto  \tau  \ottsym{]}$ is a subtype of $\ottnt{B}$. In
+\rref{s-forallR}, the type variable $\ottmv{a}$ is put into the typing context and
+subtyping continues with $\ottnt{A}$ and $\ottnt{B}$.
+We save additional explanation about
+the static semantics for \cref{sec:type-system}, where we present our gradually
+typed version of the calculus.
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: ../paper.bib
+%%% End:

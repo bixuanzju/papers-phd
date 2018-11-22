@@ -1,0 +1,131 @@
+\section{Background}
+\label{sec:background}
+
+In this section we review a simple gradually typed language with
+objects~\cite{siek2007gradual}, to introduce the concept of consistency
+subtyping. We also briefly talk about the Odersky-L{\"a}ufer type system for
+higher-rank types~\cite{odersky1996putting}, which serves as the original
+language on which our gradually typed calculus with implicit
+higher-rank polymorphism is based.
+
+
+\subsection{Gradual Subtyping}
+
+\begin{figure}[t]
+  \begin{small}
+  \begin{mathpar}
+    \framebox{$A \tsub B$}\\
+    \ObSInt \and \ObSBool \and \ObSFloat \and
+    \ObSIntFloat \\ \ObFun \and
+    \ObSRecord \and \ObSUnknown
+  \end{mathpar}
+
+  \begin{mathpar}
+    \framebox{$A \sim B$}\\
+    \ObCRefl \and \ObCUnknownR \and
+    \ObCUnknownL \and \ObCC \and \ObCRecord
+  \end{mathpar}
+
+  \end{small}
+
+  \caption{Subtyping and type consistency in \obb}
+  \label{fig:objects}
+\end{figure}
+
+\citet{siek2007gradual} developed a gradual typed system for object-oriented
+languages that they call \obb. Central to gradual typing is the concept of
+\textit{consistency} (written $\sim$) between gradual types, which are types
+that may involve the unknown type $\unknown$. The intuition is that consistency
+relaxes the structure of a type system to tolerate unknown positions in a
+gradual type. They also defined the subtyping relation in a way that static type
+safety is preserved. Their key insight is that the unknown type $\unknown$ is
+neutral to subtyping, with only $\unknown \tsub \unknown$. Both relations are
+found in \Cref{fig:objects}.
+
+A primary contribution of their work is to show that type consistency and
+subtyping are orthogonal, and can be superimposed. To compose subtyping and
+consistency, \citeauthor{siek2007gradual} defined \textit{consistent subtyping}
+(written $\tconssub$) in multiple equivalent ways:
+
+\begin{mdef}[Consistent Subtyping \`a la \citet{siek2007gradual}]\leavevmode
+\label{def:old-decl-conssub}
+\begin{itemize}
+\item $A \tconssub B$ if and only if $A \sim C$ and $C \tsub B$ for some $C$.
+\item $A \tconssub B$ if and only if $A \tsub C$ and $C \sim B$ for some $C$.
+\end{itemize}
+\end{mdef}
+
+Both definitions are non-deterministic because of the intermediate type $C$. To
+remove non-determinism, they came up with a so-called \textit{restriction
+  operator}, written $\mask A B$ that masks off the parts of a type $A$ that are
+unknown in a type $B$. The definition of the restriction operator is given
+below:
+\begin{small}
+\begin{align*}
+  \mask A B & =  \kw{case}~(A, B)~\kw{of}\\
+               & \mid (-, \unknown) \Rightarrow \unknown\\
+               & \mid ([l_1: A_1,...,l_n:A_n], [l_1:B_1,...,l_m:B_m]) \quad \kw{where} n \leq m \Rightarrow\\
+               & \qquad [l_1 : \mask {A_1} {B_1}, ..., l_n : \mask {A_n} {B_n}]\\
+               & \mid ([l_1: A_1,...,l_n:A_n], [l_1:B_1,...,l_m:B_m]) \quad \kw{where} n > m \Rightarrow\\
+               & \qquad [l_1 : \mask {A_1} {B_1}, ..., l_m : \mask {A_m} {B_m},...,l_n:A_n ]\\
+               & \mid (-, -) \Rightarrow A\\
+  \mask {A_1 \to A_2} {B_1 \to B_2} & =  \mask {A_1} {B_1} \to \mask {A_2} {B_2}
+\end{align*}
+\end{small}
+With the restriction operator, consistent subtyping is simply defined
+as $A \tconssub B \equiv \mask A B \tsub \mask B A$. And they proved that this
+definition is equivalent to \Cref{def:old-decl-conssub}.
+
+
+\subsection{The Odersky-L{\"a}ufer Type System}
+
+\begin{figure}[t]
+  \begin{small}
+
+    \begin{tabular}{lrcl} \toprule
+      Expressions & $e$ & \syndef & $x \mid n \mid
+                                    \blam x A e \mid e~e$ \\
+
+      Types & $A, B$ & \syndef & $ \nat \mid a \mid A \to B \mid \forall a. A$ \\
+      Monotypes & $\tau, \sigma$ & \syndef & $ \nat \mid a \mid \tau \to \sigma$ \\
+
+      Contexts & $\dctx$ & \syndef & $\ctxinit \mid \dctx,x: A \mid \dctx, a$ \\  \bottomrule
+    \end{tabular}
+
+  \begin{mathpar}
+    \framebox{$\dctx \byhinf e : A$}\\
+    \NVar \and \NNat \and \NLamAnnA \and
+    \NApp \and \NSub
+  \end{mathpar}
+
+  \begin{mathpar}
+    \framebox{$\dctx \bysub A \tsub B$}\\
+    \NForallL \and \NForallR \and
+    \NFun \and \NTVar \and \NSInt
+  \end{mathpar}
+
+  \end{small}
+  \caption{Syntax and static semantics of the Odersky-L{\"a}ufer type system.}
+  \label{fig:original-typing}
+\end{figure}
+
+
+The calculus we are combining gradual typing with is the fully annotated version
+of the well-established type system for higher-rank types proposed by
+\citet{odersky1996putting}. One difference is that, for simplicity, we do not account 
+for a let expression and, consequently, we do not have
+let-generalization. However, there is already existing work about gradual type
+systems with let expressions and let generalization (for example, see
+\citep{garcia2015principal}). Similar techniques can
+be applied to our calculus to enable let generalization.
+
+The syntax of the type system, along with the typing and subtyping judgments is
+given in \Cref{fig:original-typing}. We save the explanations for the
+static semantics to \Cref{sec:type-system}, where we present our
+gradually typed version of the calculus.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: "../paper.bib"
+%%% End:

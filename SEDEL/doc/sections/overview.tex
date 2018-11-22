@@ -1,0 +1,416 @@
+
+\section{Overview}
+\label{sec:overview}
+
+This section aims at introducing first-class classes and traits, their possible
+uses and applications, as well as the typing challenges that arise
+from their use.
+We start by describing a hypothetical JavaScript library for text editing
+widgets, inspired and adapted from Racket's GUI
+toolkit~\cite{DBLP:conf/oopsla/TakikawaSDTF12}. The example is illustrative of
+typical uses of dynamic inheritance/composition, and also the typing challenges
+in the presence of first-class classes/traits. Without diving into
+technical details, we then give the corresponding typed version in
+\name, and informally presents its salient features.
+
+\subsection{First-Class Classes in JavaScript}
+
+A class construct was officially added to JavaScript in the ECMAScript
+2015 Language Specification~\cite{EcmaScript:15}. One purpose of
+adding classes to JavaScript was to support a construct that is more
+familiar to programmers who come from mainstream class-based languages,
+such as Java or C++. However classes in JavaScript are
+\emph{first-class} and support functionality not easily mimicked in
+statically-typed class-based languages.
+
+\subparagraph{Conventional Classes.}
+Before diving into the more advanced features of JavaScript classes, we first
+review the more conventional class declarations supported in JavaScript as well
+as many other languages. Even for conventional classes there are some
+interesting points to note about JavaScript that will be important when we move
+into a typed setting. An example of a JavaScript class declaration is:
+\begin{lstlisting}[language=JavaScript]
+class Editor {
+  onKey(key) { return "Pressing " + key; }
+  doCut()    { return this.onKey("C-x") + " for cutting text"; }
+  showHelp() { return "Version: " + this.version() + " Basic usage..."; }
+};
+\end{lstlisting}
+This form of class definition is standard and very similar to declarations in
+class-based languages (for example Java). The \lstinline{Editor} class
+defines three methods: \lstinline{onKey} for handling key events,
+\lstinline{doCut} for cutting text and \lstinline{showHelp} for displaying help
+message. For the purpose of demonstration, we elide the actual implementation,
+and replace it with plain messages.
+
+We wish to bring the readers' attention to two points in the above class.
+Firstly, note that the \lstinline{doCut} method is defined in terms of the
+\lstinline{onKey} method via the keyword
+\lstinline[language=JavaScript]{this}. In other words the call to
+\lstinline{onKey} is enabled by the \emph{self} reference and is
+\emph{dynamically dispatched} (i.e., the particular implementation of
+\lstinline{onKey} will only be determined when the class or subclass
+is instantiated). % Typically an
+% OO programmer seeing this definition would expect the \lstinline{doCut} method
+% to call the \lstinline{onKey} method of a subclass of \lstinline{Editor}, even though
+% the subclass does not exist when the superclass \lstinline{Editor} is being
+% defined.
+Secondly, notice that there is no definition of
+the \lstinline{version} method in the class body, but such method is used inside the
+\lstinline{showHelp} method. In a untyped language, such as JavaScript, using
+undefined methods is error prone -- accidentally instantiating \lstinline{Editor}
+and then calling \lstinline{showHelp} will cause a runtime error!
+Statically-typed languages usually provide some means to protect us from this
+situation. For example, in Java, we would need an \textit{abstract} \lstinline{version}
+method, which effectively makes \lstinline{Editor} an abstract class and
+prevents it from being instantiated. As we will see, \name's treatment of
+abstract methods is quite different from mainstream languages. In fact, \name
+has a unified (typing) mechanism for dealing with both dynamic dispatch and abstract
+methods. We will describe \name's mechanism for dealing with both features and
+justify our design in \cref{sec:traits}.
+
+% A couple of things worth pointing out in the above code snippet: (1) the class
+% \lstinline{Editor} has no definition of the method
+% \lstinline{version}, but such method
+% is used in the body of the method \lstinline{showHelp}. In a strongly-typed OO
+% language, such as Java, we would need to define an abstract method for
+% \lstinline{version}. (2) The \lstinline{Editor} class requires
+% \emph{dynamic dispatching}.
+%  In the body of the method \lstinline{doCut} we invoke
+% the method \lstinline{onKey} defined in the same class through the keyword
+% \lstinline[language=JavaScript]{this}. This has the implication that when a
+% subclass of \lstinline{Editor} overrides the method \lstinline{onKey}, a call to
+% \lstinline{doCut} should invoke \lstinline{onKey} defined in the subclass
+% instead of the original one.\bruno{punchline?}
+%As we will see later, the type system of \name correctly handles it.
+
+\subparagraph{First-Class Classes and Class Expressions.}
+Another way to define a class in JavaScript is via a \emph{class expression}. This is where the class
+model in JavaScript is very different from the traditional class model found in
+many mainstream OO languages, such as Java, where classes are second-class
+(static) entities. JavaScript embraces a dynamic class model that treats classes
+as \emph{first-class} expressions: a function can take classes as arguments,
+or return them as a result. First-class classes enable programmers to
+abstract over patterns in the class hierarchy and to experiment with new forms of OOP
+such as mixins and traits. In particular, mixins become programmer-defined
+constructs. We illustrate this by presenting a simple mixin that adds
+spell checking to an editor:
+\begin{lstlisting}[language=JavaScript]
+const spellMixin = Base => {
+  return class extends Base {
+    check()    { return super.onKey("C-c") + " for spell checking"; }
+    onKey(key) { return "Process " + key + " on spell editor"; }
+  }
+};
+\end{lstlisting}
+In JavaScript, a mixin is simply a function with a superclass as input and a
+subclass extending that superclass as an output. Concretely, \lstinline{spellMixin}
+adds a method \lstinline{check} for spell checking. It also provides
+a method \lstinline{onKey}.
+The function \lstinline{spellMixin} shows the typical use of what we call \emph{dynamic inheritance}.
+Note that \lstinline{Base}, which is supposed to be a superclass being inherited, is \emph{parameterized}.
+Therefore \lstinline{spellMixin} can be applied to any base class at
+\emph{runtime}. This is impossible to do, in a type-safe way, in
+conventional statically-typed class-based languages like Java or
+C++.\footnote{With C++ templates, it is possible to
+  implement a so-called mixin pattern~\cite{DBLP:conf/gcse/SmaragdakisB00}, which enables extending
+a parameterized class. However C++ templates defer type-checking until
+instantiation, and such pattern still does not allow selection of the
+base class at runtime (only at up to class instantiation time).}
+
+It is noteworthy that not all applications of \lstinline{spellMixin} to base
+classes are successful. Notice the use of the \lstinline{super} keyword in the
+\lstinline{check} method. If the base class does not implement the
+\lstinline{onKey} method, then mixin application fails with a runtime error. In
+a typed setting, a type system must express this requirement (i.e., the presence of
+the \lstinline{onKey} method) on the (statically unknown) base class that is
+being inherited.
+
+
+% The class expression inside the function body has no
+% definition of the method \lstinline{version}, but which is used in the body of
+% the method \lstinline{showHelp}. In a statically-typed OO language, such as Java,
+% we would need an \emph{abstract method} for
+% \lstinline{version}.
+
+
+We invite the readers to pause for a while and think about what the type of
+\lstinline{spellMixin} would look like. Clearly our type system should be
+flexible enough to express this kind of dynamic pattern of composition in order
+to accommodate mixins (or traits), but also not too lenient to allow any
+composition.
+
+
+\subparagraph{Mixin Composition and Conflicts.}
+The real power of mixins is that \lstinline{spellMixin}'s functionality is not
+tied to a particular class hierarchy and is composable with other features. For
+example, we can define another mixin that adds simple modal editing -- as in Vim
+-- to an arbitrary editor:
+\begin{lstlisting}[language=JavaScript]
+const modalMixin = Base => {
+  return class extends Base {
+    constructor() {
+      super();
+      this.mode = "command";
+    }
+    toggleMode() { return "toggle succeeded"; }
+    onKey(key)   { return "Process " + key + " on modal editor"; }
+  };
+};
+\end{lstlisting}
+\lstinline{modalMixin} adds a \lstinline{mode} field that controls which
+keybindings are active, initially set to the command mode, and a method
+\lstinline{toggleMode} that is used to switch between modes. It also provides a method \lstinline{onKey}.
+
+Now we can compose \lstinline{spellMixin} with \lstinline{modalMixin} to produce
+a combination of functionality, mimicking some form of multiple inheritance:
+\begin{lstlisting}[language=JavaScript]
+class IDEEditor extends modalMixin(spellMixin(Editor)) {
+  version() { return 0.2; }
+}
+\end{lstlisting}
+The class \lstinline{IDEEditor} extends the base class \lstinline{Editor} with
+modal editing and spell checking capabilities. It also defines the missing
+\lstinline{version} method.
+
+At first glance, \lstinline{IDEEditor} looks quite fine, but it has a subtle
+issue. Recall that two mixins \lstinline{modalMixin} and \lstinline{spellMixin}
+both provide a method \lstinline{onKey}, and the \lstinline{Editor} class also
+defines an \lstinline{onKey} method of its own. Now we have a name clash. A
+question arises as to which one gets picked inside the \lstinline{IDEEditor}
+class. A typical mixin model resolves this issue by looking at the order of mixin applications. Mixins appearing later in the order
+overrides \emph{all} the identically named methods of earlier mixins. So in our
+case, \lstinline{onKey} in \lstinline{modalMixin} gets picked. If we
+change the order of application to \lstinline{spellMixin(modalMixin(Editor))},
+then \lstinline{onKey} in \lstinline{spellMixin} is inherited.
+
+\subparagraph{Problem of Mixin Composition.}
+From the above discussion, we can see that mixin are composed linearly: all the
+mixins used by a class must be applied one at a time. However, when we wish to
+resolve conflicts by selecting features from different mixins, we may not be
+able to find a suitable order. For example, when we compose the two mixins to
+make the class \lstinline{IDEEditor}, we can choose which of them comes first,
+but in either order, \lstinline{IDEEditor} cannot access to the \lstinline{onKey}
+method in the \lstinline{Editor} class.
+
+\subparagraph{Trait Model.}
+Because of the total ordering and the limited means for resolving conflicts imposed by the mixin model,
+researchers have proposed a simple compositional model called
+traits~\cite{scharli2003traits, Ducasse_2006}. Traits are lightweight entities and serve as
+the primitive units of code reuse. Among others, the key difference from
+mixins is that the order of trait composition is irrelevant, and conflicting
+methods must be resolved \emph{explicitly}. This gives programmers
+fine-grained control, when conflicts arise, of selecting desired features from
+different components. Thus we believe traits are a better model for multiple
+inheritance in statically-typed OO languages, and in \name we realize this
+vision by giving traits a first-class status in the language,
+achieving more expressive power compared with traditional (second-class) traits.
+
+
+\subparagraph{Summary of Typing Challenges.}
+From our previous discussion, we can identify the following typing challenges
+for a type system to accommodate the programming patterns (first-class classes/mixins)
+we have just seen in a typed setting:
+\begin{itemize}
+\item How to account for, in a typed way, abstract methods and dynamic dispatch.
+\item What are the types of first-class classes or mixins.
+\item How to type dynamic inheritance.
+\item How to express constraints on method presence and absence (the use of
+  \lstinline{super} clearly demands that).
+% \item How to ensure that composition of mixins is going to be valid, i.e., how
+%   to reflect linearity in a type system.
+\item In the presence of first-class traits, how to detect conflicts statically,
+  even when the traits involved are not statically known.
+\end{itemize}
+\name elegantly solves the above challenges in a unified way, as
+we will see next.
+
+
+% From a pragmatic point of view, this implicit conflict resolution
+% sometimes give programmers more surprises than convenience. What if the compiler can alarm us when a
+% potential conflict may occur. Because of the dynamic nature of JavaScript, we
+% would not know before actually running the code that there is a conflict. We
+% miss the guarantee that a static type system can provide: such conflict can be
+% detected at compile-time.
+
+% Given the flexibility of first-class classes in dynamically-typed languages, we
+% -- being advocates of statically-typed languages -- were wondering how to
+% incorporate this same expressive power into statically-typed
+% languages. As it
+% turns out, designing a sound type system that fully supports first-class classes
+% is notoriously hard; there are only a few, quite sophisticated, languages that
+% manage this~\cite{DBLP:conf/oopsla/TakikawaSDTF12, DBLP:conf/ecoop/LeeASP15}. We
+% pushed it further: \name has support for typed first-class
+% traits.\bruno{Better to say there's no work on typed first-class
+%   traits, and little work on first-class classes/mixins, despite
+%  many dynamic languages prominently supporting such features.}
+
+\subsection{A Glance at Typed First-Class Traits in \name}
+
+We now rewrite the above library in \name, but this time with types. The resulting code has the same functionality as the dynamic version, but is
+statically typed. All code snippets in this and later sections are runnable in
+our prototype implementation. Before proceeding, we ask the readers to bear in mind that in this section we are not using traits
+in the most canonical way, i.e., we use traits as if they are classes (but with
+built-in conflict detection). This is because we are trying to stay as close as possible
+to the structure of the JavaScript version for ease of comparison. In
+\cref{sec:traits} we will remedy this to make better use of traits.
+
+\subparagraph{Simple Traits.}
+Below is a simple trait \lstinline{editor}, which corresponds to the JavaScript
+class \lstinline{Editor}. The \lstinline{editor} trait defines the same set of
+methods: \lstinline{on_key}, \lstinline{do_cut} and \lstinline{show_help}:
+\lstinputlisting[linerange=14-18]{../../examples/overview2.sl}% APPLY:linerange=OVERVIEW_EDITOR
+The first thing to notice is that \name uses a syntax (similar to Scala's
+self type annotations~\cite{odersky2004overview}) where we can give a type annotation to the
+\lstinline{self} reference. In the type of \lstinline{self} we use
+\lstinline{&} construct to create intersection types. \lstinline{Editor} and \lstinline{Version} are two record types:
+\lstinputlisting[linerange=7-8]{../../examples/overview2.sl}% APPLY:linerange=OVERVIEW_EDITOR_TYPES
+For the sake of conciseness, \name uses \lstinline{type} aliases to abbreviate types.
+
+\subparagraph{Self-Types Encode Abstract Methods.}
+Recall that in the JavaScript class \lstinline{Editor}, the \lstinline{version}
+method is undefined, but is used inside \lstinline{showHelp}. How can we express
+this in the typed setting, if not with an abstract method? In \name, self-types
+play the role of trait requirements. As the first approximation, we
+can justify the use of \lstinline{self.version} by noticing that (part of) the
+type of \lstinline{self} (i.e., \lstinline{Version}) contains the declaration of
+\lstinline{version}. An interesting aspect of \name's trait model is that there
+is no need for abstract methods. Instead, abstract methods can be simulated as
+requirements of a trait. Later, when the trait is composed with other
+traits, \emph{all} requirements on the self-types must be
+satisfied and one of the traits in the composition must provide an
+implementation of the method \lstinline{version}.
+%to this point in \cref{sec:traits}.
+
+As in the JavaScript version, the \lstinline{on_key} method is invoked on
+\lstinline{self} in the body of \lstinline{do_cut}. This is allowed as (part of)
+the type of \lstinline{self} (i.e., \lstinline{Editor}) contains the signature
+of \lstinline{on_key}. Comparing \lstinline{editor} to the JavaScript class
+\lstinline{Editor}, almost everything stays the same, except that we now have
+the typed version. As a side note, since \name is currently a pure functional OO
+language, there is no difference between fields and methods, so we can omit
+empty arguments and parameter parentheses.
+
+\subparagraph{First-Class Traits and Trait Expressions.}
+
+\name treats traits as first-class expressions, putting them in the same
+syntactic category as objects, functions, and other primitive forms. To
+illustrate this, we give the \name version of \lstinline{spellMixin}:
+\lstinputlisting[linerange=22-29]{../../examples/overview2.sl}% APPLY:linerange=OVERVIEW_HELP
+This looks daunting at first, but \lstinline{spell_mixin} has almost the same structure as
+its JavaScript cousin \lstinline{spellMixin}, albeit with
+some type annotations. In \name, we use capital letters (\lstinline{A}, \lstinline{B}, $\dots$) to denote type variables, and trait
+expressions \lstinline$trait [self : ...] inherits ... => {...}$ to create
+first-class traits. Trait expressions have trait
+types of the form \lstinline{Trait[T1, T2]} where \lstinline{T1} and \lstinline{T2} denote trait requirements and functionality respectively.
+We will explain trait types in \cref{sec:traits}. Despite the structural similarities, there are several significant
+features that are unique to \name (e.g., the disjointness operator \lstinline{*}).
+We discuss these in the following.
+
+
+
+\subparagraph{Disjoint Polymorphism and Conflict Detection.}
+
+\name uses a type system based on \emph{disjoint intersection types}~\cite{oliveira2016disjoint} and
+\emph{disjoint polymorphism}~\cite{alpuimdisjoint}. Disjoint intersections
+empower \name to detect conflicts statically when trying to compose two
+traits with identically named features. For example composing two traits
+\lstinline{a} and \lstinline{b} that both provide \lstinline{foo} gives a
+type error (the overloaded \lstinline{&} operator denotes trait composition):
+\begin{lstlisting}
+trait a => { foo = 1 };
+trait b => { foo = 2 };
+trait c inherits a & b => {}; -- type error!
+\end{lstlisting}
+Disjoint polymorphism, as a more advanced mechanism, allows detecting conflicts
+even in the presence of polymorphism -- for example when a trait is parameterized and its
+full set of methods is not statically known. As can be seen,
+\lstinline{spell_mixin} is actually a polymorphic function. Unlike ordinary
+parametric polymorphism, in \name, a type variable can also have a disjointness
+constraint. For instance, \lstinline{A * Spelling & OnKey}
+means that \lstinline{A} can be instantiated to any type as long as it \emph{does not}
+contain \lstinline{check} and \lstinline{on_key}. To mimic mixins, the
+argument \lstinline{base}, which is supposed to be some trait, serves as the
+``base'' trait that is being inherited. Notice that the type variable
+\lstinline{A} appears in the type of \lstinline{base}, which essentially states
+that \lstinline{base} is a trait that contains at least those methods specified
+by \lstinline{Editor}, and possibly more (which we do not know statically).
+% In summary, \lstinline{Trait[Editor & Version, Editor & A]} (the assigned type
+% of \lstinline{base}) specifies that both method \emph{presence} and \emph{absence}.
+Also note that leaving out the \lstinline{override} keyword will result in a
+type error. The type system is forcing us to be very specific as to what is the
+intention of the \lstinline{on_key} method because it sees the same method is
+also declared in \lstinline{base}, and blindly inheriting \lstinline{base}
+will definitely cause a method conflict. As a final note, the use of \lstinline{super}
+inside \lstinline{check} is allowed because the ``super'' trait \lstinline{base}
+implements \lstinline{on_key}, as can be seen from its type.
+
+
+\subparagraph{Dynamic Inheritance.}
+
+Disjoint polymorphism enables us to correctly type dynamic inheritance:
+\lstinline{spell_mixin} is able to take any trait that conforms with its
+assigned type, equips it with the \lstinline{check} method and overrides its
+old \lstinline{on_key} method. As a side note, the use of disjoint polymorphism
+is essential to correctly model the mixin semantics. From the type we know
+\lstinline{base} has some features specified by \lstinline{Editor}, plus
+something more denoted by \lstinline{A}. By inheriting \lstinline{base}, we are
+guaranteed that the result trait will have everything that is already contained
+in \lstinline{base}, plus more features. This is in some sense similar to row
+polymorphism~\cite{wand1994type} in that the result trait is prohibited from
+forgetting methods from the argument trait. As we will discuss in
+\cref{sec:related}, disjoint polymorphism is more expressive than row
+polymorphism.
+
+
+\subparagraph{Typing Mixin Composition.}
+Next we give the typed version of \lstinline{modalMixin} as follows:
+\lstinputlisting[linerange=34-41]{../../examples/overview2.sl}% APPLY:linerange=OVERVIEW_MODAL
+Now the definition of \lstinline{modal_mixin} should be self-explanatory.
+Finally we can apply both ``mixins'' one by one to \lstinline{editor} to create
+a concrete editor:
+\lstinputlisting[linerange=46-49]{../../examples/overview2.sl}% APPLY:linerange=OVERVIEW_LINE
+As with the JavaScript version, we need to fill in the missing
+\lstinline{version} method. It is easy to verify that the \lstinline{on_key} method
+in \lstinline{modal_mixin} is inherited. Compared with the untyped version,
+here this behaviour is reasonable because in each mixin we specifically tags the
+\lstinline{on_key} method to be an overriding method. Let us take a close look
+at the mixin applications. Since \name is currently explicitly typed, we need to
+provide concrete types when using \lstinline{modal_mixin} and \lstinline{spell_mixin}.
+In the inner application (\lstinline{spell_mixin Top editor}), we use the top
+type \lstinline{Top} to instantiate \lstinline{A} because the \lstinline{editor} trait
+provides exactly those method specified by \lstinline{Editor} and nothing more
+(hence \lstinline{Top}). In the outer application, we use \lstinline{Spelling}
+to instantiate \lstinline{A}. This is where implicit conflict resolution of
+mixins happens. We know the result of the inner application actually forms a
+trait that provides both \lstinline{check} and \lstinline{on_key}, but the
+disjointness constraint of \lstinline{A} requires the absence of \lstinline{on_key},
+thus we cannot instantiate \lstinline{A} to \lstinline{Spelling & OnKey} for example
+when applying \lstinline{modal_mixin}. Therefore the outer application effectively excludes
+\lstinline{on_key} from \lstinline{spell_mixin}.
+In summary, the order of mixin applications is reflected by the order
+of function applications, and conflict resolution code is implicitly embedded.
+Of course changing the mixin application order to \lstinline{spell_mixin ModalEdit (modal_mixin Top editor)} gives the expected behaviour.
+
+
+Admittedly the typed version is unnecessarily complicated as we were
+mimicking mixins by functions over traits. The final editor
+\lstinline{ide_editor} suffers from the same problem as the class
+\lstinline{IDEEditor}, since there is no obvious way to access the
+\lstinline{on_key} method in the \lstinline{editor} trait.\footnote{In fact, as
+  we will see in \cref{sec:traits}, we can still access \lstinline{on_key} in
+  \lstinline{editor} by the forwarding operator.} \cref{sec:traits}
+makes better use of traits to simplify the editor code.
+
+
+
+% Note that the use of \lstinline{override} is valid because the type system knows the inherit clause contains \lstinline{on_key}.
+% As a bonus, since \name guarantees that there are no potential conflicts in a program,
+% we can reason that the version number in \lstinline{modal_editor} is
+% \lstinline{0.1}.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: ../paper.bib
+%%% End:

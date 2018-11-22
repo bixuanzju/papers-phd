@@ -1,0 +1,706 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Semantics of the \fnamee Calculus}
+\label{sec:typesystem}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \bruno{Regarding text about differences to \fname. I think that maybe
+%   we can make a comparision in Related Work, rather than the technical
+% section. That will not disrupt the flow of the technical section, and
+% will be useful to add weight to the related work section.}
+
+This section gives a formal account of \fnamee, the first typed calculus combining
+disjoint polymorphism~\cite{alpuimdisjoint} (and disjoint intersection
+types) with BCD
+subtyping~\cite{Barendregt_1983}. The main differences to \fname are in the
+subtyping, well-formedness and disjointness relations. \fnamee adds
+BCD subtyping and unrestricted intersections, and also closes an open problem of
+\fname by including the bottom type.
+% through appropriate adjustments to the disjointness relation.
+% \fnamee is a variant of Levant's
+% predicative System F~\cite{leivant1991finitely}. \jeremy{Do we really need to
+%   cite this? Leivant's System F has finitely stratified levels} The choice of
+% predicativity is due to the coherence proof, which is
+% discussed in \cref{sec:coherence:poly}.
+The dynamic semantics
+of \fnamee is given by elaboration to the target calculus \tnamee---a variant of
+System F extended with products and explicit coercions.
+% \jeremy{Should we summaries the differences from \fname here? }
+
+% \subsection{Motivation}
+% \label{sec:poly:motivation}
+
+% Parametric polymorphism~\cite{reynolds1983types} is a well-beloved (and
+% well-studied) programming feature. It enables a single piece of code to be
+% reused on data of different types. So it is quite natural and theoretically
+% interesting to study combining parametric polymorphism with disjoint
+% intersection types, especially how it affects disjointness and coherence. On a
+% more pragmatic note, the combination of parametric polymorphism and disjoint
+% intersection types also reveals new insights into practical applications.
+% Dynamically typed languages (such as JavaScript) usually embrace quite flexible
+% mechanisms for class/object composition, e.g., mixin composition where objects
+% can be composed at run time, and their structures are not necessarily statically
+% known. The use of intersection types in TypeScript is inspired by such flexible
+% programming patterns. For example, an important use of intersection types in
+% TypeScript is the following function for mixin composition:
+% \begin{lstlisting}[language=JavaScript]
+% function extend<T, U>(first: T, second : U) : T & U {...}
+% \end{lstlisting}
+% which is analogous to our merge operator in that it takes two objects and
+% produces an object with the intersection of the types of the argument objects.
+% However, the types of the two objects are not known, i.e., they are generic. An
+% important point is that, while it is possible to define such function in
+% TypeScript (albeit using some low-level (and type-unsafe) features of
+% JavaScript), it can also cause, as pointed out by \cite{alpuimdisjoint},
+% run-time type errors! Clearly a well-defined meaning for intersection types with
+% type variables is needed.
+
+
+% \paragraph{Disjoint polymorphism.}
+
+% Motivated by the above two points, \cite{alpuimdisjoint} proposed disjoint
+% polymorphism, a variant of parametric polymorphism. The main novelty is
+% \emph{disjoint (universal) quantification} of the form $[[ \ X ** A . B ]]$.
+% Inspired by bounded quantification~\cite{cardelli1994extension} where a type
+% variable is constrained by a type bound, disjoint quantification allows type
+% variables to be associated with \emph{disjointness constraints}.
+% Correspondingly, a term construct of the form $[[ \ X ** A. ee ]]$ is used to
+% create values of disjoint quantification. We have seen some examples of disjoint
+% polymorphism at work in \cref{bg:sec:disjoint_poly}. With disjointness constraints
+% and a built-in merge operator, a type-safe and conflict-free \lstinline{extend}
+% function can be naturally defined as follows:
+% \begin{lstlisting}
+% extend T [U * T] (first : T) (second : U) : T & U = first ,, second;
+% \end{lstlisting}
+% The disjointness constraint on the type variable \lstinline{U} ensures that no
+% conflicts can occur when composing two objects, which is quite similar to
+% the trait model~\cite{scharli2003traits} in object-orientated programming.
+% We shall devote a whole chapter (\cref{chap:traits}) to further this point.
+
+
+% \paragraph{Adding BCD subtyping.}
+
+% While \cite{alpuimdisjoint} studied the combination of disjoint intersection
+% types and parametric polymorphism, they follow the then-standard approach
+% of \cite{oliveira2016disjoint} to ensure coherence, thus excluding the
+% possibility of adding BCD subtyping. The combination of BCD subtyping and
+% disjoint polymorphism opens doors for more expressiveness. For example, we can
+% define the following function
+% \begin{lstlisting}
+% combine A [B * A] (f : {foo : Int -> A})
+%                   (g : {foo : Int -> B}) : {foo : Int -> A & B} = f ,, g;
+% \end{lstlisting}
+% which ``combines'' two singleton records with parts of types unknown and returns
+% another singleton record containing an intersection type. A variant of this
+% function plays a fundamental role in defining Object Algebra combinators (cf.
+% \cref{chap:case_study}).
+
+
+
+\subsection{Syntax and Semantics}
+
+\begin{figure}[t]
+  \centering
+\begin{tabular}{llll} \toprule
+  Types & $[[A]], [[B]], [[C]]$ & $\Coloneqq$ & $[[nat]] \mid [[Top]] \mid [[Bot]] \mid [[A -> B]]  \mid [[A & B]] \mid [[{l : A}]] \mid [[X]] \mid [[\ X ** A . B]] $\\
+  % Monotypes & $[[t]]$ & $\Coloneqq$ & $[[nat]] \mid [[Top]] \mid [[Bot]] \mid [[t1 -> t2]]  \mid [[t1 & t2]] \mid [[X]] \mid [[{l : t}]]$\\
+  Expressions & $[[ee]]$ & $\Coloneqq$ & $[[x]] \mid [[ii]] \mid [[Top]] \mid [[\x . ee]] \mid [[ee1 ee2]] \mid [[ ee1 ,, ee2 ]] \mid [[ ee : A ]] \mid [[{l = ee}]] \mid [[ ee.l  ]] $ \\
+        & & $\mid$ & $  [[\X ** A . ee]] \mid [[ ee A ]] $ \\
+  Term contexts & $[[GG]]$ & $\Coloneqq$ &  $[[empty]] \mid [[GG , x : A]] $ \\
+  Type contexts & $[[DD]] $ & $\Coloneqq $ & $[[empty]] \mid [[DD , X ** A]] $  \\ \bottomrule
+\end{tabular}
+  \caption{Syntax of \fnamee}
+  \label{fig:syntax:fi}
+\end{figure}
+
+
+\Cref{fig:syntax:fi} shows the syntax of \fnamee.
+% For brevity of the
+% meta-theoretic study, we do not consider primitive operations on primitive
+% types. They can be easily added to the language, and our prototype
+% implementation is indeed equipped with common primitive types and their
+% operations.
+Metavariables $[[A]], [[B]], [[C]]$ range over types. Types include
+standard constructs from prior work~\cite{oliveira2016disjoint, alpuimdisjoint}:
+integers $[[nat]]$, the top type $[[Top]]$, arrows $[[A -> B]]$, intersections $[[A & B]]$, single-field record types
+$[[{l : A}]]$ and disjoint quantification $[[ \X ** A . B ]]$. One
+novelty in \fnamee is the addition of the uninhabited bottom type $[[Bot]]$.
+% Monotypes $[[t]]$ are the same, minus the disjoint quantification.
+Metavariable $[[ee]]$ ranges over expressions. Expressions are
+integer literals $[[ii]]$, the top value $[[Top]]$,
+lambda abstractions $[[ \x . ee]]$, applications $[[ee1 ee2]]$, merges
+$[[ee1 ,, ee2]]$, annotated terms $[[ ee : A ]]$, single-field records
+$[[ {l = ee} ]]$, record projections $[[ ee . l ]]$, type abstractions
+$[[ \X ** A . ee ]]$ and type applications $[[ee A]]$.
+% We sometimes (ab)use $[[\X . A]]$ to abbreviate $[[ \X ** Top. A  ]]$, similarly for $[[ \ X . ee ]]$.
+
+%To support
+%polymorphism, we inherit from \fname two constructs: type abstractions $[[ \X ** A . ee ]]$
+%of type $[[ \X ** A . B ]]$, and type applications $[[ee A]]$.
+
+% We use $[[ A [X ~> B]  ]]$ to denote capture-avoiding substitution.
+
+% \paragraph{Contexts.}
+
+% In the traditional formulation of System F, there is a single context for
+% tracking both type and term variables. Here we use another style of
+% presentation~\cite[chap.~16]{Harper_2016} where contexts are split into
+% \emph{term contexts} $[[GG]]$ and \emph{type contexts} $[[DD]]$. The former
+% track term variables $[[x]]$ with their types $[[A]]$; and the latter track type
+% variables $[[X]]$ with their disjointness constraints $[[A]]$. This formulation
+% also turns out to be convenient for the presentation of logical relations in
+% \cref{sec:coherence:poly}.
+
+% \begin{figure}[t]
+%   \begin{small}
+%   \drules[swfte]{$[[ ||- DD]]$}{Well-formedness of type context}{empty, var}
+%   \drules[swfe]{$[[DD ||- GG]]$}{Well-formedness of value context}{empty, var}
+%   \drules[swft]{$[[DD |- A]]$}{Well-formedness of type}{top, bot, nat, var, arrow, all, and, rcd}
+%   \end{small}
+%   \centering
+%   \caption{Well-formedness of types}
+%   \label{fig:well-formedness:fi}
+% \end{figure}
+
+
+% \paragraph{Disjoint polymorphism.}
+% \bruno{Will this be redundant with the text about disjoint
+%   polymorphism in Section 2? Try to unify the the 2 texts perhaps and
+%   write everything in Section 2?}
+% Disjoint polymorphism~\cite{alpuimdisjoint} was recently proposed to combine
+% (disjoint) intersection types with parametric polymorphism. The main novelty is
+% \emph{disjoint quantification} $[[ \ X ** A . B ]]$.
+% Inspired by bounded quantification~\cite{cardelli1994extension} where a type
+% variable is constrained by a type bound, disjoint quantification associates type
+% variables with \emph{disjointness constraints}.
+% A term construct $[[ \ X ** A. ee ]]$ is used to
+% create values. With disjointness quantification,
+% it is possible to write a generic and conflict-free \lstinline{merge} function
+% as follows:
+% \begin{lstlisting}
+% merge T [U * T] (first : T) (second : U) : T & U = first ,, second;
+% \end{lstlisting}
+% which allows calling \lstinline{merge Int Char 1 'a'} for example, but rejects
+% \lstinline{merge Int Int 1 2} due to ambiguity. The type system ensures that no
+% conflicts can occur when composing two objects. This is quite similar to the
+% trait model~\cite{scharli2003traits} in object-oriented programming.
+
+
+\paragraph{Well-formedness and unrestricted intersections.}
+
+\fnamee's well-formedness judgment of types $[[ DD |- A ]]$ is
+standard, and only enforces well-scoping. This
+is one of the key differences from \fname, which uses
+well-formedness to also ensure that all intersection types are disjoint. 
+In other words, while in \fname all valid intersection types must be
+disjoint, in \fnamee unrestricted intersection types such as
+$[[nat & nat]]$ are allowed.
+More specifically,
+the well-formedness of intersection types in \fnamee and \fname is:
+{\small
+\begin{mathpar}
+  \ottaltinferrule{wf-\fnamee}{}{ [[DD |- A]] \\ [[DD |- B]]  }{ [[ DD |- A & B ]] } \and
+  \ottaltinferrule{wf-\fname}{}{ [[DD |- A]] \\ [[DD |- B]] \\ \hlmath{[[DD |- A ** B]]}  }{ [[ DD |- A & B ]] }
+\end{mathpar}
+}%
+Notice that \fname has an extra disjointness condition $[[ DD |- A ** B ]]$ in the premise.
+This is crucial for \fname's syntactic method for proving coherence,
+but also burdens the calculus with various syntactic restrictions and
+complicates its metatheory. For example, it requires extra effort to
+show that \fname only produces disjoint intersection types. As a consequence,
+\fname features a \emph{weaker} substitution lemma (note the gray
+part in \cref{lemma:weaker_lemma}) than \fnamee (\cref{lemma:general_lemma}).
+
+\begin{proposition}[Types are stable under substitution in \fname] \label{lemma:weaker_lemma}
+  If $[[DD |- A]]$, $[[DD |- B]]$, $[[ (X ** C) in DD  ]]$, $\hlmath{[[ DD |- B ** C ]]}$
+  and well-formed context $[[  DD [ X ~> B ]   ]]$, then $[[   DD [ X ~> B ] |-  A [ X ~> B  ]     ]]$.
+\end{proposition}
+
+\begin{figure}[t]
+  \centering
+    \drules[S]{$ [[A <: B ~~> c]]  $}{Declarative subtyping}{refl,trans,top,rcd,andl,andr,arr,and,distArr,topArr,distRcd,topRcd,bot,forall,topAll,distAll}
+  \caption{Declarative subtyping}
+  \label{fig:subtype_decl:fi}
+\end{figure}
+
+
+\begin{lemma}[Types are stable under substitution in \fnamee] \label{lemma:general_lemma}
+  If $[[DD |- A]]$, $[[DD |- B]]$, $[[ (X ** C) in DD  ]]$
+  and well-formed context $[[  DD [ X ~> B ]   ]]$, then $[[   DD [ X ~> B ] |-  A [ X ~> B  ]     ]]$.
+\end{lemma}
+% \begin{proof}
+%   By induction on the derivation of $[[ DD |- A  ]]$.
+% \end{proof}
+
+
+\paragraph{Declarative subtyping.}
+
+\fnamee's subtyping judgment is another major difference to \fname, because it
+features BCD-style subtyping and a rule for the bottom type.
+The full set of subtyping rules are shown in
+\cref{fig:subtype_decl:fi}. The reader is advised to ignore the gray parts for
+now. Our subtyping rules extend the BCD-style subtyping rules from
+\namee~\cite{bi_et_al:LIPIcs:2018:9227} with a rule for parametric
+(disjoint) polymorphism (\rref{S-forall}). Moreover, we have three new rules:
+\rref{S-bot} for the bottom type, and \rref{S-distAll,S-topAll} for distributivity of
+disjoint quantification. The subtyping relation is a partial order
+(\rref{S-refl,S-trans}). Most of the rules are quite standard. $[[Bot]]$ is a subtype of all types (\rref{S-bot}).
+Subtyping of disjoint quantification is covariant in its body, and
+contravariant in its disjointness constraints (\rref{S-forall}). Of particular interest are those
+so-called ``distributivity'' rules: \rref{S-distArr} says intersections
+distribute over arrows; \rref{S-distRcd} says intersections distribute over
+records. Similarly, \rref{S-distAll} dictates that
+intersections may distribute over disjoint quantifiers.
+%It should be noted that \fnamee features explicit polymorphism, so type
+%variables are neutral to subtyping, i.e., $[[X <: X]]$, which is already
+%contained in \rref{S-refl}.
+
+% \begin{remark}
+%   In our Coq formalization, we require that the two types $[[A]]$ and $[[B]]$ are
+%   well-formed relative to some type context, resulting in the subtyping
+%   judgment $[[DD |- A <: B]]$. But this is not very important
+%   for the purpose of presentation, thus we omit contexts.
+% \end{remark}
+
+\paragraph{Typing rules.}
+
+\begin{figure}[t]
+  \centering
+    \drules[T]{$[[DD; GG |- ee => A ~~> e]]$}{Inference}{top, nat, var, app, merge, anno, rcd, proj, tabs, tapp}
+    \drules[T]{$[[DD ; GG |- ee <= A ~~> e]]$}{Checking}{abs, sub}
+  \caption{Bidirectional type system}
+  \label{fig:typing:fi}
+\end{figure}
+
+
+\fnamee features a bidirectional type system inherited from \fname.
+% \bruno{We can just focus on the
+%   T-TApp, T-TAbs and T-Merge. Maybe you can drop subsumption and lambdas,
+%   since those are standard.
+% Refer to the full rules in the appendix.}
+The full set of typing rules are shown in \cref{fig:typing:fi}. Again we ignore
+the gray parts and explain them in \cref{sec:elaboration:fi}.
+The inference judgment $[[ DD; GG |- ee => A ]]$ says
+that we can synthesize the type $[[A]]$ under the contexts $[[DD]]$ and
+$[[GG]]$. The checking judgment $[[ DD ; GG |- ee <= A ]]$ asserts that $[[ee]]$
+checks against the type $[[A]]$ under the contexts $[[DD]]$ and $[[GG]]$.
+Most of the rules are quite standard in the literature.
+The merge expression $[[ee1 ,, ee2]]$ is well-typed if both sub-expressions are
+well-typed, and their types are \textit{disjoint} (\rref{T-merge}).
+The disjointness relation will be explained in \cref{sec:disjoint:fi}.
+To infer a type abstraction (\rref{T-tabs}), we add disjointness constraints to the type
+context. For a type
+application (\rref{T-tapp}), we check that the type argument
+satisfies the disjointness constraints.
+\Rref{T-merge,T-tapp} are the only rules checking disjointness.
+
+
+\subsection{Disjointness}
+\label{sec:disjoint:fi}
+
+\renewcommand{\rulehl}[1]{#1}
+
+\begin{figure}[t]
+  \centering
+  \drules[TL]{$[[ A top  ]]$}{Top-like types}{top,and,arr,rcd,all}
+  \drules[D]{$[[DD |- A ** B]]$}{Disjointness}{topL, topR, arr, andL, andR, rcdEq, rcdNeq, tvarL, tvarR, forall,ax}
+  % \drules[Dax]{$[[A **a B]]$}{Disjointness axioms}{sym, intArr, intRcd,intAll,arrAll,arrRcd,allRcd}
+  \caption{Selected rules for disjointness}
+  \label{fig:disjoint:fi}
+\end{figure}
+
+We now turn to another core judgment of \fnamee---the disjointness relation,
+shown in \cref{fig:disjoint:fi}. The disjointness rules are mostly inherited
+from \fname~\cite{alpuimdisjoint}, but the new bottom type requires
+a notable change regarding disjointness with \emph{top-like types}.
+
+\paragraph{Top-like types.}
+
+Top-like types are all types that are isomorphic to $[[Top]]$ (i.e.,
+simultaneously sub- and supertypes of $[[Top]]$). Hence, they are inhabited by a
+single value, isomorphic to the $[[Top]]$ value. \cref{fig:disjoint:fi} captures
+this notion in a syntax-directed fashion in the $[[A top]]$ predicate. As a
+historical note, top-like types were first introduced in
+\oname~\cite{oliveira2016disjoint}, and then adopted by \fname~\cite{alpuimdisjoint}. Their motivation
+is solely for enabling a syntactic method of proving coherence, and due to the
+lack of BCD subtyping, they do not have a type-theoretic interpretation of
+top-like types.
+
+
+
+
+
+% \jeremy{mention previous work do not have good explanations of top-like types?}
+% \ningning{that's a good idea. I think ``all types that are isomorphic to
+%   $[[Top]]$'' is a more accurate definition of Top-like. A comparison with
+%   previous work would be great (i.e. why \oname and \fname include top-like,
+%   and \namee doesn't, while \fnamee does again?)}
+
+\paragraph{Disjointness rules.}
+
+%The disjointness judgment $[[DD |- A ** B]]$ plays a central role in \fnamee,
+%and is used to ensure that the merge operator can only form intersections of
+%disjoint types.
+
+The disjointness judgment $[[DD |- A ** B]]$ is helpful to check whether the merge of two
+expressions of type $[[A]]$ and $[[B]]$ preserves coherence. Incoherence
+arises when both expressions produce distinct values for the same type, either
+directly when they are both of that same type, or through implicit upcasting to
+a common supertype. Of course we can safely disregard top-like types in this matter
+because they do not have two distinct values. In short, it suffices to check that the
+two types have only top-like supertypes in common.
+
+% (As a precondition, $[[A]]$ and $[[B]]$ are
+% required to be both well-formed under the context $[[DD]]$.)
+% A guiding principle
+% of checking whether $[[A]]$ and $[[B]]$ are disjoint is to ask if their
+% supertypes are top-like types. Let us apply this principle to design
+% disjointness rules for bottom types. Given $[[Bot]]$ and $[[A]]$, we know that
+Because $[[Bot]]$ and any another type $[[A]]$ always have $[[A]]$ as
+a common supertype,
+it follows that $[[Bot]]$ is only disjoint to $[[A]]$ when
+$[[A]]$ is top-like.
+More generally, if $[[A]]$ is a top-like type, then $[[A]]$ is disjoint to any
+type. This is the rationale behind the two rules \rref*{D-topL,D-topR}, which
+generalize and subsume $[[ DD |- Top ** A ]]$ and $[[ DD |- A ** Top ]]$ from \fname, and
+also cater to the bottom type.
+Two other interesting rules are
+\rref*{D-tvarL,D-tvarR}, which dictate that a type variable $[[X]]$ is disjoint
+with some type $[[B]]$ if its disjointness constraints $[[A]]$ is a subtype of
+$[[B]]$.
+Disjointness axioms $[[ A **a B ]]$ (appearing in \rref{D-ax}) take
+care of two types with different type constructors (e.g., $[[nat]]$ and records). Axiom rules can be found in \cref{appendix:fnamee}.
+Finally we note that the disjointness relation is symmetric.
+
+% \begin{lemma}[Symmetry of disjointness]
+%   \label{lemma:symmetry-disjoint}
+%   If $[[ DD |- A ** B  ]]$, then $[[  DD |- B ** A   ]]$.
+% \end{lemma}
+% \begin{proof}
+%   By induction on the disjointness derivation. In the case for \rref{FD-forall},
+%   apply \cref{lemma:narrow:disjoint}.
+% \end{proof}
+
+
+\subsection{Elaboration and Type Safety}
+\label{sec:elaboration:fi}
+
+\begin{figure}[t]
+  \centering
+\begin{tabular}{llll} \toprule
+  Types & $[[T]]$ & $\Coloneqq$ & $[[nat]] \mid [[Unit]] \mid [[T1 -> T2]]  \mid [[T1 * T2]] \mid [[X]] \mid [[\ X . T]]$\\
+  Terms & $[[e]]$ & $\Coloneqq$ & $[[x]] \mid [[ii]] \mid [[unit]] \mid [[\x . e]] \mid [[e1 e2]] \mid [[< e1 , e2>]] \mid [[\X . e]] \mid [[ e T ]] \mid [[c e]]$ \\
+  Coercions & $[[c]]$ & $\Coloneqq$ & $[[id]] \mid [[c1 o c2]] \mid [[top]] \mid [[bot]] \mid [[c1 -> c2]] \mid [[< c1 , c2 >]] \mid [[pp1]] \mid [[pp2]] $ \\
+  & & $\mid$ & $ [[\ c]] \mid [[distArr]] \mid [[topArr]] \mid [[topAll]] \mid [[distPoly]] $ \\
+  Values & $[[v]]$ & $\Coloneqq$ & $[[ii]] \mid [[unit]] \mid [[\x . e]] \mid [[< v1 , v2>]] \mid [[\X . e]] \mid [[ (c1 -> c2) v ]] \mid [[\c v]]  $ \\
+  & & $\mid$ & $ [[distArr v]] \mid [[topArr v]] \mid [[topAll v]] \mid [[distPoly v]]  $ \\
+  Term contexts & $[[gg]]$ & $\Coloneqq$ &  $[[empty]] \mid [[gg , x : T]] $ \\
+  Type contexts & $[[dd]] $ & $\Coloneqq $ & $[[empty]] \mid [[dd , X]] $  \\
+  Evaluation contexts & $[[EE]]$ & $\Coloneqq$ &  $  [[__]] \mid [[EE e]] \mid [[v EE]] \mid [[ < EE , e >  ]] \mid [[ < v , EE > ]] \mid [[ c EE  ]] \mid [[ EE T  ]]  $ \\ \bottomrule
+\end{tabular}
+\caption{Syntax of \tnamee}
+\label{fig:syntax:fco}
+\end{figure}
+
+
+The dynamic semantics of \fnamee is given by elaboration into
+a target calculus. The target calculus \tnamee is the standard call-by-value
+System F extended with products and coercions. The syntax of \tnamee is shown in
+\cref{fig:syntax:fco}.
+
+\paragraph{Type translation.}
+
+\cref{def:type:translate:fi} defines the type translation function $| \cdot |$
+from \fnamee types $[[A]]$ to \tnamee types $[[T]]$. Most cases are
+straightforward. For example, $[[Bot]]$ is mapped to an uninhabited
+type $[[\X . X]]$; disjoint quantification is mapped to universal
+quantification, dropping the disjointness constraints. $| \cdot |$ is
+naturally extended to work on contexts as well.
+
+\begin{definition} Type translation $| \cdot |$ is defined as follows:
+  \label{def:type:translate:fi}
+  \begin{center}
+\begin{tabular}{rlllrlllrll} \toprule
+  $| [[nat]] |$ &$=$ & $ [[nat]]$ & $\qquad$ &   $| [[Top]] |$ & $ = $ & $ [[ Unit  ]] $ & $\qquad$ &   $| [[A -> B]] |$ & $ = $ & $ [[ |A| -> |B| ]]$ \\
+  $| [[A & B]] |$ &$=$ & $ [[ |A| * |B|    ]] $ & $\qquad$ &   $| [[{l : A}]] |$ & $ = $ & $ [[ | A | ]] $ & $\qquad$ &   $| [[X]] |$ & $ = $ & $ [[ X ]]$ \\
+  $| [[ Bot  ]] |$ &$=$& $[[ \X . X   ]]$ & $\qquad$   & $| [[\X ** A . B]] |$ & $ = $ & $[[\X . |B|]]$ \\ \bottomrule
+\end{tabular}
+  \end{center}
+\end{definition}
+
+
+\paragraph{Coercions and coercive subtyping.}
+
+We follow prior work~\cite{bi_et_al:LIPIcs:2018:9227, biernacki2015logical} by having a syntactic category
+for coercions~\cite{Henglein_1994}. In \cref{fig:syntax:fco}, we have several new coercions:
+$[[bot]]$, $[[ \ c ]]$, $[[distPoly]]$ and $[[topAll]]$ due to the addition of polymorphism and bottom type. As
+seen in
+\cref{fig:subtype_decl:fi} the coercive subtyping judgment has the form $[[ A <: B ~~> c ]]$, which
+says that the subtyping derivation for $[[A <: B]]$ produces a coercion $[[c]]$ that converts terms of type $[[ |A|  ]]$
+to $[[| B |]]$.
+% Each subtyping rule has its own specific form of coercion.
+
+
+% Now we go back
+% to the coercion part in \rref{S-forall}. Since the disjointness constraints are
+% erased during elaboration, they do not contribute to the overall coercion; we
+% only need the coercion generated by the subtyping of the bodies $[[B1]]$ and
+% $[[B2]]$.
+
+% As a cognitive aid, it is
+% instructive to mentally ``desugar'' the coercion $[[\ c]]$ to the regular term
+% $[[ \f . \ X . c (f X)]]$, as shown in \cref{tab:coercion2}, then the expression
+% $ [[\c v]] $ is ``equal'' to $[[ \X . c (v X) ]]$, which is why we can treat $[[ \c v]]$ as a value.
+
+% \begin{figure}[t]
+%   \centering
+
+% \begin{tabular}{lllll} \toprule
+%   \textbf{Coercion} & \textbf{Term} & & \textbf{Coercion} & \textbf{Term} \\ \midrule
+%   $[[id]]$         & $[[ \x . x]]$  & & $[[ c1 o c2  ]]$    &  $[[  \x . c1 (c2 x) ]]$ \\
+%   $[[top]]$         & $[[ \x . unit ]]$  & & $[[ c1 -> c2  ]]$    &  $[[  \f . \x . c2 (f (c1 x))  ]]$ \\
+%   $[[  pp1   ]]$         & $[[ \x . pp1 x    ]]$  & & $[[ pp2  ]]$    &  $[[  \x . pp2 x  ]]$ \\
+%   $[[  < c1 , c2 >   ]]$         & $[[ \x . < c1 x, c2 x >    ]]$  & & $[[ distArr  ]]$    &  $[[  \x . \y . < (pp1 x) y , (pp2 x) y > ]]$ \\
+%   $[[  topArr   ]]$         & $[[ \x . \ y . unit    ]]$  & & $[[ \ c  ]]$ &  $[[   \f . \ X . c (f X)    ]]$   \\
+%   $[[  topAll   ]]$         & $[[ \x . \ X . unit    ]]$  & & $[[ distPoly  ]]$ &  $[[   \f . \ X .< (pp1 f) X , (pp2 f) X >     ]]$   \\ \bottomrule
+% \end{tabular}
+%   \caption{Correspondence between coercions and terms}
+%   \label{tab:coercion2}
+% \end{figure}
+
+
+
+
+\paragraph{\tnamee static semantics.}
+
+The typing rules of \tnamee are quite standard. We have one rule \rref*{t-capp} regarding
+coercion application, which uses the judgment $[[ c |- T tri T' ]]$ to
+type coercions. We show two representative rules \rref*{ct-forall,ct-bot}.
+{\small
+  \begin{mathpar}
+  \drule{t-capp} \and
+  \drule{ct-forall}  \and \drule{ct-bot}
+  \end{mathpar}
+}%
+
+
+\begin{figure}[t]
+  \centering
+  \drules[r]{$[[e --> e']]$}{Single-step reduction}{forall,topAll, distAll,tapp,app,ctxt}
+  \caption{Selected reduction rules}
+  \label{fig:red:fi}
+\end{figure}
+
+\paragraph{\tnamee dynamic semantics.}
+
+The dynamic semantics of \tnamee is mostly unremarkable. We write $[[e --> e']]$
+to mean one-step reduction. \Cref{fig:red:fi} shows selected reduction
+rules. The first line shows three representative rules regarding coercion reductions.
+They do not contribute to computation but merely rearrange coercions.
+Our coercion reduction rules are quite standard but not efficient in terms of
+space. Nevertheless, there is existing work on space-efficient
+coercions~\citep{Siek_2015, herman2010space}, which should be applicable to our
+work as well. \Rref{r-app} is the usual $\beta$-rule that performs actual
+computation, and \rref{r-ctxt} handles reduction under an evaluation context.
+As usual, $[[-->>]]$ is the reflexive, transitive closure of $[[-->]]$.
+Now we can show that \tnamee is type safe:
+
+\begin{theorem}[Preservation]
+  If $[[empty; empty |- e : T]]$ and $[[e --> e']]$, then $[[empty; empty |- e' : T]]$.
+\end{theorem}
+
+\begin{theorem}[Progress]
+  If $[[empty; empty |- e : T]]$, either $[[e]]$ is a value, or $\exists [[e']].\ [[e --> e']]$.
+\end{theorem}
+
+
+\paragraph{Elaboration.}
+
+Now consider the translation parts in \cref{fig:typing:fi}. The key idea of
+the translation follows the prior work~\cite{dunfield2014elaborating, oliveira2016disjoint,
+  alpuimdisjoint, bi_et_al:LIPIcs:2018:9227}: merges are elaborated to pairs
+(\rref{T-merge}); disjoint quantification and disjoint type applications
+(\rref{T-tabs,T-tapp}) are elaborated to regular universal quantification and
+type applications, respectively.
+% Below we show an example translation:
+% \[
+%   [[ (\X ** nat . (\x . x) : X -> X)  : \ X ** nat . X & nat -> X ]] \hlmath{\rightsquigarrow [[\ (pp1 -> id)  (\ X . \x . x)]]}
+% \]
+% \begin{align*}
+%   & [[ (\X ** nat . (\x . x) : X -> X)  : \ X ** nat . X & nat -> X ]] \\
+%   \rightsquigarrow & \\
+%   & [[\ (pp1 -> id)  (\ X . \x . x)]]
+% \end{align*}
+Finally, the following lemma connects \fnamee to \tnamee:
+
+% \begin{lemma}[Coercions preserve types]
+%   \label{lemma:sub-correct:fi}
+% \end{lemma}
+% \begin{proof}
+%   By structural induction on the derivation of subtyping.
+% \end{proof}
+\begin{lemma}[Elaboration soundness] We have that:
+  \begin{itemize}
+  \item If $[[A <: B ~~> c]]$, then $[[c |-  |A| tri |B|]]$.
+  \item If $[[DD ; GG |- ee => A ~~> e]]$, then $[[ |DD| ; |GG| |- e : |A | ]]$.
+  \item If $[[DD ; GG |- ee <= A ~~> e]]$, then $[[ |DD| ; |GG| |- e : |A | ]]$.
+  \end{itemize}
+\end{lemma}
+% \begin{proof}
+%   By structural induction on the derivation of typing.
+% \end{proof}
+
+
+
+
+\section{Algorithmic System and Decidability}
+
+
+The subtyping relation in \cref{fig:subtype_decl:fi} is highly non-algorithmic
+due to the presence of a transitivity rule.
+This section presents an alternative algorithmic formulation.
+Our algorithm extends that of \namee, which itself was inspired by
+Pierce's decision
+procedure~\cite{pierce1989decision}, to handle
+disjoint quantifiers and the bottom type. We then prove that the algorithm is sound and
+complete with respect to declarative subtyping.
+
+Additionally we prove that the subtyping and disjointness relations are
+decidable. Although the proofs of this fact are fairly straightforward, it is
+nonetheless remarkable since it contrasts with the subtyping
+relation for (full) \fsub~\cite{cardelli1985understanding}, which is 
+undecidable~\cite{pierce1994bounded}. Thus while bounded quantification is
+infamous for its undecidability, disjoint quantification has the nicer property
+of being decidable.
+
+\subsection{Algorithmic Subtyping Rules}
+
+
+While \cref{fig:subtype_decl:fi} is a fine specification of how subtyping
+should behave, it cannot be read directly as a subtyping algorithm for two
+reasons: (1) the conclusions of \rref{S-refl,S-trans} overlap with the other
+rules, and (2) the premises of \rref{S-trans} mention a type that does not
+appear in the conclusion. Simply dropping the two offending rules
+from the system is not possible without losing
+expressivity~\cite{Laurent12note}. Thus we need a
+different approach. Following \namee, we intend the algorithmic judgment $[[ fs |- A <: B ]]$ to be
+equivalent to $[[ A <: fs => B ]]$, where $[[fs]]$ is a queue used to track record labels, domain types and disjointness constraints.
+The full rules of the algorithmic subtyping of \fnamee are shown \cref{fig:algo:sub:fi}.
+
+\begin{definition}[$[[fs]] \Coloneqq [[ []   ]] \mid [[ l , fs  ]] \mid [[  B , fs ]] \mid [[ X ** B , fs  ]]$]
+$[[fs => A]]$ is defined as follows:
+  \begin{center}
+  \begin{tabular}{rlllrll} \toprule
+    $[[ [] => A]]$ &=& $[[A]]$ & $\qquad$ & $[[ (B , fs) => A]]$ &=& $[[B -> (fs => A)]]$  \\
+    $[[ (l , fs) => A]]$ &=& $[[{l : fs => A}]]$ & $\qquad$ & $[[ (X ** B , fs) => A]]$ &=& $[[\ X ** B . fs => A]]$ \\  \bottomrule
+  \end{tabular}
+  \end{center}
+\end{definition}
+
+
+\renewcommand{\rulehl}[2][gray!40]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+
+\begin{figure}[t]
+  \centering
+  \drules[A]{$[[fs |- A <: B ~~> c]]$}{Algorithmic subtyping}{top,and,arr,rcd,forall,const, bot,arrConst,rcdConst,andConst,allConst}
+  \caption{Algorithmic subtyping}
+  \label{fig:algo:sub:fi}
+\end{figure}
+
+\renewcommand{\rulehl}[1]{#1}
+
+
+
+For brevity of the algorithm, we use metavariable $[[rho]]$ to mean type constants:
+\[
+  \text{Type Constants}\quad [[rho]] \Coloneqq  [[nat]] \mid [[Bot]] \mid [[X]]
+\]
+The basic idea of $[[ fs |- A <: B ]]$ is to perform a case analysis on $[[B]]$
+until it reaches type constants. We explain new rules regarding disjoint
+quantification and the bottom type.
+When a quantifier is encountered in $[[B]]$, \rref{A-forall} pushes
+the type variables with its disjointness constraints onto $[[fs]]$ and continue
+with the body. Correspondingly, in \rref{A-allConst}, when a quantifier is
+encountered in $[[A]]$, and the head of $[[fs]]$ is a type variable, this
+variable is popped out and we continue with the body.
+\Rref{A-bot} is similar to its declarative counterpart.
+Two meta-functions $[[ < fs >1 ]]$
+and $[[ < fs >2 ]]$ are meant to generate correct forms of coercions, and their
+definitions are shown in \cref{appendix:fnamee}. For other algorithmic rules, we refer to
+\namee~\cite{bi_et_al:LIPIcs:2018:9227} for detailed explanations.
+
+
+\paragraph{Correctness of the algorithm.}
+
+We prove that the algorithm is sound and complete with respect to the
+specification. We refer the reader to our Coq formalization for more details.
+We only show the two major theorems:
+
+\begin{theorem}[Soundness]
+  If $[[ fs |- A <: B ~~> c]]$ then $ [[   A <: fs => B ~~> c  ]]   $.
+\end{theorem}
+
+\begin{theorem}[Completeness]
+  If $[[A <: B ~~> c]]$, then $\exists [[c']].\ [[ [] |- A <: B ~~> c']]$.
+\end{theorem}
+
+
+\subsection{Decidability}
+
+Moreover, we prove that our algorithmic type system is decidable. To see this,
+first notice that the bidirectional type system is syntax-directed, so we only
+need to show decidability of algorithmic subtyping and
+disjointness. The full (manual) proofs for decidability can be found in
+\cref{appendix:decidable}.
+
+\begin{restatable}[Decidability of algorithmic subtyping]{lemma}{decidesub} \label{lemma:decide-sub}
+  Given $[[fs]]$, $[[A]]$ and $[[B]]$, it is decidable whether there exists
+  $[[c]]$, such that $[[fs |- A <: B ~~> c]]$.
+\end{restatable}
+
+\begin{restatable}[Decidability of disjointness checking]{lemma}{decidedis} \label{lemma:decide-dis}
+  Given $[[DD]]$, $[[A]]$ and $[[B]]$, it is decidable whether $[[ DD |- A ** B ]]$.
+\end{restatable}
+
+% Given algorithmic subtyping and disjointness are decidable, it follows that our
+% bidirectional type checking is decidable ($[[dirflag]]$ is a short-hand for $[[ => ]]$ and $[[<=]]$).
+
+% \begin{restatable}[Decidability of typing]{theorem}{decidetyp} \label{lemma:decide-typing}
+%   Given $[[DD]]$, $[[GG]]$, $[[ee]]$ and $[[A]]$, it is decidable whether $[[DD ; GG  |- ee dirflag A]]$.
+% \end{restatable}
+
+One interesting observation here is that although our disjointness
+quantification has a similar shape to bounded quantification $[[\/X<:A. B]]$ in
+\fsub~\citep{cardelli1985understanding}, subtyping for \fsub~is
+undecidable~\citep{pierce1994bounded}. In \fsub, the subtyping relation between
+bounded quantification is:
+{\small
+\[
+  \drule{fsub-forall}
+\]
+}%
+Compared with \rref{S-forall}, both rules are contravariant on
+bounded/disjoint types, and covariant on the body. However, with bounded
+quantification it is fundamental to track the bounds in the
+environment, which complicates the design of the rules and makes
+subtyping undecidable with \rref{fsub-forall}.
+Decidability can be recovered
+by employing an invariant rule for bounded quantification
+(that is by forcing $[[A1]]$ and $[[A2]]$ to be identical).
+Disjoint quantification does not require such invariant rule for
+decidability.
+
+\begin{comment}
+For example, in the original
+type $[[\/X<:A1. B1]]$, the $[[X]]$ in $[[B1]]$ is thought of being bound to
+$[[A1]]$, the premise $[[DD, X <: A2 |- B1 <: B2]]$ forces $[[X]]$ to be bound
+to $[[A2]]$ in $[[B1]]$. This destroys the original connection and makes it
+impossible to give a decision procedure.
+\end{comment}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: "../paper.bib"
+%%% End:

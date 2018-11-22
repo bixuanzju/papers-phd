@@ -1,0 +1,1884 @@
+
+\section{Some Proofs about the Declarative System}
+
+
+\lemmaerase*
+\begin{proof}
+By straightforward induction on the typing derivation.
+\end{proof}
+
+\lemmacoherence*
+\begin{proof}
+According to Lemma~\ref{lemma:erase}, after erasure of types and casts,
+$\mathcal{C}\{s_{{\mathrm{1}}}\}$ and $\mathcal{C}\{s_{{\mathrm{2}}}\}$ are equivalent. So if
+$\mathcal{C}\{ s_{{\mathrm{1}}} \} \reduce \ottmv{n}$, it is impossible for $\mathcal{C}\{
+s_{{\mathrm{2}}} \}$ to reduce to a different integer according to the dynamic semantics.
+\end{proof}
+
+\proptop*
+\begin{proof} \leavevmode
+  \begin{itemize}
+  \item From first to second: By induction on the derivation of consistent
+    subtyping. We have extra case \rref{CS-Top} now, where $B = \top$.
+    We can choose $C = A$, and
+    $D$ by replacing the unknown types in $C$ by $\nat$. Namely, $D$ is a static
+    type, so by \rref{S-Top} we are done.
+  \item From second to first: By induction on the derivation of second
+    subtyping. We have extra case \rref{S-Top} now, where
+    $B = \top$, so $A \tconssub B$ holds by \rref{CS-Top}.
+  \end{itemize}
+\end{proof}
+
+\propagttop*
+\begin{proof} \leavevmode
+  \begin{itemize}
+  \item From left to right: By induction on the derivation of consistent
+    subtyping. We have case \rref{CS-Top} now.
+    It follows that for
+    every static type $A_1 \in \gamma(A)$, we can derive $A_1 \tsub \top$ by
+    \rref{S-Top}.
+    We have $B_1 = B = \top$ and we are done.
+  \item From right to left: By induction on the derivation of subtyping and
+    inversion on the concretization. We have extra case \rref{S-Top} now, where
+    $B$ is $\top$. So
+    consistent subtyping directly holds.
+  \end{itemize}
+\end{proof}
+
+\propparalpha*
+\begin{proof}
+Follows directly from the definition of Translation Pre-order.
+\end{proof}
+
+\begin{definition}[Measurements of Translation]
+  There are three measurements of a translation $s$,
+  \begin{enumerate}
+  \item $ \llbracket  s  \rrbracket_\mathcal{E} $, the size of the expression 
+  \item $ \llbracket  s  \rrbracket_\mathcal{S} $, the number of distinct static type parameters in $s$
+  \item $ \llbracket  s  \rrbracket_\mathcal{G} $, the number of distinct gradual type parameters in $s$
+  \end{enumerate}
+  We use $ \llbracket  s  \rrbracket $ to denote the lexicographical order of the triple
+  $( \llbracket  s  \rrbracket_\mathcal{E} , - \llbracket  s  \rrbracket_\mathcal{S} , - \llbracket  s  \rrbracket_\mathcal{G} )$.
+\end{definition}
+
+\begin{definition}[Size of types]
+
+  \begin{align*}
+     \llbracket  \mathsf{Int}  \rrbracket  &= 1 \\
+     \llbracket  \ottmv{a}  \rrbracket  &= 1 \\
+     \llbracket  \ottnt{A}  \rightarrow  \ottnt{B}  \rrbracket  &=  \llbracket  \ottnt{A}  \rrbracket  +  \llbracket  \ottnt{B}  \rrbracket  + 1 \\
+     \llbracket  \forall  \ottmv{a}  .\,  \ottnt{A}  \rrbracket  &=  \llbracket  \ottnt{A}  \rrbracket  + 1 \\
+     \llbracket  \star  \rrbracket  &= 1 \\
+     \llbracket  \mathcal{S}  \rrbracket  &= 1 \\
+     \llbracket  \mathcal{G}  \rrbracket  &= 1
+  \end{align*}
+
+\end{definition}
+
+\begin{definition}[Size of expressions]
+
+  \begin{align*}
+     \llbracket  \ottmv{x}  \rrbracket_\mathcal{E}  &= 1 \\
+     \llbracket  \ottmv{n}  \rrbracket_\mathcal{E}  &= 1 \\
+     \llbracket  \lambda  \ottmv{x}  \ottsym{:}  \ottnt{A}  .\,  s  \rrbracket_\mathcal{E}  &=  \llbracket  \ottnt{A}  \rrbracket  +  \llbracket  s  \rrbracket_\mathcal{E}  + 1 \\
+     \llbracket  \Lambda  \ottmv{a}  .\,  s  \rrbracket_\mathcal{E}  &=  \llbracket  s  \rrbracket_\mathcal{E}  + 1 \\
+     \llbracket  s_{{\mathrm{1}}} \, s_{{\mathrm{2}}}  \rrbracket_\mathcal{E}  &=  \llbracket  s_{{\mathrm{1}}}  \rrbracket_\mathcal{E}  +  \llbracket  s_{{\mathrm{2}}}  \rrbracket_\mathcal{E}  + 1 \\
+     \llbracket  \langle  \ottnt{A}  \hookrightarrow  \ottnt{B}  \rangle  s  \rrbracket_\mathcal{E}  &=  \llbracket  s  \rrbracket_\mathcal{E}  +  \llbracket  \ottnt{A}  \rrbracket  +  \llbracket  \ottnt{B}  \rrbracket  + 1 \\
+  \end{align*}
+
+\end{definition}
+
+
+\begin{lemma} \label{lemma:size_e}
+  If $ \Psi   \vdash   \ottnt{e}  :  \ottnt{A}  \otthl{ \rightsquigarrow   s } $ then $ \llbracket  s  \rrbracket_\mathcal{E}  \geq  \llbracket  \ottnt{e}  \rrbracket_\mathcal{E}   $.
+\end{lemma}
+\begin{proof}
+  Immediate by inspecting each typing rule.
+\end{proof}
+
+\begin{corollary} \label{lemma:decrease_stop}
+  If $ \Psi   \vdash   \ottnt{e}  :  \ottnt{A}  \otthl{ \rightsquigarrow   s } $ then $ \llbracket  s  \rrbracket  > ( \llbracket  \ottnt{e}  \rrbracket_\mathcal{E} , - \llbracket  \ottnt{e}  \rrbracket_\mathcal{E} , - \llbracket  \ottnt{e}  \rrbracket_\mathcal{E}  )  $.
+\end{corollary}
+\begin{proof}
+  By \cref{lemma:size_e} and note that $  \llbracket  s  \rrbracket_\mathcal{E}  >  \llbracket  s  \rrbracket_\mathcal{S}  $ and $  \llbracket  s  \rrbracket_\mathcal{E}  >  \llbracket  s  \rrbracket_\mathcal{G}  $
+\end{proof}
+
+\begin{lemma} \label{lemma:type_decrease}
+  $ \llbracket  \ottnt{A}  \rrbracket  \leq  \llbracket  \psubst \, \ottsym{(}  \ottnt{A}  \ottsym{)}  \rrbracket   $.
+\end{lemma}
+\begin{proof}
+  By induction on the structure of $\ottnt{A}$. The interesting cases are $\ottnt{A} =  \mathcal{S} $ and
+  $\ottnt{A} =  \mathcal{G} $. When $\ottnt{A} =  \mathcal{S} $, $\psubst \, \ottsym{(}  \ottnt{A}  \ottsym{)} = \tau$
+  for some monotype $\tau$ and it is immediate that $ \llbracket  \mathcal{S}  \rrbracket   \leq  \llbracket  \tau  \rrbracket  $
+  (note that $ \llbracket  \mathcal{S}  \rrbracket  <  \llbracket  \mathcal{G}  \rrbracket  $ by definition).
+\end{proof}
+
+\begin{lemma}[Substitution Decreases Measurement]
+  \label{lemma:subst_dec_measure}
+  If $s_{{\mathrm{1}}} \leq s_{{\mathrm{2}}}$, then $ { \llbracket  s_{{\mathrm{1}}}  \rrbracket } \leq  \llbracket  s_{{\mathrm{2}}}  \rrbracket $; unless
+  $s_{{\mathrm{2}}} \leq s_{{\mathrm{1}}}$ also holds, otherwise we have $ \llbracket  s_{{\mathrm{1}}}  \rrbracket  <  \llbracket  s_{{\mathrm{2}}}  \rrbracket $.
+\end{lemma}
+\begin{proof}
+  Since $s_{{\mathrm{1}}} \leq s_{{\mathrm{2}}}$, we know $s_{{\mathrm{2}}} = \psubst \, \ottsym{(}  s_{{\mathrm{1}}}  \ottsym{)}$ for some $ \psubst $. By induction on
+  the structure of $s_{{\mathrm{1}}}$.
+
+  \begin{itemize}
+  \item Case $s_{{\mathrm{1}}} = \lambda  \ottmv{x}  \ottsym{:}  \ottnt{A}  .\,  s$. We have
+    $s_{{\mathrm{2}}} = \lambda  \ottmv{x}  \ottsym{:}  \psubst \, \ottsym{(}  \ottnt{A}  \ottsym{)}  .\,  \psubst \, \ottsym{(}  s  \ottsym{)}$. By \cref{lemma:type_decrease} we have $ \llbracket  \ottnt{A}  \rrbracket  \leq  \llbracket  \psubst \, \ottsym{(}  \ottnt{A}  \ottsym{)}  \rrbracket $.
+    By i.h., we have $ \llbracket  s  \rrbracket  \leq  \llbracket  \psubst \, \ottsym{(}  s  \ottsym{)}  \rrbracket $. Therefore $ \llbracket  \lambda  \ottmv{x}  \ottsym{:}  \ottnt{A}  .\,  s  \rrbracket  \leq  \llbracket  \lambda  \ottmv{x}  \ottsym{:}  \psubst \, \ottsym{(}  \ottnt{A}  \ottsym{)}  .\,  \psubst \, \ottsym{(}  s  \ottsym{)}  \rrbracket $.
+  \item Case $s_{{\mathrm{1}}} = \langle  \ottnt{A}  \hookrightarrow  \ottnt{B}  \rangle  s$. We have
+    $s_{{\mathrm{2}}} = \langle  \psubst \, \ottsym{(}  \ottnt{A}  \ottsym{)}  \hookrightarrow  \psubst \, \ottsym{(}  \ottnt{B}  \ottsym{)}  \rangle  \psubst \, \ottsym{(}  s  \ottsym{)}$.  By \cref{lemma:type_decrease} we have $ \llbracket  \ottnt{A}  \rrbracket  \leq  \llbracket  \psubst \, \ottsym{(}  \ottnt{A}  \ottsym{)}  \rrbracket $
+    and $ \llbracket  \ottnt{B}  \rrbracket  \leq  \llbracket  \psubst \, \ottsym{(}  \ottnt{B}  \ottsym{)}  \rrbracket $. By i.h., we have $ \llbracket  s  \rrbracket  \leq  \llbracket  \psubst \, \ottsym{(}  s  \ottsym{)}  \rrbracket $.
+    Therefore $ \llbracket  \langle  \ottnt{A}  \hookrightarrow  \ottnt{B}  \rangle  s  \rrbracket  \leq  \llbracket  \langle  \psubst \, \ottsym{(}  \ottnt{A}  \ottsym{)}  \hookrightarrow  \psubst \, \ottsym{(}  \ottnt{B}  \ottsym{)}  \rangle  \psubst \, \ottsym{(}  s  \ottsym{)}  \rrbracket $.
+
+  \item The rest of cases are immediate.
+  \end{itemize}
+\end{proof}
+
+
+\lemmareptyping*
+\begin{proof}
+We already know that at least one translation $s = s_{{\mathrm{1}}}$ exists
+for every typing derivation. If $s_{{\mathrm{1}}}$ is a representative translation then we
+are done. Otherwise there exists another translation $s_{{\mathrm{2}}}$ such that
+$s_{{\mathrm{2}}} \leq s_{{\mathrm{1}}}$ and $ s_{{\mathrm{1}}} \not \leq s_{{\mathrm{2}}}$. By
+\cref{lemma:subst_dec_measure}, we have $ \llbracket  s_{{\mathrm{2}}}  \rrbracket  <  \llbracket  s_{{\mathrm{1}}}  \rrbracket $. We continue
+with $s = s_{{\mathrm{2}}}$, and get a strictly decreasing sequence $ \llbracket  s_{{\mathrm{1}}}  \rrbracket ,  \llbracket  s_{{\mathrm{2}}}  \rrbracket , \dots$.
+By \cref{lemma:decrease_stop}, we know this sequence cannot be infinite long. Suppose it ends at $ \llbracket  s_{\ottmv{j}}  \rrbracket $,
+by the construction of the sequence, we know that $s_{\ottmv{j}}$ is a representative translation of $\ottnt{e}$.
+\end{proof}
+
+
+\newpage
+
+
+\section{The Extended Algorithmic System}
+
+
+\subsection{Syntax}
+
+
+\begin{center}
+\begin{tabular}{lrcl} \toprule
+  Expressions & $e$ & \syndef & $\ottmv{x} \mid \ottmv{n} \mid \lambda  \ottmv{x}  \ottsym{:}  A  .\,  e  \mid  \lambda  \ottmv{x}  .\,  e \mid e_{{\mathrm{1}}} \, e_{{\mathrm{2}}} \mid e  \ottsym{:}  A \mid \ottkw{let} \, \ottmv{x}  \ottsym{=}  e_{{\mathrm{1}}} \, \ottkw{in} \, e_{{\mathrm{2}}} $ \\
+  Types & $A, B$ & \syndef & $  \mathsf{Int}  \mid \ottmv{a} \mid \widehat{a} \mid A  \rightarrow  B \mid \forall  \ottmv{a}  .\,  A \mid  \star  \mid  \mathcal{S}  \mid  \mathcal{G}  $ \\
+  Monotypes & $\tau, \sigma$ & \syndef & $  \mathsf{Int}  \mid \ottmv{a} \mid \widehat{a} \mid \tau  \rightarrow  \sigma \mid  \mathcal{S}  \mid  \mathcal{G} $ \\
+  Existential variables & $\widehat{a}$ & \syndef & $ \widehat{a}_{S}   \mid  \widehat{a}_{G}   $   \\
+  Castable Types & $\mathbb{C}$ & \syndef & $  \mathsf{Int}  \mid \ottmv{a} \mid \widehat{a} \mid \mathbb{C}_{{\mathrm{1}}}  \rightarrow  \mathbb{C}_{{\mathrm{2}}} \mid \forall  \ottmv{a}  .\,  \mathbb{C} \mid  \star  \mid  \mathcal{G}  $ \\
+  Castable Monotypes & $t$ & \syndef & $  \mathsf{Int}  \mid \ottmv{a} \mid \widehat{a} \mid t_{{\mathrm{1}}}  \rightarrow  t_{{\mathrm{2}}} \mid  \mathcal{G} $ \\
+  Algorithmic Contexts & $\Gamma, \Delta, \Theta$ & \syndef & $ \bullet  \mid \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A \mid \Gamma  \ottsym{,}  \ottmv{a} \mid \Gamma  \ottsym{,}  \widehat{a}  \mid \Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  \tau \mid \Gamma  \ottsym{,}   \widehat{a}_{G}   \ottsym{=}  t \mid \Gamma  \ottsym{,}   \blacktriangleright_{ \widehat{a} }  $ \\
+  Complete Contexts & $\Omega$ & \syndef & $ \bullet  \mid \Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  A \mid \Omega  \ottsym{,}  \ottmv{a} \mid \Omega  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  \tau \mid \Omega  \ottsym{,}   \widehat{a}_{G}   \ottsym{=}  t \mid \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{a} }  $ \\
+  \bottomrule
+\end{tabular}
+
+\end{center}
+
+
+\subsection{Type System}
+
+
+\drules[as]{$ \Gamma  \vdash  A  \lesssim  B  \dashv  \Delta $}{Algorithmic Consistent Subtyping}{tvar, evar, int, arrow, forallR, forallLL, spar, gpar, unknownLL, unknownRR, instL, instR}
+
+\drules[instl]{$ \Gamma  \vdash  \widehat{a}  \lessapprox  A  \dashv  \Delta $}{Instantiation I}{solveS, solveG, solveUS, solveUG, reachSGOne, reachSGTwo, reachOther, arr, forallR}
+
+\drules[instr]{$ \Gamma  \vdash  A  \lessapprox  \widehat{a}  \dashv  \Delta $}{Instantiation II}{solveS, solveG, solveUS, solveUG, reachSGOne, reachSGTwo, reachOther, arr, forallLL}
+
+\drules[inf]{$ \Gamma  \vdash  e  \Rightarrow  A  \dashv  \Delta $}{Inference}{var, int, lamannTwo, lamTwo, anno, app, letTwo}
+
+\drules[chk]{$ \Gamma  \vdash  e  \Leftarrow  A  \dashv  \Delta $}{Checking}{lam, gen, sub}
+
+\drules[am]{$ \Gamma  \vdash  A  \triangleright  A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}  \dashv  \Delta $}{Algorithmic Matching}{forallL, arr, unknown, var}
+
+\newpage
+
+\section{Decidability} \label{app:decidable}
+
+The decidability proofs mostly follow that of DK system. Whenever possible, we only show
+the new cases; otherwise we provide full detailed proofs.
+
+\subsection{Decidability of Instantiation}
+
+
+\begin{lemma}[Left Unsolvedness Preservation]
+  Let $\Gamma = \Gamma_{{\mathrm{0}}}  \ottsym{,}  \widehat{a}  \ottsym{,}  \Gamma_{{\mathrm{1}}}$. If  $\Gamma  \vdash  \widehat{a}  \lessapprox  A  \dashv  \Delta$ or $\Gamma  \vdash  A  \lessapprox  \widehat{a}  \dashv  \Delta$, and $\widehat{b} \in \textsc{unsolved}(\Gamma_{{\mathrm{0}}})$,
+  then  $\Delta = \ottsym{(}  \Delta_{{\mathrm{0}}}  \ottsym{,}  \widehat{b}  \ottsym{,}  \Delta_{{\mathrm{1}}}  \ottsym{)}$ or $\Delta = \ottsym{(}  \Delta_{{\mathrm{0}}}  \ottsym{,}  \widehat{b}'  \ottsym{,}  \widehat{b}  \ottsym{=}  \widehat{b}'  \ottsym{,}  \Delta_{{\mathrm{1}}}  \ottsym{)}$ where $\widehat{b}'$ is a fresh unsolved existential.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation. We show the new cases.
+
+  \begin{itemize}
+  \item Case \[     \ottaltinferrule{instl-solveUS}{}{  }{ \Gamma_{{\mathrm{0}}}  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}  \Gamma_{{\mathrm{1}}}  \vdash   \widehat{a}_{S}   \lessapprox  \star  \dashv  \Gamma_{{\mathrm{0}}}  \ottsym{,}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{=}   \widehat{a}_{G}   \ottsym{,}  \Gamma_{{\mathrm{1}}} }  \]
+    First notice that $\widehat{b}$ cannot be $ \widehat{a}_{G} $. Then to the left of $ \widehat{a}_{S} $, the contexts $\Delta$ and $\Gamma$ are the same $\Gamma_{{\mathrm{0}}}$.
+  \item Case \[  \drule{instl-solveUG}   \]
+    Immediate, since to the left of $ \widehat{a}_{G} $, the contexts $\Delta$ and $\Gamma$ are the same.
+  \item Case \[  \drule{instl-reachSGOne}    \]
+    First notice that $\widehat{b}$ cannot be $ \widehat{a}_{G} $. Then to the left of $ \widehat{a}_{S} $, the contexts $\Delta$ and $\Gamma$ are the same.
+  \item Case \[  \drule{instl-reachSGTwo}    \]
+    If $\widehat{b} \neq  \widehat{b}_{S}  $, immediate, since to the left of $ \widehat{a}_{G} $ ($\widehat{b}$ cannot be $ \widehat{b}_{G} $), the contexts $\Delta$ and $\Gamma$ are the same.
+    Otherwise, $ \widehat{b}_{S} $'s solution (i.e., $ \widehat{b}_{G} $) is a fresh unsolved existential that lies just before $ \widehat{b}_{S} $.
+  \item Case \rref*{instr-solveUS} is similar to case \rref*{instl-solveUS}.
+  \item Case \rref*{instr-solveUG} is similar to case \rref*{instl-solveUG}.
+  \item Case \rref*{instr-reachSG1} is similar to case \rref*{instl-reachSG1}.
+  \item Case \rref*{instr-reachSG2} is similar to case \rref*{instl-reachSG2}.
+  \end{itemize}
+
+\end{proof}
+
+
+\begin{lemma}[Left Free Variable Preservation]
+  Let $\Gamma = \Gamma_{{\mathrm{0}}}  \ottsym{,}  \widehat{a}  \ottsym{,}  \Gamma_{{\mathrm{1}}}$. If $\Gamma  \vdash  \widehat{a}  \lessapprox  A  \dashv  \Delta$ or $\Gamma  \vdash  A  \lessapprox  \widehat{a}  \dashv  \Delta$, and $\Gamma  \vdash  B$
+  and $\widehat{a} \notin \textsc{fv}(\ottsym{[}  \Gamma  \ottsym{]}  B)$ and $\widehat{b} \in \textsc{unsolved}(\Gamma_{{\mathrm{0}}})  $
+  and $\widehat{b}  \notin \textsc{fv}(\ottsym{[}  \Gamma  \ottsym{]}  B)  $,
+  then $\widehat{b} \notin \textsc{fv}(\ottsym{[}  \Delta  \ottsym{]}  B)$.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation. We show the new cases.
+  \begin{itemize}
+  \item Case \[  \drule{instl-solveUS}    \]
+    Since $\Delta$ differs from $\Gamma$ only in solving $ \widehat{a}_{S} $ to $ \widehat{a}_{G} $, and $ \widehat{a}_{G} $ is fresh,
+    applying $\Delta$ to a type will not introduce $\widehat{b}$.  We have $\widehat{b}  \notin \textsc{fv}(\ottsym{[}  \Gamma  \ottsym{]}  B)  $, so
+    $\widehat{b}  \notin \textsc{fv}(\ottsym{[}  \Delta  \ottsym{]}  B)  $.
+
+  \item Case \[  \drule{instl-solveUG}    \]
+    Immediate, since $\Delta$ and $\Gamma$ are the same.
+
+  \item Case \[  \drule{instl-reachSGOne}    \]
+
+    Since $\Delta$ differs from $\Gamma$ only in solving $ \widehat{a}_{S} $ and $ \widehat{b}_{G} $ to $ \widehat{a}_{G} $, and $ \widehat{a}_{G} $ is fresh,
+    applying $\Delta$ to a type will not introduce $\widehat{b}$.  We have $\widehat{b}  \notin \textsc{fv}(\ottsym{[}  \Gamma  \ottsym{]}  B)  $, so
+    $\widehat{b}  \notin \textsc{fv}(\ottsym{[}  \Delta  \ottsym{]}  B)  $.
+
+  \item Case \[  \drule{instl-reachSGTwo}    \]
+
+    Since $\Delta$ differs from $\Gamma$ only in solving $ \widehat{b}_{S} $ and $ \widehat{a}_{G} $ to $ \widehat{b}_{G} $, and $ \widehat{b}_{G} $ is fresh,
+    applying $\Delta$ to a type will not introduce $\widehat{b}$.  We have $\widehat{b}  \notin \textsc{fv}(\ottsym{[}  \Gamma  \ottsym{]}  B)  $, so
+    $\widehat{b}  \notin \textsc{fv}(\ottsym{[}  \Delta  \ottsym{]}  B)  $.
+
+  \item Case \rref*{instr-solveUS} is similar to case \rref*{instl-solveUS}.
+  \item Case \rref*{instr-solveUG} is similar to case \rref*{instl-solveUG}.
+  \item Case \rref*{instr-reachSG1} is similar to case \rref*{instl-reachSG1}.
+  \item Case \rref*{instr-reachSG2} is similar to case \rref*{instl-reachSG2}.
+
+
+  \end{itemize}
+
+\end{proof}
+
+
+\begin{lemma}[Instantiation Size Preservation] \label{lemma:dec:instan}
+  If $\Gamma = \Gamma_{{\mathrm{0}}}  \ottsym{,}  \widehat{a}  \ottsym{,}  \Gamma_{{\mathrm{1}}}$ and $\Gamma  \vdash  \widehat{a}  \lessapprox  A  \dashv  \Delta$
+  or $\Gamma  \vdash  A  \lessapprox  \widehat{a}  \dashv  \Delta$, and $\Gamma  \vdash  B$ and $ \widehat{a}  \notin \textsc{fv} (  \ottsym{[}  \Gamma  \ottsym{]}  B  ) $, then $ | \ottsym{[}  \Gamma  \ottsym{]}  B | = | \ottsym{[}  \Delta  \ottsym{]}  B | $, where $| C | $ is the plain size of $C$.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation. We show the new cases.
+  \begin{itemize}
+  \item Case \[ \drule{instl-solveUS} \]
+    Since $\Delta$ differs $\Gamma$ only in solving $ \widehat{a}_{S} $, and we know $  \widehat{a}_{S}   \notin \textsc{fv} (  \ottsym{[}  \Gamma  \ottsym{]}  B  )   $, we have $\ottsym{[}  \Delta  \ottsym{]}  B = \ottsym{[}  \Gamma  \ottsym{]}  B$, so
+    $ | \ottsym{[}  \Gamma  \ottsym{]}  B | = | \ottsym{[}  \Delta  \ottsym{]}  B | $.
+
+  \item Case \[  \drule{instl-solveUG}   \]
+    Immediate, since $\Delta$ and $\Gamma$ are the same.
+
+  \item Case \[   \drule{instl-reachSGOne}   \]
+    Since $\Delta$ differs $\Gamma$ only in solving $ \widehat{a}_{S} $ and $ \widehat{b}_{G} $, and we know $  \widehat{a}_{S}   \notin \textsc{fv} (  \ottsym{[}  \Gamma  \ottsym{]}  B  )   $,
+    even if $ \widehat{b}_{G} $ occurs in $\ottsym{[}  \Gamma  \ottsym{]}  B$, its solution is again an existential variable, so the size does not change,
+    so $ | \ottsym{[}  \Gamma  \ottsym{]}  B | = | \ottsym{[}  \Delta  \ottsym{]}  B | $.
+
+  \item Case \[   \drule{instl-reachSGTwo}   \]
+    Since $\Delta$ differs $\Gamma$ only in solving $ \widehat{a}_{G} $ and $ \widehat{b}_{S} $, and we know $  \widehat{a}_{G}   \notin \textsc{fv} (  \ottsym{[}  \Gamma  \ottsym{]}  B  )   $,
+    even if $ \widehat{b}_{S} $ occurs in $\ottsym{[}  \Gamma  \ottsym{]}  B$, its solution is again an existential variable, so the size does not change,
+    so $ | \ottsym{[}  \Gamma  \ottsym{]}  B | = | \ottsym{[}  \Delta  \ottsym{]}  B | $.
+
+  \item Case \rref*{instr-solveUS} is similar to case \rref*{instl-solveUS}.
+  \item Case \rref*{instr-solveUG} is similar to case \rref*{instl-solveUG}.
+  \item Case \rref*{instr-reachSG1} is similar to case \rref*{instl-reachSG1}.
+  \item Case \rref*{instr-reachSG2} is similar to case \rref*{instl-reachSG2}.
+
+  \end{itemize}
+\end{proof}
+
+
+\decInstan*
+\begin{proof}
+  By induction on the derivation of $\Gamma  \vdash  A$. We show the new cases.
+  \begin{itemize}
+  \item Case \[  \drule{ad-unknown}   \]
+    By \rref{instl-solveUS} or \rref{instl-solveUG}.
+
+  \item Case \[  \drule{ad-static}   \]
+    By \rref{instl-solveS}.
+
+  \item Case \[  \drule{ad-gradual}   \]
+
+    By \rref{instl-solveS} or \rref{instl-solveG}.
+
+
+  \item Case \[    \ottaltinferrule{ad-evar}{}{  }{ \Gamma_{{\mathrm{0}}}  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}  \Gamma_{{\mathrm{1}}}  \vdash   \widehat{a}_{G}  }  \]
+    If $ \widehat{a}_{G}  \in \Gamma_{{\mathrm{0}}}  $, then we have a derivation by \rref{instl-reachOther}. If $ \widehat{a}_{G}  \in \Gamma_{{\mathrm{1}}}$, then
+    we have a derivation by \rref{instl-reachSG1}.
+
+
+  \item Case \[    \ottaltinferrule{ad-evar}{}{  }{ \Gamma_{{\mathrm{0}}}  \ottsym{,}   \widehat{a}_{G}   \ottsym{,}  \Gamma_{{\mathrm{1}}}  \vdash   \widehat{a}_{S}  }  \]
+    If $ \widehat{a}_{S}  \in \Gamma_{{\mathrm{0}}}  $, then we have a derivation by \rref{instl-reachSG2}. If $ \widehat{a}_{S}  \in \Gamma_{{\mathrm{1}}}$, then
+    we have a derivation by \rref{instl-reachOther}.
+
+  \end{itemize}
+
+
+\end{proof}
+
+
+
+\subsection{Decidability of Algorithmic Consistent Subtyping}
+
+
+\begin{lemma}[Monotypes Solve Variables] \label{lemma:mono_solve_var}
+  If $\Gamma  \vdash  \widehat{a}  \lessapprox  \tau  \dashv  \Delta$ or $\Gamma  \vdash  \tau  \lessapprox  \widehat{a}  \dashv  \Delta$, then if $\ottsym{[}  \Gamma  \ottsym{]}  \tau = \tau$ and
+  $\widehat{a} \notin \textsc{fv}(\ottsym{[}  \Gamma  \ottsym{]}  \tau)$, then $| \textsc{unsolved}(\Gamma)   | = |  \textsc{unsolved}(\Delta)      | + 1$.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation. Since our syntax of monotypes differ
+  from DK only in having static and gradual parameters, we show only two affected cases.
+  \begin{itemize}
+  \item Case \[  \drule{instl-solveS}  \]
+    It is immediate that $|  \textsc{unsolved}(\Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}  \Gamma')    | = |  \textsc{unsolved}(\Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  \tau  \ottsym{,}  \Gamma')    | + 1$.
+  \item Case \[  \drule{instl-solveG}  \]
+    It is immediate that $|  \textsc{unsolved}(\Gamma  \ottsym{,}   \widehat{a}_{G}   \ottsym{,}  \Gamma')    | = |  \textsc{unsolved}(\Gamma  \ottsym{,}   \widehat{a}_{G}   \ottsym{=}  t  \ottsym{,}  \Gamma')    | + 1$.
+  \end{itemize}
+\end{proof}
+
+
+\begin{lemma}[Monotype Monotonicity] \label{lemma:mono_mono}
+  If $\Gamma  \vdash  \tau_{{\mathrm{1}}}  \lesssim  \tau_{{\mathrm{2}}}  \dashv  \Delta$  then $| \textsc{unsolved}(\Delta) | \leq |  \textsc{unsolved}(\Gamma)    |$.
+\end{lemma}
+\begin{proof}
+  By induction on the derivation. We show the new cases.
+  \begin{itemize}
+  \item Case \rref*{as-spar,as-gpar}: In these rules, $\Delta = \Gamma$, so $| \textsc{unsolved}(\Delta) | = |  \textsc{unsolved}(\Gamma)    |$.
+  \end{itemize}
+
+\end{proof}
+
+
+\begin{lemma}[Substitution Decreases Size] \label{lemma:subst_decrease}
+  If $\Gamma  \vdash  A$, then $|\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A| \leq  |  \Gamma  \vdash  A      |   $.
+\end{lemma}
+\begin{proof}
+  By induction on $| \Gamma  \vdash  A |$. We show the new cases.
+  \begin{itemize}
+  \item $A =  \star $, or $A =  \mathcal{S} $, or $A =  \mathcal{G} $ then $\ottsym{[}  \Gamma  \ottsym{]}  A = A$. Therefore
+    $|\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A| =  |  \Gamma  \vdash  A      |   $.
+  \end{itemize}
+\end{proof}
+
+
+\begin{lemma}[Monotype Context Invariance] \label{lemma:mono_inva}
+  If $\Gamma  \vdash  \tau  \lesssim  \tau'  \dashv  \Delta$ where $\ottsym{[}  \Gamma  \ottsym{]}  \tau = \tau$ and $\ottsym{[}  \Gamma  \ottsym{]}  \tau' = \tau'$ and
+  $|   \textsc{unsolved}(\Gamma)      | = |  \textsc{unsolved}(\Delta)    |$, then $\Delta = \Gamma$.
+\end{lemma}
+\begin{proof}
+  By induction on the derivation. We show the new cases.
+  \begin{itemize}
+  \item Cases \rref*{as-spar,as-gpar}: In these rules, the output context is the
+    same as the input context, so the result is immediate.
+  \item Case \[  \drule{as-instL}   \]
+    By \cref{lemma:mono_solve_var}, $|\textsc{unsolved}(\Delta)| < | \textsc{unsolved}(\Gamma  \ottsym{[}  \widehat{a}  \ottsym{]})   |$, which is contrary to what is given,
+    so this case is impossible.
+
+  \item Case \rref*{as-instR} is similar to \rref*{as-instL}.
+  \end{itemize}
+
+\end{proof}
+
+\decsubtype*
+\begin{proof}
+  Let the judgment $\Gamma  \vdash  A  \lesssim  B  \dashv  \Delta$ be measured lexicographically by
+ \begin{enumerate}[(M1)]
+\item the number of $\forall$-quantifiers in $A$ and $B$;
+\item the number of unknown types in $A$ and $B$;
+\item $| \textsc{unsolved}(\Gamma) |$: the number of unsolved existential
+  variables in $\Gamma$;
+\item $| \Gamma  \vdash  A | + | \Gamma  \vdash  B   |$.
+\end{enumerate}
+
+We focus on the interesting (and new) cases.
+
+\begin{asparaitem}
+\item Cases \rref*{as-spar,as-gpar,as-unknownLL,as-unknownRR} have no premises.
+\item Case \[  \drule{as-arrow}   \]
+  We discuss each premise separately:
+  \begin{description}
+    \item[First premise:]
+      If $A_{{\mathrm{2}}}$ or $B_{{\mathrm{2}}}$ has a quantifier, then the first premise is smaller by (M1). Otherwise, if $A_{{\mathrm{2}}}$ or $B_{{\mathrm{2}}}$
+      has a unknown type, then first premise is smaller by (M2). Otherwise, the first premise shares the same input context as the conclusion, so it
+      has the same (M3), but the types $B_{{\mathrm{1}}}$ and $A_{{\mathrm{1}}}$ are subterms of the conclusion's types, so the first premise is smaller by (M4).
+    \item[Second premise:] If $B_{{\mathrm{1}}}$ or $A_{{\mathrm{1}}}$ has a quantifier, then the second premise is smaller by (M1) because
+      applying contexts will not introduce quantifiers. Otherwise,
+      if $B_{{\mathrm{1}}}$ or $A_{{\mathrm{1}}}$ has a unknown type, then the second premise is smaller by (M2) because
+      applying contexts will not introduce unknown types. Otherwise, at this point, we know
+      $B_{{\mathrm{1}}}$ and $A_{{\mathrm{1}}}$ are monotypes, so by \cref{lemma:mono_mono} on the first premise,
+      we have $| \textsc{unsolved}(\Theta)  | \leq | \textsc{unsolved}(\Gamma)   |$.
+      \begin{itemize}
+      \item If $| \textsc{unsolved}(\Theta)  | < | \textsc{unsolved}(\Gamma)   |$, then the second premise is smaller by (M3).
+      \item If $| \textsc{unsolved}(\Theta)  | = | \textsc{unsolved}(\Gamma)   |$, then we have the same (M3). By \cref{lemma:mono_inva}
+        on the first premise, we know  $\Theta = \Gamma$, so $| \Theta  \vdash  \ottsym{[}  \Theta  \ottsym{]}  A_{{\mathrm{2}}} | = | \Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{2}}} |$.
+        By \cref{lemma:subst_decrease} we know $| \Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{2}}} | \leq  | \Gamma  \vdash  A_{{\mathrm{2}}} |  $. Therefore we have
+        \[
+          | \Theta  \vdash  \ottsym{[}  \Theta  \ottsym{]}  A_{{\mathrm{2}}} | \leq  | \Gamma  \vdash  A_{{\mathrm{2}}} |
+        \]
+        Same for $B_{{\mathrm{2}}}$:
+        \[
+          | \Theta  \vdash  \ottsym{[}  \Theta  \ottsym{]}  B_{{\mathrm{2}}} | \leq  | \Gamma  \vdash  B_{{\mathrm{2}}} |
+        \]
+        Therefore,
+        \[
+          | \Theta  \vdash  \ottsym{[}  \Theta  \ottsym{]}  A_{{\mathrm{2}}} | + | \Theta  \vdash  \ottsym{[}  \Theta  \ottsym{]}  B_{{\mathrm{2}}} | \leq | \Gamma  \vdash  A_{{\mathrm{2}}} | +  | \Gamma  \vdash  B_{{\mathrm{2}}} | < | \Gamma  \vdash  A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}} | + | \Gamma  \vdash  B_{{\mathrm{1}}}  \rightarrow  B_{{\mathrm{2}}} |
+        \]
+        and the second premise is smaller by (M4).
+      \end{itemize}
+  \end{description}
+\end{asparaitem}
+
+\end{proof}
+
+\subsection{Decidability of Algorithmic Typing}
+
+\decmatch*
+\begin{proof}
+  \Rref{am-arr,am-unknown,am-var} do not have premises. For \rref{am-forall},
+  the size of $A$ is decreasing in the premise.
+\end{proof}
+
+
+\dectyping*
+\begin{proof}
+
+  We consider the following measure:
+  \begin{center}
+    \begin{tabular}{lllll}
+      \multirow{2}{*}{$ \Big \langle$} & \multirow{2}{*}{$e,$} & $ \Rightarrow $ & \multirow{2}{*}{$| \Gamma  \vdash  A |$} & \multirow{2}{*}{$\Big \rangle$} \\
+                                       &                    & $ \Leftarrow ,$ &  &
+    \end{tabular}
+  \end{center}
+  and show every inference/checking premise is smaller than the conclusion.
+  \begin{itemize}
+  \item \Rref{inf-var,inf-int} do not have premises.
+  \item \Rref{inf-anno,inf-lamann,inf-lam,inf-let,chk-lam} all have strictly
+    smaller $e$ in the premises.
+  \item \Rref{inf-app}: The first and third premises have strictly smaller
+    $e$. The second (matching) judgment is decidable by
+    \cref{lemma:decmatch}.
+  \item \Rref{chk-gen}: Both the premise and conclusion type the same term, and
+    both are the checking judgments. However $| \Gamma  \ottsym{,}  \ottmv{a}  \vdash  A | < | \Gamma  \vdash  \forall  \ottmv{a}  .\,  A |$, so
+    the premise is smaller.
+  \item \Rref{chk-sub}: The first premise uses inference mode, so it is smaller.
+    The second premise is decidable by \cref{thm:decsubtype}.
+  \end{itemize}
+
+\end{proof}
+
+\newpage
+
+
+
+\section{Properties of Consistent Subtyping}
+
+
+\begin{clemma}[Consistent Subtyping is Reflexive] \label{lemma:sub_refl}%
+  If $\Psi  \vdash  \ottnt{A}$ then $\Psi  \vdash  \ottnt{A}  \lesssim  \ottnt{A}$.
+\end{clemma}
+
+
+\begin{clemma}[Monotype Equality]   \label{lemma:mono_equal}
+  If  $\Psi  \vdash  \tau  \lesssim  \sigma$  then $\tau = \sigma$.
+\end{clemma}
+
+\begin{lemma}[Invertibility]  \label{lemma:forall_invert}
+  If $ \Psi  \vdash  \ottnt{A}  \lesssim  \forall  \ottmv{b}  .\,  \ottnt{B} $ then $\Psi  \ottsym{,}  \ottmv{b}  \vdash  \ottnt{A}  \lesssim  \ottnt{B}$.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation.
+  \begin{itemize}
+  \item \Rref{cs-arrow,cs-tvar,cs-int,cs-unknownRR,cs-spar,cs-gpar} are impossible since
+    the supertype is not a forall type.
+  \item Case \[  \drule{cs-forallR}   \] The premise is exactly what we need.
+  \item Case \[  \drule{cs-forallL}  \] where $B = \forall  \ottmv{b}  .\,  \ottnt{B_{{\mathrm{0}}}}$. By i.h.,
+    we have $\Psi  \ottsym{,}  \ottmv{b}  \vdash  \ottnt{A}  \ottsym{[}  \ottmv{a}  \mapsto  \tau  \ottsym{]}  \lesssim  \ottnt{B_{{\mathrm{0}}}}$. By \rref{cs-forallL} we have
+    $\Psi  \ottsym{,}  \ottmv{b}  \vdash  \forall  \ottmv{a}  .\,  \ottnt{A}  \lesssim  \ottnt{B_{{\mathrm{0}}}}$.
+  \item Case \[ \drule{cs-unknownLL}   \] where $\mathbb{C} = \forall  \ottmv{b}  .\,  \mathbb{C}_{{\mathrm{0}}}$. By \rref{cs-unknownLL}
+    we have $\Psi  \ottsym{,}  \ottmv{b}  \vdash  \star  \lesssim  \mathbb{C}_{{\mathrm{0}}}$.
+  \end{itemize}
+\end{proof}
+
+
+\newpage
+
+
+\section{Properties of Context Extension}
+
+\subsection{Syntactic Properties}
+
+
+Since the definition of the context extension judgment ($\Gamma  \longrightarrow  \Delta$,
+\cref{fig:ctxt-extension}) is exactly the same as that of the DK system, we
+refer the reader to their technical report~\citep{dunfield2013complete} for the proofs of the following
+syntactic properties of context extension.
+
+
+
+\begin{lemma}[Reverse Declaration Order Preservation]   \label{lemma:reverse_preserve}
+  If $\Gamma \exto \Delta$ and $a$ and $b$ are both declared in $\Gamma$ and $a$
+  is declared to the left of $b$ in $\Delta$, then $a$ is declared to the left
+  of $b$ in $\Gamma$.
+\end{lemma}
+
+
+
+\begin{lemma}[Reflexivity]   \label{lemma:reflexivity}
+  If $\Gamma$ is well-formed then $\Gamma  \longrightarrow  \Gamma$.
+\end{lemma}
+
+
+\begin{lemma}[Transitivity]   \label{lemma:transitivity}
+  If $\Gamma  \longrightarrow  \Delta $ and $\Delta  \longrightarrow  \Theta$ then $\Gamma  \longrightarrow  \Theta$.
+\end{lemma}
+
+\begin{definition}[Softness]
+  A context $\Theta$ is soft iff it consists only of $\widehat{a}$ and $\widehat{a}  \ottsym{=}  \tau$ declarations.
+\end{definition}
+
+
+\begin{lemma}[Substitution Extension Invariance]  \label{lemma:subst_ext_invar}
+  If $\Theta  \vdash  A$ and $\Theta  \longrightarrow  \Gamma$ then $\ottsym{[}  \Gamma  \ottsym{]}  A = \ottsym{[}  \Gamma  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Theta  \ottsym{]}  A  \ottsym{)}  $ and $ \ottsym{[}  \Gamma  \ottsym{]}  A = \ottsym{[}  \Theta  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A  \ottsym{)}   $.
+\end{lemma}
+
+
+\begin{lemma}[Extension Order] \label{lemma:extension_order}%
+  We have the following:
+  \begin{enumerate}
+  \item If $\Gamma_L  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Gamma_R  \longrightarrow  \Delta$ then $\Delta  = \ottsym{(}  \Delta_L  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Delta_R  \ottsym{)}  $ where
+    $\Gamma_L  \longrightarrow  \Delta_L$. Moreover, if $\Gamma_R$ is soft then $\Delta_R$ is soft.
+  \item If $\Gamma_L  \ottsym{,}   \blacktriangleright_{ \widehat{a} }   \ottsym{,}  \Gamma_R  \longrightarrow  \Delta$ then $\Delta  = \ottsym{(}  \Delta_L  \ottsym{,}   \blacktriangleright_{ \widehat{a} }   \ottsym{,}  \Delta_R  \ottsym{)}  $ where
+    $\Gamma_L  \longrightarrow  \Delta_L$. Moreover, if $\Gamma_R$ is soft then $\Delta_R$ is soft.
+  \item If $\Gamma_L  \ottsym{,}  \widehat{a}  \ottsym{,}  \Gamma_R  \longrightarrow  \Delta$ then $\Delta  = \ottsym{(}  \Delta_L  \ottsym{,}  \Theta  \ottsym{,}  \Delta_R  \ottsym{)}  $ where $\Gamma_L  \longrightarrow  \Delta_L$ and $\Theta$ is either $\widehat{a}$ or $\widehat{a} = \tau$ for some $\tau$.
+  \item If $\Gamma_L  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau  \ottsym{,}  \Gamma_R  \longrightarrow  \Delta$ then $\Delta  = \ottsym{(}  \Delta_L  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau'  \ottsym{,}  \Delta_R  \ottsym{)}  $ where $\Gamma_L  \longrightarrow  \Delta_L$ and and $\ottsym{[}  \Delta_L  \ottsym{]}  \tau = \ottsym{[}  \Delta_L  \ottsym{]}  \tau'$.
+  \item If $\Gamma_L  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{,}  \Gamma_R  \longrightarrow  \Delta$ then $\Delta  = \ottsym{(}  \Delta_L  \ottsym{,}  \ottmv{x}  \ottsym{:}  A'  \ottsym{,}  \Delta_R  \ottsym{)}  $ where $\Gamma_L  \longrightarrow  \Delta_L$ and $\ottsym{[}  \Delta_L  \ottsym{]}  A = \ottsym{[}  \Delta_L  \ottsym{]}  A'$. Moreover, $\Gamma_R$ is soft if and only if $\Delta_R$ is soft.
+  \end{enumerate}
+\end{lemma}
+
+
+\begin{lemma}[Solution Admissibility for Extension] \label{lemma:solution_ext}
+  If $\Gamma_L  \vdash  \tau$ then $\Gamma_L  \ottsym{,}  \widehat{a}  \ottsym{,}  \Gamma_R  \longrightarrow  \Gamma_L  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau  \ottsym{,}  \Gamma_R$.
+\end{lemma}
+
+
+\begin{lemma}[Unsolved Variable Addition for Extension]   \label{lemma:unsolved_ext}
+  We have that $ \Gamma_L  \ottsym{,}  \Gamma_R  \longrightarrow  \Gamma_L  \ottsym{,}  \widehat{a}  \ottsym{,}  \Gamma_R $
+\end{lemma}
+
+
+\begin{lemma}[Parallel Admissibility]   \label{lemma:paralell_admit}
+  If $\Gamma_L \exto \Delta_L$ and $\Gamma_L, \Gamma_R \exto \Delta_L, \Delta_R$ then:
+  \begin{enumerate}
+  \item $\Gamma_L, \genA, \Gamma_R \exto \Delta_L, \genA, \Delta_R$
+  \item If $\Delta_L \vdash \tau'$ then $\Gamma_L, \genA, \Gamma_R \exto \Delta_L, \genA = \tau', \Delta_R$.
+  \item If $\Gamma_L \vdash \tau$ and $\Delta_L \vdash \tau'$ and $\ctxsubst{\Delta_L}{\tau} = \ctxsubst{\Delta_L}{\tau'}$, then $\Gamma_L, \genA = \tau, \Gamma_R \exto \Delta_L, \genA = \tau', \Delta_R$.
+  \end{enumerate}
+\end{lemma}
+
+\begin{lemma}[Parallel Extension Solution] \label{lemma:paralell_ext_solu}
+  If $\Gamma_L, \genA, \Gamma_R \exto \Delta_L, \genA = \tau', \Delta_R$ and
+  $\Gamma_L \vdash \tau$ and $\ctxsubst{\Delta_L}{\tau} =
+  \ctxsubst{\Delta_L}{\tau'}$, then $\Gamma_L, \genA = \tau, \Gamma_R \exto
+  \Delta_L, \genA = \tau', \Delta_R$.
+\end{lemma}
+
+
+
+
+\begin{lemma}[Drop Variable for Extension]   \label{lemma:drop_ext}
+  If $\Gamma  \ottsym{,}  \widehat{a}  \longrightarrow  \Delta$ then $\Gamma  \longrightarrow  \Delta$.
+\end{lemma}
+
+
+\begin{lemma}[Finishing Types]
+  If $\Omega \vdash A$ and $\Omega \exto \Omega'$ then $\ctxsubst{\Omega}{A} = \ctxsubst{\Omega'}{A}$.
+  \label{lemma:finish_types}
+\end{lemma}
+
+
+\begin{lemma}[Finishing completions]
+  If $\Omega \exto \Omega'$ then $\ctxsubst{\Omega}{\Omega} = \ctxsubst{\Omega'}{\Omega'}$.
+  \label{lemma:finish_complete}
+\end{lemma}
+
+
+
+\begin{lemma}[Confluence of Completeness]   \label{lemma:confluence}
+  If $\Delta_{{\mathrm{1}}}  \longrightarrow  \Omega$ and $\Delta_{{\mathrm{2}}}  \longrightarrow  \Omega$ then
+  $\ottsym{[}  \Omega  \ottsym{]}  \Delta_{{\mathrm{1}}}  =  \ottsym{[}  \Omega  \ottsym{]}  \Delta_{{\mathrm{2}}}$.
+\end{lemma}
+
+
+\begin{lemma}[Variable Preservation]
+  If $(x : A) \in \Delta$ or $(x : A) \in \Omega$ and $\Delta \exto \Omega$ then $(x : \ctxsubst{\Omega}{A}) \in \ctxsubst{\Omega}{\Delta}$.
+  \label{lemma:variable_preservation}
+\end{lemma}
+
+
+\begin{lemma}[Softness Goes Away]
+  If $\Delta, \Theta \exto \Omega, \Omega_Z$ where $\Delta \exto \Omega$ and $\Theta$ is soft, then $\ctxsubst{\Omega, \Omega_Z}{(\Delta, \Theta)} = \ctxsubst{\Omega}{\Delta}$.
+  \label{lemma:subst_go_away}
+\end{lemma}
+
+\begin{lemma}[Stability of Complete Contexts]
+  If $\Gamma \exto \Omega$ then $\ctxsubst{\Omega}{\Gamma} = \ctxsubst{\Omega}{\Omega}$.
+  \label{lemma:stable_complete_ctxt}
+\end{lemma}
+
+
+
+\subsection{Instantiation Extends}
+
+\begin{lemma}[Instantiation Extension]   \label{lemma:inst_extension}
+ If $\Gamma  \vdash  \widehat{a}  \lessapprox  A  \dashv  \Delta$ or $\Gamma  \vdash  A  \lessapprox  \widehat{a}  \dashv  \Delta$ then $\Gamma  \longrightarrow  \Delta$.
+\end{lemma}
+\begin{proof}
+  By induction on the given instantiation derivation.
+  \begin{itemize}
+  \item \Rref{instl-solveS,instl-solveG,instl-reachOther,instr-solveS,instr-solveG,instr-reachOther}
+    are immediate from \cref{lemma:solution_ext}.
+
+  \item Case \[ \drule{instl-solveUS} \]
+    By \cref{lemma:unsolved_ext} we have $\Gamma  \ottsym{[}   \widehat{a}_{S}   \ottsym{]}  \longrightarrow  \Gamma  \ottsym{[}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{]}$. By \cref{lemma:solution_ext} we have
+    $\Gamma  \ottsym{[}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{]}  \longrightarrow  \Gamma  \ottsym{[}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{=}   \widehat{a}_{G}   \ottsym{]}$. By \cref{lemma:transitivity} we have $\Gamma  \ottsym{[}   \widehat{a}_{S}   \ottsym{]}  \longrightarrow  \Gamma  \ottsym{[}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{=}   \widehat{a}_{G}   \ottsym{]}$.
+
+  \item Case \[ \drule{instl-solveUG} \] Immediate by \cref{lemma:reflexivity}.
+
+
+  \item Case \[  \drule{instl-reachSGOne}  \]
+    By \cref{lemma:unsolved_ext} we have $\Gamma  \ottsym{[}   \widehat{a}_{S}   \ottsym{]}  \ottsym{[}   \widehat{b}_{G}   \ottsym{]}  \longrightarrow  \Gamma  \ottsym{[}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{]}  \ottsym{[}   \widehat{b}_{G}   \ottsym{]}$. By applying \cref{lemma:solution_ext} twice,
+    we have $\Gamma  \ottsym{[}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{]}  \ottsym{[}   \widehat{b}_{G}   \ottsym{]}  \longrightarrow  \Gamma  \ottsym{[}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{=}   \widehat{a}_{G}   \ottsym{]}  \ottsym{[}   \widehat{b}_{G}   \ottsym{=}   \widehat{a}_{G}   \ottsym{]}$. By \cref{lemma:transitivity} we have $\Gamma  \ottsym{[}   \widehat{a}_{S}   \ottsym{]}  \ottsym{[}   \widehat{b}_{G}   \ottsym{]}  \longrightarrow  \Gamma  \ottsym{[}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{=}   \widehat{a}_{G}   \ottsym{]}  \ottsym{[}   \widehat{b}_{G}   \ottsym{=}   \widehat{a}_{G}   \ottsym{]}$.
+
+  \item Case \[  \drule{instl-reachSGTwo}   \] Same as the case for \rref{instl-reachSG1}.
+
+  \item Case \[ \drule{instl-arr}\]
+    By applying \cref{lemma:unsolved_ext} twice, we have $\Gamma  \ottsym{[}  \widehat{a}  \ottsym{]}  \longrightarrow  \Gamma  \ottsym{[}  \widehat{a}_{{\mathrm{2}}}  \ottsym{,}  \widehat{a}_{{\mathrm{1}}}  \ottsym{,}  \widehat{a}  \ottsym{]}$.
+    By \cref{lemma:solution_ext} we have $\Gamma  \ottsym{[}  \widehat{a}_{{\mathrm{2}}}  \ottsym{,}  \widehat{a}_{{\mathrm{1}}}  \ottsym{,}  \widehat{a}  \ottsym{]}  \longrightarrow  \Gamma  \ottsym{[}  \widehat{a}_{{\mathrm{2}}}  \ottsym{,}  \widehat{a}_{{\mathrm{1}}}  \ottsym{,}  \widehat{a}  \ottsym{=}  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \widehat{a}_{{\mathrm{2}}}  \ottsym{]}$.
+    By i.h., we have $\Gamma  \ottsym{[}  \widehat{a}_{{\mathrm{2}}}  \ottsym{,}  \widehat{a}_{{\mathrm{1}}}  \ottsym{,}  \widehat{a}  \ottsym{=}  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \widehat{a}_{{\mathrm{2}}}  \ottsym{]}  \longrightarrow  \Theta$ and $\Theta  \longrightarrow  \Delta$. By \cref{lemma:transitivity} we
+    have $\Gamma  \ottsym{[}  \widehat{a}  \ottsym{]}  \longrightarrow  \Delta$.
+
+  \item Case \[ \drule{instl-forallR}  \]
+    By i.h., we have $\Gamma  \ottsym{[}  \widehat{a}  \ottsym{]}  \ottsym{,}  \ottmv{b}  \longrightarrow  \Delta  \ottsym{,}  \ottmv{b}  \ottsym{,}  \Theta$. By \cref{lemma:extension_order} (1), we have $\Gamma  \ottsym{[}  \widehat{a}  \ottsym{]}  \longrightarrow  \Delta$.
+
+  \item Case \[ \drule{instr-solveUS}  \] Same as the case for \rref{instl-solveUS}.
+
+  \item Case \[  \drule{instr-solveUG}\] Same as the case for \rref{instl-solveUG}.
+
+  \item Case \[  \drule{instr-reachSGOne}  \]  Same as the case for \rref{instl-reachSG1}.
+
+  \item Case \[  \drule{instr-reachSGTwo}  \]  Same as the case for \rref{instl-reachSG1}.
+
+  \item Case \[ \drule{instr-arr} \] Same as the case for \rref{instl-arr}.
+
+  \item Case \[ \drule{instr-forallLL}   \]
+    By i.h., we have $\Gamma  \ottsym{[}  \widehat{a}  \ottsym{]}  \ottsym{,}   \blacktriangleright_{ \widehat{b} }   \ottsym{,}   \widehat{b}_{S}   \longrightarrow  \Delta  \ottsym{,}   \blacktriangleright_{ \widehat{b} }   \ottsym{,}  \Theta$. By \cref{lemma:extension_order}(2) we have $\Gamma  \ottsym{[}  \widehat{a}  \ottsym{]}  \longrightarrow  \Delta$.
+
+  \end{itemize}
+\end{proof}
+
+\subsection{Consistent Subtyping Extends}
+
+\begin{lemma} \label{lemma:contamination_extension}
+  If $\Gamma  \vdash  A$ then $\Gamma  \longrightarrow   \mathsf{contaminate}(  \Gamma  ,  A  ) $.
+\end{lemma}
+\begin{proof}
+  By induction on the structure of $\Gamma$. The only interesting case is when $\Gamma = \Gamma'  \ottsym{,}   \widehat{a}_{S}  $. By \cref{def:contamination},
+  we have $ \mathsf{contaminate}(  \ottsym{(}  \Gamma'  \ottsym{,}   \widehat{a}_{S}   \ottsym{)}  ,  A  )  =  \mathsf{contaminate}(  \Gamma'  ,  A  )   \ottsym{,}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{=}   \widehat{a}_{G}  $. By i.h., we have $\Gamma'  \longrightarrow   \mathsf{contaminate}(  \Gamma'  ,  A  ) $.
+  By definition of context extension we have $\Gamma'  \ottsym{,}   \widehat{a}_{S}   \longrightarrow   \mathsf{contaminate}(  \Gamma'  ,  A  )   \ottsym{,}   \widehat{a}_{S} $. By \cref{lemma:unsolved_ext} we have
+  $ \mathsf{contaminate}(  \Gamma'  ,  A  )   \ottsym{,}   \widehat{a}_{S}   \longrightarrow   \mathsf{contaminate}(  \Gamma'  ,  A  )   \ottsym{,}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S} $. By \cref{lemma:solution_ext} we have $ \mathsf{contaminate}(  \Gamma'  ,  A  )   \ottsym{,}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \longrightarrow   \mathsf{contaminate}(  \Gamma'  ,  A  )   \ottsym{,}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{=}   \widehat{a}_{G} $.
+  By \cref{lemma:transitivity} we have $\Gamma'  \ottsym{,}   \widehat{a}_{S}   \longrightarrow   \mathsf{contaminate}(  \Gamma'  ,  A  )   \ottsym{,}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{=}   \widehat{a}_{G} $.
+\end{proof}
+
+\begin{lemma}[Consistent Subtyping Extension]   \label{lemma:sub_extension}
+  If $ \Gamma  \vdash  A  \lesssim  B  \dashv  \Delta  $ then $ \Gamma  \longrightarrow  \Delta$.
+\end{lemma}
+\begin{proof}
+  By induction on the derivation of consistent subtyping.
+
+  \begin{itemize}
+  \item \Rref{as-tvar,as-evar,as-int,as-spar,as-gpar} are immediate from \cref{lemma:reflexivity}.
+
+  \item Case \[ \drule{as-arrow} \]
+    By i.h., we have $\Gamma  \longrightarrow  \Theta$ and $\Theta  \longrightarrow  \Delta$. By \cref{lemma:transitivity}, we have $\Gamma  \longrightarrow  \Delta$.
+
+  \item Case \[ \drule{as-forallR} \]
+    By i.h., we have $\Gamma  \ottsym{,}  \ottmv{a}  \longrightarrow  \Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta$. By \cref{lemma:extension_order} (1), we have $\Gamma  \longrightarrow  \Delta$.
+
+
+  \item Case \[ \drule{as-forallLL} \]
+    By i.h., we have $\Gamma  \ottsym{,}   \blacktriangleright_{ \widehat{a} }   \ottsym{,}   \widehat{a}_{S}   \longrightarrow  \Delta  \ottsym{,}   \blacktriangleright_{ \widehat{a} }   \ottsym{,}  \Theta$. By \cref{lemma:extension_order} (2), we have $\Gamma  \longrightarrow  \Delta$.
+
+
+  \item Case \[ \drule{as-unknownLL}  \] Immediate by \cref{lemma:contamination_extension}.
+
+  \item Case \[ \drule{as-unknownRR}  \] Immediate by \cref{lemma:contamination_extension}.
+
+
+  \item \Rref{as-instL,as-instR} are immediate.
+
+  \end{itemize}
+
+\end{proof}
+
+
+\newpage
+
+\section{Soundness of Consistent Subtyping}
+
+
+\begin{definition}[Filling]   \label{def:filling}
+  The filling of a context $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}$ solves all unsolved variables:
+  \begin{align*}
+    \ottsym{\mbox{$\mid$}}  \bullet  \ottsym{\mbox{$\mid$}} &=  \bullet  \\
+    \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{\mbox{$\mid$}} &= \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \ottmv{x}  \ottsym{:}  A \\
+    \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{,}  \ottmv{a}  \ottsym{\mbox{$\mid$}} &= \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \ottmv{a} \\
+    \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau  \ottsym{\mbox{$\mid$}} &= \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau \\
+    \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{,}  \widehat{a}  \ottsym{\mbox{$\mid$}} &= \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \widehat{a}  \ottsym{=}  \mathsf{Int} \\
+    \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{,}   \blacktriangleright_{ \widehat{a} }   \ottsym{\mbox{$\mid$}} &= \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}   \blacktriangleright_{ \widehat{a} } 
+  \end{align*}
+\end{definition}
+
+
+\begin{lemma}[Substitution Stability]
+  For any well-formed complete context $(\Omega, \Omega_Z)$, if $\Omega \vdash A$
+  then $\ctxsubst{\Omega}{A} = \ctxsubst{\Omega,\Omega_Z}{A}$.
+  \label{lemma:subst_stable}
+\end{lemma}
+\begin{proof}
+  By induction on $\Omega_Z$. If $\Omega_Z =  \bullet $, the result is
+  immediate. Otherwise use the i.h. and the fact that $\Omega \vdash A$ implies
+  $\textsc{fv}(A) \cap \textsc{dom}(\Omega_Z) = \emptyset$.
+\end{proof}
+
+
+
+\begin{lemma}[Filling Completes]   \label{lemma:filling_completes}
+  If $\Gamma  \longrightarrow  \Omega$ and $\ottsym{(}  \Gamma  \ottsym{,}  \Theta  \ottsym{)}$ is well-formed, then $\Gamma  \ottsym{,}  \Theta  \longrightarrow  \Omega  \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}$.
+\end{lemma}
+\begin{proof}
+  By induction on $\Theta$, following \cref{def:filling} and applying the rules for context extension.
+\end{proof}
+
+\instsoundness*
+\begin{proof}
+  By induction on the given instantiation derivation.
+  \begin{itemize}
+  \item Case \[ \drule{instl-solveS} \] Immediate from \cref{lemma:sub_refl}.
+
+  \item Case \[ \drule{instl-solveG} \] Immediate from \cref{lemma:sub_refl}.
+
+  \item Case \[ \drule{instl-solveUS} \]
+    We know $\ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S}  = t $ for some castable monotype $t$, and $t \in \mathbb{C}$.
+    By \rref{cs-unknownRR}, we have $\ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{[}   \widehat{a}_{S}   \ottsym{]}  \ottsym{)}  \vdash  t  \lesssim  \star$
+
+
+  \item Case \[  \drule{instl-solveUG} \] Similar to the case for \rref{instl-solveUS}.
+
+  \item Case \[ \drule{instl-reachSGOne}  \]
+    We know $\ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S}  = \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{G}  =  t $ and $\ottsym{[}  \Omega  \ottsym{]}   \widehat{b}_{G}  = \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{G}  = t$ for some castable monotype $t$.
+    By \cref{lemma:sub_refl} we have $\ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{[}   \widehat{a}_{S}   \ottsym{]}  \ottsym{[}   \widehat{b}_{G}   \ottsym{]}  \ottsym{)}  \vdash  t  \lesssim  t$.
+
+  \item Case \[  \drule{instl-reachSGTwo}   \] Similar to the case for \rref{instl-reachSG1}.
+
+  \item Case \[ \drule{instl-reachOther}  \]
+    Let $\Delta = \Gamma  \ottsym{[}  \widehat{a}  \ottsym{]}  \ottsym{[}  \widehat{b}  \ottsym{]}$, we have $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a} = \tau $ and $\ottsym{[}  \Omega  \ottsym{]}  \widehat{b}  = \ottsym{[}  \Omega  \ottsym{]}  \widehat{a} = \tau $
+    for some monotype $\tau$. By \cref{lemma:sub_refl} we have $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \tau  \lesssim  \tau$.
+
+  \item Case \[ \drule{instl-arr}   \]
+    Let $\Gamma_{{\mathrm{1}}} = \Gamma  \ottsym{[}  \widehat{a}_{{\mathrm{2}}}  \ottsym{,}  \widehat{a}_{{\mathrm{1}}}  \ottsym{,}  \widehat{a}  \ottsym{=}  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \widehat{a}_{{\mathrm{2}}}  \ottsym{]}    $:
+    \begin{longtable}[l]{ll|l}
+      & $\Theta  \vdash  \widehat{a}_{{\mathrm{2}}}  \lessapprox  \ottsym{[}  \Theta  \ottsym{]}  A_{{\mathrm{2}}}  \dashv  \Delta$ & Premise \\
+      & $\Theta  \longrightarrow  \Delta$ & By \cref{lemma:inst_extension} \\
+      & $\Delta  \longrightarrow  \Omega$ & Given \\
+      & $\Theta  \longrightarrow  \Omega$ & By \cref{lemma:transitivity} \\
+      & $\Gamma_{{\mathrm{1}}}  \vdash  A_{{\mathrm{1}}}  \lessapprox  \widehat{a}_{{\mathrm{1}}}  \dashv  \Theta$ & Given \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}_{{\mathrm{1}}}$ & By i.h. and \Cref{lemma:confluence} \\
+      & $\Theta  \vdash  \widehat{a}_{{\mathrm{2}}}  \lessapprox  \ottsym{[}  \Theta  \ottsym{]}  A_{{\mathrm{2}}}  \dashv  \Delta$& Premise \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}_{{\mathrm{2}}}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Theta  \ottsym{]}  A_{{\mathrm{2}}}  \ottsym{)}$ & By i.h. \\
+      & $\Theta  \longrightarrow  \Delta$ & Above \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}_{{\mathrm{2}}}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}$ & By \cref{lemma:subst_ext_invar} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}_{{\mathrm{2}}}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}$ & By \rref{cs-arrow} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}  \ottsym{)} $ & By def. of substitution
+    \end{longtable}
+
+  \item Case \[ \drule{instl-forallR}  \]
+    \begin{longtable}[l]{ll|l}
+      & $\Delta  \ottsym{,}  \ottmv{b}  \ottsym{,}  \Theta  \longrightarrow  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}  $ & By \cref{lemma:filling_completes} \\
+      & $\Gamma  \ottsym{[}  \widehat{a}  \ottsym{]}  \ottsym{,}  \ottmv{b}  \vdash  \widehat{a}  \lessapprox  B  \dashv  \Delta  \ottsym{,}  \ottmv{b}  \ottsym{,}  \Theta$ & Given \\
+      & $\ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}  \ottsym{]}  \ottsym{(}  \Delta  \ottsym{,}  \ottmv{b}  \ottsym{,}  \Theta  \ottsym{)}  \vdash  \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}  \ottsym{]}  B$ & By i.h. \\
+      & $\ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}  \ottsym{]}  \ottsym{(}  \Delta  \ottsym{,}  \ottmv{b}  \ottsym{,}  \Theta  \ottsym{)}  \vdash  \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  B$ & Free variables in $\widehat{a}$ and $B$ are declared in $\ottsym{(}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{)}$\\
+      & $\ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  \ottsym{(}  \Delta  \ottsym{,}  \ottmv{b}  \ottsym{)}  \vdash  \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  B$ & By context partitioning and thinning \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \ottsym{,}  \ottmv{b}  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B$ & By context substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \forall  \ottmv{b}  .\,  \ottsym{[}  \Omega  \ottsym{]}  B$ & By \rref{cs-forallR} \\
+       & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \forall  \ottmv{b}  .\,  B  \ottsym{)}$ & By def. of substitution
+    \end{longtable}
+
+  \item Case \[ \drule{instr-forallLL}  \]
+
+    \begin{longtable}[l]{ll}
+      & $\Delta  \ottsym{,}   \blacktriangleright_{ \widehat{b} }   \ottsym{,}  \Theta  \longrightarrow  \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{b} }   \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}  $ \qquad By \cref{lemma:filling_completes} \\
+      & $\Gamma  \ottsym{[}  \widehat{a}  \ottsym{]}  \ottsym{,}   \blacktriangleright_{ \widehat{b} }   \ottsym{,}   \widehat{b}_{S}   \vdash  B  \ottsym{[}  \ottmv{b}  \mapsto   \widehat{b}_{S}   \ottsym{]}  \lessapprox  \widehat{a}  \dashv  \Delta  \ottsym{,}   \blacktriangleright_{ \widehat{b} }   \ottsym{,}  \Theta$ \qquad Premise \\
+      & $\ottsym{[}  \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{b} }   \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}  \ottsym{]}  \ottsym{(}  \Delta  \ottsym{,}   \blacktriangleright_{ \widehat{b} }   \ottsym{,}  \Theta  \ottsym{)}  \vdash  \ottsym{[}  \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{b} }   \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}  \ottsym{]}  \ottsym{(}  B  \ottsym{[}  \ottmv{b}  \mapsto   \widehat{b}_{S}   \ottsym{]}  \ottsym{)}  \lesssim  \ottsym{[}  \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{b} }   \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}  \ottsym{]}  \widehat{a}$ \qquad By i.h. \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{(}  \ottsym{[}  \Omega  \ottsym{]}  B  \ottsym{)}  \ottsym{[}  \ottmv{b}  \mapsto  \ottsym{[}  \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{b} }   \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}  \ottsym{]}   \widehat{b}_{S}   \ottsym{]}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$ \qquad By distributivity of substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{b} }   \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}  \ottsym{]}   \widehat{b}_{S} $ \qquad Follows from def. of context application \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \forall  \ottmv{b}  .\,  \ottsym{[}  \Omega  \ottsym{]}  B  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$ \qquad By \rref{cs-forallL} and $\ottsym{[}  \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{b} }   \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}  \ottsym{]}   \widehat{b}_{S} $ is a monotype  \\
+       & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \forall  \ottmv{b}  .\,  B  \ottsym{)}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$ \qquad By def. of substitution
+    \end{longtable}
+
+  \item The rest of the cases are similar to the above cases.
+
+  \end{itemize}
+\end{proof}
+
+
+\subsoundness*
+\begin{proof}
+  By induction on the derivation of consistent subtyping.
+
+  \begin{itemize}
+  \item Case \[ \drule{as-tvar}  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $  \ottmv{a}  \in  \Gamma  \ottsym{[}  \ottmv{a}  \ottsym{]}   $ & Given \\
+      & $  \ottmv{a}  \in  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{[}  \ottmv{a}  \ottsym{]}  \ottsym{)}    $ & Follows from def. of context application \\
+      & $ \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{[}  \ottmv{a}  \ottsym{]}  \ottsym{)}  \vdash  \ottmv{a}  \lesssim  \ottmv{a}  $ & By \rref{cs-tvar} \\
+      & $ \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{[}  \ottmv{a}  \ottsym{]}  \ottsym{)}  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \ottmv{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \ottmv{a}     $ & By def. of substitution
+    \end{longtable}
+
+
+  \item Case \[  \drule{as-evar}   \]
+
+    \begin{longtable}[l]{ll|l}
+      & $ \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  $ defined & Follows from def. of context application \\
+      & $  \ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  $ & Follows from $ \Delta = \ottsym{[}  \Gamma  \ottsym{]}  \widehat{a}  $ \\
+      & $  \ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  $ & By \cref{lemma:sub_refl}
+    \end{longtable}
+
+  \item Case \[  \drule{as-int}  \] Immediate.
+
+
+  \item Case \[  \drule{as-arrow}    \]
+
+    \begin{longtable}[l]{ll|l}
+      & $  \Gamma  \vdash  B_{{\mathrm{1}}}  \lesssim  A_{{\mathrm{1}}}  \dashv  \Theta  $ & Premise \\
+      & $   \Delta  \longrightarrow  \Omega  $ & Given \\
+      & $   \Theta  \longrightarrow  \Omega$ & By \cref{lemma:transitivity} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Theta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{1}}}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}$ & By i.h. \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{1}}}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}$ & By \cref{lemma:confluence} \\
+      & $ \Theta  \vdash  \ottsym{[}  \Theta  \ottsym{]}  A_{{\mathrm{2}}}  \lesssim  \ottsym{[}  \Theta  \ottsym{]}  B_{{\mathrm{2}}}  \dashv  \Delta   $ & Premise \\
+      & $ \ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Theta  \ottsym{]}  A_{{\mathrm{2}}}  \ottsym{)}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Theta  \ottsym{]}  B_{{\mathrm{2}}}  \ottsym{)}   $ & By i.h. \\
+      & $ \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Theta  \ottsym{]}  A_{{\mathrm{2}}}  \ottsym{)} = \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}  $ & By \cref{lemma:subst_ext_invar} \\
+      & $ \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Theta  \ottsym{]}  B_{{\mathrm{2}}}  \ottsym{)} = \ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{2}}}  $ & By \cref{lemma:subst_ext_invar} \\
+      & $ \ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{2}}}    $ & By above equalities \\
+      & $  \ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{2}}}     $ & By \rref{cs-arrow} \\
+      & $  \ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}  \ottsym{)}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  B_{{\mathrm{1}}}  \rightarrow  B_{{\mathrm{2}}}  \ottsym{)}       $ & By def. of substitution
+    \end{longtable}
+
+
+  \item Case \[ \drule{as-forallR}  \]
+
+      \begin{longtable}[l]{ll|l}
+      & $  \Gamma  \ottsym{,}  \ottmv{a}  \longrightarrow  \Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta   $ & By \cref{lemma:sub_extension} \\
+      & $\Theta$ is soft & By \cref{lemma:extension_order} (1) where $\Gamma_R =  \bullet $ \\
+      & $\Delta  \longrightarrow  \Omega$ & Given \\
+      & $\underbrace{\Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta}_{\Delta'}  \longrightarrow  \underbrace{  \Omega  \ottsym{,}  \ottmv{a}  \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}   }_{\Omega'}$ & By \cref{lemma:filling_completes} \\
+      & $  \Gamma  \ottsym{,}  \ottmv{a}  \vdash  A  \lesssim  B  \dashv  \Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta   $ & Given \\
+      & $ \ottsym{[}  \Omega'  \ottsym{]}  \Delta'  \vdash  \ottsym{[}  \Omega'  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega'  \ottsym{]}  B  $ & By i.h. \\
+      & $ \ottsym{[}  \Omega'  \ottsym{]}  A = \ottsym{[}  \Omega  \ottsym{,}  \ottmv{a}  \ottsym{]}  A   $ & By \cref{lemma:subst_stable} \\
+      & $ \ottsym{[}  \Omega'  \ottsym{]}  B = \ottsym{[}  \Omega  \ottsym{,}  \ottmv{a}  \ottsym{]}  B   $ & By \cref{lemma:subst_stable} \\
+      & $ \ottsym{[}  \Omega'  \ottsym{]}  \Delta'  = \ottsym{[}  \Omega  \ottsym{,}  \ottmv{a}  \ottsym{]}  \ottsym{(}  \Delta  \ottsym{,}  \ottmv{a}  \ottsym{)} $ & By \cref{lemma:subst_go_away} \\
+      & $\ottsym{[}  \Omega  \ottsym{,}  \ottmv{a}  \ottsym{]}  \ottsym{(}  \Delta  \ottsym{,}  \ottmv{a}  \ottsym{)}  \vdash  \ottsym{[}  \Omega  \ottsym{,}  \ottmv{a}  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{,}  \ottmv{a}  \ottsym{]}  B$ & By above equalities \\
+      & $ \ottsym{[}  \Omega  \ottsym{]}  \Delta  \ottsym{,}  \ottmv{a}  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B    $ & By def. of substitution \\
+      & $ \ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \forall  \ottmv{a}  .\,  \ottsym{[}  \Omega  \ottsym{]}  B  $ & By \rref{cs-forallR} \\
+      & $ \ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \forall  \ottmv{a}  .\,  B  \ottsym{)}   $ & By def. of substitution
+      \end{longtable}
+
+
+    \item Case \[  \drule{as-forallLL}  \]
+
+      \begin{longtable}[l]{ll|l}
+        & Let $\Omega' = \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{a}_S }   \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}$ \\
+        & $\Delta  \longrightarrow  \Omega$ & Given \\
+        & $\Delta  \ottsym{,}   \blacktriangleright_{ \widehat{a}_S }   \ottsym{,}  \Theta  \longrightarrow  \Omega'$  & By \cref{lemma:filling_completes} \\
+        & $\Gamma  \ottsym{,}   \blacktriangleright_{ \widehat{a}_S }   \ottsym{,}   \widehat{a}_{S}   \vdash  A  \ottsym{[}  \ottmv{a}  \mapsto   \widehat{a}_{S}   \ottsym{]}  \lesssim  B  \dashv  \Delta  \ottsym{,}   \blacktriangleright_{ \widehat{a}_S }   \ottsym{,}  \Theta$ & Premise \\
+        & $\ottsym{[}  \Omega'  \ottsym{]}  \ottsym{(}  \Delta  \ottsym{,}   \blacktriangleright_{ \widehat{a}_S }   \ottsym{,}  \Theta  \ottsym{)}  \vdash  \ottsym{[}  \Omega'  \ottsym{]}  \ottsym{(}  A  \ottsym{[}  \ottmv{a}  \mapsto   \widehat{a}_{S}   \ottsym{]}  \ottsym{)}  \lesssim  \ottsym{[}  \Omega'  \ottsym{]}  B$ & By i.h. \\
+        & $ \ottsym{[}  \Omega'  \ottsym{]}  B = \ottsym{[}  \Omega  \ottsym{,}  \ottmv{a}  \ottsym{]}  B   $ & By \cref{lemma:subst_stable} \\
+        & $ \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \Delta  \ottsym{,}   \blacktriangleright_{ \widehat{a}_S }   \ottsym{,}  \Theta  \ottsym{)}  \vdash  \ottsym{[}  \Omega'  \ottsym{]}  A  \ottsym{[}  \ottmv{a}  \mapsto  \ottsym{[}  \Omega'  \ottsym{]}   \widehat{a}_{S}   \ottsym{]}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B  $ & By distributivity of substitution \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \Delta  \ottsym{,}   \blacktriangleright_{ \widehat{a}_S }   \ottsym{,}  \Theta  \ottsym{)}  \vdash  \ottsym{[}  \Omega'  \ottsym{]}   \widehat{a}_{S} $ & Follows from def. of context application \\
+        & $ \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \Delta  \ottsym{,}   \blacktriangleright_{ \widehat{a}_S }   \ottsym{,}  \Theta  \ottsym{)}  \vdash  \forall  \ottmv{a}  .\,  \ottsym{[}  \Omega'  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B  $ & By \rref{cs-forallL} \\
+        & $ \ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \forall  \ottmv{a}  .\,  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B  $ & By context partitioning \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \forall  \ottmv{a}  .\,  A  \ottsym{)}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B $ & By def. of substitution
+      \end{longtable}
+
+    \item Case \[  \drule{as-spar}  \] Immediate from \rref{cs-spar}.
+
+    \item Case \[  \drule{as-gpar}  \] Immediate from \rref{cs-gpar}.
+
+
+    \item Case \[ \drule{as-unknownLL}   \] Immediate from \rref{cs-unknownLL}.
+
+    \item Case \[ \drule{as-unknownRR}   \] Immediate from \rref{cs-unknownRR}.
+
+    \item Case \[  \drule{as-instL}     \]
+      \begin{longtable}[l]{ll|l}
+        & $\Gamma  \ottsym{[}  \widehat{a}  \ottsym{]}  \vdash  \widehat{a}  \lessapprox  A  \dashv  \Delta$ & Premise \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  A$ & By \cref{thm:inst_soundness}
+      \end{longtable}
+
+    \item Case \[  \drule{as-instR}     \] Similar to the case for \rref{as-instL}.
+
+  \end{itemize}
+\end{proof}
+
+
+\newpage
+
+\section{Soundness of Typing}
+
+\textbf{Note:} We use $\byhave$ to improve readability when the conclusion has several parts.
+
+
+\begin{lemma}[Matching Extension]   \label{lemma:match_extension}
+  If $\Gamma  \vdash  A  \triangleright  A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}  \dashv  \Delta$ then $ \Gamma  \longrightarrow  \Delta  $.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation.
+  \begin{itemize}
+  \item Case \[ \drule{am-forallL} \]
+    By i.h., we have $\Gamma  \ottsym{,}   \widehat{a}_{S}   \longrightarrow  \Delta$. By \cref{lemma:drop_ext}, we have $\Gamma  \longrightarrow  \Delta$.
+
+  \item Case \[  \drule{am-arr}  \] Immediate by \cref{lemma:reflexivity}.
+
+  \item Case \[ \drule{am-unknown}   \] Immediate by \cref{lemma:reflexivity}.
+
+  \item Case \[ \drule{am-var} \]
+    By applying \cref{lemma:unsolved_ext} twice, we have
+    $ \Gamma  \ottsym{[}  \widehat{a}  \ottsym{]}  \longrightarrow  \Gamma  \ottsym{[}  \widehat{a}_{{\mathrm{1}}}  \ottsym{,}  \widehat{a}_{{\mathrm{2}}}  \ottsym{,}  \widehat{a}  \ottsym{]}   $. By
+    \cref{lemma:solution_ext}, we have $\Gamma  \ottsym{[}  \widehat{a}_{{\mathrm{1}}}  \ottsym{,}  \widehat{a}_{{\mathrm{2}}}  \ottsym{,}  \widehat{a}  \ottsym{]}  \longrightarrow  \Gamma  \ottsym{[}  \widehat{a}_{{\mathrm{1}}}  \ottsym{,}  \widehat{a}_{{\mathrm{2}}}  \ottsym{,}  \widehat{a}  \ottsym{=}  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \widehat{a}_{{\mathrm{2}}}  \ottsym{]}$. By
+    \cref{lemma:transitivity}, we have $\Gamma  \ottsym{[}  \widehat{a}  \ottsym{]}  \longrightarrow  \Gamma  \ottsym{[}  \widehat{a}_{{\mathrm{1}}}  \ottsym{,}  \widehat{a}_{{\mathrm{2}}}  \ottsym{,}  \widehat{a}  \ottsym{=}  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \widehat{a}_{{\mathrm{2}}}  \ottsym{]}$.
+  \end{itemize}
+
+\end{proof}
+
+
+\begin{lemma}[Typing Extension]   \label{lemma:typing_extension}
+  If $ \Gamma  \vdash  e  \Rightarrow  A  \dashv  \Delta $ or $ \Gamma  \vdash  e  \Leftarrow  A  \dashv  \Delta  $ then $\Gamma  \longrightarrow  \Delta$.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation.
+
+  \begin{itemize}
+  \item Case \[ \drule{inf-var}  \] Immediate by \cref{lemma:reflexivity}.
+
+  \item Case \[  \drule{inf-int}  \] Immediate by \cref{lemma:reflexivity}.
+
+  \item Case \[ \drule{inf-lamTwo}   \]
+    By i.h., we have $\Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}   \widehat{b}_{S}   \ottsym{,}  \ottmv{x}  \ottsym{:}   \widehat{a}_{S}   \longrightarrow  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}   \widehat{a}_{S}   \ottsym{,}  \Theta$. By \cref{lemma:extension_order}, we have
+    $\Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}   \widehat{b}_{S}   \longrightarrow  \Delta$. By definition, we have $\Gamma  \longrightarrow  \Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}   \widehat{b}_{S} $. By \cref{lemma:transitivity}
+    we have $\Gamma  \longrightarrow  \Delta$.
+
+  \item Case \[  \drule{inf-lamannTwo}  \]
+    By i.h., we have $\Gamma  \ottsym{,}   \widehat{b}_{S}   \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \longrightarrow  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{,}  \Theta   $. By \cref{lemma:extension_order},
+    we have $\Gamma  \longrightarrow  \Delta$.
+
+  \item Case \[ \drule{inf-app}   \]
+    By i.h., we have $\Gamma  \longrightarrow  \Theta_{{\mathrm{1}}}$, $\Theta_{{\mathrm{2}}}  \longrightarrow  \Delta$. By \cref{lemma:match_extension},
+    we have $\Theta_{{\mathrm{1}}}  \longrightarrow  \Theta_{{\mathrm{2}}}$. By \cref{lemma:transitivity} , we have
+    $\Gamma  \longrightarrow  \Delta$.
+
+
+  \item Case \[ \drule{inf-anno}   \]
+    By i.h., we have $\Gamma  \longrightarrow  \Delta$.
+
+  \item Case \[ \drule{chk-gen}   \]
+    By i.h., we have $\Gamma  \ottsym{,}  \ottmv{a}  \longrightarrow  \Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta$. By
+    \cref{lemma:extension_order} we have $\Gamma  \longrightarrow  \Delta$.
+
+  \item Case \[ \drule{chk-lam} \]
+    By i.h., we have $\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \longrightarrow  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{,}  \Theta$.
+    By \cref{lemma:extension_order} we have $\Gamma  \longrightarrow  \Delta$.
+
+  \item Case \[ \drule{chk-sub} \]
+    By i.h., we have $\Gamma  \longrightarrow  \Theta$. By
+    \cref{lemma:sub_extension} we have $\Theta  \longrightarrow  \Delta$. By
+    \cref{lemma:transitivity} we have $\Gamma  \longrightarrow  \Delta$.
+  \end{itemize}
+
+\end{proof}
+
+\begin{theorem}[Matching Soundness]  \label{thm:match_soundness}%
+  If $\Gamma  \vdash  A  \triangleright  A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}  \dashv  \Delta$ where $\ottsym{[}  \Gamma  \ottsym{]}  A  \ottsym{=}  A$ and $\Delta  \longrightarrow  \Omega$
+  then $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \triangleright  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}$.
+\end{theorem}
+\begin{proof}
+  By induction on the given derivation.
+
+  \begin{itemize}
+  \item Case \[ \drule{am-forallL}  \]
+    \begin{longtable}[l]{ll|l}
+      & $\Gamma  \ottsym{,}   \widehat{a}_{S}   \vdash  A  \ottsym{[}  \ottmv{a}  \mapsto   \widehat{a}_{S}   \ottsym{]}  \triangleright  A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}  \dashv  \Delta$ & Premise \\
+      & $\Delta  \longrightarrow  \Omega$ & Given \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  A  \ottsym{[}  \ottmv{a}  \mapsto   \widehat{a}_{S}   \ottsym{]}  \ottsym{)}  \triangleright  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}$ & By i.h. \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \ottsym{[}  \ottmv{a}  \mapsto  \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S}   \ottsym{]}  \triangleright  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}$ & By distributivity of substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S} $ & Follows from def. of context application \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \forall  \ottmv{a}  .\,  \ottsym{[}  \Omega  \ottsym{]}  A  \triangleright  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}$ & By \rref{m-forall} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \forall  \ottmv{a}  .\,  A  \ottsym{)}  \triangleright  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}$ & By def. of substitution
+    \end{longtable}
+
+
+  \item Case \[  \drule{am-arr}  \] Immediate from \rref{m-arr}.
+
+  \item Case \[  \drule{am-unknown}  \] Immediate from \rref{m-unknown}.
+
+  \item Case \[  \drule{am-var}  \]
+      \begin{longtable}[l]{ll|l}
+        &$\Delta  \longrightarrow  \Omega$& Given \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a} = \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}_{{\mathrm{2}}}$ & By def. of context application \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}_{{\mathrm{2}}}  \triangleright  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}_{{\mathrm{2}}}$ & By \rref{m-arr}
+      \end{longtable}
+
+  \end{itemize}
+
+\end{proof}
+
+
+\typingsoundness*
+\begin{proof}
+  By induction on the given derivation.
+
+  \begin{itemize}
+  \item Case \[ \drule{inf-var}  \]
+    \begin{longtable}[l]{ll|l}
+      &$ (  \ottmv{x}  :  A  ) \in  \Gamma $ & Premise \\
+      &$ (  \ottmv{x}  :  A  ) \in  \Delta $ & $\Delta = \Omega$ \\
+      &$\Delta  \longrightarrow  \Omega$ & Given \\
+      &$ (  \ottmv{x}  :  \ottsym{[}  \Omega  \ottsym{]}  A  ) \in  \ottsym{[}  \Omega  \ottsym{]}  \Gamma $ & By \Cref{lemma:variable_preservation} \\
+      $\byhave$&$\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A$ & By \rref{var} \\
+      $\byhave$& $\erase{\ottmv{x}} = \erase{\ottmv{x}}$ & By def. of erasure
+    \end{longtable}
+
+  \item Case \[ \drule{inf-int}  \]
+    \begin{longtable}[l]{ll|l}
+      $\byhave$&$\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottmv{n}  \ottsym{:}  \mathsf{Int}$ & By \rref{int} \\
+      $\byhave$& $\erase{\ottmv{n}} = \erase{\ottmv{n}}$ & By def. of erasure
+    \end{longtable}
+
+  \item Case \[ \drule{inf-lamannTwo}  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $\Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \longrightarrow  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{,}  \Theta$ & By \Cref{lemma:typing_extension} \\
+      & $\Theta$ is soft & By \Cref{lemma:extension_order} where $\Gamma_R =  \bullet $ \\
+      & $\Delta  \longrightarrow  \Omega$ & Given \\
+      & $\underbrace{\Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{,}  \Theta}_{\Delta'}  \longrightarrow  \underbrace{\Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}} }_{\Omega'}$ & By \Cref{lemma:filling_completes} \\
+      & $\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \vdash  e  \Rightarrow  B  \dashv  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{,}  \Theta$ & Premise \\
+      & $\ottsym{[}  \Omega'  \ottsym{]}  \Delta'  \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega'  \ottsym{]}   \widehat{b}_{S} $ & By i.h. \\
+      & $\erase{e} = \erase{e'}$ & above \\
+      & $\ottsym{[}  \Omega'  \ottsym{]}   \widehat{b}_{S}  = \ottsym{[}  \Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{]}   \widehat{b}_{S}  = \ottsym{[}  \Omega  \ottsym{]}   \widehat{b}_{S} $ & By \Cref{lemma:subst_stable} and def. of substitution \\
+      & $\ottsym{[}  \Omega'  \ottsym{]}  \Delta'$ = $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A$ & By \Cref{lemma:subst_go_away} and def. of context substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A  \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}   \widehat{b}_{S}  $ & By above equalities \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \lambda  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A  .\,  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}   \widehat{b}_{S}  $ & By \rref{lamann} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  A = \ottnt{A}$ & Type annotations cannot contain evars \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \lambda  \ottmv{x}  \ottsym{:}  \ottnt{A}  .\,  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}   \widehat{b}_{S} $ & By above equality \\
+      $\byhave$& $ \ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \lambda  \ottmv{x}  \ottsym{:}  \ottnt{A}  .\,  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  A  \rightarrow   \widehat{b}_{S}   \ottsym{)} $ & By def. of substitution \\
+      $\byhave$& $\erase{\lambda  \ottmv{x}  \ottsym{:}  \ottnt{A}  .\,  \ottnt{e'}} = \erlam{x}{\erase{e'}} = \erlam{x}{\erase{e}} = \erase{\blam{x}{A}{e}} $ & By def. of erasure
+    \end{longtable}
+
+
+
+  \item Case \[  \drule{inf-lam}  \]
+
+    \begin{longtable}[l]{ll|l}
+      &$\Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}   \widehat{b}_{S}   \ottsym{,}  \ottmv{x}  \ottsym{:}   \widehat{a}_{S}   \longrightarrow  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}   \widehat{a}_{S}   \ottsym{,}  \Theta$& By \cref{lemma:typing_extension} \\
+      &$\Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}   \widehat{b}_{S}   \longrightarrow  \Delta$& By \cref{lemma:extension_order} \\
+      &$\Theta$ is soft & Above \\ \\
+      &$\Delta  \longrightarrow  \Omega$  & Given \\
+      &$\Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}   \widehat{a}_{S}   \longrightarrow  \Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S} $  & By def \\
+      &$\underbrace{\Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}   \widehat{a}_{S}   \ottsym{,}  \Theta}_{\Delta'}  \longrightarrow  \underbrace{ \Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S}   \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}} }_{\Omega'}$  & By \cref{lemma:filling_completes} \\ \\
+
+      & $ \Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}   \widehat{b}_{S}   \ottsym{,}  \ottmv{x}  \ottsym{:}   \widehat{a}_{S}   \vdash  e  \Leftarrow   \widehat{b}_{S}   \dashv  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}   \widehat{a}_{S}   \ottsym{,}  \Theta $ & Premise \\
+      & $\ottsym{[}  \Omega'  \ottsym{]}  \Delta'  \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega'  \ottsym{]}   \widehat{b}_{S} $ & By i.h. \\
+      & $\erase{e} = \erase{\ottnt{e'}}$ & Above \\
+      & $\ottsym{[}  \Omega'  \ottsym{]}   \widehat{b}_{S}  = \ottsym{[}  \Omega  \ottsym{]}   \widehat{b}_{S} $ & By def. of context substitution \\
+      & $\ottsym{[}  \Omega'  \ottsym{]}  \Delta' = \ottsym{[}  \Omega  \ottsym{]}  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S}   $ & By def. of context substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S}   \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}   \widehat{b}_{S} $ & By above equalities \\
+      & $\ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S} $ is a monotype & $\Omega$ is predicative \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \lambda  \ottmv{x}  .\,  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S}   \rightarrow  \ottsym{[}  \Omega  \ottsym{]}   \widehat{b}_{S}  $ & By \rref{lam} \\
+      $\byhave$& $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \lambda  \ottmv{x}  .\,  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}   \widehat{a}_{S}   \rightarrow   \widehat{b}_{S}   \ottsym{)}$ & By def. of substitution \\
+      $\byhave$& $\erase{\erlam{x}{e}} = \erlam{x}{\erase{e}} = \erlam{x}{\erase{e'}} = \erase{\erlam{x}{e'}}$ & By def. of erasure
+    \end{longtable}
+
+
+
+  \item Case \[  \drule{inf-app}  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $\Delta  \longrightarrow  \Omega$ & Given \\
+      & $\Theta_{{\mathrm{1}}}  \longrightarrow  \Omega$ & By \cref{lemma:match_extension,lemma:typing_extension,lemma:transitivity} \\
+      & $\Gamma  \vdash  e_{{\mathrm{1}}}  \Rightarrow  A  \dashv  \Theta_{{\mathrm{1}}}$ & Premise \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Theta_{{\mathrm{1}}}  \vdash  \ottnt{e'_{{\mathrm{1}}}}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A$ & By i.h. \\
+      & $\erase{\ottnt{e'_{{\mathrm{1}}}}} = \erase{e_{{\mathrm{1}}}}$ & above \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Theta_{{\mathrm{1}}} = \ottsym{[}  \Omega  \ottsym{]}  \Delta$ & By \Cref{lemma:confluence} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottnt{e'_{{\mathrm{1}}}}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A$ & By above equality \\
+      & $\Theta_{{\mathrm{2}}}  \vdash  e_{{\mathrm{2}}}  \Leftarrow  \ottsym{[}  \Theta_{{\mathrm{2}}}  \ottsym{]}  A_{{\mathrm{1}}}  \dashv  \Delta$ & Premise \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottnt{e'_{{\mathrm{2}}}}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}$ & By i.h. \\
+      & $\erase{\ottnt{e'_{{\mathrm{2}}}}} = \erase{e_{{\mathrm{2}}}}$ & Above \\
+      & $\Theta_{{\mathrm{1}}}  \vdash  \ottsym{[}  \Theta_{{\mathrm{1}}}  \ottsym{]}  A  \triangleright  A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}  \dashv  \Theta_{{\mathrm{2}}}$ & Premise \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Theta_{{\mathrm{2}}}  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Theta_{{\mathrm{1}}}  \ottsym{]}  A  \ottsym{)}  \triangleright  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}$ & By \Cref{thm:match_soundness} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Theta_{{\mathrm{2}}} =  \ottsym{[}  \Omega  \ottsym{]}  \Delta$ & By \Cref{lemma:confluence} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Theta_{{\mathrm{1}}}  \ottsym{]}  A  \ottsym{)} =  \ottsym{[}  \Omega  \ottsym{]}  A$ & By \Cref{lemma:subst_ext_invar} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \triangleright  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}$ & By above equalities \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}$ & By \cref{lemma:sub_refl} \\
+      $\byhave$& $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottnt{e'_{{\mathrm{1}}}} \, \ottnt{e'_{{\mathrm{2}}}}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}$ & By \rref{app} \\
+      $\byhave$& $\erase{e_1' ~ e_2'} = \erase{e_1'} ~ \erase{e_2'} = \erase{e_1} ~ \erase{e_2} = \erase{e_1 ~ e_2}$ & By def. of erasure
+    \end{longtable}
+
+
+  \item Case \[  \drule{inf-anno}  \]
+    \begin{longtable}[l]{ll|l}
+      & $\Gamma  \vdash  e  \Leftarrow  A  \dashv  \Delta$ & Premise \\
+      $\byhave$ & $ \ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A  $ & By i.h., \\
+      & $\erase{\ottnt{e}} = \erase{\ottnt{e'}}$ & Above \\
+      $\byhave$ & $\erase{e : A} = \erase{e} = \erase{e'}$ & By above equality and the def. of erasure
+    \end{longtable}
+
+
+
+  \item Case \[ \drule{chk-gen}  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $\Delta  \longrightarrow  \Omega$ & Given \\
+      & $\Delta  \ottsym{,}  \ottmv{a}  \longrightarrow  \Omega  \ottsym{,}  \ottmv{a}$ & By def \\
+      & $\Gamma  \ottsym{,}  \ottmv{a}  \longrightarrow  \Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta$ & By \cref{lemma:typing_extension} \\
+      & $\Theta$ is soft & By \cref{lemma:extension_order} \\
+      & $\underbrace{\Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta}_{\Delta'}  \longrightarrow  \underbrace{\Omega  \ottsym{,}  \ottmv{a}  \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}}_{\Omega'}$ & By \cref{lemma:filling_completes} \\
+      & $\Gamma  \ottsym{,}  \ottmv{a}  \vdash  e  \Leftarrow  A  \dashv  \Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta$  & Premise \\
+      & $\ottsym{[}  \Omega'  \ottsym{]}  \Delta'  \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega'  \ottsym{]}  A$  & By i.h., \\
+      $\byhave$& $\erase{e} = \erase{\ottnt{e'}}$ & Above \\
+      & $\ottsym{[}  \Omega'  \ottsym{]}  A = \ottsym{[}  \Omega  \ottsym{]}  A$ & By \cref{lemma:subst_stable} \\
+      & $\ottsym{[}  \Omega'  \ottsym{]}  \Delta'$ = $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \ottsym{,}  \ottmv{a}$ & By \Cref{lemma:subst_go_away} and def. of context substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \ottsym{,}  \ottmv{a}  \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A$  & By above equalities \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottnt{e'}  \ottsym{:}  \forall  \ottmv{a}  .\,  \ottsym{[}  \Omega  \ottsym{]}  A$  & By \rref{gen} \\
+      $\byhave$& $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \forall  \ottmv{a}  .\,  A  \ottsym{)}$  & By def. of substitution
+
+    \end{longtable}
+
+
+  \item Case \[ \drule{chk-lam}  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $\Delta  \longrightarrow  \Omega$ & Given \\
+      & $\Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \longrightarrow  \Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A$ & By def \\
+      & $\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \longrightarrow  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{,}  \Theta$ & By \cref{lemma:typing_extension} \\
+      & $\Theta$ is soft & By \cref{lemma:extension_order} \\
+      & $\underbrace{\Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{,}  \Theta}_{\Delta'}  \longrightarrow  \underbrace{\Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A  \ottsym{,}  \ottsym{\mbox{$\mid$}}  \Theta  \ottsym{\mbox{$\mid$}}}_{\Omega'}$ & By \cref{lemma:filling_completes} \\
+      & $\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \vdash  e  \Leftarrow  B  \dashv  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{,}  \Theta$ & Premise \\
+      & $\ottsym{[}  \Omega'  \ottsym{]}  \Delta'  \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega'  \ottsym{]}  B$ & By i.h., \\
+      & $\erase{e} = \erase{\ottnt{e'}}$ & Above \\
+      & $\ottsym{[}  \Omega'  \ottsym{]}  B = \ottsym{[}  \Omega  \ottsym{]}  B$ & By \cref{lemma:subst_stable} \\
+      & $\ottsym{[}  \Omega'  \ottsym{]}  \Delta' = \ottsym{[}  \Omega  \ottsym{]}  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A $ & By \Cref{lemma:subst_go_away} and def. of context substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A  \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  B$ & By above equalities \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \lambda  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A  .\,  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  B $ & By \rref{lamann} \\
+      $\byhave$ & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \lambda  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A  .\,  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  A  \rightarrow  B  \ottsym{)}$ & By def. of substitution \\
+      $\byhave$ & $\erase{\erlam x e} = \erlam x {\erase{e}} = \erlam x {\erase{e'}} = \erase{\lambda  \ottmv{x}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A  .\,  \ottnt{e'}}$ & By the def. of erasure
+    \end{longtable}
+
+
+  \item Case \[ \drule{chk-sub}  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $\Theta  \vdash  \ottsym{[}  \Theta  \ottsym{]}  A  \lesssim  \ottsym{[}  \Theta  \ottsym{]}  B  \dashv  \Delta$ & Premise \\
+      & $\Theta  \longrightarrow  \Delta$ & By \cref{lemma:sub_extension} \\
+      & $\Delta  \longrightarrow  \Omega$ & Given \\
+      & $\Theta  \longrightarrow  \Omega$ & By \cref{lemma:transitivity} \\
+      & $\Gamma  \vdash  e  \Rightarrow  A  \dashv  \Theta$ & Premise \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Theta  \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A$ & By i.h., \\
+      & $\erase{e} = \erase{\ottnt{e'}}$ & Above \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Theta = \ottsym{[}  \Omega  \ottsym{]}  \Delta$ & By \cref{lemma:confluence} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottnt{e'}  \ottsym{:}  \ottsym{[}  \Omega  \ottsym{]}  A $ & By above equality \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Theta  \ottsym{]}  A  \ottsym{)}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Theta  \ottsym{]}  B  \ottsym{)} $ & By \Cref{thm:sub_soundness} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Theta  \ottsym{]}  A  \ottsym{)} = \ottsym{[}  \Omega  \ottsym{]}  A$ & By \cref{lemma:subst_ext_invar} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Theta  \ottsym{]}  B  \ottsym{)} = \ottsym{[}  \Omega  \ottsym{]}  B$ & By \cref{lemma:subst_ext_invar} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Delta  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B$ & By above equalities \\
+      $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash (e' : \ottsym{[}  \Omega  \ottsym{]}  B) : \ottsym{[}  \Omega  \ottsym{]}  B$ & By def. annotation \\
+      $\byhave$& $\erase{(e' : \ottsym{[}  \Omega  \ottsym{]}  B)} = \erase{e'} = \erase{e}$ & By def. erasure
+    \end{longtable}
+
+
+
+  \end{itemize}
+
+
+\end{proof}
+
+\newpage
+
+\section{Completeness of Consistent Subtyping}
+
+\instcomplete*
+\begin{proof}
+  By mutual induction on the given derivation.
+  \begin{enumerate}
+  \item We have $ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  A   $. We case analyze the shape of $A$.
+    \begin{itemize}
+    \item Case $A =  \star , \widehat{a}  \ottsym{=}   \widehat{a}_{S} $:
+      \begin{longtable}[l]{ll|l}
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S}   \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \star$ & Given \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \star =  \star $ \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S}   \lesssim  \star$ & By above equality \\
+        & $ \widehat{a}_{S}  \notin \textsc{unsolved}(\Gamma)$ & Given \\
+        & $\Gamma = \Gamma_L  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}  \Gamma_R$ & Above \\
+        & $\Gamma_L  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}  \Gamma_R  \longrightarrow  \Omega$ & Given \\
+        & $\Omega = \Omega_L  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  t  \ottsym{,}  \Omega_R   $ & By \cref{lemma:extension_order} and $\Omega$ is complete and $\ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S}  \in \mathbb{C}$ \\
+        & $\Gamma_L  \longrightarrow  \Omega_L$ & Above \\
+        & Let $\Delta = \Gamma_L  \ottsym{,}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{=}   \widehat{a}_{G}   \ottsym{,}  \Gamma_R$ \\
+        & and $\Omega' = \Omega_L  \ottsym{,}   \widehat{a}_{G}   \ottsym{=}  t  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  t  \ottsym{,}  \Omega_R$ \\
+        $\byhave$& $\Gamma  \vdash   \widehat{a}_{S}   \lessapprox  \star  \dashv  \Delta$ & By \rref{instl-solveUS} \\
+        $\byhave$& $\Delta \exto \Omega'$ & By \cref{lemma:paralell_admit,lemma:paralell_ext_solu} \\
+        $\byhave$& $\Omega \exto \Omega'$ & By \cref{lemma:unsolved_ext,lemma:solution_ext}
+      \end{longtable}
+    \item Case $A =  \star , \widehat{a}  \ottsym{=}   \widehat{a}_{G} $:
+      \begin{longtable}[l]{ll|l}
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{G}   \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \star$ & Given \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \star =  \star $ \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{G}   \lesssim  \star$ & By above equality \\
+        & $ \widehat{a}_{G}  \notin \textsc{unsolved}(\Gamma)$ & Given \\
+        & $\Gamma = \Gamma_{{\mathrm{0}}}  \ottsym{[}   \widehat{a}_{G}   \ottsym{]}$ & Above \\
+        & Let $\Delta = \Gamma_{{\mathrm{0}}}  \ottsym{[}   \widehat{a}_{G}   \ottsym{]}$ and $\Omega' = \Omega$\\
+        $\byhave$& $\Gamma  \vdash   \widehat{a}_{G}   \lessapprox  \star  \dashv  \Delta$ & By \rref{instl-solveUG} \\
+        $\byhave$& $\Delta  \longrightarrow  \Omega'$ & Given \\
+        $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By \cref{lemma:reflexivity}
+      \end{longtable}
+
+    \item Case $A =  \widehat{b}_{G} , \widehat{a} =  \widehat{a}_{S} $:
+      \begin{longtable}[l]{ll|l}
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S}   \lesssim  \ottsym{[}  \Omega  \ottsym{]}   \widehat{b}_{G} $ & Given \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \tau  \lesssim  t$ & Let $\ottsym{[}  \Omega  \ottsym{]}   \widehat{a}_{S}  = \tau$ and $\ottsym{[}  \Omega  \ottsym{]}   \widehat{b}_{G}  = t$ and $\Omega$ is predicative \\
+        & $\tau = t$ & By \cref{lemma:mono_equal} \\ \\
+        & $\ottsym{[}  \Gamma  \ottsym{]}   \widehat{b}_{G}  =  \widehat{b}_{G} $ & Given \\
+        & $ \widehat{b}_{G}  \in \textsc{unsolved}{(\Gamma)}$ & Above
+      \end{longtable}
+      Now consider whether $ \widehat{a}_{S} $ is declared to the left of $ \widehat{b}_{G} $.
+      \begin{itemize}
+      \item Case $\Gamma = \Gamma_{{\mathrm{0}}}  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}  \Gamma_{{\mathrm{1}}}  \ottsym{,}   \widehat{b}_{G}   \ottsym{,}  \Gamma_{{\mathrm{2}}}$
+        \begin{longtable}[l]{ll|l}
+          & Let $\Delta = \Gamma_{{\mathrm{0}}}  \ottsym{,}   \widehat{a}_{G}   \ottsym{,}   \widehat{a}_{S}   \ottsym{=}   \widehat{a}_{G}   \ottsym{,}  \Gamma_{{\mathrm{1}}}  \ottsym{,}   \widehat{b}_{G}   \ottsym{=}   \widehat{a}_{G}   \ottsym{,}  \Gamma_{{\mathrm{2}}}$ & \\
+          $\byhave$& $\Gamma  \vdash   \widehat{a}_{S}   \lessapprox   \widehat{b}_{G}   \dashv  \Delta$ & By \rref{instl-reachSG1} \\
+          & $ \Gamma  \longrightarrow  \Omega   $ & Given \\
+          & $\Omega = \Omega_{{\mathrm{0}}}  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  t  \ottsym{,}  \Omega_{{\mathrm{1}}}  \ottsym{,}   \widehat{b}_{G}   \ottsym{=}  t  \ottsym{,}  \Omega_{{\mathrm{2}}}$ & By \cref{lemma:extension_order}   \\
+          & Let $\Omega' = \Omega_{{\mathrm{0}}}  \ottsym{,}   \widehat{a}_{G}   \ottsym{=}  t  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  t  \ottsym{,}  \Omega_{{\mathrm{1}}}  \ottsym{,}   \widehat{b}_{G}   \ottsym{=}  t  \ottsym{,}  \Omega_{{\mathrm{2}}}$  \\
+          $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By \cref{lemma:unsolved_ext,lemma:solution_ext} \\
+          $\byhave$& $\Delta  \longrightarrow  \Omega'$ & By \cref{lemma:paralell_admit,lemma:paralell_ext_solu}
+        \end{longtable}
+      \item Case $\Gamma = \Gamma_{{\mathrm{0}}}  \ottsym{,}   \widehat{b}_{G}   \ottsym{,}  \Gamma_{{\mathrm{1}}}  \ottsym{,}   \widehat{a}_{S}   \ottsym{,}  \Gamma_{{\mathrm{2}}}$
+        \begin{longtable}[l]{ll|l}
+          & Let $\Delta = \Gamma_{{\mathrm{0}}}  \ottsym{,}   \widehat{b}_{G}   \ottsym{,}  \Gamma_{{\mathrm{1}}}  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}   \widehat{b}_{G}   \ottsym{,}  \Gamma_{{\mathrm{2}}}$ & \\
+          $\byhave$& $ \Gamma  \vdash   \widehat{a}_{S}   \lessapprox   \widehat{b}_{G}   \dashv  \Delta $ & By \rref{instl-reachOther} \\
+          $\byhave$& $\Delta  \longrightarrow  \Omega$ & By \Cref{lemma:paralell_ext_solu} \\
+          $\byhave$& $\Omega  \longrightarrow  \Omega$ & By \Cref{lemma:reflexivity}
+        \end{longtable}
+      \end{itemize}
+    \item Case $A =  \widehat{b}_{S} $ is similar to the above case.
+    \item Case $A = a$:
+      \begin{longtable}[l]{ll|l}
+        &$\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \ottmv{a}$& Given \\
+        &$\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottmv{a}$ & From $\ottsym{[}  \Omega  \ottsym{]}  \ottmv{a} = \ottmv{a}$ \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a} = \ottmv{a}$ & By inversion of \rref{cs-tvar} \\
+        & $\ottmv{a}$ is declared to the left of $\widehat{a}$ in $\Omega$ & $\Omega$ is well-formed \\
+        & $\Gamma  \longrightarrow  \Omega$ & Given \\
+        & $\ottmv{a}$ is declared to the left of $\widehat{a}$ in $\Gamma$ & By \Cref{lemma:reverse_preserve} \\
+        & Let $\Gamma = \Gamma_{{\mathrm{0}}}  \ottsym{[}  \ottmv{a}  \ottsym{]}  \ottsym{[}  \widehat{a}  \ottsym{]}$ \\
+        & Let $\Delta = \Gamma_{{\mathrm{0}}}  \ottsym{[}  \ottmv{a}  \ottsym{]}  \ottsym{[}  \widehat{a}  \ottsym{=}  \ottmv{a}  \ottsym{]}$ \\
+        $\byhave$& $\Gamma  \vdash  \widehat{a}  \lessapprox  \ottmv{a}  \dashv  \Delta$ & By \rref{instl-solveS} or \rref{instl-solveG} \\
+        $\byhave$& $\Delta \exto \Omega$ & By \Cref{lemma:paralell_ext_solu} \\
+        $\byhave$& $\Omega \exto \Omega$ & By \Cref{lemma:reflexivity}
+      \end{longtable}
+    \item Case $A = A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}$:
+      \begin{longtable}[l]{ll|l}
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}$ & Given \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a} = \tau_{{\mathrm{1}}}  \rightarrow  \tau_{{\mathrm{2}}}$ & $\Omega$ is predicative \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \lesssim  \tau_{{\mathrm{1}}}$ & By inversion of \rref{cs-arrow} \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \tau_{{\mathrm{2}}}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}$ & Above \\
+        & $\Gamma = \Gamma_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}  \ottsym{]}$ & From $\widehat{a} \in \textsc{unsolved}{(\Gamma)}$ \\
+        & $\Gamma_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}  \ottsym{]}  \longrightarrow  \underbrace{\Gamma_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}_{{\mathrm{2}}}  \ottsym{,}  \widehat{a}_{{\mathrm{1}}}  \ottsym{,}  \widehat{a}  \ottsym{=}  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \widehat{a}_{{\mathrm{2}}}  \ottsym{]}}_{\Gamma_{{\mathrm{1}}}}$ \\
+        & $\Gamma  \longrightarrow  \Omega$ & Given \\
+        & $\Omega = \Omega_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}  \ottsym{=}  \tau_{{\mathrm{0}}}  \ottsym{]}$ & From $\genA \in \textsc{unsolved}{(\Gamma)}$ \\
+        & $\Omega_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}  \ottsym{=}  \tau_{{\mathrm{0}}}  \ottsym{]}  \longrightarrow  \underbrace{\Omega_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}_{{\mathrm{2}}}  \ottsym{=}  \tau_{{\mathrm{2}}}  \ottsym{,}  \widehat{a}_{{\mathrm{1}}}  \ottsym{=}  \tau_{{\mathrm{1}}}  \ottsym{,}  \widehat{a}  \ottsym{=}  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \widehat{a}_{{\mathrm{2}}}  \ottsym{]}}_{\Omega_{{\mathrm{1}}}}$ \\ \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma = \ottsym{[}  \Omega_{{\mathrm{1}}}  \ottsym{]}  \Gamma_{{\mathrm{1}}}$ & By \Cref{lemma:finish_complete} \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}} = \ottsym{[}  \Omega_{{\mathrm{1}}}  \ottsym{]}  A_{{\mathrm{1}}}$ & By \Cref{lemma:finish_types} \\
+        & $\tau_{{\mathrm{1}}} = \ottsym{[}  \Omega_{{\mathrm{1}}}  \ottsym{]}  \widehat{a}_{{\mathrm{1}}}$ & From def. of $\Omega_{{\mathrm{1}}}$ \\
+        & $\ottsym{[}  \Omega_{{\mathrm{1}}}  \ottsym{]}  \Gamma_{{\mathrm{1}}}  \vdash  \ottsym{[}  \Omega_{{\mathrm{1}}}  \ottsym{]}  A_{{\mathrm{1}}}  \lesssim  \ottsym{[}  \Omega_{{\mathrm{1}}}  \ottsym{]}  \widehat{a}_{{\mathrm{1}}}$ & By above equalities \\
+        & $\Gamma_{{\mathrm{1}}}  \vdash  A_{{\mathrm{1}}}  \lessapprox  \widehat{a}_{{\mathrm{1}}}  \dashv  \Delta_{{\mathrm{2}}}$ & By i.h. \\
+        & $\Delta_{{\mathrm{2}}}  \longrightarrow  \Omega_{{\mathrm{2}}}$ and $\Omega_{{\mathrm{1}}}  \longrightarrow  \Omega_{{\mathrm{2}}}$ & Above \\ \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma = \ottsym{[}  \Omega_{{\mathrm{2}}}  \ottsym{]}  \Gamma_{{\mathrm{2}}}$ & By \Cref{lemma:finish_complete} \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}} = \ottsym{[}  \Omega_{{\mathrm{2}}}  \ottsym{]}  A_{{\mathrm{2}}} = \ottsym{[}  \Omega_{{\mathrm{2}}}  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Delta_{{\mathrm{2}}}  \ottsym{]}  A_{{\mathrm{2}}}  \ottsym{)}$ & By \Cref{lemma:finish_types} \\
+        & $\tau_{{\mathrm{2}}} = \ottsym{[}  \Omega_{{\mathrm{2}}}  \ottsym{]}  \widehat{a}_{{\mathrm{2}}}$ & By  $\Omega_{{\mathrm{1}}}  \longrightarrow  \Omega_{{\mathrm{2}}}$ \\
+        & $\ottsym{[}  \Omega_{{\mathrm{2}}}  \ottsym{]}  \Delta_{{\mathrm{2}}}  \vdash  \ottsym{[}  \Omega_{{\mathrm{2}}}  \ottsym{]}  \widehat{a}_{{\mathrm{2}}}  \lesssim  \ottsym{[}  \Omega_{{\mathrm{2}}}  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Delta_{{\mathrm{2}}}  \ottsym{]}  A_{{\mathrm{2}}}  \ottsym{)}$ & By above equalities \\
+        & $\Delta_{{\mathrm{2}}}  \vdash  \widehat{a}_{{\mathrm{2}}}  \lessapprox  \ottsym{[}  \Delta_{{\mathrm{2}}}  \ottsym{]}  A_{{\mathrm{2}}}  \dashv  \Delta$ & By i.h. \\
+        & $\Omega_{{\mathrm{2}}}  \longrightarrow  \Omega'$ & Above \\
+        $\byhave$& $\Delta  \longrightarrow  \Omega'$ & Above \\
+        $\byhave$& $\Gamma_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}  \ottsym{]}  \vdash  \widehat{a}  \lessapprox  A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}  \dashv  \Delta$ & By \rref{instl-arr} \\
+        $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By \Cref{lemma:transitivity}
+      \end{longtable}
+    \item Case $\ottnt{A} =  \mathsf{Int} $:
+      \begin{longtable}[l]{ll|l}
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \mathsf{Int}$ & Given \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \mathsf{Int} =  \mathsf{Int} $ \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \mathsf{Int}$ & By above equality \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a} =  \mathsf{Int} $ & $\Omega$ is predicative \\
+        & $\widehat{a} \in \textsc{unsolved}{(\Gamma)}$ & Given \\
+        & $\Gamma = \Gamma_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}  \ottsym{]}$ & Above \\
+        & Let $\Delta = \Gamma_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}  \ottsym{=}  \mathsf{Int}  \ottsym{]}$ and $\Omega' = \Omega$\\
+        & $\Gamma_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}  \ottsym{]}  \vdash  \widehat{a}  \lessapprox  \mathsf{Int}  \dashv  \Delta$ & By \rref{instl-solveS} or \rref{instl-solveG} \\
+        & $\Gamma  \longrightarrow  \Omega$ & Given \\
+        & $\Gamma_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}  \ottsym{=}  \mathsf{Int}  \ottsym{]}  \longrightarrow  \Omega$ & By \Cref{lemma:paralell_ext_solu}
+      \end{longtable}
+    \item Case $A = \forall  \ottmv{b}  .\,  B$:
+      \begin{longtable}[l]{ll|l}
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \forall  \ottmv{b}  .\,  \ottsym{[}  \Omega  \ottsym{]}  B$ & Given \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$ cannot be a quantifier & $\Omega$ is predicative \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \ottsym{,}  \ottmv{b}  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B $ & By inversion of \rref{cs-forallR} \\ \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \ottsym{,}  \ottmv{b} = \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}  \ottmv{b}  \ottsym{)}$ & By def. of context substitution \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a} = \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  \widehat{a}$ & By def. of substitution \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  B = \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  B$ & By def. of substitution \\
+        & $ \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}  \ottmv{b}  \ottsym{)}  \vdash  \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  B  $ & By above equalities \\
+        & $ \Gamma  \ottsym{,}  \ottmv{b}  \vdash  \widehat{a}  \lessapprox  B  \dashv  \Delta_{{\mathrm{0}}}  $ & By i.h. \\
+        & $\Delta_{{\mathrm{0}}}  \longrightarrow  \Omega'$ & Above \\
+        & $\Omega  \ottsym{,}  \ottmv{b}  \longrightarrow  \Omega'$ & Above \\
+        $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By \cref{lemma:drop_ext}\\  \\
+        & $\Gamma  \ottsym{,}  \ottmv{b}  \longrightarrow  \Delta_{{\mathrm{0}}}$ & By \Cref{lemma:inst_extension} \\
+        & $\Delta_{{\mathrm{0}}} = \Delta  \ottsym{,}  \ottmv{b}  \ottsym{,}  \Delta'$ & By \Cref{lemma:extension_order} \\
+        & $\Gamma  \longrightarrow  \Delta$ & Above \\
+        $\byhave$& $\Delta  \longrightarrow  \Omega'$ \\
+        $\byhave$& $ \Gamma  \vdash  \widehat{a}  \lessapprox  \forall  \ottmv{b}  .\,  B  \dashv  \Delta  $ & By \rref{instl-forallR}
+      \end{longtable}
+    \end{itemize}
+  \item Now we have $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$. These cases are mostly symmetric. The one exception is when $A = \forall  \ottmv{b}  .\,  B$.
+    \begin{itemize}
+    \item Case $A = \forall  \ottmv{b}  .\,  B$:
+      \begin{longtable}[l]{ll}
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \forall  \ottmv{b}  .\,  \ottsym{[}  \Omega  \ottsym{]}  B  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$ \qquad Given \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$ cannot be a quantifier \qquad $\Omega$ is predicative \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \tau$ \qquad By inversion of \rref{cs-forallL} \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{(}  \ottsym{[}  \Omega  \ottsym{]}  B  \ottsym{)}  \ottsym{[}  \ottmv{b}  \mapsto  \tau  \ottsym{]}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$ \qquad Above \\ \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma = \ottsym{[}  \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{b}_S }   \ottsym{,}   \widehat{b}_{S}   \ottsym{=}  \tau  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}   \blacktriangleright_{ \widehat{b}_S }   \ottsym{,}   \widehat{b}_{S}   \ottsym{)}$ \qquad By def. of context application \\
+        & $\ottsym{(}  \ottsym{[}  \Omega  \ottsym{]}  \ottnt{B}  \ottsym{)}  \ottsym{[}  \ottmv{b}  \mapsto  \tau  \ottsym{]} = \ottsym{[}  \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{b}_S }   \ottsym{,}   \widehat{b}_{S}   \ottsym{=}  \tau  \ottsym{]}  \ottsym{(}  B  \ottsym{[}  \ottmv{b}  \mapsto   \widehat{b}_{S}   \ottsym{]}  \ottsym{)}$ \qquad by def. of substitution \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a} = \ottsym{[}  \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{b}_S }   \ottsym{,}   \widehat{b}_{S}   \ottsym{=}  \tau  \ottsym{]}  \widehat{a}$ \qquad By def. of substitution \\
+        & $\ottsym{[}  \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{b}_S }   \ottsym{,}   \widehat{b}_{S}   \ottsym{=}  \tau  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}   \blacktriangleright_{ \widehat{b}_S }   \ottsym{,}   \widehat{b}_{S}   \ottsym{)}  \vdash  \ottsym{[}  \Omega  \ottsym{,}   \blacktriangleright_{ \widehat{b}_S }   \ottsym{,}   \widehat{b}_{S}   \ottsym{=}  \tau  \ottsym{]}  \ottsym{(}  B  \ottsym{[}  \ottmv{b}  \mapsto   \widehat{b}_{S}   \ottsym{]}  \ottsym{)}  \lesssim  \ottsym{[}  \Omega  \ottsym{,}   \widehat{b}_{S}   \ottsym{=}  \tau  \ottsym{]}  \widehat{a}$ \qquad By above equalities \\
+        & $\Gamma  \ottsym{,}   \blacktriangleright_{ \widehat{b}_S }   \ottsym{,}   \widehat{b}_{S}   \vdash  B  \ottsym{[}  \ottmv{b}  \mapsto   \widehat{b}_{S}   \ottsym{]}  \lessapprox  \widehat{a}  \dashv  \Delta$ \qquad By i.h. \\
+        &$\Gamma  \ottsym{,}   \blacktriangleright_{ \widehat{b}_S }   \ottsym{,}   \widehat{b}_{S}   \longrightarrow  \Delta$ \qquad By \cref{lemma:inst_extension} \\
+        & $\Delta = \Delta_L  \ottsym{,}   \blacktriangleright_{ \widehat{b}_S }   \ottsym{,}  \Delta_R$ \qquad By \cref{lemma:extension_order} \\
+        & $\Gamma  \longrightarrow  \Delta_L$ \qquad Above \\
+        & $\Omega  \ottsym{,}   \blacktriangleright_{ \widehat{b}_S }   \ottsym{,}   \widehat{b}_{S}   \ottsym{=}  \tau  \longrightarrow  \Omega'$ \qquad Above \\
+        & $\Omega' = \Omega_L  \ottsym{,}   \blacktriangleright_{ \widehat{b}_S }   \ottsym{,}  \Omega_R$ \qquad By \cref{lemma:extension_order} \\
+        $\byhave$& $\Omega  \longrightarrow  \Omega_L$ \qquad Above \\
+        $\byhave$& $\Delta_L  \longrightarrow  \Omega_L$ \qquad \cref{lemma:transitivity} \\
+        $\byhave$ & $\Gamma  \vdash  \forall  \ottmv{b}  .\,  B  \lessapprox  \widehat{a}  \dashv  \Delta_L$ \qquad By \rref{instr-forallLL}
+      \end{longtable}
+    \end{itemize}
+  \end{enumerate}
+\end{proof}
+
+
+\begin{landscape}
+\begin{table}
+  \centering
+  \begin{footnotesize}
+\begin{tabular}{cccccccccc} \toprule
+&                 & \multicolumn{8}{c}{ $\ottsym{[}  \Gamma  \ottsym{]}  B$  }  \\
+&                 & $\forall b. B'$  & $\int$      & $a$         & $\genB$     & $\unknown$          & $B_1 \to B_2$ & $ \mathcal{S} $ & $ \mathcal{G} $ \\ \cmidrule{3-10}
+   \multirow{6}{*}{$\ctxsubst{\Gamma}{A}$} & $\forall a. A'$ & \hl{1 (B poly)}  & \hl{2.Poly} & \hl{2.Poly} & \hl{2.Poly} & \hl{1 (B unknown)}         &  \hl{2.Poly} & \hl{2.Poly}  & \hl{2.Poly}  \\ \cmidrule{3-10}
+& $\int$          & \hl{1 (B poly)}  &  \hl{2.Ints}           &  \textit{Impossible} & \hl{2.BEx.Int}            & \hl{1 (B unknown)}  &  \textit{Impossible} &  \textit{Impossible} &  \textit{Impossible} \\ \cmidrule{3-10}
+& $a$             &  \hl{1 (B poly)} & \textit{Impossible} &  \hl{2.UVars}           &  \hl{2.BEx.UVar}           &  \hl{1 (B unknown)} &  \textit{Impossible}  &  \textit{Impossible} &  \textit{Impossible} \\ \cmidrule{3-10}
+& \multirow{2}{*}{$\genA$}         & \multirow{2}{*}{\hl{1 (B poly)}}   & \multirow{2}{*}{\hl{2.AEx.Int}} & \multirow{2}{*}{\hl{2.AEx.UVar}} & \hl{2.AEx.SameEx}  & \multirow{2}{*}{\hl{1 (B unknown)}}  & \multirow{2}{*}{\hl{2.AEx.Arrow}} & \multirow{2}{*}{\hl{2.AEx.S}} & \multirow{2}{*}{\hl{2.AEx.G}}  \\
+& & & & & \hl{2.AEx.OtherEx} &   &   \\ \cmidrule{3-10}
+& $\unknown$      & \hl{1 (B poly)}  & \hl{2.Unknown} &  \hl{2.Unknown}  &  \hl{2.Unknown} & \hl{1 (B unknown)}  & \hl{2.Unknown} & \textit{Impossible} & \hl{2.Unknown}  \\ \cmidrule{3-10}
+  & $A_1 \to A_2$     & \hl{1 (B poly)}  & \textit{Impossible} &  \textit{Impossible}  & \hl{2.BEx.Arrow}  & \hl{1 (B unknown)}  & \hl{2.Arrows} &  \textit{Impossible} &  \textit{Impossible} \\ \cmidrule{3-10}
+  & $ \mathcal{S} $     & \hl{1 (B poly)}  & \textit{Impossible} &  \textit{Impossible}  & \hl{2.BEx.S} & \textit{Impossible} & \textit{Impossible} & \hl{2.S} &  \textit{Impossible}  \\ \cmidrule{3-10}
+  & $ \mathcal{G} $     & \hl{1 (B poly)}  & \textit{Impossible} &  \textit{Impossible}  & \hl{2.BEx.G} & \hl{1 (B unknown)} & \textit{Impossible} & \textit{Impossible} & \hl{2.G} \\ \bottomrule
+\end{tabular}
+  \end{footnotesize}
+\caption{List of cases} \label{table:complete}
+\end{table}
+\end{landscape}
+
+\subcomplete*
+\begin{proof}
+
+  By induction on the given declarative derivation. We list all the possible cases in \cref{table:complete}.
+
+We first split on$\ctxsubst{\Gamma}{B}$.
+  \begin{itemize}
+  \item Case \hl{1 (B poly)}: $\ottsym{[}  \Gamma  \ottsym{]}  B$ is polymorphic: $\ottsym{[}  \Gamma  \ottsym{]}  B = \forall  \ottmv{b}  .\,  B'$:
+    \begin{longtable}[l]{ll|l}
+      &$B = \forall  \ottmv{b}  .\,  B_{{\mathrm{0}}}   $& $\Gamma$ is predicative \\
+      & $B' = \ottsym{[}  \Gamma  \ottsym{]}  B_{{\mathrm{0}}}$ & $\Gamma$ is predicative \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  B  =  \forall  \ottmv{b}  .\,  \ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{0}}}    $ & By def. of substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B$ & Premise \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \forall  \ottmv{b}  .\,  \ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{0}}}$ & By above equality \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \ottsym{,}  \ottmv{b}  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{0}}}$ & By \Cref{lemma:forall_invert} \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \ottsym{,}  \ottmv{b} = \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}  \ottmv{b}  \ottsym{)}$ & By def. of substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  A = \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  A$ & By def. of substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  B = \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  B$ & By def. of substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}  \ottmv{b}  \ottsym{)}  \vdash  \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{,}  \ottmv{b}  \ottsym{]}  B_{{\mathrm{0}}}$ & By above equalities \\
+      & $\Gamma  \ottsym{,}  \ottmv{b}  \vdash  \ottsym{[}  \Gamma  \ottsym{,}  \ottmv{b}  \ottsym{]}  A  \lesssim  \ottsym{[}  \Gamma  \ottsym{,}  \ottmv{b}  \ottsym{]}  B_{{\mathrm{0}}}  \dashv  \Delta'$ & By i.h. \\
+      & $\Delta'  \longrightarrow  \Omega'_{{\mathrm{0}}}$ & Above \\
+      & $\Omega  \ottsym{,}  \ottmv{b}  \longrightarrow  \Omega'_{{\mathrm{0}}}$ & Above \\
+      & $\Gamma  \ottsym{,}  \ottmv{b}  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  B_{{\mathrm{0}}}  \dashv  \Delta'$ & By def. of substitution \\ \\
+      & $\Gamma  \ottsym{,}  \ottmv{b}  \longrightarrow  \Delta'$ & By \Cref{lemma:inst_extension} \\
+      & $\Delta' = \Delta  \ottsym{,}  \ottmv{b}  \ottsym{,}  \Theta$ & By \Cref{lemma:extension_order} \\
+      & $\Gamma  \longrightarrow  \Delta$ & Above \\
+      & $\Delta  \ottsym{,}  \ottmv{b}  \ottsym{,}  \Theta  \longrightarrow  \Omega'_{{\mathrm{0}}}$ & By $\Delta'  \longrightarrow  \Omega'_{{\mathrm{0}}}$ and above equality \\
+      & $\Omega'_{{\mathrm{0}}} = \Omega'  \ottsym{,}  \ottmv{b}  \ottsym{,}  \Omega_R$ & By \Cref{lemma:extension_order} \\
+      $\byhave$& $\Delta  \longrightarrow  \Omega'$ & Above \\
+      & $\Omega  \ottsym{,}  \ottmv{b}  \longrightarrow  \Omega'  \ottsym{,}  \ottmv{b}  \ottsym{,}  \Omega_R$ & By above equality \\
+      $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By \Cref{lemma:extension_order} \\ \\
+      & $\Gamma  \ottsym{,}  \ottmv{b}  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  B_{{\mathrm{0}}}  \dashv  \Delta  \ottsym{,}  \ottmv{b}  \ottsym{,}  \Theta$ & By above equality \\
+      & $\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A  \lesssim  \forall  \ottmv{b}  .\,  \ottsym{[}  \Gamma  \ottsym{]}  B_{{\mathrm{0}}}  \dashv  \Delta$ & By \rref{as-forallR} \\
+      $\byhave$& $\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A  \lesssim  \forall  \ottmv{b}  .\,  B'  \dashv  \Delta$ & By above equality
+    \end{longtable}
+
+  \item Case \hl{1 (B unknown)}: $\ctxsubst{\Gamma}{B} = \unknown$:
+        \begin{longtable}[l]{ll|l}
+          & $\ottsym{[}  \Omega  \ottsym{]}  B =  \star $ \\
+          & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \star$ & Given \\
+          & $\ottsym{[}  \Omega  \ottsym{]}  A \in \mathbb{C} $ & Above \\
+          &$\Gamma  \longrightarrow  \Omega$& Given \\
+          &$\ottsym{[}  \Gamma  \ottsym{]}  A \in \mathbb{C}  $ & Above \\
+          & $\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A  \lesssim  \star  \dashv   \mathsf{contaminate}(  \Gamma  ,  \ottsym{[}  \Gamma  \ottsym{]}  A  ) $ & By \rref{as-unknownRR} \\
+          & There exists $\Omega'$ such that $ \mathsf{contaminate}(  \Gamma  ,  \ottsym{[}  \Gamma  \ottsym{]}  A  )   \longrightarrow  \Omega'$  and $\Omega  \longrightarrow  \Omega'$
+        \end{longtable}
+
+ \item Case 2.*: $\ottsym{[}  \Gamma  \ottsym{]}  B$ is not polymorphic. We split on the form of $\ottsym{[}  \Omega  \ottsym{]}  A$.
+    \begin{itemize}
+    \item Case \hl{2.Poly}: $\ottsym{[}  \Omega  \ottsym{]}  A$ is polymorphic: $\ottsym{[}  \Gamma  \ottsym{]}  A = \forall  \ottmv{a}  .\,  A'$:
+      \begin{longtable}[l]{ll|l}
+        & $A = \forall  \ottmv{a}  .\,  A_{{\mathrm{0}}}$& $\Gamma$ is predicative \\
+        & $A' = \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{0}}}$ & $\Gamma$ is predicative \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  A = \forall  \ottmv{a}  .\,  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{0}}}$ & By def. of substitution \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B$ & Premise \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \forall  \ottmv{a}  .\,  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{0}}}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B$ & By above equality \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{(}  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{0}}}  \ottsym{)}  \ottsym{[}  \ottmv{a}  \mapsto  \tau  \ottsym{]}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B$ & By inversion on \rref{cs-forallL} \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \tau$ & Above \\ \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma = \ottsym{[}  \Omega  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}  \widehat{a}  \ottsym{)}$ & By def. of substitution \\
+        & $\ottsym{(}  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{0}}}  \ottsym{)}  \ottsym{[}  \ottmv{a}  \mapsto  \tau  \ottsym{]} = \ottsym{[}  \Omega  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau  \ottsym{]}  \ottsym{(}  A_{{\mathrm{0}}}  \ottsym{[}  \ottmv{a}  \mapsto  \widehat{a}  \ottsym{]}  \ottsym{)}$ & By def. of substitution \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  B = \ottsym{[}  \Omega  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau  \ottsym{]}  B$ & By def. of substitution \\
+        & $\ottsym{[}  \Omega  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}  \widehat{a}  \ottsym{)}  \vdash  \ottsym{[}  \Omega  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau  \ottsym{]}  \ottsym{(}  A_{{\mathrm{0}}}  \ottsym{[}  \ottmv{a}  \mapsto  \widehat{a}  \ottsym{]}  \ottsym{)}  \lesssim  \ottsym{[}  \Omega  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau  \ottsym{]}  B $ & By above equalities \\
+        & $\Gamma  \ottsym{,}  \widehat{a}  \vdash  \ottsym{[}  \Gamma  \ottsym{,}  \widehat{a}  \ottsym{]}  \ottsym{(}  A_{{\mathrm{0}}}  \ottsym{[}  \ottmv{a}  \mapsto  \widehat{a}  \ottsym{]}  \ottsym{)}  \lesssim  \ottsym{[}  \Gamma  \ottsym{,}  \widehat{a}  \ottsym{]}  B  \dashv  \Delta$ & By i.h. \\
+        $\byhave$& $\Delta  \longrightarrow  \Omega'$ & Above \\
+        & $\Omega  \ottsym{,}  \widehat{a}  \ottsym{=}  \tau  \longrightarrow  \Omega'$ & Above \\
+        $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By \cref{lemma:drop_ext} \\
+        & $\ottsym{[}  \Gamma  \ottsym{,}  \widehat{a}  \ottsym{]}  \ottsym{(}  A_{{\mathrm{0}}}  \ottsym{[}  \ottmv{a}  \mapsto  \widehat{a}  \ottsym{]}  \ottsym{)} = \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{0}}}  \ottsym{)}  \ottsym{[}  \ottmv{a}  \mapsto  \widehat{a}  \ottsym{]}$ & By def. of substitution \\
+        & $\ottsym{[}  \Gamma  \ottsym{,}  \widehat{a}  \ottsym{]}  B = \ottsym{[}  \Gamma  \ottsym{]}  B$ & By def. of substitution \\
+        & $\Gamma  \ottsym{,}  \widehat{a}  \vdash  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{0}}}  \ottsym{)}  \ottsym{[}  \ottmv{a}  \mapsto  \widehat{a}  \ottsym{]}  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  B  \dashv  \Delta$ & By above equality \\
+        & $\Gamma  \vdash  \forall  \ottmv{a}  .\,  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{0}}}  \ottsym{)}  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  B  \dashv  \Delta$ & By \rref{as-forallLL} \\
+        $\byhave$& $\Gamma  \vdash  \forall  \ottmv{a}  .\,  A'  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  B  \dashv  \Delta$ & By above equality \\
+      \end{longtable}
+
+    \item Case \hl{2.Unknown}: $\ottsym{[}  \Gamma  \ottsym{]}  A =  \star $:
+        \begin{longtable}[l]{ll|l}
+          & $\ottsym{[}  \Omega  \ottsym{]}  A =  \star $ & Obviously, what else? \\
+          & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \star  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B$ & Given \\
+          & $\ottsym{[}  \Omega  \ottsym{]}  B \in \mathbb{C} $ & Above \\
+          &$\Gamma  \longrightarrow  \Omega$& Given \\
+          &$\ottsym{[}  \Gamma  \ottsym{]}  B \in \mathbb{C}  $ & Above \\
+          & $\Gamma  \vdash  \star  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  B  \dashv   \mathsf{contaminate}(  \Gamma  ,  \ottsym{[}  \Gamma  \ottsym{]}  B  ) $ & By \rref{as-unknownLL} \\
+          & There exists $\Omega'$ such that $ \mathsf{contaminate}(  \Gamma  ,  \ottsym{[}  \Gamma  \ottsym{]}  B  )   \longrightarrow  \Omega'$ and $\Omega  \longrightarrow  \Omega'$
+        \end{longtable}
+
+    \item Case \hl{2.AEx.*}: $\ottsym{[}  \Gamma  \ottsym{]}  A$ is an existential variable: $\ottsym{[}  \Gamma  \ottsym{]}  A = \widehat{a}$. We split on the form of $\ottsym{[}  \Gamma  \ottsym{]}  B$.
+      \begin{itemize}
+      \item Case \hl{2.AEx.SameEx}. $\ottsym{[}  \Gamma  \ottsym{]}  B$ is the same existential variable $\ottsym{[}  \Gamma  \ottsym{]}  B = \widehat{a}$:
+        \begin{longtable}[l]{ll|l}
+          &$\Gamma  \vdash  \widehat{a}  \lesssim  \widehat{a}  \dashv  \Gamma$& By \rref{as-evar} \\
+          $\byhave$& $\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  B  \dashv  \Gamma$ & By above equality \\
+          $\byhave$& $\Delta  \longrightarrow  \Omega$ & $\Delta = \Gamma$ \\
+          $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By \Cref{lemma:reflexivity} and $\Omega' = \Omega$
+        \end{longtable}
+      \item Case \hl{2.AEx.OtherEx}. $\ottsym{[}  \Gamma  \ottsym{]}  B$ is a different existential variable $\ottsym{[}  \Gamma  \ottsym{]}  B = \widehat{b}$ where $\widehat{b} \neq \widehat{a}$:
+        \begin{longtable}[l]{ll|l}
+          &$\ottsym{[}  \Omega  \ottsym{]}  A = \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A  \ottsym{)} = \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$& By \Cref{lemma:subst_ext_invar} \\
+          &$\ottsym{[}  \Omega  \ottsym{]}  B = \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  B  \ottsym{)} = \ottsym{[}  \Omega  \ottsym{]}  \widehat{b}$& By \Cref{lemma:subst_ext_invar} \\
+          & $ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B   $ & Given \\
+          & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \widehat{b} $ & By above equalities \\
+          & $\Gamma  \vdash  \widehat{a}  \lessapprox  \widehat{b}  \dashv  \Delta$ & By \Cref{thm:inst_complete} \\
+          $\byhave$& $\Delta  \longrightarrow  \Omega'$ & Above \\
+          $\byhave$& $\Omega  \longrightarrow  \Omega'$ & Above \\
+          & $\Gamma  \vdash  \widehat{a}  \lesssim  \widehat{b}  \dashv  \Delta$ & By \rref{as-instL} \\
+          $\byhave$& $\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  B  \dashv  \Delta$ & By above equalities
+        \end{longtable}
+      \item Case \hl{2.AEx.Int}. We have $\ottsym{[}  \Gamma  \ottsym{]}  B =  \mathsf{Int} $:
+        \begin{longtable}[l]{ll|l}
+          &$\Gamma  \longrightarrow  \Omega$& Given \\
+          & $ \ottsym{[}  \Omega  \ottsym{]}  B =  \mathsf{Int}  = \ottsym{[}  \Omega  \ottsym{]}  \mathsf{Int}$ & By def. of substitution \\
+          & $\ottsym{[}  \Omega  \ottsym{]}  A = \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A  \ottsym{)} = \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$ & By \Cref{lemma:subst_ext_invar} \\
+          & $  \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B  $ & Given \\
+          & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \mathsf{Int}$ & By above equalities \\
+          & $\Gamma  \vdash  \widehat{a}  \lessapprox  \mathsf{Int}  \dashv  \Delta$ & By \Cref{thm:inst_complete} \\
+          $\byhave$& $\Delta  \longrightarrow  \Omega'$ & Above \\
+          $\byhave$& $\Omega  \longrightarrow  \Omega'$ & Above \\
+          & $\Gamma  \vdash  \widehat{a}  \lesssim  \mathsf{Int}  \dashv  \Delta$ & By \rref{as-instL} \\
+          $\byhave$& $\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  B  \dashv  \Delta$ & By above equalities
+        \end{longtable}
+      \item Case \hl{2.AEx.UVar}. We have $\ottsym{[}  \Gamma  \ottsym{]}  B = \ottmv{b}$. Similar to Case \hl{2.AEx.Int}.
+      \item Case \hl{2.AEx.Arrow}. $\ottsym{[}  \Gamma  \ottsym{]}  B = B_{{\mathrm{1}}}  \rightarrow  B_{{\mathrm{2}}}$. We prove
+        $\widehat{a} \notin \textsc{fv}(\ottsym{[}  \Gamma  \ottsym{]}  B)$. Suppose for a
+        contradiction, that $\widehat{a} \in \textsc{fv}(\ottsym{[}  \Gamma  \ottsym{]}  B)$, then
+        $\widehat{a}$ must be a subterm of $\ottsym{[}  \Gamma  \ottsym{]}  B$, so is
+        $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$ a subterm of
+        $\ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  B  \ottsym{)}$. The latter is equal to
+        $\ottsym{[}  \Omega  \ottsym{]}  B$, so $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$ is a subterm of
+        $\ottsym{[}  \Omega  \ottsym{]}  B$. Since $\ottsym{[}  \Gamma  \ottsym{]}  B = B_{{\mathrm{1}}}  \rightarrow  B_{{\mathrm{2}}}$, then
+        $\ottsym{[}  \Omega  \ottsym{]}  B$ must have the form $B'_{{\mathrm{1}}}  \rightarrow  B'_{{\mathrm{2}}}$. Therefore
+        $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$ must occur in either $B'_{{\mathrm{1}}}$ or $B'_{{\mathrm{2}}}$. But we
+        have $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B$. That is , $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$
+        cannot be a subterm of $\ottsym{[}  \Omega  \ottsym{]}  B$. This is a contradiction.
+        \begin{longtable}[l]{ll|l}
+          &$\widehat{a} \notin \textsc{fv}(\ottsym{[}  \Gamma  \ottsym{]}  B)$ & Proved above \\
+          & $\Gamma  \longrightarrow  \Omega$ & Given \\
+          & $\ottsym{[}  \Omega  \ottsym{]}  B = \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  B  \ottsym{)}$ & By \Cref{lemma:subst_ext_invar} \\
+          & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B$ & Given \\
+          & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  B  \ottsym{)}$ & By above equality \\
+          & $\Gamma  \vdash  \widehat{a}  \lessapprox  \ottsym{[}  \Gamma  \ottsym{]}  B  \dashv  \Delta$ & By \Cref{thm:inst_complete} \\
+          $\byhave$& $\Delta  \longrightarrow  \Omega'$ & Above \\
+          $\byhave$& $\Omega  \longrightarrow  \Omega'$ & Above \\
+          &$\Gamma  \vdash  \widehat{a}  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  B  \dashv  \Delta$ & By \rref{cs-instL} \\
+          $\byhave$& $\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  B  \dashv  \Delta$ & By above equalities
+        \end{longtable}
+      \item Case \hl{2.AEx.S} and \hl{2.AEx.S}. Similar to Case \hl{2.AEx.Int}.
+      \end{itemize}
+
+    \item Case \hl{2.BEx.*}. $\ottsym{[}  \Gamma  \ottsym{]}  A$ is not polymorphic and
+      $\ottsym{[}  \Gamma  \ottsym{]}  B$ is an existential variable: $\ottsym{[}  \Gamma  \ottsym{]}  B = \widehat{b}$. We split on the form of $\ottsym{[}  \Gamma  \ottsym{]}  A$.
+      \begin{itemize}
+      \item Case \hl{2.BEx.Int}. Similar to Case \hl{2.AEx.Unit}.
+      \item Case \hl{2.BEx.UVar}. Similar to Case \hl{2.AEx.UVar}.
+      \item Case \hl{2.BEx.Arrow}. Similar to Case \hl{2.AEx.Arrow}.
+      \item Case \hl{2.BEx.S}. Similar to Case \hl{2.AEx.S}.
+      \item Case \hl{2.BEx.G}. Similar to Case \hl{2.AEx.G}.
+      \end{itemize}
+      We use the second part of \Cref{thm:inst_complete} and apply \rref{as-instR}.
+
+    \item Case \hl{2.Ints}. $\ottsym{[}  \Gamma  \ottsym{]}  A = \ottsym{[}  \Gamma  \ottsym{]}  B =  \mathsf{Int}  $:
+      \begin{longtable}[l]{ll|l}
+        $\byhave$&$\Gamma  \vdash  \mathsf{Int}  \lesssim  \mathsf{Int}  \dashv  \Gamma$& By \rref{as-int} \\
+                 & $\Gamma  \longrightarrow  \Omega$ & Given \\
+        $\byhave$& $\Delta  \longrightarrow  \Omega'$ & $\Delta = \Gamma$ \\
+        $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By \Cref{lemma:reflexivity} and $\Omega' = \Omega$
+      \end{longtable}
+
+    \item Case \hl{2.UVars}. $\ottsym{[}  \Gamma  \ottsym{]}  A = \ottsym{[}  \Gamma  \ottsym{]}  B = \ottmv{a}$:
+      \begin{longtable}[l]{ll|l}
+      $\byhave$&$\Gamma  \vdash  \ottmv{a}  \lesssim  \ottmv{a}  \dashv  \Gamma$& By \rref{as-tvar} \\
+                 & $\Gamma  \longrightarrow  \Omega$ & Given \\
+        $\byhave$& $\Delta  \longrightarrow  \Omega'$ & $\Delta = \Gamma$ \\
+        $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By \Cref{lemma:reflexivity} and $\Omega' = \Omega$
+      \end{longtable}
+
+    \item Case \hl{2.Arrows}. Let $\ottsym{[}  \Gamma  \ottsym{]}  A = A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}$ and $\ottsym{[}  \Gamma  \ottsym{]}  B = B_{{\mathrm{1}}}  \rightarrow  B_{{\mathrm{2}}}$:
+      \begin{longtable}[l]{ll|l}
+        & $\Gamma  \longrightarrow  \Omega$ & Given \\
+        &$\ottsym{[}  \Omega  \ottsym{]}  A = \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A  \ottsym{)} = \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}$ & By \Cref{lemma:subst_ext_invar} \\
+        &$\ottsym{[}  \Omega  \ottsym{]}  B = \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  B  \ottsym{)} = \ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{2}}}$ & By \Cref{lemma:subst_ext_invar} \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B$ & Given \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{1}}}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{1}}}$ & Premise \\
+        & $\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  B_{{\mathrm{1}}}  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{1}}}  \dashv  \Theta$ & By i.h. \\
+        & $\Theta  \longrightarrow  \Omega_{{\mathrm{0}}}$ & Above \\
+        & $\Omega  \longrightarrow  \Omega_{{\mathrm{0}}}$ & Above \\
+        & $\Gamma  \longrightarrow  \Omega_{{\mathrm{0}}}$ & By \Cref{lemma:transitivity} \\ \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma = \ottsym{[}  \Omega_{{\mathrm{0}}}  \ottsym{]}  \Theta$ & By \Cref{lemma:confluence} \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}} = \ottsym{[}  \Omega_{{\mathrm{0}}}  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{2}}}  \ottsym{)}$ & By \Cref{lemma:subst_ext_invar} \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{2}}} = \ottsym{[}  \Omega_{{\mathrm{0}}}  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  B_{{\mathrm{2}}}  \ottsym{)}$ & By \Cref{lemma:subst_ext_invar} \\
+        & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{2}}}  \lesssim  \ottsym{[}  \Omega  \ottsym{]}  B_{{\mathrm{2}}}$ & Premise \\
+        & $\ottsym{[}  \Omega_{{\mathrm{0}}}  \ottsym{]}  \Theta  \vdash  \ottsym{[}  \Omega_{{\mathrm{0}}}  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{2}}}  \ottsym{)}  \lesssim  \ottsym{[}  \Omega_{{\mathrm{0}}}  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  B_{{\mathrm{2}}}  \ottsym{)} $ & By above equalities \\
+        & $\Theta  \vdash  \ottsym{[}  \Theta  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{2}}}  \ottsym{)}  \lesssim  \ottsym{[}  \Theta  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  B_{{\mathrm{2}}}  \ottsym{)}  \dashv  \Delta$ & By i.h. \\
+        $\byhave$& $\Delta  \longrightarrow  \Omega'$ & Above \\
+        & $\Omega_{{\mathrm{0}}}  \longrightarrow  \Omega'$ & Above \\ \\
+        $\byhave$& $\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  \ottsym{(}  A_{{\mathrm{1}}}  \rightarrow  A_{{\mathrm{2}}}  \ottsym{)}  \lesssim  \ottsym{[}  \Gamma  \ottsym{]}  \ottsym{(}  B_{{\mathrm{1}}}  \rightarrow  B_{{\mathrm{2}}}  \ottsym{)}  \dashv  \Delta$ & By \rref{as-arrow} \\
+        $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By \Cref{lemma:transitivity}
+      \end{longtable}
+
+    \item Case \hl{2.S}: $\ottsym{[}  \Gamma  \ottsym{]}  A = \ottsym{[}  \Gamma  \ottsym{]}  B =  \mathcal{S} $.
+      \begin{longtable}[l]{ll|l}
+        $\byhave$&$\Gamma  \vdash  \mathcal{S}  \lesssim  \mathcal{S}  \dashv  \Gamma$& By \rref{as-spar} \\
+                 & $\Gamma  \longrightarrow  \Omega$ & Given \\
+        $\byhave$& $\Delta  \longrightarrow  \Omega'$ & $\Delta = \Gamma$ \\
+        $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By \Cref{lemma:reflexivity} and $\Omega' = \Omega$
+      \end{longtable}
+    \item Case \hl{2.G}. Similar to Case \hl{2.S}.
+
+    \end{itemize}
+  \end{itemize}
+\end{proof}
+
+
+\newpage
+
+\section{Completeness of Typing}
+
+
+\matchcomplete*
+\begin{proof}
+ By induction on the given derivation. We split on $\ottsym{[}  \Gamma  \ottsym{]}  A   $.
+
+ \begin{itemize}
+ \item $\ottsym{[}  \Gamma  \ottsym{]}  A = \forall  \ottmv{a}  .\,  A'$:
+    \begin{longtable}[l]{ll|l}
+      &$A = \forall  \ottmv{a}  .\,  A_{{\mathrm{0}}}   $& $\Gamma$ is predicative \\
+      & $A' = \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{0}}}$ & $\Gamma$ is predicative \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  A  =  \forall  \ottmv{a}  .\,  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{0}}}    $ & By def. of substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A  \triangleright  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}$ & Given \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \forall  \ottmv{a}  .\,  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{0}}}  \triangleright  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}$ & By above equality \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{(}  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{0}}}  \ottsym{)}  \ottsym{[}  \ottmv{a}  \mapsto  \tau  \ottsym{]}  \triangleright  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}$ & By inversion \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \tau$ & Above \\
+      & $\Gamma  \longrightarrow  \Omega$ & Given \\
+      & $\Gamma  \ottsym{,}   \widehat{a}_{S}   \longrightarrow  \Omega  \ottsym{,}   \widehat{a}_{S} $ & By def. of context extension \\ \\
+
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma = \ottsym{[}  \Omega  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  \tau  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{)}$ & By def. of context application \\
+      & $\ottsym{(}  \ottsym{[}  \Omega  \ottsym{]}  A_{{\mathrm{0}}}  \ottsym{)}  \ottsym{[}  \ottmv{a}  \mapsto  \tau  \ottsym{]} =  \ottsym{[}  \Omega  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  \tau  \ottsym{]}  \ottsym{(}  A_{{\mathrm{0}}}  \ottsym{[}  \ottmv{a}  \mapsto   \widehat{a}_{S}   \ottsym{]}  \ottsym{)}     $ & By def. of substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  \tau  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{)}  \vdash  \ottsym{[}  \Omega  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  \tau  \ottsym{]}  \ottsym{(}  A_{{\mathrm{0}}}  \ottsym{[}  \ottmv{a}  \mapsto   \widehat{a}_{S}   \ottsym{]}  \ottsym{)}  \triangleright  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}$ & By above equalities \\
+      & $\Gamma  \ottsym{,}   \widehat{a}_{S}   \vdash  \ottsym{[}  \Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{]}  \ottsym{(}  A_{{\mathrm{0}}}  \ottsym{[}  \ottmv{a}  \mapsto   \widehat{a}_{S}   \ottsym{]}  \ottsym{)}  \triangleright  A'_{{\mathrm{1}}}  \rightarrow  A'_{{\mathrm{2}}}  \dashv  \Delta$ & By i.h. \\
+      $\byhave$& $\Delta  \longrightarrow  \Omega'$ and $\Omega  \ottsym{,}   \widehat{a}_{S}   \ottsym{=}  \tau  \longrightarrow  \Omega'$ & Above \\
+      $\byhave$ & $\ottnt{A_{{\mathrm{1}}}} = \ottsym{[}  \Omega'  \ottsym{]}  A'_{{\mathrm{1}}}$ and $\ottnt{A_{{\mathrm{2}}}} = \ottsym{[}  \Omega'  \ottsym{]}  A'_{{\mathrm{2}}}$ & Above \\
+      & $\ottsym{[}  \Gamma  \ottsym{,}   \widehat{a}_{S}   \ottsym{]}  \ottsym{(}  A_{{\mathrm{0}}}  \ottsym{[}  \ottmv{a}  \mapsto   \widehat{a}_{S}   \ottsym{]}  \ottsym{)} =  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{0}}}  \ottsym{)}  \ottsym{[}  \ottmv{a}  \mapsto   \widehat{a}_{S}   \ottsym{]}   $ & By def. of substitution \\
+      & $\Gamma  \ottsym{,}   \widehat{a}_{S}   \vdash  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{0}}}  \ottsym{)}  \ottsym{[}  \ottmv{a}  \mapsto   \widehat{a}_{S}   \ottsym{]}  \triangleright  A'_{{\mathrm{1}}}  \rightarrow  A'_{{\mathrm{2}}}  \dashv  \Delta$ & By above equality \\
+      & $\Gamma  \vdash  \forall  \ottmv{a}  .\,  \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{0}}}  \triangleright  A'_{{\mathrm{1}}}  \rightarrow  A'_{{\mathrm{2}}}  \dashv  \Delta$ & By \rref{am-forallL} \\
+      & $\ottsym{[}  \Gamma  \ottsym{]}  A = \forall  \ottmv{a}  .\,  A' = \forall  \ottmv{a}  .\,  \ottsym{[}  \Gamma  \ottsym{]}  A_{{\mathrm{0}}}    $ & By above equalities \\
+      $\byhave$ & $\Gamma  \vdash  \ottsym{[}  \Gamma  \ottsym{]}  A  \triangleright  A'_{{\mathrm{1}}}  \rightarrow  A'_{{\mathrm{2}}}  \dashv  \Delta$ & Above
+    \end{longtable}
+
+
+
+  \item   $\ottsym{[}  \Gamma  \ottsym{]}  A = A'_{{\mathrm{1}}}  \rightarrow  A'_{{\mathrm{2}}}$:
+
+    \begin{longtable}[l]{ll|l}
+      & $\ottsym{[}  \Omega  \ottsym{]}  A = \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A  \ottsym{)} = \ottsym{[}  \Omega  \ottsym{]}  A'_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  A'_{{\mathrm{2}}}$ & By \Cref{lemma:subst_ext_invar}   \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  A'_{{\mathrm{1}}}  \rightarrow  \ottsym{[}  \Omega  \ottsym{]}  A'_{{\mathrm{2}}}  \triangleright  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}$ & Given \\
+      & Let $\Delta = \Gamma$ and $\Omega' = \Omega$ \\
+      $\byhave$& $\ottsym{[}  \Omega  \ottsym{]}  A'_{{\mathrm{1}}} = \ottnt{A_{{\mathrm{1}}}}$ and $\ottsym{[}  \Omega  \ottsym{]}  A'_{{\mathrm{2}}} = \ottnt{A_{{\mathrm{2}}}}$ \\
+      $\byhave$ & $\Gamma  \vdash  A'_{{\mathrm{1}}}  \rightarrow  A'_{{\mathrm{2}}}  \triangleright  A'_{{\mathrm{1}}}  \rightarrow  A'_{{\mathrm{2}}}  \dashv  \Gamma$ & By \rref{am-arr} \\
+      $\byhave$ & $\Delta  \longrightarrow  \Omega'$ & Given $\Gamma  \longrightarrow  \Omega$ \\
+      $\byhave$ & $\Omega  \longrightarrow  \Omega'$ & By \cref{lemma:reflexivity}
+
+    \end{longtable}
+
+  \item   $\ottsym{[}  \Gamma  \ottsym{]}  A =  \star $:
+
+    \begin{longtable}[l]{ll|l}
+      & $\ottsym{[}  \Omega  \ottsym{]}  A = \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A  \ottsym{)} =  \star $ & By \Cref{lemma:subst_ext_invar}   \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \star  \triangleright  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}$ & Given \\
+      & Let $\Delta = \Gamma$ and $\Omega' = \Omega$ \\
+      $\byhave$& $\ottnt{A_{{\mathrm{1}}}} =  \star $ and $\ottnt{A_{{\mathrm{2}}}} =  \star $ \\
+      $\byhave$ & $\Gamma  \vdash  \star  \triangleright  \star  \rightarrow  \star  \dashv  \Gamma$ & By \rref{am-unknown} \\
+      $\byhave$ & $\Delta  \longrightarrow  \Omega'$ & Given $\Gamma  \longrightarrow  \Omega$ \\
+      $\byhave$ & $\Omega  \longrightarrow  \Omega'$ & By \cref{lemma:reflexivity}
+
+    \end{longtable}
+
+  \item   $\ottsym{[}  \Gamma  \ottsym{]}  A = \widehat{a}$:
+
+    \begin{longtable}[l]{ll|l}
+      & $\Gamma = \Gamma_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}  \ottsym{]}$ & Since $\widehat{a} \in \textsc{unsolved}(\Gamma) $ \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  A = \ottsym{[}  \Omega  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Gamma  \ottsym{]}  A  \ottsym{)} = \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}$ & By \Cref{lemma:subst_ext_invar}   \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottsym{[}  \Omega  \ottsym{]}  \widehat{a}  \triangleright  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}$ & Given \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \widehat{a} = \tau_{{\mathrm{1}}}  \rightarrow  \tau_{{\mathrm{2}}}$ and $\ottnt{A_{{\mathrm{1}}}} = \tau_{{\mathrm{1}}}$ and $\ottnt{A_{{\mathrm{2}}}} = \tau_{{\mathrm{2}}}$ & $\Omega$ is predicate \\
+      & $\Omega = \Omega_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}  \ottsym{=}  \tau'  \ottsym{]}$ and $\ottsym{[}  \Omega  \ottsym{]}  \tau' = \tau_{{\mathrm{1}}}  \rightarrow  \tau_{{\mathrm{2}}}$ & Above \\
+      & Let $\Delta = \Gamma_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}_{{\mathrm{1}}}  \ottsym{,}  \widehat{a}_{{\mathrm{2}}}  \ottsym{,}  \widehat{a}  \ottsym{=}  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \widehat{a}_{{\mathrm{2}}}  \ottsym{]}$ \\
+      & Let $\Omega' = \Omega_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}_{{\mathrm{1}}}  \ottsym{=}  \tau_{{\mathrm{1}}}  \ottsym{,}  \widehat{a}_{{\mathrm{2}}}  \ottsym{=}  \tau_{{\mathrm{2}}}  \ottsym{,}  \widehat{a}  \ottsym{=}  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \widehat{a}_{{\mathrm{2}}}  \ottsym{]} $ \\
+      $\byhave$& $\Delta  \longrightarrow  \Omega'$ & By \Cref{lemma:paralell_admit} twice \\
+      $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By \Cref{lemma:paralell_ext_solu} and \Cref{lemma:paralell_admit} \\
+      $\byhave$& $\Gamma_{{\mathrm{0}}}  \ottsym{[}  \widehat{a}  \ottsym{]}  \vdash  \widehat{a}  \triangleright  \widehat{a}_{{\mathrm{1}}}  \rightarrow  \widehat{a}_{{\mathrm{2}}}  \dashv  \Delta$ & By \rref{am-var} \\
+      $\byhave$& $\ottnt{A_{{\mathrm{1}}}} = \tau_{{\mathrm{1}}} = \ottsym{[}  \Omega'  \ottsym{]}  \widehat{a}_{{\mathrm{1}}}$ and $\ottnt{A_{{\mathrm{2}}}} = \tau_{{\mathrm{2}}} = \ottsym{[}  \Omega'  \ottsym{]}  \widehat{a}_{{\mathrm{2}}}$ & Above
+    \end{longtable}
+
+ \end{itemize}
+
+
+\end{proof}
+
+\typingcomplete*
+\begin{proof}
+  By induction on the given derivation.
+  \begin{itemize}
+  \item Case \[     \ottaltinferrule{var}{}{  (  \ottmv{x}  :  \ottnt{A}  ) \in  \ottsym{[}  \Omega  \ottsym{]}  \Gamma  }{ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  }  \]
+    \begin{longtable}[l]{ll|l}
+      & $  (  \ottmv{x}  :  \ottnt{A}  ) \in  \ottsym{[}  \Omega  \ottsym{]}  \Gamma   $  & Premise \\
+      & $\Gamma  \longrightarrow  \Omega$ & Given \\
+      & $   (  \ottmv{x}  :  A'  ) \in  \Gamma   $ where $\ottsym{[}  \Omega  \ottsym{]}  A' = \ottsym{[}  \Omega  \ottsym{]}  A$ & From def. of context application \\
+      & Let $\Delta = \Gamma$ and $\Omega' = \Omega$. \\
+      $\byhave$& $\Gamma  \longrightarrow  \Omega$ & Given \\
+      $\byhave$& $\Omega  \longrightarrow  \Omega$ & By \Cref{lemma:reflexivity} \\
+      $\byhave$& $\Gamma  \vdash  \ottmv{x}  \Rightarrow  A'  \dashv  \Gamma$ & By \rref{inf-var} \\
+      $\byhave$& $\ottsym{[}  \Omega  \ottsym{]}  A' = \ottsym{[}  \Omega  \ottsym{]}  A = \ottnt{A}$ & A is well-formed in $\ottsym{[}  \Omega  \ottsym{]}  \Gamma$ \\
+      $\byhave$& $\erase{x} = \erase{x}$ & By def. of erasure
+    \end{longtable}
+
+  \item Case \[     \ottaltinferrule{int}{}{ }{ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottmv{n}  \ottsym{:}  \mathsf{Int} }  \]
+
+    \begin{longtable}[l]{ll|l}
+      &Let $A' =  \mathsf{Int} $ and $\Delta = \Gamma$ and $\Omega' = \Omega$. & \\
+      $\byhave$& $\Gamma  \longrightarrow  \Omega$ & Given \\
+      $\byhave$& $\Omega  \longrightarrow  \Omega$ & By \Cref{lemma:reflexivity} \\
+      $\byhave$& $\Gamma  \vdash  \ottmv{n}  \Rightarrow  \mathsf{Int}  \dashv  \Gamma$ & By \rref{inf-int} \\
+      $\byhave$& $\ottsym{[}  \Omega  \ottsym{]}  \mathsf{Int} =  \mathsf{Int} $ \\
+      $\byhave$& $\erase{n} = \erase{n}$ & By def. of erasure
+    \end{longtable}
+
+
+  \item Case \[     \ottaltinferrule{lamann}{}{ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottnt{A}  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{B} }{ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \lambda  \ottmv{x}  \ottsym{:}  \ottnt{A}  .\,  \ottnt{e}  \ottsym{:}  \ottnt{A}  \rightarrow  \ottnt{B} }  \]
+
+    \begin{longtable}[l]{ll|l}
+      & Let $\Omega_{{\mathrm{0}}} = \Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  A$. \\
+      & $\ottsym{[}  \Omega_{{\mathrm{0}}}  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{)} = \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A$ & From def. of context application \\
+      & $\ottsym{[}  \Omega_{{\mathrm{0}}}  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{)}  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{B}$ & By above equality and premise \\
+      & $\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \vdash  e'  \Rightarrow  B_{{\mathrm{0}}}  \dashv  \Delta_{{\mathrm{0}}}$ & By i.h. \\
+      & $\Delta_{{\mathrm{0}}}  \longrightarrow  \Omega'$ & Above \\
+      & $\Omega_{{\mathrm{0}}}  \longrightarrow  \Omega'$ & Above \\
+      & $\ottnt{B} = \ottsym{[}  \Omega'  \ottsym{]}  B_{{\mathrm{0}}}$ & Above \\
+      & $\erase{e} = \erase{e'}$ & Above \\
+      & $\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \longrightarrow  \Delta_{{\mathrm{0}}}$ & By \cref{lemma:typing_extension} \\
+      & $\Delta_{{\mathrm{0}}} = \Delta_{{\mathrm{1}}}  \ottsym{,}  \ottmv{x}  \ottsym{:}  A'  \ottsym{,}  \Delta_{{\mathrm{2}}}$ & By \cref{lemma:extension_order} \\
+      & $\ottsym{[}  \Delta_{{\mathrm{1}}}  \ottsym{]}  A = \ottsym{[}  \Delta_{{\mathrm{1}}}  \ottsym{]}  A'$ & Above \\
+      & $\Gamma  \longrightarrow  \Delta_{{\mathrm{1}}} $ & Above \\
+      & $A = \ottsym{[}  \Delta_{{\mathrm{1}}}  \ottsym{]}  A'$ & $A$ has no evar \\
+      & $\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \vdash  e'  \Rightarrow  B_{{\mathrm{0}}}  \dashv  \Delta_{{\mathrm{1}}}  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{,}  \Delta_{{\mathrm{2}}}$ & By above equalities \\
+      & $\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \vdash  e'  \Leftarrow  B_{{\mathrm{0}}}  \dashv  \Delta_{{\mathrm{1}}}  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \ottsym{,}  \Delta_{{\mathrm{2}}}$ & By \rref{chk-sub} \\ \\
+      & $\Delta_{{\mathrm{1}}}  \ottsym{,}  \ottmv{x}  \ottsym{:}  A'  \ottsym{,}  \Delta_{{\mathrm{2}}}  \longrightarrow  \Omega'$ & By above equalities \\
+      & $\Omega' = \Omega_{{\mathrm{1}}}  \ottsym{,}  \ottmv{x}  \ottsym{:}  A''  \ottsym{,}  \Omega_{{\mathrm{2}}}$ & By \cref{lemma:extension_order} \\
+      & $\ottsym{[}  \Omega_{{\mathrm{1}}}  \ottsym{]}  A' = \ottsym{[}  \Omega_{{\mathrm{1}}}  \ottsym{]}  A''$ & Above \\
+      $\byhave$ & $\Delta_{{\mathrm{1}}}  \longrightarrow  \Omega_{{\mathrm{1}}} $ & Above \\
+      & $\Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  A  \longrightarrow  \Omega_{{\mathrm{1}}}  \ottsym{,}  \ottmv{x}  \ottsym{:}  A''  \ottsym{,}  \Omega_{{\mathrm{2}}}$ & By above equalities \\
+      $\byhave$& $\Omega  \longrightarrow  \Omega_{{\mathrm{1}}}$ & By \cref{lemma:extension_order} \\ \\
+
+      & $\Gamma  \vdash  \lambda  \ottmv{x}  .\,  e'  \Leftarrow  A  \rightarrow  B_{{\mathrm{0}}}  \dashv  \Delta_{{\mathrm{1}}}$ & \rref{chk-lam} \\
+      $\byhave$& $\Gamma  \vdash  \ottsym{(}  \lambda  \ottmv{x}  .\,  e'  \ottsym{)}  \ottsym{:}  A  \rightarrow  B_{{\mathrm{0}}}  \Rightarrow  A  \rightarrow  B_{{\mathrm{0}}}  \dashv  \Delta_{{\mathrm{1}}}$ & \rref{inf-anno} \\
+      $\byhave$& $\ottsym{[}  \Omega_{{\mathrm{1}}}  \ottsym{]}  \ottsym{(}  A  \rightarrow  B_{{\mathrm{0}}}  \ottsym{)} = \ottnt{A}  \rightarrow  \ottsym{[}  \Omega'  \ottsym{]}  B_{{\mathrm{0}}} = \ottnt{A}  \rightarrow  \ottnt{B}$ & From above equality \\
+      $\byhave$& $\erase{\lambda  \ottmv{x}  \ottsym{:}  \ottnt{A}  .\,  \ottnt{e}} = \erlam{x}{\erase{e}} = \erlam{x}{\erase{e'}} = \erase{\ottsym{(}  \lambda  \ottmv{x}  .\,  e'  \ottsym{)}  \ottsym{:}  A  \rightarrow  B_{{\mathrm{0}}}}$ & By def. of erasure
+    \end{longtable}
+
+  \item Case \[     \ottaltinferrule{app}{}{ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottnt{e_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{A} \\ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottnt{A}  \triangleright  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}} \\ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottnt{e_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{A_{{\mathrm{3}}}} \\ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottnt{A_{{\mathrm{3}}}}  \lesssim  \ottnt{A_{{\mathrm{1}}}}  }{ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottnt{e_{{\mathrm{1}}}} \, \ottnt{e_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{A_{{\mathrm{2}}}}  }  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottnt{e_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{A}$ & Premise \\
+      & $\Gamma  \longrightarrow  \Omega$ & Given \\
+      & $\Gamma  \vdash  e'_{{\mathrm{1}}}  \Rightarrow  A'  \dashv  \Theta_{{\mathrm{1}}}$ & By i.h. \\
+      & $\Theta_{{\mathrm{1}}}  \longrightarrow  \Omega'_{{\mathrm{0}}}$ & Above \\
+      & $\Omega  \longrightarrow  \Omega'_{{\mathrm{0}}}$ & Above \\
+      & $\ottnt{A} = \ottsym{[}  \Omega'_{{\mathrm{0}}}  \ottsym{]}  A'$ & Above \\
+      & $\erase{\ottnt{e_{{\mathrm{1}}}}} = \erase{e'_{{\mathrm{1}}}}$ & Above \\ \\
+
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottnt{A}  \triangleright  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}$ & Premise \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma = \ottsym{[}  \Omega  \ottsym{]}  \Omega$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = \ottsym{[}  \Omega'_{{\mathrm{0}}}  \ottsym{]}  \Omega'_{{\mathrm{0}}}$ & By \Cref{lemma:finish_complete} \\
+      & $ = \ottsym{[}  \Omega'_{{\mathrm{0}}}  \ottsym{]}  \Gamma$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = \ottsym{[}  \Omega'_{{\mathrm{0}}}  \ottsym{]}  \Theta_{{\mathrm{1}}}$ & By \Cref{lemma:confluence} \\
+      & $\ottsym{[}  \Omega'_{{\mathrm{0}}}  \ottsym{]}  \Theta_{{\mathrm{1}}}  \vdash  \ottsym{[}  \Omega'_{{\mathrm{0}}}  \ottsym{]}  A'  \triangleright  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}$ & By above equalities \\
+      & $\Theta_{{\mathrm{1}}}  \vdash  \ottsym{[}  \Theta_{{\mathrm{1}}}  \ottsym{]}  A'  \triangleright  A'_{{\mathrm{1}}}  \rightarrow  A'_{{\mathrm{2}}}  \dashv  \Theta_{{\mathrm{2}}}$ & By \Cref{thm:match_complete} \\
+      & $\Theta_{{\mathrm{2}}}  \longrightarrow  \Omega'$ & Above \\
+      & $\Omega'_{{\mathrm{0}}}  \longrightarrow  \Omega'$ & Above \\
+      & $\ottnt{A_{{\mathrm{1}}}} = \ottsym{[}  \Omega'  \ottsym{]}  A'_{{\mathrm{1}}}$ & Above \\
+      & $\ottnt{A_{{\mathrm{2}}}} = \ottsym{[}  \Omega'  \ottsym{]}  A'_{{\mathrm{2}}}$ & Above \\ \\
+
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottnt{e_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{A_{{\mathrm{3}}}}$ & Premise \\
+      & $ \ottsym{[}  \Omega  \ottsym{]}  \Gamma   = \ottsym{[}  \Omega  \ottsym{]}  \Omega$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = \ottsym{[}  \Omega'  \ottsym{]}  \Omega'$ & By \Cref{lemma:finish_complete} \\
+      & $ = \ottsym{[}  \Omega'  \ottsym{]}  \Gamma$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = \ottsym{[}  \Omega'  \ottsym{]}  \Theta_{{\mathrm{2}}}$ & By \Cref{lemma:confluence} \\
+      & $\ottsym{[}  \Omega'  \ottsym{]}  \Theta_{{\mathrm{2}}}  \vdash  \ottnt{e_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{A_{{\mathrm{3}}}}$ & By above equality \\
+      & $\Theta_{{\mathrm{2}}}  \vdash  e'_{{\mathrm{2}}}  \Rightarrow  A'_{{\mathrm{3}}}  \dashv  \Theta_{{\mathrm{3}}}$ & By i.h. \\
+      & $\Theta_{{\mathrm{3}}}  \longrightarrow  \Omega'_{{\mathrm{1}}}$ & Above \\
+      & $\Omega'  \longrightarrow  \Omega'_{{\mathrm{1}}}$ & Above \\
+      & $\ottnt{A_{{\mathrm{3}}}} = \ottsym{[}  \Omega'_{{\mathrm{1}}}  \ottsym{]}  A'_{{\mathrm{3}}}$ & Above \\
+      & $\erase{\ottnt{e_{{\mathrm{2}}}}} = \erase{e'_{{\mathrm{2}}}}$ & Above \\ \\
+
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottnt{A_{{\mathrm{3}}}}  \lesssim  \ottnt{A_{{\mathrm{1}}}}$ & Premise \\
+      & $ \ottsym{[}  \Omega  \ottsym{]}  \Gamma   = \ottsym{[}  \Omega  \ottsym{]}  \Omega$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = \ottsym{[}  \Omega'_{{\mathrm{1}}}  \ottsym{]}  \Omega'_{{\mathrm{1}}}$ & By \Cref{lemma:finish_complete} \\
+      & $ = \ottsym{[}  \Omega'_{{\mathrm{1}}}  \ottsym{]}  \Gamma$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = \ottsym{[}  \Omega'_{{\mathrm{1}}}  \ottsym{]}  \Theta_{{\mathrm{3}}}$ & By \Cref{lemma:confluence} \\
+      & $\ottnt{A_{{\mathrm{3}}}} = \ottsym{[}  \Omega'_{{\mathrm{1}}}  \ottsym{]}  A'_{{\mathrm{3}}}$ & Above \\
+      & $\ottnt{A_{{\mathrm{1}}}} = \ottsym{[}  \Omega'  \ottsym{]}  A'_{{\mathrm{1}}} = \ottsym{[}  \Omega'_{{\mathrm{1}}}  \ottsym{]}  A'_{{\mathrm{1}}} $ & By \Cref{lemma:finish_types} \\
+      & $\ottsym{[}  \Omega'_{{\mathrm{1}}}  \ottsym{]}  \Theta_{{\mathrm{3}}}  \vdash  \ottsym{[}  \Omega'_{{\mathrm{1}}}  \ottsym{]}  A'_{{\mathrm{3}}}  \lesssim  \ottsym{[}  \Omega'_{{\mathrm{1}}}  \ottsym{]}  A'_{{\mathrm{1}}}$ & By above equalities \\
+      & $\Theta_{{\mathrm{3}}}  \vdash  \ottsym{[}  \Theta_{{\mathrm{3}}}  \ottsym{]}  A'_{{\mathrm{3}}}  \lesssim  \ottsym{[}  \Theta_{{\mathrm{3}}}  \ottsym{]}  A'_{{\mathrm{1}}}  \dashv  \Delta$ & By \Cref{thm:sub_completeness} \\
+      & $\ottsym{[}  \Theta_{{\mathrm{3}}}  \ottsym{]}  A'_{{\mathrm{1}}} = \ottsym{[}  \Theta_{{\mathrm{3}}}  \ottsym{]}  \ottsym{(}  \ottsym{[}  \Theta_{{\mathrm{2}}}  \ottsym{]}  A_{{\mathrm{1}}}  \ottsym{)}$ & By \cref{lemma:subst_ext_invar}\\
+      & $\Theta_{{\mathrm{2}}}  \vdash  e'_{{\mathrm{2}}}  \Leftarrow  \ottsym{[}  \Theta_{{\mathrm{2}}}  \ottsym{]}  A'_{{\mathrm{1}}}  \dashv  \Delta$ & By \rref{chk-sub} \\
+      $\byhave$& $\Delta  \longrightarrow  \Omega'_{{\mathrm{2}}}$ & Above \\
+      & $\Omega'_{{\mathrm{1}}}  \longrightarrow  \Omega'_{{\mathrm{2}}}$ & Above \\
+      $\byhave$& $\Gamma  \vdash  e'_{{\mathrm{1}}} \, e'_{{\mathrm{2}}}  \Rightarrow  A'_{{\mathrm{2}}}  \dashv  \Delta$ & By \rref{inf-app} \\
+      $\byhave$& $\ottnt{A_{{\mathrm{2}}}} = \ottsym{[}  \Omega'  \ottsym{]}  A'_{{\mathrm{2}}} = \ottsym{[}  \Omega'_{{\mathrm{2}}}  \ottsym{]}  A'_{{\mathrm{2}}}$ & \Cref{lemma:finish_types} \\
+      $\byhave$& $\Gamma  \longrightarrow  \Omega'_{{\mathrm{2}}}$ & By \Cref{lemma:transitivity} \\
+      $\byhave$& $\erase{\ottnt{e_{{\mathrm{1}}}} \, \ottnt{e_{{\mathrm{2}}}}} = \erase{e_1} ~ \erase{e_2} = \erase{e_1'} ~ \erase{e_2'} = \erase{e'_{{\mathrm{1}}} \, e'_{{\mathrm{2}}}}$ & By def. of erasure
+    \end{longtable}
+
+
+  \item Case \[     \ottaltinferrule{lam}{}{ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{B}  }{ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \lambda  \ottmv{x}  .\,  \ottnt{e}  \ottsym{:}  \tau  \rightarrow  \ottnt{B}   }  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{B}$ & Given \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau = \ottsym{[}  \Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau  \ottsym{)}$ & By def. of context substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau  \ottsym{)}  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{B}$ & By above equality \\
+      & $\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau  \vdash  e'  \Rightarrow  B'  \dashv  \Delta'$ & By i.h., \\
+      & $\Delta'  \longrightarrow  \Omega'$ & Above \\
+      & $\Omega  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau  \longrightarrow  \Omega'$ & Above \\
+      & $\ottnt{B} = \ottsym{[}  \Omega'  \ottsym{]}  B'$ & Above \\
+      & $\erase{e} = \erase{e'}$ & Above \\
+      & $\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau  \longrightarrow  \Delta'$ & By \cref{lemma:typing_extension} \\
+      & $\Delta' = \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau  \ottsym{,}  \Theta$ & By \cref{lemma:extension_order} \\
+      & $\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau  \vdash  e'  \Rightarrow  B'  \dashv  \Delta  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau  \ottsym{,}  \Theta$ & By above equality \\
+      $\byhave$& $\Gamma  \vdash  \lambda  \ottmv{x}  \ottsym{:}  \tau  .\,  e'  \Rightarrow  \tau  \rightarrow  B'  \dashv  \Delta$ & By \rref{inf-lamann} \\
+      $\byhave$& $\Delta  \longrightarrow  \Omega'$ & By context extension \\
+      $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By context extension \\
+      $\byhave$& $\tau  \rightarrow  \ottnt{B} = \tau  \rightarrow  \ottsym{[}  \Omega'  \ottsym{]}  B' = \ottsym{[}  \Omega'  \ottsym{]}  \ottsym{(}  \tau  \rightarrow  B'  \ottsym{)}  $ & By def. of substitution \\
+      $\byhave$& $\erase{\lambda  \ottmv{x}  .\,  \ottnt{e}} = \erlam{x}{\erase{e}} = \erlam{x}{\erase{e'}} = \erase{ \lambda  \ottmv{x}  \ottsym{:}  \tau  .\,  e' }$ & By def. of erasure
+    \end{longtable}
+
+
+
+  \item Case \[     \ottaltinferrule{gen}{}{ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \ottsym{,}  \ottmv{a}  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{A}  }{ \ottsym{[}  \Omega  \ottsym{]}  \Gamma  \vdash  \ottnt{e}  \ottsym{:}  \forall  \ottmv{a}  .\,  \ottnt{A}   }  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \ottsym{,}  \ottmv{a}  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{A}$ & Given \\
+      & $\ottsym{[}  \Omega  \ottsym{]}  \Gamma  \ottsym{,}  \ottmv{a} = \ottsym{[}  \Omega  \ottsym{,}  \ottmv{a}  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}  \ottmv{a}  \ottsym{)}$ & By def. of context substitution \\
+      & $\ottsym{[}  \Omega  \ottsym{,}  \ottmv{a}  \ottsym{]}  \ottsym{(}  \Gamma  \ottsym{,}  \ottmv{a}  \ottsym{)}  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{A}$ & By above equality \\
+      & $\Gamma  \ottsym{,}  \ottmv{a}  \vdash  e'  \Rightarrow  A'  \dashv  \Delta'$ & By i.h., \\
+      & $\Delta'  \longrightarrow  \Omega'$ & Above \\
+      & $\Omega  \ottsym{,}  \ottmv{a}  \longrightarrow  \Omega'$ & Above \\
+      & $\ottnt{A} = \ottsym{[}  \Omega'  \ottsym{]}  A'$ & Above \\
+      $\byhave$& $\erase{e} = \erase{e'}$ & Above \\
+      & $\Gamma  \ottsym{,}  \ottmv{a}  \longrightarrow  \Delta'$ & By \cref{lemma:typing_extension} \\
+      & $\Delta' = \Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta$ & By \cref{lemma:extension_order} \\
+      $\byhave$& $\Delta  \longrightarrow  \Omega'$ & By context extension \\
+      $\byhave$& $\Omega  \longrightarrow  \Omega'$ & By context extension \\
+      & $\Gamma  \ottsym{,}  \ottmv{a}  \vdash  e'  \Rightarrow  A'  \dashv  \Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta$ & By above equality \\
+      & $ \Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta  \vdash  \ottsym{[}  \Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta  \ottsym{]}  A'  \lesssim  \ottsym{[}  \Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta  \ottsym{]}  A'  \dashv  \Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta   $ & By reflexivity of consistent subtyping \\
+      & $\Gamma  \ottsym{,}  \ottmv{a}  \vdash  e'  \Leftarrow  A'  \dashv  \Delta  \ottsym{,}  \ottmv{a}  \ottsym{,}  \Theta$ & By \rref{chk-sub} \\
+      & $\Gamma  \vdash  e'  \Leftarrow  \forall  \ottmv{a}  .\,  A'  \dashv  \Delta$ & By \rref{chk-gen} \\
+      $\byhave$& $  \Gamma  \vdash  e'  \ottsym{:}  \forall  \ottmv{a}  .\,  A'  \Rightarrow  \forall  \ottmv{a}  .\,  A'  \dashv  \Delta  $ & By \rref{inf-anno} \\
+      $\byhave$& $\forall  \ottmv{a}  .\,  \ottnt{A} = \forall a . \ctxsubst{\Omega'}{A'} = \ctxsubst{\Omega'}{(\forall  \ottmv{a}  .\,  A')}$ & By def. of substitution \\
+    \end{longtable}
+
+
+
+  \end{itemize}
+
+
+
+\end{proof}
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: ../paper.bib
+%%% End:

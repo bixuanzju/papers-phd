@@ -1,0 +1,1315 @@
+
+% ------------------------------------------------------
+% ORIGINAL TYPING
+% ------------------------------------------------------
+
+\newcommand*{\OVar}{\inferrule{
+            x : A \in \tctx
+            }{
+            \tctx \byoinf x \infto A
+            }\rname{Var}}
+
+\newcommand*{\ONat}{\inferrule{
+            }{
+            \tctx \byoinf n \infto \nat
+            }\rname{Nat}}
+
+\newcommand*{\OLamAnnA}{\inferrule{
+            \tctx, x: A \byoinf e \infto B
+            }{
+            \tctx \byoinf (\blam x A e) \infto A \to B
+            }\rname{LamAnn-I}}
+
+\newcommand*{\OLamAnnB}{\inferrule{
+            \tctx, x: A \byoinf e \chkby B
+            }{
+            \tctx \byoinf (\blam x A e) \chkby A \to B
+            }\rname{LamAnn-C}}
+
+\newcommand*{\OApp}{\inferrule{
+            \tctx \byoinf e_1 \infto A_1 \to A_2
+         \\ \tctx \byochk e_2 \chkby A_1
+            }{
+            \tctx \byoinf e_1 ~ e_2 \infto A_2
+            }\rname{App}}
+
+\newcommand*{\OLamB}{\inferrule{
+            \tctx, x: A \byochk e \chkby B
+            }{
+            \tctx \byochk \erlam x e \chkby A \to B
+            }\rname{Lam-C}}
+
+\newcommand*{\OSub}{\inferrule{
+            \tctx \byoinf e \infto A
+            }{
+            \tctx \byochk e \chkby A
+            }\rname{Sub}}
+
+% ------------------------------------------------------
+% TYPING
+% ------------------------------------------------------
+
+\newcommand*{\Var}{\inferrule{
+            x : A \in \tctx
+            }{
+            \tctx \byinf x \infto A
+            \trto{x}
+            }\rname{Var}}
+
+\newcommand*{\Nat}{\inferrule{
+            }{
+            \tctx \byinf n \infto \nat
+            \trto{n}
+            }\rname{Nat}}
+
+\newcommand*{\LamAnnA}{\inferrule{
+            \tctx, x: A \byinf e \infto B \trto {e'}
+            }{
+            \tctx \byinf (\blam x A e) \infto A \to B
+            \trto{\blam x A {e'}}
+            }\rname{LamAnn-I}}
+
+\newcommand*{\LamAnnB}{\inferrule{
+            C \match A_1 \to B
+         \\ A = A_1 \glb A_2
+         \\ \tctx, x: A \byinf e \chkby B \trto {e'}
+            }{
+            \tctx \bychk (\blam x {A_2} e) \chkby C
+            \trto{\cast{A \to B}{C}(\blam x {A} {e'})}
+            }\rname{LamAnn-C}}
+
+\newcommand*{\App}{\inferrule{
+            \tctx \byinf e_1 \infto A \trto{e_1'}
+         \\ A \match A_1 \to A_2
+         \\ \tctx \bychk e_2 \chkby A_1 \trto{e_2'}
+            }{
+            \tctx \byinf e_1 ~ e_2 \infto A_2
+            \trto {(\cast{A}{A_1 \to A_2} e_1') ~ e_2'}
+            }\rname{App}}
+
+\newcommand*{\LamB}{\inferrule{
+            C \match A \to B
+         \\ \tctx, x: A \bychk e \chkby B \trto{e_1'}
+            }{
+            \tctx \bychk \erlam x e \chkby C
+            \trto{\cast{A \to B}{\erlam x e}}
+            }\rname{Lam-C}}
+
+\newcommand*{\Sub}{\inferrule{
+            e \neq (\blam x C e')
+         \\ \tctx \byinf e \infto B \trto{e'}
+         \\ B \sim A
+            }{
+            \tctx \bychk e \chkby A
+            \trto{\cast B A e'}
+            }\rname{Sub}}
+
+% ------------------------------------------------------
+% CAST CALCULUS
+% ------------------------------------------------------
+
+\newcommand*{\CaVar}{\inferrule{
+            x : A \in \tctx
+            }{
+            \tpreinf x : A
+            }\rname{C-Var}}
+
+\newcommand*{\CaNat}{\inferrule{
+            }{
+            \tctx \byinf n : \nat
+            }\rname{Nat}}
+
+\newcommand*{\CaLam}{\inferrule{
+            \tctx, x: A \byinf e : B
+            }{
+            \tpreinf \blam x A e : A \to B
+            }\rname{C-Lam}}
+
+\newcommand*{\CaApp}{\inferrule{
+            \tpreinf e_1 : A \to B
+         \\ \tpreinf e_2 : A
+            }{
+            \tpreinf e_1 ~ e_2 : B
+            }\rname{C-App}}
+
+\newcommand*{\CaCast}{\inferrule{
+            \tpreinf e : A
+         \\ B \sim A
+            }{
+            \tpreinf \cast A B e : B
+            }\rname{C-Cast}}
+
+\newcommand*{\CaBlame}{\inferrule{
+            }{
+            \tpreinf \blame A l : A
+            }\rname{C-Blame}}
+
+% ------------------------------------------------------
+% Matching
+% ------------------------------------------------------
+
+\newcommand*{\MA}{\inferrule{}{
+            (A_1 \to A_2) \match (A_1 \to A_2)
+            }}
+
+\newcommand*{\MB}{\inferrule{}{
+            \unknown \match \unknown \to \unknown
+            }}
+
+\newcommand*{\MMA}{\inferrule{ }{
+            \tprematch (A_1 \to A_2) \match (A_1 \to A_2)
+            }\rname{M-Arr}}
+
+\newcommand*{\MMB}{\inferrule{ }{
+            \tprematch \unknown \match \unknown \to \unknown
+            }\rname{M-Unknown}}
+
+\newcommand*{\MMC}{\inferrule{
+            \tprewf \tau
+         \\ \tprematch A \subst a \tau \match A_1 \to A_2
+            }{
+            \tprematch \forall a. A \match A_1 \to A_2
+            }\rname{M-Forall}}
+
+
+% ------------------------------------------------------
+% Matching (Algorithmic)
+% ------------------------------------------------------
+
+\newcommand*{\AMMA}{\inferrule{ }{
+            \Gamma \vdash (A_1 \to A_2) \match (A_1 \to A_2) \toctxo
+            }\rname{AM-Arr}}
+
+\newcommand*{\AMMB}{\inferrule{ }{
+            \Gamma \vdash \unknown \match \unknown \to \unknown \toctxo
+            }\rname{AM-Unknown}}
+
+\newcommand*{\AMMC}{\inferrule{ \tctx, \genA \vdash A \subst a \genA \match A_1 \to A_2 \toctxr
+            }{
+            \Gamma \vdash \forall a. A \match A_1 \to A_2 \toctxr
+            }\rname{AM-Forall}}
+
+\newcommand*{\AMMD}{\inferrule{ }{
+            \tctx[\genC] \vdash \genC \match \genA \to \genB \dashv \tctx[\genA, \genB, \genC = \genA \to \genB]
+            }\rname{AM-Var}}
+
+
+
+% ------------------------------------------------------
+% Instantiation
+% ------------------------------------------------------
+
+\newcommand*{\InstLSolve}{\inferrule{ \tctx \bywf \tau}
+            {\tctx, \genA, \tctx' \vdash \genA \unif \tau \dashv \tctx, \genA = \tau, \tctx'
+            }\rname{InstLSolve}}
+
+\newcommand*{\InstLSolveU}{\inferrule{ }
+            {\tctx[\genA] \vdash \genA \unif \unknown \dashv \tctx[\genA]
+            }\rname{InstLSolveU}}
+
+\newcommand*{\InstLReach}{\inferrule{ }
+            {\tctx[\genA][\genB] \vdash \genA \unif \genB \dashv \tctx[\genA][\genB = \genA]
+            }\rname{InstLReach}}
+
+\newcommand*{\InstLArr}{\inferrule{ \tctx[\genA_2, \genA_1, \genA = \genA_1 \to \genA_2] \vdash A_1 \unif \genA_1 \toctx \\
+             \ctxl \vdash \genA_2 \unif \ctxsubst{\ctxl}{A_2} \toctxr
+            }
+            {\tctx[\genA] \vdash \genA \unif A_1 \to A_2 \toctxr
+            }\rname{InstLArr}}
+
+\newcommand*{\InstLAllR}{\inferrule{ \tctx[\genA], b \vdash \genA \unif B \toctxr, b, \Delta'
+            }
+            {\tctx[\genA] \vdash \genA \unif \forall b . B \toctxr
+            }\rname{InstLAllR}}
+
+
+\newcommand*{\InstRSolve}{\inferrule{ \tctx \bywf \tau}
+            {\tctx, \genA, \tctx' \vdash \tau \unif \genA \dashv \tctx, \genA = \tau, \tctx'
+            }\rname{InstRSolve}}
+
+\newcommand*{\InstRSolveU}{\inferrule{ }
+            {\tctx[\genA] \vdash \unknown \unif \genA \dashv \tctx[\genA]
+            }\rname{InstRSolveU}}
+
+\newcommand*{\InstRReach}{\inferrule{ }
+            {\tctx[\genA][\genB] \vdash \genB \unif \genA \dashv \tctx[\genA][\genB = \genA]
+            }\rname{InstRReach}}
+
+\newcommand*{\InstRArr}{\inferrule{ \tctx[\genA_2, \genA_1, \genA = \genA_1 \to \genA_2] \vdash \genA_1 \unif A_1 \toctx \\
+             \ctxl \vdash \ctxsubst{\ctxl}{A_2}  \unif \genA_2  \toctxr
+            }
+            {\tctx[\genA] \vdash A_1 \to A_2  \unif \genA \toctxr
+            }\rname{InstRArr}}
+
+\newcommand*{\InstRAllL}{\inferrule{ \tctx[\genA], \genB \vdash B \subst b \genB \unif \genA \toctxr
+            }
+            {\tctx[\genA] \vdash \forall b . B \unif \genA  \toctxr
+            }\rname{InstRAllL}}
+
+
+
+% ------------------------------------------------------
+% Consistency
+% ------------------------------------------------------
+
+\newcommand*{\CA}{\inferrule{}{
+            A \sim \unknown
+            }}
+
+\newcommand*{\CB}{\inferrule{}{
+            \unknown \sim A
+            }}
+
+\newcommand*{\CC}{\inferrule{
+            A_1 \sim B_1
+         \\ A_2 \sim B_2
+            }{
+            A_1 \to A_2 \sim B_1 \to B_2
+            }}
+
+\newcommand*{\CD}{\inferrule{}{
+            A \sim A
+            }}
+
+\newcommand*{\CE}{\inferrule{
+            A \sim B
+            }{
+            \forall a. A \sim \forall a. B
+            }}
+
+% ------------------------------------------------------
+% GREATEST LOWER BOUND
+% ------------------------------------------------------
+
+\newcommand*{\GA}{\inferrule{}{
+            A \glb A = A
+            }}
+
+\newcommand*{\GB}{\inferrule{}{
+            A \glb \unknown = \unknown \glb A = A
+            }}
+
+\newcommand*{\GC}{\inferrule{}{
+            (A_1 \to A_2) \glb (B_1 \to B_2) = (A_1 \glb B_1) \to (A_2 \glb B_2)
+            }}
+
+\newcommand*{\GGA}{\inferrule{
+            }{
+            \tpreglb A \glb A = A
+            }}
+
+\newcommand*{\GGB}{\inferrule{
+            }{
+            \tpreglb A \glb \unknown = A
+            }}
+
+\newcommand*{\GGF}{\inferrule{
+            A ~ is ~ G
+            }{
+            \tpreglb \unknown \glb A = A
+            }}
+
+\newcommand*{\GGG}{\inferrule{
+            A ~ isnot~ G
+            }{
+            \tpreglb \unknown \glb A = \unknown
+            }}
+
+\newcommand*{\GGC}{\inferrule{
+            \tpreglb[,a] A \glb B = C
+            }{
+            \tpreglb A \glb \forall a. B = C
+            }}
+
+\newcommand*{\GGD}{\inferrule{
+         \\ \tpreglb[, a] A \glb B = C
+            }{
+            \tpreglb \forall a. A \glb B = \forall a. C
+            }}
+
+\newcommand*{\GGE}{\inferrule{
+            \tpreglb A_1 \glb B_1 = C_1
+         \\ \tpreglb A_2 \glb B_2 = C_2
+            }{
+            \tpreglb A_1 \to A_2 \glb B_1 \to B_2 = C_1 \to C_2
+            }}
+
+% ------------------------------------------------------
+% MASK
+% ------------------------------------------------------
+
+\newcommand*{\MSUnknownL}{\inferrule{
+            }{
+            \tctx \bymask \mask \unknown B = \unknown
+            }\rname{Mask-UnknownL}}
+
+\newcommand*{\MSUnknownR}{\inferrule{
+            }{
+            \tctx \bymask \mask A \unknown = \unknown
+            }\rname{Mask-UnknownR}}
+
+\newcommand*{\MSForallL}{\inferrule{
+            \tctx, a \bymask \mask A B = C
+            }{
+            \tctx \bymask \mask {\forall a. A} B  = \forall a. C
+            }\rname{Mask-ForallL}}
+
+\newcommand*{\MSForallR}{\inferrule{
+            \tctx, b \bymask \mask A B = C
+            }{
+            \tctx \bymask \mask A {\forall b. B}  = C
+            }\rname{Mask-ForallR}}
+
+\newcommand*{\MSArrow}{\inferrule{
+            \tctx \bymask \mask {A_1} {B_1} = {C_1}
+         \\ \tctx \bymask \mask {A_2} {B_2} = {C_2}
+            }{
+            \tctx \bymask \mask {A_1 \to A_2} {B_1 \to B_2} = C_1 \to C_2
+            }\rname{Mask-Arrow}}
+
+\newcommand*{\MSNat}{\inferrule{
+            }{
+            \tctx \bymask \mask \nat \nat = \nat
+            }\rname{Mask-Int}}
+
+% ------------------------------------------------------
+% CONSISTENT SUBTYPING
+% ------------------------------------------------------
+
+\newcommand*{\CSForallR}{\inferrule{
+            \tpresub[,a] A \tconssub B
+            }{
+            \tpresub A \tconssub \forall a. B
+            }\rname{CS-ForallR}}
+
+\newcommand*{\CSForallL}{\inferrule{
+            \dctx \bywf \tau
+         \\ \tpreconssub A \subst a \tau \tconssub B
+            }{
+            \tpresub \forall a. A \tconssub B
+            }\rname{CS-ForallL}}
+
+\newcommand*{\CSFun}{\inferrule{
+            \tpreconssub B_1 \tconssub A_1
+         \\ \tpreconssub A_2 \tconssub B_2
+            }{
+            \tpreconssub A_1 \to A_2 \tconssub B_1 \to B_2
+            }\rname{     CS-Fun}}
+
+\newcommand*{\CSTVar}{\inferrule{
+            a \in \dctx
+            }{
+            \tpreconssub a \tconssub a
+            }\rname{CS-TVar}}
+
+\newcommand*{\CSInt}{\inferrule{
+            }{
+            \tpreconssub \nat \tconssub \nat
+            }\rname{CS-Int}}
+
+\newcommand*{\CSUnknownL}{\inferrule{
+            }{
+            \tpreconssub \unknown \tconssub A
+            }\rname{CS-UnknownL}}
+
+\newcommand*{\CSUnknownR}{\inferrule{
+            }{
+            \tpreconssub A \tconssub \unknown
+            }\rname{CS-UnknownR}}
+
+
+% ------------------------------------------------------
+% CONSISTENT SUBTYPING (Algorithmic)
+% ------------------------------------------------------
+
+\newcommand*{\ACSForallR}{\inferrule{ \tctx, a \vdash A \tconssub B \toctxr, a, \ctxl
+            }{
+            \Gamma \vdash A \tconssub \forall a. B \toctxr
+            }\rname{ACS-ForallR}}
+
+\newcommand*{\ACSForallL}{\inferrule{ \tctx, \genA \vdash A \subst a \genA \tconssub B \toctxr
+            }{
+            \Gamma \vdash \forall a. A \tconssub B \toctxr
+            }\rname{ACS-ForallL}}
+
+\newcommand*{\ACSFun}{\inferrule{\Gamma \vdash B_1 \tconssub A_1 \toctx \\
+             \ctxl \vdash \ctxsubst{\ctxl}{A_2} \tconssub \ctxsubst{\ctxl}{B_2} \toctxr
+            }{
+            \Gamma \vdash A_1 \to A_2 \tconssub B_1 \to B_2 \toctxr
+            }\rname{ACS-Fun}}
+
+\newcommand*{\ACSTVar}{\inferrule{
+            }{
+            \tctx[a] \vdash a \tconssub a \dashv \tctx[a]
+            }\rname{ACS-TVar}}
+
+\newcommand*{\ACSExVar}{\inferrule{
+            }{
+            \tctx[\genA] \vdash \genA \tconssub \genA \dashv \tctx[\genA]
+            }\rname{ACS-ExVar}}
+
+
+\newcommand*{\ACSInt}{\inferrule{
+            }{
+            \Gamma \vdash \nat \tconssub \nat \toctxo
+            }\rname{ACS-Int}}
+
+\newcommand*{\ACSUnknownL}{\inferrule{
+            }{
+            \Gamma \vdash \unknown \tconssub A \toctxo
+            }\rname{ACS-UnknownL}}
+
+\newcommand*{\ACSUnknownR}{\inferrule{
+            }{
+            \Gamma \vdash A \tconssub \unknown \toctxo
+            }\rname{ACS-UnknownR}}
+
+\newcommand*{\AInstantiateL}{\inferrule{ \genA \notin \mathit{fv}(A) \\
+             \tctx[\genA] \vdash \genA \unif A \toctxr
+            }{
+            \tctx[\genA] \vdash \genA \tconssub A \toctxr
+            }\rname{ACS-InstL}}
+
+\newcommand*{\AInstantiateR}{\inferrule{ \genA \notin \mathit{fv}(A) \\
+             \tctx[\genA] \vdash  A \unif \genA \toctxr
+            }{
+            \tctx[\genA] \vdash A \tconssub \genA  \toctxr
+            }\rname{ACS-InstR}}
+
+
+
+% ------------------------------------------------------
+% LESS PRECISION
+% ------------------------------------------------------
+
+\newcommand*{\LUnknown}{\inferrule{
+            }{
+            \unknown \lessp A
+            }\rname{L-Unknown}}
+
+\newcommand*{\LNat}{\inferrule{
+            }{
+            \nat \lessp \nat
+            }\rname{L-Nat}}
+
+\newcommand*{\LArrow}{\inferrule{
+            A_1 \lessp B_1
+         \\ A_2 \lessp B_2
+            }{
+            A_1 \to A_2 \lessp B_1 \to B_2
+            }\rname{L-Arrow}}
+
+\newcommand*{\LTVar}{\inferrule{
+            }{
+            a \lessp a
+            }\rname{L-TVar}}
+
+\newcommand*{\LForall}{\inferrule{
+            A \lessp B
+            }{
+            \forall a. A \lessp \forall a. B
+            }\rname{L-Forall}}
+
+% Term level
+
+\newcommand*{\LRefl}{\inferrule{
+            }{
+            e \lessp e
+            }\rname{L-Refl}}
+
+\newcommand*{\LAbsAnn}{\inferrule{
+            A_1 \lessp A_2
+         \\ e_1 \lessp e_2
+            }{
+            \blam x {A_1} {e_1} \lessp \blam x {A_2} {e_2}
+            }\rname{L-LamAnn}}
+
+\newcommand*{\LApp}{\inferrule{
+            e_1 \lessp e_3
+         \\ e_2 \lessp e_4
+            }{
+            e_1 ~ e_2 \lessp e_3 ~ e_4
+            }\rname{L-App}}
+
+% PBC Term level
+
+\newcommand*{\LVar}{\inferrule{
+            x : A \in \dctx_1
+         \\ x : B \in  \dctx_2
+            }{
+            \dctx_1 \ctxsplit \dctx_2 \bylessp x \lesspp x
+            }\rname{L-Var}}
+
+\newcommand*{\LNatP}{\inferrule{
+            }{
+            \dctx_1 \ctxsplit \dctx_2 \bylessp n \lesspp n
+            }\rname{L-Nat}}
+
+\newcommand*{\LAbsAnnP}{\inferrule{
+            A_1 \lessp A_2
+         \\ \dctx_1, x: A_1 \ctxsplit \dctx_2, x: A_2 \bylessp e_1 \lesspp e_2
+            }{
+            \dctx_1 \ctxsplit \dctx_2 \bylessp \blam x {A_1} {e_1} \lesspp \blam x {A_2} {e_2}
+            }\rname{L-LamAnn}}
+
+\newcommand*{\LAppP}{\inferrule{
+            \dctx_1 \ctxsplit \dctx_2 \bylessp e_1 \lesspp e_3
+         \\ \dctx_1 \ctxsplit \dctx_2 \bylessp e_2 \lesspp e_4
+            }{
+            \dctx_1 \ctxsplit \dctx_2 \bylessp e_1 ~ e_2 \lesspp e_3 ~ e_4
+            }\rname{L-App}}
+
+\newcommand*{\LCast}{\inferrule{
+            A_1 \lessp B_1
+         \\ A_2 \lessp B_2
+         \\ \dctx_1 \ctxsplit \dctx_2 \bylessp e_1 \lesspp e_2
+            }{
+            \dctx_1 \ctxsplit \dctx_2 \bylessp \cast {A_1} {A_2} {e_1} \lesspp \cast{B_1} {B_2} {e_2}
+            }\rname{L-Cast}}
+
+\newcommand*{\LCastL}{\inferrule{
+            \dctx_1 \ctxsplit \dctx_2 \bylessp e_1 \lesspp e_2
+         \\ \dctx_2 \bypinf e_2 : B
+         \\ A_1 \lessp B
+         \\ A_2 \lessp B
+            }{
+            \dctx_1 \ctxsplit \dctx_2 \bylessp \cast {A_1} {A_2} {e_1} \lesspp {e_2}
+            }\rname{L-CastL}}
+
+\newcommand*{\LCastR}{\inferrule{
+            \dctx_1 \ctxsplit \dctx_2 \bylessp e_1 \lesspp e_2
+         \\ \dctx_1 \bypinf e_1 : A
+         \\ A \lessp B_1
+         \\ A \lessp B_2
+            }{
+            \dctx_1 \ctxsplit \dctx_2 \bylessp e_1 \lesspp \cast {B_1} {B_2} {e_2}
+            }\rname{L-CastR}}
+
+% Env level
+
+\newcommand*{\LERefl}{\inferrule{
+            }{
+            \tctx \lessp \tctx
+            }\rname{L-ERefl}}
+
+\newcommand*{\LEPush}{\inferrule{
+            \tctx_1 \lessp \tctx_2
+         \\ A_1 \lessp A_2
+            }{
+            \tctx_1, x: A_1 \lessp \tctx_2, x:A_2
+            }\rname{L-EPush}}
+
+% ------------------------------------------------------
+% ORIGINAL HIGHER-RANKED TYPE
+% ------------------------------------------------------
+
+\newcommand*{\HVar}{\inferrule{
+            x : A \in \tctx
+            }{
+            \tctx \byinf x \infto A
+            }\rname{Var}}
+
+\newcommand*{\HNat}{\inferrule{
+            }{
+            \tpreinf n \infto \nat
+            }\rname{Nat}}
+
+\newcommand*{\HLamAnnA}{\inferrule{
+            \tctx, x: A \byinf e \infto B
+            }{
+            \tctx \byinf (\blam x A e) \infto A \to B
+            }\rname{LamAnn-I}}
+
+\newcommand*{\HLamAnnB}{\inferrule{
+            B \tsub A
+         \\ \tctx, x: A \bychk e \chkby C
+            }{
+            \tctx \byinf (\blam x A e) \chkby B \to C
+            }\rname{LamAnn-C}}
+
+\newcommand*{\HApp}{\inferrule{
+            \tctx \byinf e_1 \infto A
+         \\ \tctx \byinf A \bullet e \appto B
+            }{
+            \tctx \byinf e_1 ~ e_2 \infto B
+            }\rname{App}}
+
+\newcommand*{\HAppPoly}{\inferrule{
+            \tctx \byinf A \subst a \tau \bullet e \appto B
+            }{
+            \tctx \byinf \forall a. A \bullet e \appto B
+            }\rname{AppPoly}}
+
+\newcommand*{\HAppFun}{\inferrule{
+            \tprechk e \chkby A_1
+            }{
+            \tctx \byinf A_1 \to A_2 \bullet e \appto A_2
+            }\rname{AppFun}}
+
+\newcommand*{\HSub}{\inferrule{
+            \tctx \byinf e \infto A
+         \\ \tpresub A \tsub B
+            }{
+            \tctx \bychk e \chkby B
+            }\rname{Sub}}
+
+\newcommand*{\HAll}{\inferrule{
+            \tctx, a \bychk e \chkby A
+            }{
+            \tctx \bychk e \chkby \forall a. A
+            }\rname{Forall}}
+
+\newcommand*{\SForallR}{\inferrule{
+            \tctx, a \bysub A \tsub B
+            }{
+            A \tsub \forall a. B
+            }\rname{S-ForallR}}
+
+\newcommand*{\SForallL}{\inferrule{
+            \tctx \bywf \tau
+         \\ \tctx \bysub A \subst a \tau \tsub B
+            }{
+            \tpresub \forall a. A \tsub B
+            }\rname{S-ForallL}}
+
+\newcommand*{\SFun}{\inferrule{
+            \tpresub B_1 \tsub A_1
+         \\ \tpresub A_2 \tsub B_2
+            }{
+            \tpresub A_1 \to A_2 \tsub B_1 \to B_2
+            }\rname{S-Fun}}
+
+\newcommand*{\STVar}{\inferrule{
+            a \in \tctx
+            }{
+            \tctx \bysub a \tsub a
+            }\rname{S-TVar}}
+
+\newcommand*{\SInt}{\inferrule{
+            }{
+            \tctx \bysub \nat \tsub \nat
+            }\rname{S-Int}}
+
+% ------------------------------------------------------
+% GRADUAL HIGHER-RANKED TYPE
+% ------------------------------------------------------
+
+\newcommand*{\HRVar}{\inferrule{
+            x : A \in \tctx
+            }{
+            \tctx \byinf x \infto A
+            }\rname{Var}}
+
+\newcommand*{\HRNat}{\inferrule{
+            }{
+            \tpreinf n \infto \nat
+            }\rname{Nat}}
+
+\newcommand*{\HRLamAnnA}{\inferrule{
+            \tctx, x: A \byinf e \infto B
+            }{
+            \tctx \byinf \blam x A e \infto A \to B
+            }\rname{LamAnn-I}}
+
+\newcommand*{\HRLamAnnB}{\inferrule{
+            C \match A_1 \to B
+         \\ \tpresub A_1 \tconssub A_2
+         \\ A = A_2 \glb A_1
+         \\ \tctx, x: A \bychk e \chkby B
+            }{
+            \tctx \byinf \blam x {A_2} e \chkby C
+            }\rname{LamAnn-C}}
+
+\newcommand*{\HRApp}{\inferrule{
+            \tctx \byinf e_1 \infto A
+         \\ A \match A_1 \to A_2
+         \\ \tctx \bychk e_2 \chkby A_1
+            }{
+            \tctx \byinf e_1 ~ e_2 \infto A_2
+            }\rname{App}}
+
+\newcommand*{\HRSub}{\inferrule{
+            e \neq (\blam x C e')
+         \\ \tctx \byinf e \infto A
+         \\ \tpresub A \tconssub B
+            }{
+            \tctx \bychk e \chkby B
+            }\rname{Sub}}
+
+\newcommand*{\HRAll}{\inferrule{
+            \tctx, a \bychk e \chkby A
+            }{
+            \tctx \bychk e \chkby \forall a. A
+            }\rname{Forall}}
+
+\newcommand*{\HSForallR}{\inferrule{
+            \tpresub[,a] A \tsub B
+            }{
+            \tpresub A \tsub \forall a. B
+            }\rname{S-ForallR}}
+
+\newcommand*{\HSForallL}{\inferrule{
+            \dctx \bywf \tau
+         \\ \tpresub A \subst a \tau \tsub B
+            }{
+            \tpresub \forall a. A \tsub B
+            }\rname{S-ForallL}}
+
+\newcommand*{\HSFun}{\inferrule{
+            \tpresub B_1 \tsub A_1
+         \\ \tpresub A_2 \tsub B_2
+            }{
+            \tpresub A_1 \to A_2 \tsub B_1 \to B_2
+            }\rname{S-Fun}}
+
+\newcommand*{\HSTVar}{\inferrule{
+            a \in \dctx
+            }{
+            \tpresub a \tsub a
+            }\rname{S-TVar}}
+
+\newcommand*{\HSInt}{\inferrule{
+            }{
+            \tpresub \nat \tsub \nat
+            }\rname{S-Int}}
+
+\newcommand*{\HSUnknown}{\inferrule{
+            }{
+            \tpresub \unknown \tsub \unknown
+            }\rname{S-Unknown}}
+
+% ------------------------------------------------------
+% GRADUAL HIGHER-RANKED TYPING : DECLARATIVE
+% ------------------------------------------------------
+
+\newcommand*{\DVar}{\inferrule{
+            x : A \in \dctx
+            }{
+            \dctx \byinf x : A
+            \trto {x}
+            }\rname{Var}}
+
+\newcommand*{\DNat}{\inferrule{
+            }{
+            \tpreinf n : \nat
+            \trto {n}
+            }\rname{Nat}}
+
+\newcommand*{\DLam}{\inferrule{
+            \dctx, x: \tau \byinf e : B
+            \trto {s}
+            }{
+            \dctx \byinf \erlam x e : \tau \to B
+            \trto {\blam x \tau s}
+            }\rname{Lam}}
+
+\newcommand*{\DLamAnnA}{\inferrule{
+            \dctx, x: A \byinf e : B
+            \trto {s}
+            }{
+            \dctx \byinf \blam x A e : A \to B
+            \trto {\blam x A s}
+            }\rname{LamAnn}}
+
+\newcommand*{\DApp}{\inferrule{
+            \dctx \byinf e_1 : A
+            \trto {s_1}
+         \\ \dctx \byinf A \match A_1 \to A_2
+         \\ \dctx \byinf e_2 : A_3
+            \trto {s_2}
+         \\ \tpreconssub A_3 \tconssub A_1
+            }{
+            \dctx \byinf e_1 ~ e_2 : A_2
+            \trto {(\cast A {A_1 \to A_2} s_1) ~
+            (\cast {A_3} {A_1} s_2)
+            }
+            }\rname{App}}
+
+\newcommand*{\DGen}{\inferrule{
+            \dctx, a \byinf e : A \trto {s}
+            }{
+            \dctx \byinf e : \forall a. A
+            \trto {\Lambda a. s}
+            }\rname{Gen}}
+
+% ------------------------------------------------------
+% GRADUAL HIGHER-RANKED TYPING : Algorithmic
+% ------------------------------------------------------
+
+\newcommand*{\AVar}{\inferrule{
+            (x : A) \in \tctx
+            }{
+            \Gamma \vdash x \infto A \toctxo
+            }\rname{AVar}}
+
+\newcommand*{\ANat}{\inferrule{
+            }{
+            \Gamma \vdash n \infto \nat \toctxo
+            }\rname{ANat}}
+
+\newcommand*{\ALamU}{\inferrule{
+             \tctx, \genA, \genB, x : \genA \bychk e \chkby \genB \toctxr, x : \genA, \ctxl
+            }{
+            \tctx \byinf \erlam x e \infto \genA \to \genB \toctxr
+            }\rname{ALamU}}
+
+
+\newcommand*{\ALamAnnA}{\inferrule{
+            \tctx, x: A \byinf e \infto B \toctxr,  x : A , \ctxl
+            }{
+            \tctx \byinf \blam x A e \infto A \to B \toctxr
+            }\rname{ALamAnnA}}
+
+\newcommand*{\ALam}{\inferrule{
+            \tctx, x: A \byinf e \chkby B \toctxr,  x : A , \ctxl
+            }{
+            \tctx \byinf \erlam x e \chkby A \to B \toctxr
+            }\rname{ALam}}
+
+\newcommand*{\AGen}{\inferrule{
+            \tctx, a \bychk e \chkby A \toctxr, a, \ctxl
+            }{
+            \tctx \bychk e \chkby \forall a. A \toctxr
+            }\rname{AGen}}
+
+\newcommand*{\AAnno}{\inferrule{
+            \tctx \vdash A
+            \\
+            \tctx \bychk e \chkby A \toctxr
+            }{
+            \tctx \bychk e : A \infto A \toctxr
+            }\rname{AAnno}}
+
+
+\newcommand*{\AApp}{\inferrule{
+            \Gamma \vdash e_1 \infto A \dashv \ctxl_1
+         \\ \ctxl_1 \byinf \ctxsubst{\ctxl_1}{A} \match A_1 \to A_2 \dashv \ctxl_2
+         \\ \ctxl_2 \byinf e_2 \chkby \ctxsubst{\ctxl_2}{A_1} \dashv \ctxr
+            }{
+            \Gamma \vdash e_1 ~ e_2 \infto A_2 \toctxr
+            }\rname{AApp}}
+
+\newcommand*{\ASub}{\inferrule{
+            \tctx \byinf e \infto A \toctx
+         \\ \ctxl \bysub \ctxsubst{\ctxl} A \tconssub \ctxsubst{\ctxl} B \toctxr
+            }{
+            \tctx \bychk e \chkby B \toctxr
+            }\rname{ASub}}
+
+
+% ------------------------------------------------------
+% Context extension
+% ------------------------------------------------------
+
+
+\newcommand*{\ExtID}{\inferrule{
+            }{
+            \ctxinit \exto \ctxinit
+            }\rname{ExtID}}
+
+\newcommand*{\ExtVar}{\inferrule{
+              \Gamma \exto \Delta \\
+              \ctxsubst{\Delta}{A} = \ctxsubst{\Delta}{A'}
+            }{
+            \Gamma, x : A \exto \Delta, x : A'
+            }\rname{ExtVar}}
+
+\newcommand*{\ExtUVar}{\inferrule{
+              \Gamma \exto \Delta
+            }{
+            \Gamma, a \exto \Delta, a
+            }\rname{ExtUVar}}
+
+\newcommand*{\ExtEVar}{\inferrule{
+              \Gamma \exto \Delta
+            }{
+            \Gamma, \genA \exto \Delta, \genA
+            }\rname{ExtEVar}}
+
+\newcommand*{\ExtSolved}{\inferrule{
+              \Gamma \exto \Delta \\
+              \ctxsubst{\Delta}{\tau} = \ctxsubst{\Delta}{\tau'}
+            }{
+            \Gamma, \genA = \tau \exto \Delta, \genA = \tau'
+            }\rname{ExtSolved}}
+
+\newcommand*{\ExtSolve}{\inferrule{
+              \Gamma \exto \Delta
+            }{
+            \Gamma, \genA \exto \Delta, \genA = \tau
+            }\rname{ExtSolve}}
+
+\newcommand*{\ExtAdd}{\inferrule{
+              \Gamma \exto \Delta
+            }{
+            \Gamma \exto \Delta, \genA
+            }\rname{ExtAdd}}
+
+\newcommand*{\ExtAddS}{\inferrule{
+              \Gamma \exto \Delta
+            }{
+            \Gamma \exto \Delta, \genA = \tau
+            }\rname{ExtAddSolved}}
+
+
+
+% ------------------------------------------------------
+% HIGHER-RANKED TYPING : NON-BI
+% ------------------------------------------------------
+
+\newcommand*{\NVar}{\inferrule{
+            x : A \in \dctx
+            }{
+            \dctx \byhinf x : A
+            }\rname{Var}}
+
+\newcommand*{\NNat}{\inferrule{
+            }{
+            \dctx \byhinf n : \nat
+            }\rname{Nat}}
+
+\newcommand*{\NLam}{\inferrule{
+            \dctx, x: \tau \byhinf e : B
+            }{
+            \dctx \byhinf \erlam x e : \tau \to B
+            }\rname{Lam}}
+
+\newcommand*{\NGen}{\inferrule{
+            \dctx, a \byhinf e : A
+            }{
+            \dctx \byhinf e : \forall a. A
+            }\rname{Gen}}
+
+\newcommand*{\NLamAnnA}{\inferrule{
+            \dctx, x: A \byhinf e : B
+            }{
+            \dctx \byhinf \blam x A e : A \to B
+            }\rname{LamAnn}}
+
+\newcommand*{\NApp}{\inferrule{
+            \dctx \byhinf e_1 : A_1 \to A_2
+         \\ \dctx \byhinf e_2 : A_1
+            }{
+            \dctx \byhinf e_1 ~ e_2 : A_2
+            }\rname{App}}
+
+\newcommand*{\NSub}{\inferrule{
+            \dctx \byhinf e : A_1
+         \\ \tpresub A_1 \tsub A_2
+            }{
+            \dctx \byhinf e : A_2
+            }\rname{Sub}}
+
+\newcommand*{\NForallR}{\inferrule{
+            \tpresub[,a] A \tsub B
+            }{
+            \tpresub A \tsub \forall a. B
+            }\rname{ForallR}}
+
+\newcommand*{\NForallL}{\inferrule{
+            \dctx \bywf \tau
+         \\ \tpresub A \subst a \tau \tsub B
+            }{
+            \tpresub \forall a. A \tsub B
+            }\rname{ForallL}}
+
+\newcommand*{\NFun}{\inferrule{
+            \tpresub B_1 \tsub A_1
+         \\ \tpresub A_2 \tsub B_2
+            }{
+            \tpresub A_1 \to A_2 \tsub B_1 \to B_2
+            }\rname{CS-Fun}}
+
+\newcommand*{\NTVar}{\inferrule{
+            a \in \dctx
+            }{
+            \tpresub a \tsub a
+            }\rname{CS-TVar}}
+
+\newcommand*{\NSInt}{\inferrule{
+            }{
+            \tpresub \nat \tsub \nat
+            }\rname{CS-Int}}
+
+
+% ------------------------------------------------------
+% MASK OFF
+% ------------------------------------------------------
+
+\newcommand*{\FA}{\inferrule{
+            }{
+            \mask A \unknown = \unknown
+            }\rname{F-StarR}}
+
+\newcommand*{\FB}{\inferrule{
+            }{
+            \mask \unknown A = \unknown
+            }\rname{F-StarL}}
+
+\newcommand*{\FC}{\inferrule{
+            }{
+            \mask {\forall a. A} B = \mask A B
+            }\rname{F-ForallL}}
+
+\newcommand*{\FD}{\inferrule{
+            }{
+            \mask A {\forall a. B} = \mask A B
+            }\rname{F-ForallR}}
+
+\newcommand*{\FE}{\inferrule{
+            }{
+            \mask {A_1 \to A_2} {B_1 \to B_2} = \mask {A_1} {B_1} \to \mask {A_2} {B_2}
+            }\rname{F-Fun}}
+
+% ------------------------------------------------------
+% PBC
+% ------------------------------------------------------
+
+\newcommand*{\PBCVar}{\inferrule{
+            x : A \in \tctx
+            }{
+            \tctx \bypinf x \infto A
+            }\rname{PBC-Var}}
+
+\newcommand*{\PBCNat}{\inferrule{
+            }{
+            \tctx \bypinf n \infto \nat
+            }\rname{PBC-Var}}
+
+\newcommand*{\PBCApp}{\inferrule{
+            \tctx \bypinf e_1 \infto A_1 \to A_2
+         \\ \tctx \bypinf e_2 \infto A_1
+            }{
+            \tctx \bypinf e_1 ~ e_2 \infto A_2
+            }\rname{PBC-App}}
+
+\newcommand*{\PBCLam}{\inferrule{
+            \tctx, x: A \bypinf e \infto B
+            }{
+            \tctx \bypinf \blam x A e \infto A \to B
+            }\rname{PBC-Lam}}
+
+\newcommand*{\PBCBLam}{\inferrule{
+            \tctx, X \bypinf e \infto A
+            }{
+            \tctx \bypinf \Lambda X. e \infto \forall X. A
+            }\rname{PBC-BLam}}
+
+\newcommand*{\PBCTApp}{\inferrule{
+            \tctx, X \bypinf e \infto  \forall X. A
+            }{
+            \tctx \bypinf e ~ [B] \infto A \subst X B
+            }\rname{PBC-TApp}}
+
+\newcommand*{\PBCCast}{\inferrule{
+            \tctx \bypinf e \infto A
+         \\ A \pbccons B
+            }{
+            \tctx \bypinf \cast A B e \infto B
+            }\rname{PBC-TApp}}
+
+% ------------------------------------------------------
+% PBC Compatibility
+% ------------------------------------------------------
+
+\newcommand*{\CompRefl}{\inferrule{
+            }{
+            A \pbccons A
+            }\rname{Comp-Refl}}
+
+\newcommand*{\CompUnknownR}{\inferrule{
+            }{
+            A \pbccons \unknown
+            }\rname{Comp-UnknownR}}
+
+\newcommand*{\CompUnknownL}{\inferrule{
+            }{
+            \unknown \pbccons A
+            }\rname{Comp-UnknownL}}
+
+\newcommand*{\CompArrow}{\inferrule{
+            A_1 \pbccons B_1
+         \\ A_2 \pbccons B_2
+            }{
+            A_1 \to A_2 \pbccons B_1 \to B_2
+            }\rname{Comp-Arrow}}
+
+\newcommand*{\CompAllR}{\inferrule{
+            A \pbccons B
+            }{
+            A \pbccons \forall X. B
+            }\rname{Comp-AllR}}
+
+\newcommand*{\CompAllL}{\inferrule{
+            A \subst X \star \pbccons B
+            }{
+            \forall X. A \pbccons B
+            }\rname{Comp-AllL}}
+
+% ------------------------------------------------------
+% EXTENSION
+% ------------------------------------------------------
+
+\newcommand*{\SubTop}{\inferrule{
+            A ~ static
+            }{
+            \dctx \bysub A \tsub \top
+            }\rname{S-Top}}
+
+\newcommand*{\CTop}{\inferrule{}{
+            \top \sim \top
+            }}
+
+\newcommand*{\CSTop}{\inferrule{
+            }{
+            \dctx \bysub A \tconssub \top
+            }\rname{CS-Top}}
+
+
+% ------------------------------------------------------
+% Well-formedess of type under declarative context
+% ------------------------------------------------------
+
+\newcommand*{\DeclVarWF}{\inferrule{
+              a \in \dctx
+            }{
+            \dctx \vdash a
+            }\rname{DeclVarWF}}
+
+\newcommand*{\DeclIntWF}{\inferrule{
+            }{
+            \dctx \vdash \nat
+            }\rname{DeclIntWF}}
+
+\newcommand*{\DeclUnknownWF}{\inferrule{
+            }{
+            \dctx \vdash \unknown
+            }\rname{DeclUnknownWF}}
+
+
+\newcommand*{\DeclFunWF}{\inferrule{
+              \dctx \vdash A \\ \dctx \vdash B
+            }{
+            \dctx \vdash A \to B
+            }\rname{DeclFunWF}}
+
+\newcommand*{\DeclForallWF}{\inferrule{
+              \dctx, a \vdash A
+            }{
+            \dctx \vdash \forall a. A
+            }\rname{DeclForallWF}}
+
+% ------------------------------------------------------
+% Well-formedess of type under algorithmic context
+% ------------------------------------------------------
+
+\newcommand*{\VarWF}{\inferrule{
+            }{
+            \Gamma[a] \vdash a
+            }\rname{VarWF}}
+
+\newcommand*{\IntWF}{\inferrule{
+            }{
+            \Gamma \vdash \nat
+            }\rname{IntWF}}
+
+\newcommand*{\UnknownWF}{\hlmath{\inferrule{
+            }{
+            \Gamma \vdash \unknown
+            }\rname{UnknownWF}}}
+
+\newcommand*{\FunWF}{\inferrule{
+              \Gamma \vdash A \\ \Gamma \vdash B
+            }{
+            \Gamma \vdash A \to B
+            }\rname{FunWF}}
+
+\newcommand*{\ForallWF}{\inferrule{
+              \Gamma, a \vdash A
+            }{
+            \Gamma \vdash \forall a. A
+            }\rname{ForallWF}}
+
+\newcommand*{\EVarWF}{\inferrule{
+            }{
+            \Gamma[\genA] \vdash \genA
+            }\rname{EVarWF}}
+
+\newcommand*{\SolvedEVarWF}{\inferrule{
+            }{
+            \Gamma[\genA = \tau] \vdash \genA
+            }\rname{SolvedEVarWF}}
+
+% ------------------------------------------------------
+% OBJECTS: SUBTYPING
+% ------------------------------------------------------
+
+\newcommand*{\ObSInt}{\inferrule{}
+            {
+            \nat \tsub \nat
+            }}
+
+\newcommand*{\ObSBool}{\inferrule{}
+            {
+            \bool \tsub \bool
+            }}
+
+\newcommand*{\ObSFloat}{\inferrule{}
+            {
+            \float \tsub \float
+            }}
+
+\newcommand*{\ObSIntFloat}{\inferrule{}
+            {
+            \nat \tsub \float
+            }}
+
+\newcommand*{\ObFun}{\inferrule{B_1 \tsub A_1 \\ A_2 \tsub B_2}
+            {
+            A_1 \to A_2 \tsub B_1 \to B_2
+            }}
+
+\newcommand*{\ObSUnknown}{\inferrule{}
+            {
+            \unknown \tsub \unknown
+            }}
+
+\newcommand*{\ObSRecord}{\inferrule{}
+            {
+            [l_i : A_i^{i \in 1...n+m}] \tsub
+            [l_i : A_i^{i \in 1...n}]
+            }}
+
+% ------------------------------------------------------
+% OBJECTS: CONSISTENCY
+% ------------------------------------------------------
+
+\newcommand*{\ObCRefl}{\inferrule{}
+            {
+            A \sim A
+            }}
+
+\newcommand*{\ObCUnknownR}{\inferrule{}
+            {
+            A \sim \unknown
+            }}
+
+\newcommand*{\ObCUnknownL}{\inferrule{}
+            {
+            \unknown \sim A
+            }}
+
+\newcommand*{\ObCC}{\inferrule{
+            A_1 \sim B_1
+         \\ A_2 \sim B_2
+            }{
+            A_1 \to A_2 \sim B_1 \to B_2
+            }}
+
+
+\newcommand*{\ObCRecord}{\inferrule{
+            A_i \sim B_i
+            }
+            {
+            [l_i: A_i] \sim [l_i:B_i]
+            }}

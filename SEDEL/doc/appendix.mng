@@ -1,0 +1,265 @@
+%%% !!! WARNING: AUTO GENERATED. DO NOT MODIFY !!! %%%
+
+
+\section{Full Type System of \name}
+
+
+\begin{small}
+\drules[WF]{$\Gamma  \vdash  \ottnt{A}$}{Well formedness}{top, int, arrow, record, var, and, forall, trait}
+
+\drules[Sub]{$\ottnt{A}  \ottsym{<:}  \ottnt{B}$}{Subtyping}{top, andR, int, andLOne, andLTwo, rec, var, arr, forall, trait}
+
+\drules[D]{$\Gamma  \vdash  \ottnt{A}  *  \ottnt{B}$}{Disjointness}{top, topSym, var, varSym, forall, rec, recn, arrow, andL, andR, trait, traitArrOne, traitArrTwo, ax}
+
+\drules[Dax]{$\ottnt{A}  *_{ax}  \ottnt{B}$}{Disjointness axiom}{sym, intArr, intRec, intForall, intTrait, arrForall, arrRec, traitForall, traitRec, forallRec}
+
+\drules[Inf]{$\Gamma  \vdash  \ottnt{E}  \Rightarrow  \ottnt{A}  \rightsquigarrow  \ottnt{e}$}{Infer}{top, int, var, anno, app, tapp, merge,rec, proj, blam, lete, trait, traitSuper,new,forward}
+
+\drules[Chk]{$ \Gamma   \vdash   \ottnt{E}   \Leftarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e} } $}{Check}{abs, sub}
+\end{small}
+
+
+
+\begin{definition}[Type translation]
+  \begin{align*}
+    | \alpha | &= \alpha \\
+    |  \mathsf{Int}  | &=  \mathsf{Int}  \\
+    |  \top  | &=  \top  \\
+    | \ottnt{A}  \rightarrow  \ottnt{B} | &= \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \rightarrow  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \\
+    | \ottnt{A}  \,\&\,  \ottnt{B} | &= \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \\
+    | \ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{A}  \ottsym{\}} | &= \ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \ottsym{\}} \\
+    | \forall \, \ottsym{(}  \alpha  *  \ottnt{A}  \ottsym{)}  .\,  \ottnt{B} | &= \forall \, \ottsym{(}  \alpha  *  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \ottsym{)}  .\,  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \\
+    | \ottkw{Trait} \, \ottsym{[}  \ottnt{A}  \ottsym{,}  \ottnt{B}  \ottsym{]} | &= \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \rightarrow  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}
+  \end{align*}
+\end{definition}
+
+
+\section{Metatheory}
+
+\begin{lemma} \label{lemma:wf}
+  If $\Gamma  \vdash  \ottnt{A}$ then $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \vdash  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}$.
+\end{lemma}
+\begin{proof}
+ By simple induction on the derivation of the judgement.
+\end{proof}
+
+\begin{lemma} \label{lemma:disa}
+  If $\ottnt{A}  *_{ax}  \ottnt{B}$ then $|A| *_{ax} |B|$.
+\end{lemma}
+\begin{proof}
+  Note that $|\ottkw{Trait} \, \ottsym{[}  \ottnt{A}  \ottsym{,}  \ottnt{B}  \ottsym{]}| = \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \rightarrow  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}$, the rest are immediate.
+\end{proof}
+
+
+
+\begin{lemma} \label{lemma:sub}
+  If $\ottnt{A}  \ottsym{<:}  \ottnt{B}$ then $\ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \ottsym{<:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}$.
+\end{lemma}
+\begin{proof}
+Most of them are just \bname subtyping. We only show \rref{Sub-trait}.
+\begin{itemize}
+\item \[    \drule{Sub-trait} \]
+  \begin{longtable}[l]{ll}
+    $|B_1| <: |A_1|$ & By i.h. \\
+    $|A_2| <: |B_2|$ & By i.h. \\
+    $|A_1| \rightarrow |A_2| <: |B_1| \rightarrow |B_2|$ & By \textsc{S$\rightarrow$}
+  \end{longtable}
+\end{itemize}
+\end{proof}
+
+
+
+\begin{lemma} \label{lemma:dis}
+  If $\Gamma  \vdash  \ottnt{A}  *  \ottnt{B}$ then $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \vdash  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  *  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}$.
+\end{lemma}
+\begin{proof}
+  By induction on the derivation of the judgement.
+  \begin{itemize}
+  \item \Rref{D-top,D-topSym, D-recn} are immediate.
+  \item \[ \drule{D-var} \]
+    \begin{longtable}[l]{ll}
+      $|A| <: |B|$ & By Lemma~\ref{lemma:sub} \\
+      $ \alpha   *   \ottnt{A}  \in  \Gamma $ & Given \\
+      $ \alpha   *   \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \in  \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}} $ & Above \\
+      $|\Gamma| \vdash \alpha * |B|$ & By \textsc{D$\alpha$}
+    \end{longtable}
+  \item \[ \drule{D-varSym} \]
+    \begin{longtable}[l]{ll}
+      $|A| <: |B|$ & By Lemma~\ref{lemma:sub} \\
+      $ \alpha   *   \ottnt{A}  \in  \Gamma $ & Given \\
+      $ \alpha   *   \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \in  \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}} $ & Above \\
+      $|\Gamma| \vdash |B| * \alpha$ & By \textsc{D$\alpha$Sym}
+    \end{longtable}
+  \item \[ \drule{D-forall}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma|, \alpha * \inter{|A_1|}{|A_2|} \vdash |B| * |C|$ & By i.h. \\
+      $|\Gamma| \vdash \for{(\alpha * |A_1|)}{B} * \for{(\alpha * |A_2|)}{C}$ & By \textsc{D$\forall$}
+    \end{longtable}
+  \item \[ \drule{D-rec}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A| * |B| $ & By i.h. \\
+      $|\Gamma| \vdash \recordType{l}{|A|} * \recordType{l}{|B|}$ & By \textsc{DRec$_=$}
+    \end{longtable}
+  \item \[ \drule{D-arrow}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A_2| * |B_2| $ & By i.h. \\
+      $|\Gamma| \vdash |A_1| \rightarrow |A_2| * |B_1| \rightarrow |B_2|$ & By \textsc{D$\rightarrow$}
+    \end{longtable}
+  \item \[  \drule{D-andL}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A_1| * |B|$ & By i.h. \\
+      $|\Gamma| \vdash |A_2| * |B|$ & By i.h. \\
+      $|\Gamma| \vdash \inter{|A_1|}{|A_2|} * |B|$ & By \textsc{D\&L}
+    \end{longtable}
+  \item \[ \drule{D-andR}   \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A| * |B_1|$ & By i.h. \\
+      $|\Gamma| \vdash |A| * |B_2|$ & By i.h. \\
+      $|\Gamma| \vdash |A| * \inter{|B_1|}{|B_2|}$ & By \textsc{D\&R}
+    \end{longtable}
+  \item \[ \drule{D-trait}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A_2| * |B_2|$ & By i.h. \\
+      $|\Gamma| \vdash |A_1| \rightarrow |A_2| * |B_1| \rightarrow |B_2|$ & By \textsc{D$\rightarrow$}
+    \end{longtable}
+  \item \[ \drule{D-traitArrOne}   \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A_2| * |B_2|$ & By i.h. \\
+      $|\Gamma| \vdash |A_1| \rightarrow |A_2| * |B_1| \rightarrow |B_2|$ & By \textsc{D$\rightarrow$}
+    \end{longtable}
+  \item \[ \drule{D-traitArrTwo}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A_2| * |B_2|$ & By i.h. \\
+      $|\Gamma| \vdash |A_1| \rightarrow |A_2| * |B_1| \rightarrow |B_2|$ & By \textsc{D$\rightarrow$}
+    \end{longtable}
+  \item \[  \drule{D-ax}  \]
+    \begin{longtable}[l]{ll}
+      $|A| *_{ax} |B|$ & By Lemma~\ref{lemma:disa} \\
+      $|\Gamma| \vdash |A| * |B|$ & By \textsc{DAx}
+    \end{longtable}
+  \end{itemize}
+\end{proof}
+
+
+
+\begin{theorem}[Type-safe translation] We have that:
+  \begin{itemize}
+  \item If $\Gamma  \vdash  \ottnt{E}  \Rightarrow  \ottnt{A}  \rightsquigarrow  \ottnt{e}$ then $ \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \vdash  \ottnt{e}  \Rightarrow  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}} $.
+  \item If $ \Gamma   \vdash   \ottnt{E}   \Leftarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e} } $ then $ \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \vdash  \ottnt{e}  \Leftarrow  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}} $.
+  \end{itemize}
+\end{theorem}
+\begin{proof}
+  By induction on the typing judgement.
+  \begin{itemize}
+  \item \Rref{Inf-top,Inf-int,Inf-var} are immediate.
+  \item \[ \drule{Inf-anno} \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e \Leftarrow |A|$ & By i.h. \\
+      $|\Gamma| \vdash e : |A| \Rightarrow |A|$ & By \rref*{TI-anno}
+    \end{longtable}
+  \item \[  \drule{Inf-app}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e_1 \Rightarrow |A_1| \rightarrow |A_2|$ & By i.h. \\
+      $|\Gamma| \vdash e_2 \Leftarrow |A_2| $ & By i.h. \\
+      $|\Gamma| \vdash \app{e_1}{e_2} \Rightarrow |A_2|$  & By \rref*{TI-app}
+    \end{longtable}
+  \item \[  \drule{Inf-tapp}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e \Rightarrow \for{(\alpha * |B|)}{|C|}$ & By i.h. \\
+      $|\Gamma| \vdash |A|$ & By Lemma~\ref{lemma:wf} \\
+      $|\Gamma| \vdash |A| * |B|$ & By Lemma~\ref{lemma:dis} \\
+      $|\Gamma| \vdash \tapp{e}{|A|} \Rightarrow [\alpha \mapsto |A|]|C|$ & By \rref*{TI-tapp}
+    \end{longtable}
+  \item \[  \drule{Inf-merge}   \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e_1 \Rightarrow |A|$ & By i.h. \\
+      $|\Gamma| \vdash e_2 \Rightarrow |B|$ & By i.h. \\
+      $|\Gamma| \vdash |A| * |B|$ & By Lemma~\ref{lemma:dis} \\
+      $|\Gamma| \vdash e_1 ,, e_2 \Rightarrow \inter{|A|}{|B|}$ & By \rref*{TI-merge}
+    \end{longtable}
+  \item \[   \drule{Inf-rec}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e \Rightarrow |A| $ & By i.h. \\
+      $|\Gamma| \vdash \recordCon{l}{e} \Rightarrow \recordType{l}{|A|}$ & By \rref*{TI-rec}
+    \end{longtable}
+  \item \[  \drule{Inf-proj}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e \Rightarrow \recordType{l}{|A|}$ & By i.h. \\
+      $|\Gamma| \vdash e.l \Rightarrow |A|$ & By \rref*{TI-proj}
+    \end{longtable}
+  \item \[  \drule{Inf-blam}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A|$ & By Lemma~\ref{lemma:wf} \\
+      $|\Gamma|, \alpha * |A| \vdash e \Rightarrow |B|$ & By i.h. \\
+      $|\Gamma| \vdash \blam{(\alpha * |A|)}{e} \Rightarrow \for{(\alpha * |A|)}{|B|}$ & By \rref*{TI-blam}
+    \end{longtable}
+  \item \[  \drule{Inf-lete}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma|, x : |A| \vdash e_1 \Leftarrow |A| $ & By i.h. \\
+      $|\Gamma|, x : |A| \vdash e_2 \Rightarrow |B| $ & By i.h. \\
+      $|\Gamma| \vdash \ottkw{letrec} \, \ottmv{x}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \ottsym{=}  \ottnt{e_{{\mathrm{1}}}} \, \ottkw{in} \, \ottnt{e_{{\mathrm{2}}}} \Rightarrow |B|$ & By \rref*{TI-lete}
+    \end{longtable}
+  \item \[  \drule{Inf-new}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e_i \Rightarrow |A_i| \rightarrow |B_i|$ & By i.h. \\
+      $|A| <: |A_i|$ & By Lemma~\ref{lemma:sub} \\
+      $|\Gamma| \vdash \ottsym{\mbox{$\mid$}}  \ottnt{B_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}}  \,\&\, \, .. \, \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{B_{\ottmv{n}}}  \ottsym{\mbox{$\mid$}}$ & By Lemma~\ref{lemma:dis} \\
+      $\ottsym{\mbox{$\mid$}}  \ottnt{B_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}}  \,\&\, \, .. \, \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{B_{\ottmv{n}}}  \ottsym{\mbox{$\mid$}} <: |A|$ & By Lemma~\ref{lemma:sub} \\
+      $|\Gamma|, \mathsf{self} : |A| \vdash \mathsf{self} \Rightarrow |A|$ & By \rref*{TI-var} \\
+      $|\Gamma|, \mathsf{self} : |A| \vdash \mathsf{self} \Leftarrow |A_i|$ & By \rref*{TC-sub} \\
+      $|\Gamma|, \mathsf{self} : |A| \vdash \,  \ottnt{e_{\ottmv{i}}} \, \mathsf{self} \Rightarrow |B_i|$ & By \rref*{TI-app} \\
+      $|\Gamma|, \mathsf{self} : |A| \vdash \ottsym{(}  \ottnt{e_{{\mathrm{1}}}} \, \mathsf{self}  \ottsym{)}  \,,,\, \, .. \, \,,,\,  \ottsym{(}  \ottnt{e_{\ottmv{n}}} \, \mathsf{self}  \ottsym{)} \Rightarrow \ottsym{\mbox{$\mid$}}  \ottnt{B_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}}  \,\&\, \, .. \, \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{B_{\ottmv{n}}}  \ottsym{\mbox{$\mid$}} $ & By \rref*{TI-merge} and above \\
+      $|\Gamma|, \mathsf{self} : |A| \vdash \ottsym{(}  \ottnt{e_{{\mathrm{1}}}} \, \mathsf{self}  \ottsym{)}  \,,,\, \, .. \, \,,,\,  \ottsym{(}  \ottnt{e_{\ottmv{n}}} \, \mathsf{self}  \ottsym{)} \Leftarrow |A| $ & By \rref*{TC-sub} \\
+      $|\Gamma| \vdash \ottkw{letrec} \, \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \ottsym{=}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}} \, \mathsf{self}  \ottsym{)}  \,,,\, \, .. \, \,,,\,  \ottsym{(}  \ottnt{e_{\ottmv{n}}} \, \mathsf{self}  \ottsym{)} \, \ottkw{in} \, \mathsf{self} \Rightarrow |A| $ & By \rref*{TI-lete}
+    \end{longtable}
+  \item \[  \drule{Inf-trait}   \]
+    \begin{longtable}[l]{ll}
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \vdash e_i \Rightarrow |B_i| \rightarrow |C_i|$ & By i.h. \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}  \vdash  \ottnt{e}  \Rightarrow  \ottsym{\mbox{$\mid$}}  \ottnt{C}  \ottsym{\mbox{$\mid$}}$ & By i.h. \\
+      $|B| <: |B_i|$ & By Lemma~\ref{lemma:sub} \\
+      $|\Gamma| \vdash \ottsym{\mbox{$\mid$}}  \ottnt{C_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}}  \,\&\, \, .. \, \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C_{\ottmv{n}}}  \ottsym{\mbox{$\mid$}}  \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C}  \ottsym{\mbox{$\mid$}}$ & By Lemma~\ref{lemma:wf} \\
+      $\ottsym{\mbox{$\mid$}}  \ottnt{C_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}}  \,\&\, \, .. \, \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C_{\ottmv{n}}}  \ottsym{\mbox{$\mid$}}  \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C}  \ottsym{\mbox{$\mid$}} <: |A|$ & By Lemma~\ref{lemma:sub} \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \vdash \mathsf{self} \Rightarrow |B|$ & By \rref*{TI-var} \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \vdash \mathsf{self} \Leftarrow |B_i|$ & By \rref*{TC-sub} \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \vdash \,  \ottnt{e_{\ottmv{i}}} \, \mathsf{self} \Rightarrow |C_i|$ & By \rref*{TI-app} \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \vdash \ottsym{(}  \ottnt{e_{{\mathrm{1}}}} \, \mathsf{self}  \ottsym{)}  \,,,\, \, .. \, \,,,\,  \ottsym{(}  \ottnt{e_{\ottmv{n}}} \, \mathsf{self}  \ottsym{)}  \,,,\,  \ottnt{e} \Rightarrow \ottsym{\mbox{$\mid$}}  \ottnt{C_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}}  \,\&\, \, .. \, \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C_{\ottmv{n}}}  \ottsym{\mbox{$\mid$}}  \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C}  \ottsym{\mbox{$\mid$}} $ & By \rref*{TI-merge} \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \vdash \ottsym{(}  \ottnt{e_{{\mathrm{1}}}} \, \mathsf{self}  \ottsym{)}  \,,,\, \, .. \, \,,,\,  \ottsym{(}  \ottnt{e_{\ottmv{n}}} \, \mathsf{self}  \ottsym{)}  \,,,\,  \ottnt{e} \Leftarrow |A| $ & By \rref*{TC-sub} \\
+      $|\Gamma| \vdash \lambda  \ottsym{(}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}  \ottsym{)}  .\,  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}} \, \mathsf{self}  \ottsym{)}  \,,,\, \, .. \, \,,,\,  \ottsym{(}  \ottnt{e_{\ottmv{n}}} \, \mathsf{self}  \ottsym{)}  \,,,\,  \ottnt{e} \Rightarrow \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}  \rightarrow  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}$ & By \rref*{TI-abs} (annotated lambda typing)
+    \end{longtable}
+  \item \[  \drule{Inf-traitSuper}   \]
+    \begin{longtable}[l]{ll}
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \vdash e_i \Rightarrow |B_i| \rightarrow |C_i|$ & By i.h. \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{super}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{C_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}}  \,\&\, \, .. \, \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C_{\ottmv{n}}}  \ottsym{\mbox{$\mid$}}  \vdash  \ottnt{e}  \Rightarrow  \ottsym{\mbox{$\mid$}}  \ottnt{C}  \ottsym{\mbox{$\mid$}}$ & By i.h. \\
+      $|B| <: |B_i|$ & By Lemma~\ref{lemma:sub} \\
+      $|\Gamma| \vdash \ottsym{\mbox{$\mid$}}  \ottnt{C_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}}  \,\&\, \, .. \, \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C_{\ottmv{n}}}  \ottsym{\mbox{$\mid$}}  \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C}  \ottsym{\mbox{$\mid$}}$ & By Lemma~\ref{lemma:wf} \\
+      $\ottsym{\mbox{$\mid$}}  \ottnt{C_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}}  \,\&\, \, .. \, \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C_{\ottmv{n}}}  \ottsym{\mbox{$\mid$}}  \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C}  \ottsym{\mbox{$\mid$}} <: |A|$ & By Lemma~\ref{lemma:sub} \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \vdash \mathsf{self} \Rightarrow |B|$ & By \rref*{TI-var} \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \vdash \mathsf{self} \Leftarrow |B_i|$ & By \rref*{TC-sub} \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \vdash \,  \ottnt{e_{\ottmv{i}}} \, \mathsf{self} \Rightarrow |C_i|$ & By \rref*{TI-app} \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \vdash \ottsym{(}  \ottnt{e_{{\mathrm{1}}}} \, \mathsf{self}  \ottsym{)}  \,,,\, \, .. \, \,,,\,  \ottsym{(}  \ottnt{e_{\ottmv{n}}} \, \mathsf{self}  \ottsym{)} \Rightarrow \ottsym{\mbox{$\mid$}}  \ottnt{C_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}}  \,\&\, \, .. \, \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C_{\ottmv{n}}}  \ottsym{\mbox{$\mid$}} $ & By \rref*{TI-merge} \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{super}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{C_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}}  \,\&\, \, .. \, \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C_{\ottmv{n}}}  \ottsym{\mbox{$\mid$}} \vdash \mathsf{super}  \,,,\,  \ottnt{e} \Rightarrow \ottsym{\mbox{$\mid$}}  \ottnt{C_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}}  \,\&\, \, .. \, \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C_{\ottmv{n}}}  \ottsym{\mbox{$\mid$}}  \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C}  \ottsym{\mbox{$\mid$}} $ & By \rref*{TI-merge} \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \vdash \ottkw{let} \, \mathsf{super}  \ottsym{=}  \ottcomplu{\ottsym{(}  \ottnt{e_{\ottmv{i}}} \, \mathsf{self}  \ottsym{)}}{\ottmv{i}}{{\mathrm{1}}}{..}{\ottmv{n}} \, \ottkw{in} \, \mathsf{super}  \,,,\,  \ottnt{e} \Rightarrow \ottsym{\mbox{$\mid$}}  \ottnt{C_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}}  \,\&\, \, .. \, \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C_{\ottmv{n}}}  \ottsym{\mbox{$\mid$}}  \,\&\,  \ottsym{\mbox{$\mid$}}  \ottnt{C}  \ottsym{\mbox{$\mid$}} $ & By \rref*{TI-let} (non-recursive let) \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \ottsym{,}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \vdash \ottkw{let} \, \mathsf{super}  \ottsym{=}  \ottcomplu{\ottsym{(}  \ottnt{e_{\ottmv{i}}} \, \mathsf{self}  \ottsym{)}}{\ottmv{i}}{{\mathrm{1}}}{..}{\ottmv{n}} \, \ottkw{in} \, \mathsf{super}  \,,,\,  \ottnt{e} \Leftarrow \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}} $ & By \rref*{TC-sub} \\
+      $|\Gamma| \vdash \lambda  \ottsym{(}  \mathsf{self}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}  \ottsym{)}  .\,  \ottkw{let} \, \mathsf{super}  \ottsym{=}  \ottcomplu{\ottsym{(}  \ottnt{e_{\ottmv{i}}} \, \mathsf{self}  \ottsym{)}}{\ottmv{i}}{{\mathrm{1}}}{..}{\ottmv{n}} \, \ottkw{in} \, \mathsf{super}  \,,,\,  \ottnt{e} \Rightarrow \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}  \rightarrow  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}$ & By \rref*{TI-abs} (annotated lambda typing)
+    \end{longtable}
+  \item \[ \drule{Inf-forward}    \]
+    \begin{longtable}[l]{ll}
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \vdash  \ottnt{e_{{\mathrm{1}}}}  \Rightarrow  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \rightarrow  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}$ & By i.h. \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \vdash  \ottnt{e_{{\mathrm{2}}}}  \Leftarrow  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}$ & By i.h. \\
+      $\ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \vdash  \ottnt{e_{{\mathrm{1}}}} \, \ottnt{e_{{\mathrm{2}}}}  \Rightarrow  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}$ & By \rref*{TI-app}
+    \end{longtable}
+  \item \drule{Chk-abs}
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A|$ & By Lemma~\ref{lemma:wf} \\
+      $|\Gamma|, x : |A| \vdash e \Leftarrow |B|$ & By i.h. \\
+      $|\Gamma| \vdash \lambda  \ottmv{x}  .\,  \ottnt{e} \Leftarrow |A| \rightarrow |B|$ & By \rref*{TC-abs}
+    \end{longtable}
+  \item \drule{Chk-sub}
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e \Rightarrow |A|$ & By i.h. \\
+      $|A| <: |B|$ & By Lemma~\ref{lemma:sub} \\
+      $|\Gamma| \vdash |B|$ & By Lemma~\ref{lemma:wf} \\
+      $|\Gamma| \vdash e \Leftarrow |B|$ & By \rref*{TC-sub}
+    \end{longtable}
+  \end{itemize}
+\end{proof}

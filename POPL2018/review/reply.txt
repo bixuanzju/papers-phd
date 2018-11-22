@@ -1,0 +1,204 @@
+We thank the reviewers for their comments.
+
+## Reviewer A
+
+> The language seems much weaker than it should be.
+
+We admit that our static type system is weaker than the original OL type system.
+
+We have acknowledged in the paper (Sect. 2.2) that we do not have
+let-generalization, and there is already prior work on gradual type system with
+let constructs, for example "Principal Type Schemes for Gradual Programs" by
+Garcia et al. We believe similar techniques can be applied here. Also, we
+emphasize that our work focuses more on the challenge of integrating implicit
+polymorphism with gradual typing, especially, consistent subtyping.
+
+Nevertheless, in our gradual type system,
+forall types can be introduced via annotations (see Fig 9 for sugar).
+We do apologise: we should have been clearer about this point.
+
+A typical example using forall types is shown below:
+
+```
+let id : forall a . a -> a = \x . x
+in id 3
+```
+which can be encoded in our system as follow:
+
+```
+let id = (\x . x) : (forall a . a -> a)
+in id 3
+
+==> (syntactic sugar of annotation, Fig 9)
+
+let id = (\f : (forall a . a -> a) . f) (\x . x)
+in id 3
+
+==> (syntactic sugar of let expression)
+
+(\id . id 3) ((\f :  forall a . a -> a. f) (\x . x))   --valid term in our lang 
+```
+
+The idea of "annotations via syntactic sugar" was borrowed from "Principal Type
+Schemes for Gradual Programs" (Sect. 2), but it's a fairly common idea.
+
+> in \textsc{ForallR} a bound type
+> variable on the right-hand side may be captured by type $A$
+
+The intention is to be capture-avoiding and we were assuming this in
+the paper. We will make this clear.
+Our Coq formalization satisfies this side condition explicitly,
+since generated variables are always fresh.
+
+Also, an expression such as `\x. x` is typed as `* -> *` instead of `X -> X`. And we
+have `* -> * <~ \forall X. X -> X`. (<~ is consistent subtyping)
+
+Moreover, another choice is to annotate the expression explicitly as `(\x. x) : \forall X. X
+-> X`, then we get `\forall X. X -> X <: \forall X. X -> X)`:
+
+```
+               ...
+------------------------------------
+    X |- X -> X <: X -> X
+   (we have capture-avoiding, but the binder is then instantiated with X)
+------------------------------------
+X |- forall X . X -> X <: X -> X
+---------------------------------------
+forall X . X -> X <: forall X . X -> X
+```
+
+
+> There are no examples of using gradual typing with both subtyping
+> and implicit higher-rank polymorphism, and so this work is not well
+> motivated.  Especially, it is not fully clarified why this work is
+> significant
+
+We acknowledge that we should have motivated our work better with examples. One of
+the motivations (briefly mentioned in last paragraph of Intro, before
+contributions) is to have Haskell-like languages with gradual typing. Haskell
+uses a (implicit) higher-rank type system.
+
+One program that we could write in our system but not in Haskell or existing
+gradual type systems is (assume having Char type)
+
+```
+\g : (forall a . a -> a -> a) . \f . g (f 1) (f 'c') ...
+```
+
+This is a typical example of a program that would be rejected in a higher-rank
+system (because f needs to be polymorphic, for example, `forall a. a -> Int`), and
+it is rejected in existing gradual type systems because there is no support for
+implicit polymorphism. However in our system, by having gradual typing, the
+program is accepted with possible type:
+
+```
+(forall a. a -> a -> a) -> (* -> *) -> ...
+```
+
+One could argue that our system enables us to try out programs with less precise
+types first, and later figure out the more precise higher-rank annotations. In
+short, by combining implicit higher-rank polymorphism and gradual typing,
+programmers can enjoy the benefits from both worlds.
+
+> I'd like to see deeper analysis why the introduction of higher-rank types in
+> the style of Odersky-L{\"{a}}ufer breaks Def. 1.
+
+The reason is explained in Section 3.2 and also through Fig 6. Def. 1 does
+not fully capture the idea that information can only be lost once, while it
+happens to work correctly in the setting of object subtyping. This
+coincidence is due to the fact that for object subtyping, doing one subtyping
+step first and then consistency is equivalent to first consistency and then
+subtyping, which is further due to the fact that object subtyping is
+structural. For *non-structural subtyping*, such as polymorphic subtyping, or
+the Top type (see Section 7.1), Def. 1 will not work.
+
+> Fig. 5(a) is not quite a counterexample.
+
+Sorry about that, we should have double-checked the counter-example. A correct
+counter-example is shown below:
+
+```
+                     ~
+bottom   ---------------------------  (* -> int) -> int
+  ^                                          ^
+  | <:                                       | <:
+  |                            ~             |
+(forall a. a -> int) -> int -------- (forall a. * -> int) -> int
+```
+
+
+> Fig. 13 in Section 5.2 shows algorithmic consistent subtyping rules, but they
+> are not syntax-directed
+
+We should have been clearer that the order doesn't matter for the algorithmic
+rules. This is the same as the DK system for example (see Fig. 9 in their paper). In
+practice though, one can apply `ACS-ForallR` eagerly.
+
+
+
+## Reviewer B
+
+We agree that some of our claims are too strong. The reviewers pointed out a few
+of those, such as the criticism of AGT, and we will revise the paper to weaken
+our claims.
+
+> ...except for the dynamic gradual guarantee. This is an important omission that
+> should be mentioned
+
+We agree that we should have been clearer here that whether the dynamic gradual
+guarantee holds in our system in not known. As the reviewer pointed out, whether
+the dynamic gradual guarantee holds in PBC is still unknown. According to
+Igarashi (2017) (where they have System Fc which is similar to PBC), the
+difficulty lies in the definition of term precision that preserves the
+semantics.
+
+
+## Reviewer C
+
+
+> Results seem incremental? 
+
+The reviewer seems to think our work is an improvement over PBC, but this is not
+the case. Our work is on a *source language* that elaborates to PBC
+(which is the target/core language). PBC has explicit casts and
+explicit polymorphism, whereas our language has implicit casts and
+implicit polymorphism. There's an analogy here with Haskell and System F:
+
+| Source Language                        |               | Core Language                     |
+|----------------------------------------|---------------|-----------------------------------|
+| Haskell  (implicit polymorphism)       | elaborates to | System F (explicit polymorphism)  |
+| Our work (implicit polymorphism/casts) | elaborates to | PBC (explicit polymorphism/casts) |
+
+To illustrate the difference in a concrete example, here is a program
+that can be written in our language and its corresponding PBC counterpart.
+
+```
+\f . (f 1, f 'c')                                                                              -- in our lang
+\f . ( (< * ~~> * -> *> f) (<Int ~~> *> 1) ,  (< * ~~> * -> *> f) (<Char ~~> *> 'c') )         -- in PBC
+```
+
+So, our language removes a lot of typing details that are necessary in
+a low-level core language like PBC.
+
+While elaborating to PBC, our system is able to catch some errors statically
+which PBC rejects during evaluation.
+
+> Unclear what is the bigger motivation for this work? 
+
+To continue on the previous response one of our motivations is to
+design a gradually typed *source* languages that support higher-ranked types (PBC isn't
+a source language). Please refer to our reply to Reviewer A as well. 
+Also, we aim at providing a general treatment of unknowns in designing
+the consistent subtyping relation.
+
+> the orthogonal design does not automatically provide a recipe on how to
+> integrate a new feature?
+
+Def 2. is a general non-deterministic definition for integrating a new feature.
+
+For the deterministic version, we do have the analysis in Section 3.3, and
+provide a recipe as mentioned in pp. 11 first paragraph: essentially taking a
+subtyping relation and adding two rules `CS-UnknownL` and `CS-UnknownR`.
+
+However, as reviewer B mentioned, it remains as a conjecture whether it works
+for all new features.

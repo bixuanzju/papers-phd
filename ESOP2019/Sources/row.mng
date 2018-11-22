@@ -1,0 +1,472 @@
+%%% !!! WARNING: AUTO GENERATED. DO NOT MODIFY !!! %%%
+\renewcommand{\rulehl}[2][gray!40]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+
+
+\section{Taming Row Polymorphism}
+
+In this section we show how to systematically translate
+\rname~\cite{Harper:1991:RCB:99583.99603}---a polymorphic record calculus---into
+\fnamee. The translation itself is interesting in two regards: first, it shows
+that disjoint polymorphism can simulate row polymorphism; second, it also
+reveals a significant difference of expressiveness between disjoint polymorphism
+and row polymorphism---in particular, we point out that row polymorphism alone
+is impossible to encode nested composition, which is crucial for applications of
+extensible designs. We first review the syntax and semantics of
+\rname. We then discuss a seemingly correct translation that failed to
+faithfully convey the essence of row polymorphism. By a careful comparison of
+the two calculi, we present a type-directed translation,
+and prove that the translation is type safe, i.e., well-typed \rname terms map
+to well-typed \fnamee terms.
+\bruno{besides nested composition, the other advantage of disjoint
+  polymorphism is subtyping. Row polymorphism usually does not support
+subtyping, so you cannnot write a function f : \{x : Int\} $\to$ Int and
+type-check the following application: f \{x=2,y=3\}. With row
+polymorphism you must generalize the type of f, and make the interface
+of the function more complicated.}
+\jeremy{I don't think this is entirely true for row polymorphism in general. Some row systems do have subtyping (see Harper's paper).
+  As argued by Harper, it was their design choice to not have subsumption (or subtyping) in the first place,
+  in order to have a simpler system. Also with row type inference, you don't actually need to write complicated types for this example.}
+
+% In the process, we identified one broken lemma of \rname due to the design of type equivalence, which is remedied in our presentation.
+
+
+\subsection{Syntax of \rname}
+
+\begin{figure}[t]
+  \centering
+\begin{tabular}{llll} \toprule
+  Types & $t$ & $\Coloneqq$ & $ \mathsf{Int}  \mid t_{{\mathrm{1}}}  \rightarrow  t_{{\mathrm{2}}} \mid  \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottnt{R}   .\, t  \mid \ottnt{r}$\\
+  Records & $\ottnt{r}$ & $\Coloneqq$ & $\ottmv{a} \mid  \mathsf{Empty}  \mid \ottsym{\{}  \ottmv{l}  \ottsym{:}  t  \ottsym{\}}  \mid  \ottnt{r_{{\mathrm{1}}}}  \ || \  \ottnt{r_{{\mathrm{2}}}}  $ \qquad   Constraint lists $\ottnt{R} \Coloneqq  \diamond  \mid \ottnt{r}  \ottsym{,}  \ottnt{R} $ \\
+  Terms & $e$ & $\Coloneqq$ & $\ottmv{x} \mid  \lambda   \ottmv{x}  :  t   .\, e  \mid e_{{\mathrm{1}}} \, e_{{\mathrm{2}}} \mid  \mathsf{empty}  \mid \ottsym{\{}  \ottmv{l}  \ottsym{=}  e  \ottsym{\}} \mid  e_{{\mathrm{1}}}  \ || \  e_{{\mathrm{2}}}  \mid  e  \setminus  \ottmv{l}   \mid e  \ottsym{.}  \ottmv{l} $ \\
+        & & & $ \mid  \Lambda   \ottmv{a}  \,  \ottsym{\#}  \,  \ottnt{R}   .\, e  \mid e  \ottsym{[}  \ottnt{r}  \ottsym{]}$ \\
+  Term contexts & $G$ & $\Coloneqq$ &  $ \diamond  \mid G  \ottsym{,}  \ottmv{x}  \ottsym{:}  t $ \qquad Type contexts $T \Coloneqq  \diamond  \mid  T  ,  \ottmv{a}  \,  \ottsym{\#}  \,  \ottnt{R}  $ \\ \bottomrule
+\end{tabular}
+  \caption{Syntax of \rname}
+  \label{fig:syntax:record}
+\end{figure}
+
+We start by briefly reviewing the syntax of \rname, shown in \cref{fig:syntax:record}.
+
+\paragraph{Types.}
+
+Metavariable $t$ ranges over types, which include integer types
+$ \mathsf{Int} $, function types $t_{{\mathrm{1}}}  \rightarrow  t_{{\mathrm{2}}}$, constrained quantification $ \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottnt{R}   .\, t $
+and record types $\ottnt{r}$. The record types are built from record type
+variables $\ottmv{a}$, empty record $ \mathsf{Empty} $, single-field record types $\ottsym{\{}  \ottmv{l}  \ottsym{:}  t  \ottsym{\}}$
+and record merges $ \ottnt{r_{{\mathrm{1}}}}  \ || \  \ottnt{r_{{\mathrm{2}}}} $.\footnote{The original \rname also include record
+  type restrictions $ \ottnt{r}  \setminus  \ottmv{l} $, which, as they later proved, can be systematically
+  erased using type equivalence, thus we omit type-level restrictions but keep term-level restrictions.}
+A constraint list $\ottnt{R}$ is a list of record types, used to constrain instantiations of record type variables.
+% , and plays
+% an important role in the calculus, as we will explain shortly.
+
+\paragraph{Terms.}
+
+Metavariable $e$ ranges over terms, which include term
+variables $\ottmv{x}$, lambda abstractions $ \lambda   \ottmv{x}  :  t   .\, e $, function applications $e_{{\mathrm{1}}} \, e_{{\mathrm{2}}}$, empty records $ \mathsf{empty} $,
+single-filed records $\ottsym{\{}  \ottmv{l}  \ottsym{=}  e  \ottsym{\}}$, record merges $ e_{{\mathrm{1}}}  \ || \  e_{{\mathrm{2}}} $, record restrictions $ e  \setminus  \ottmv{l} $, record projections $e  \ottsym{.}  \ottmv{l}$,
+type abstractions $ \Lambda   \ottmv{a}  \,  \ottsym{\#}  \,  \ottnt{R}   .\, e $ and type applications $e  \ottsym{[}  \ottnt{r}  \ottsym{]}$.
+As a side note, from the syntax of type applications $e  \ottsym{[}  \ottnt{r}  \ottsym{]}$, it already can be seen that \rname only supports
+quantification over \emph{record types}.
+% ---though a separate form of quantifier that quantifies over \emph{all types}.
+% can be added, Harper and Pierce decided to have only one form of quantifier for the sake of simplicity.
+
+% \paragraph{An example.}
+
+% Before proceeding to the formal semantics, let us first see some examples that
+% can be written in \rname, which may be of help in understanding the overall
+% system better.
+\paragraph{An example.}
+
+When it comes to extension, every record calculus must decide what to do with
+duplicate labels. According to Leijen~\cite{leijen2005extensible}, record calculi can
+be divided into those that support \emph{free} extension, and those that support
+\emph{strict} extension. The former allows duplicate labels to coexist, whereas
+the latter does not. In that sense, \rname belongs to the strict camp. What sets
+\rname apart from other strict record calculi is its ability to merge records
+with statically unknown fields, and a mechanism to ensure the resulting record
+is conflict-free (i.e., no duplicate labels). For example, the following
+function merges two records:
+\[
+  \mathsf{mergeRcd} =   \Lambda   \ottmv{a_{{\mathrm{1}}}}  \,  \ottsym{\#}  \,   \mathsf{Empty}    .\,  \Lambda   \ottmv{a_{{\mathrm{2}}}}  \,  \ottsym{\#}  \,  \ottmv{a_{{\mathrm{1}}}}   .\,  \lambda   \ottmv{x_{{\mathrm{1}}}}  :  \ottmv{a_{{\mathrm{1}}}}   .\,  \lambda   \ottmv{x_{{\mathrm{2}}}}  :  \ottmv{a_{{\mathrm{2}}}}   .\, \ottmv{x_{{\mathrm{1}}}}      \ || \  \ottmv{x_{{\mathrm{2}}}} 
+\]
+which takes two type variables: the first one has no constraint
+($ \mathsf{Empty} $) at all and the second one has only one constraint ($\ottmv{a_{{\mathrm{1}}}}$). It
+may come as no surprise that $\mathsf{mergeRcd}$ can take any record type as its
+first argument, but the second type must be \emph{compatible} with the first. In
+other words, the second record cannot have any labels that already exist in the
+first. These constraints are enough to ensure that the resulting record $ \ottmv{x_{{\mathrm{1}}}}  \ || \  \ottmv{x_{{\mathrm{2}}}} $ has no duplicate labels. If later we want to say that the first record
+$\ottmv{x_{{\mathrm{1}}}}$ has \emph{at least} a field $\ottmv{l_{{\mathrm{1}}}}$ of type $ \mathsf{Int} $, we can refine
+the constraint list of $\ottmv{a_{{\mathrm{1}}}}$ and the type of $\ottmv{x_{{\mathrm{1}}}}$ accordingly:
+\[
+    \Lambda   \ottmv{a_{{\mathrm{1}}}}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l_{{\mathrm{1}}}}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}   .\,  \Lambda   \ottmv{a_{{\mathrm{2}}}}  \,  \ottsym{\#}  \,  \ottmv{a_{{\mathrm{1}}}}   .\,  \lambda   \ottmv{x_{{\mathrm{1}}}}  :   \ottmv{a_{{\mathrm{1}}}}  \ || \  \ottsym{\{}  \ottmv{l_{{\mathrm{1}}}}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}    .\,  \lambda   \ottmv{x_{{\mathrm{2}}}}  :  \ottmv{a_{{\mathrm{2}}}}   .\, \ottmv{x_{{\mathrm{1}}}}      \ || \  \ottmv{x_{{\mathrm{2}}}} 
+\]
+The above examples suggest an important point: the form of constraint used in
+\rname can only express \emph{negative} information about record type variables.
+Nonetheless, with the help of the merge operator, positive information can be
+encoded as merges of record type variables, e.g., the assigned type of $\ottmv{x_{{\mathrm{1}}}}$
+illustrates that the missing field $\ottsym{\{}  \ottmv{l_{{\mathrm{1}}}}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}$ is merged back into
+$\ottmv{a_{{\mathrm{1}}}}$.
+
+The acute reader may have noticed some correspondences between \rname and
+\fnamee: for instance, $ \Lambda   \ottmv{a}  \,  \ottsym{\#}  \,  \ottnt{R}   .\, e $ vs. $ \Lambda (  \alpha   *   \ottnt{A}  ) .\, \mathit{E} $,
+and $ \ottmv{x_{{\mathrm{1}}}}  \ || \  \ottmv{x_{{\mathrm{2}}}} $ vs.  $ \ottmv{x_{{\mathrm{1}}}}  \, ,, \,  \ottmv{x_{{\mathrm{2}}}} $. Indeed, the very
+function can be written in \fnamee almost verbatim:
+\[
+  \mathsf{mergeAny} =   \Lambda (  \ottmv{a_{{\mathrm{1}}}}   *   \top  ) .\,  \Lambda (  \ottmv{a_{{\mathrm{2}}}}   *   \ottmv{a_{{\mathrm{1}}}}  ) .\,  \lambda \ottmv{x_{{\mathrm{1}}}}  :  \ottmv{a_{{\mathrm{1}}}}  .\,  \lambda \ottmv{x_{{\mathrm{2}}}}  :  \ottmv{a_{{\mathrm{2}}}}  .\, \ottmv{x_{{\mathrm{1}}}}      \, ,, \,  \ottmv{x_{{\mathrm{2}}}} 
+\]
+However, as the name suggests, $\mathsf{mergeAny}$ works for \emph{any} two types,
+not just record types.
+
+\subsection{Typing Rules of \rname}
+\label{sec:typing_rname}
+
+% \jeremy{We may only want to show selected rules. }
+
+The type system of \rname consists of several conventional judgments. The
+complete set of rules appear in \cref{appendix:rname}.
+\Cref{fig:rname_well_formed} presents the well-formedness rules for record
+types. % Most cases are quite standard.
+A merge $ \ottnt{r_{{\mathrm{1}}}}  \ || \  \ottnt{r_{{\mathrm{2}}}} $ is well-formed in
+$T$ if $\ottnt{r_{{\mathrm{1}}}}$ and $\ottnt{r_{{\mathrm{2}}}}$ are well-formed, and moreover,
+$\ottnt{r_{{\mathrm{1}}}}$ and $\ottnt{r_{{\mathrm{2}}}}$ are compatible in $T$ (\rref{wfr-Merge})---the most
+important judgment in \rname, as we will explain next.
+
+\begin{figure}[t]
+  \centering
+% \drules[wftc]{$ T  \ \mathsf{ok} $}{Well-formed type contexts}{Empty, Tvar}
+
+% \drules[wfc]{$ T   \vdash   G  \ \mathsf{ok} $}{Well-formed term contexts}{Empty, Var}
+
+% \drules[wfrt]{$ T   \vdash   t  \ \mathsf{type} $}{Well-formed types}{Prim, Arrow, All, Rec}
+
+\drules[wfr]{$ T   \vdash   \ottnt{r}  \ \mathsf{record} $}{Well-formed record types}{Var, Merge}
+
+% \drules[wfcl]{$ T   \vdash   \ottnt{R}  \ \mathsf{ok} $}{Well-formed constraint lists}{Nil, Cons}
+  \caption{Selected rules for well-formedness of record types}
+  \label{fig:rname_well_formed}
+\end{figure}
+
+
+
+\paragraph{Compatibility.}
+
+The compatibility relation in \cref{fig:compatible} plays a central role in \rname. It is the underlying
+mechanism of deciding when merging two records is ``sensible''. Informally,
+$ T   \vdash   \ottnt{r_{{\mathrm{1}}}}  \, \# \,  \ottnt{r_{{\mathrm{2}}}} $ holds if $\ottnt{r_{{\mathrm{1}}}}$ and $\ottnt{r_{{\mathrm{2}}}}$ are mergeable, that is,
+$\ottnt{r_{{\mathrm{1}}}}$ lacks every field contained in $\ottnt{r_{{\mathrm{2}}}}$ and vice versa.
+Compatibility is
+symmetric (\rref{cmp-Symm}) and respects type equivalence (\rref{cmp-Eq}).
+\Rref{cmp-Base} says that if a record is compatible with a single-field record
+$\ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{t}  \ottsym{\}}$, it is also compatible with every record $\ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{t'}  \ottsym{\}}$. A type variable is compatible
+with the records in its constraint list (\rref{cmp-Tvar}). Two single-field
+records are compatible if they have different labels (\rref{cmp-BaseBase}). The
+rest are self-explanatory.
+
+% and we refer the reader to their paper for further explanations.
+
+% The judgment of constraint list satisfaction $ T   \vdash   \ottnt{r}  \, \# \,  \ottnt{R} $
+% ensures that $\ottnt{r}$ must be compatible with every record in the constraint list $\ottnt{R}$.
+% With the compatibility rules, let us go back to the definition of $\mathsf{mergeRcd}$
+% and see why it can type check, i.e.,  why $\ottmv{a_{{\mathrm{1}}}}$ and $\ottmv{a_{{\mathrm{2}}}}$ are compatible---because
+% $\ottmv{a_{{\mathrm{1}}}}$ is in the constraint list of $\ottmv{a_{{\mathrm{2}}}}$, and by \rref{cmp-Tvar}, they are compatible.
+
+
+\begin{figure}[t]
+  \centering
+\drules[cmp]{$ T   \vdash   \ottnt{r_{{\mathrm{1}}}}  \, \# \,  \ottnt{r_{{\mathrm{2}}}} $}{Compatibility}{Eq, Symm, Base, Tvar, MergeE,Empty,MergeI,BaseBase}
+% \drules[cmpList]{$ T   \vdash   \ottnt{r}  \, \# \,  \ottnt{R} $}{Constraint list satisfaction}{Nil, Cons}
+\caption{Compatibility}
+\label{fig:compatible}
+
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+\drules[teq]{$t_{{\mathrm{1}}}  \sim  t_{{\mathrm{2}}}$}{Type equivalence}{MergeUnit,MergeAssoc,MergeComm,CongAll}
+\drules[ceq]{$\ottnt{R_{{\mathrm{1}}}}  \sim  \ottnt{R_{{\mathrm{2}}}}$}{Constraint list equivalence}{Swap,Empty,Merge,Dupl,Base}
+\caption{Selected type equivalence rules}
+\label{fig:type_equivalence}
+\end{figure}
+
+\paragraph{Type equivalence.}
+
+Unlike \fnamee, \rname does not have subtyping. Instead, \rname uses type
+equivalence to convert terms of one type to another. A selection of the rules
+defining equivalence of types and constraint lists appears in
+\cref{fig:type_equivalence}. The relation $t_{{\mathrm{1}}}  \sim  t_{{\mathrm{2}}}$ is an
+equivalence relation, and is a congruence with respect to the type constructors.
+Finally merge is associative (\rref{teq-MergeAssoc}), commutative
+(\rref{teq-MergeComm}), and has $ \mathsf{Empty} $ as its unit (\rref{teq-MergeUnit}).
+As a consequence, records are identified up to permutations. Since the
+quantifier in \rname is constrained, the equivalence of constrained
+quantification (\rref{teq-CongAll}) relies on the equivalence of constraint
+lists $\ottnt{R_{{\mathrm{1}}}}  \sim  \ottnt{R_{{\mathrm{2}}}}$. Again, it is an equivalence relation, and respects
+type equivalence. Constraint lists are essentially finite sets, so order and
+multiplicity of constraints are irrelevant (\rref{ceq-Swap,ceq-Dupl}). Merges of
+constraints can be ``flattened'' (\rref{ceq-Merge}), and occurences of
+$ \mathsf{Empty} $ may be eliminated (\rref{ceq-Empty}). The last rule \rref*{ceq-Base}
+is quite interesting: it says that the types of single-field records are
+ignored. The reason is that as far as compatibility is concerned, only labels
+matter, thus changing the types of records will not affect their compatibility
+relation. We will have more to say about this in \cref{sec:trouble}, in
+particular, this is the rule that forbids a simple translation.
+
+% \begin{remark}
+% \jeremy{If we have space trouble, we can delete this}
+%   The original rules of type equivalence~\cite{Harper:1991:RCB:99583.99603} do
+%   not have contexts (i.e.,  judgment of the form $t_{{\mathrm{1}}}  \sim  t_{{\mathrm{2}}}$). However this is incorrect, as it invalidates one of the key
+%   lemmas (Lemma 2.3.1.7) in their type system, which says that
+%     if $ T   \vdash   \ottnt{r_{{\mathrm{1}}}}  \, \# \,  \ottnt{r_{{\mathrm{2}}}} $, then $ T   \vdash   \ottnt{r_{{\mathrm{1}}}}  \ \mathsf{record} $ and $ T   \vdash   \ottnt{r_{{\mathrm{2}}}}  \ \mathsf{record} $.
+%   Consider two types $\ottsym{\{}  \ottmv{l_{{\mathrm{1}}}}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}$ and $\ottsym{\{}  \ottmv{l_{{\mathrm{2}}}}  \ottsym{:}   \forall   \ottmv{a}  \,  \ottsym{\#}  \,   \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  \ || \  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}    .\, \mathsf{Int}   \ottsym{\}}$.
+%   According to the original rules, they are compatible because
+%   \begin{inparaenum}[(1)]
+%   \item $\ottsym{\{}  \ottmv{l_{{\mathrm{1}}}}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  $ is compatible with $ \ottsym{\{}  \ottmv{l_{{\mathrm{2}}}}  \ottsym{:}   \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  \ottsym{,}  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}   .\, \mathsf{Int}   \ottsym{\}}$ by \rref{cmp-BaseBase};
+%   \item $ \ottsym{\{}  \ottmv{l_{{\mathrm{2}}}}  \ottsym{:}   \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  \ottsym{,}  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}   .\, \mathsf{Int}   \ottsym{\}}  \sim  \ottsym{\{}  \ottmv{l_{{\mathrm{2}}}}  \ottsym{:}   \forall   \ottmv{a}  \,  \ottsym{\#}  \,   \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  \ || \  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}    .\, \mathsf{Int}   \ottsym{\}}$.
+%   \end{inparaenum}
+%   Then it follows that $\ottsym{\{}  \ottmv{l_{{\mathrm{2}}}}  \ottsym{:}   \forall   \ottmv{a}  \,  \ottsym{\#}  \,   \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  \ || \  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}    .\, \mathsf{Int}   \ottsym{\}}$ is well-formed.
+%   However, this record type is not well-formed in any context because $ \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  \ || \  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}} $
+%   is not well-formed in any context. To fix this, we add context throughout type equivalence.
+%   % The culprit is \rref{ceq-Merge}---the well-formedness of $\ottnt{r_{{\mathrm{1}}}}  \ottsym{,}  \ottsym{(}  \ottnt{r_{{\mathrm{2}}}}  \ottsym{,}  \ottnt{R}  \ottsym{)}$
+%   % does not necessarily entail the well-formedness of $\ottsym{(}   \ottnt{r_{{\mathrm{1}}}}  \ || \  \ottnt{r_{{\mathrm{2}}}}   \ottsym{)}  \ottsym{,}  \ottnt{R}$, as
+%   % the latter also requires the compatibility of $\ottnt{r_{{\mathrm{1}}}}$ and $\ottnt{r_{{\mathrm{2}}}}$.
+%   % That is why we need to explicitly add contexts to type equivalence
+%   % so that $ \ottsym{\{}  \ottmv{l_{{\mathrm{2}}}}  \ottsym{:}   \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  \ottsym{,}  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}   .\, \mathsf{Int}   \ottsym{\}} $ and $\ottsym{\{}  \ottmv{l_{{\mathrm{2}}}}  \ottsym{:}   \forall   \ottmv{a}  \,  \ottsym{\#}  \,   \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  \ || \  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}    .\, \mathsf{Int}   \ottsym{\}}$
+%   % are not considered equivalent in the first place.
+% \end{remark}
+
+
+\paragraph{Typing rules.}
+
+A selection of typing rules are shown in \cref{fig:typing_rname}. At
+first reading, the gray parts can be ignored, which will be covered in
+\cref{sec:row_trans}. % Most of the typing rules are quite standard.
+% Typing is
+% invariant under type equivalence (\rref{wtt-Eq}).
+Two terms can be merged if their types are compatible (\rref{wtt-Merge}). Type
+application $e  \ottsym{[}  \ottnt{r}  \ottsym{]}$ is well-typed if the type argument $\ottnt{r}$
+satisfies the constraints $\ottnt{R}$ (\rref{wtt-AllE}).
+
+
+\begin{remark}
+  A few simplifications have been placed compared to the original \rname,
+  notably the typing of record selection (\rref{wtt-Select}) and restriction
+  (\rref{wtt-Restr}). In the original formulation, both typing rules need a
+  partial function $ r \_ l $ which means the type associated with label $\ottmv{l}$
+  in $\ottnt{r}$. Instead of using partial functions, here we explicitly expose the
+  expected label in a record. It can be shown that if label $\ottmv{l}$ is present
+  in record type $\ottnt{r}$, then the fields in $\ottnt{r}$ can be rearranged so that
+  $\ottmv{l}$ comes first by type equivalence. This formulation was also adopted by
+  Leijen~\cite{leijen2005extensible}.
+\end{remark}
+
+
+\begin{figure}[t]
+  \centering
+\drules[wtt]{$ T  ;  G    \vdash    e   :  t  \rulehl{ \rightsquigarrow   \mathit{E} } $}{Type-directed translation}{Base,Restr,Select,Empty,Merge,AllE,AllI}
+\caption{Selected typing rules with translations}
+\label{fig:typing_rname}
+\end{figure}
+
+
+
+\renewcommand{\rulehl}[1]{#1}
+
+\subsection{A Failed Attempt}
+\label{sec:trouble}
+
+In this section, we sketch out an intuitive translation scheme.
+On the syntactic level, it is pretty straightforward to see a one-to-one
+correspondence between \rname terms and \fnamee expressions. % For example,
+% constrained type abstractions $ \Lambda   \ottmv{a}  \,  \ottsym{\#}  \,  \ottnt{R}   .\, e $ correspond to \fnamee type
+% abstractions $ \Lambda (  \ottmv{a}   *   \ottnt{A}  ) .\, \mathit{E} $; record merges can be simulated by the more
+% general merge operator of \fnamee; record restriction can be modeled as annotate terms, and so on.
+On the semantic level, all well-formedness judgments of \rname have corresponding well-formedness judgments
+of \fnamee, given a ``suitable'' translation function $ \llbracket  t  \rrbracket $ from \rname types to \fnamee types
+Compatibility relation corresponds to disjointness relation. What might not be
+so obvious is that type equivalence can be expressed via subtyping. More
+specifically, $t_{{\mathrm{1}}}  \sim  t_{{\mathrm{2}}}$ induces mutual subtyping relations
+$ \llbracket  t_{{\mathrm{1}}}  \rrbracket   \ottsym{<:}   \llbracket  t_{{\mathrm{2}}}  \rrbracket $ and $ \llbracket  t_{{\mathrm{2}}}  \rrbracket   \ottsym{<:}   \llbracket  t_{{\mathrm{1}}}  \rrbracket $.
+Informally, type-safety of translation is something along the lines of
+``if a term has type $t$, then its translation has type $ \llbracket  t  \rrbracket $''.
+With all these in mind, let us consider two examples:
+
+\begin{example} \label{eg:1} %
+  Consider term $ \Lambda   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}   .\,  \lambda   \ottmv{x}  :  \ottmv{a}   .\, \ottmv{x}  $. It could be
+  assigned type (among others) $ \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}   .\, \ottmv{a}   \rightarrow  \ottmv{a}$, and its ``obvious'' translation
+  $ \Lambda (  \alpha   *   \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  ) .\,  \lambda \ottmv{x}  :  \alpha  .\, \ottmv{x}  $ has type $ \forall (  \alpha   *   \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  ) .\, \alpha   \rightarrow  \alpha$, which corresponds very well to
+  $ \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}   .\, \ottmv{a}   \rightarrow  \ottmv{a}$. The same term could also be assigned type $ \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}   .\, \ottmv{a}   \rightarrow  \ottmv{a}$, since
+  $ \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}   .\, \ottmv{a}   \rightarrow  \ottmv{a}$ is equivalent to $ \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}   .\, \ottmv{a}   \rightarrow  \ottmv{a}$ by \rref{teq-CongAll,ceq-Base}. However,
+  as far as \fnamee is concerned, these two types  have no relationship at all---$ \Lambda (  \alpha   *   \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  ) .\,  \lambda \ottmv{x}  :  \alpha  .\, \ottmv{x}  $
+  cannot have type $ \forall (  \alpha   *   \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}  ) .\, \alpha   \rightarrow  \alpha$, and indeed it should not, as these two types have completely different meanings!
+\end{example}
+
+\begin{remark}
+  Interestingly, the algorithmic system of \rname can only infer
+  type $ \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}   .\, \ottmv{a}   \rightarrow  \ottmv{a}$ for the aforementioned term.
+  To relate to the declarative system (in particular, to prove completeness of the algorithm),
+  they show that the type inferred by the algorithm is equivalent
+  (in the sense of type equivalence) to the assignable type in the declarative system.
+  Proving type-safety of translation is, in a sense, like proving completeness. So
+  maybe we should change the type-safety statement to
+  ``if a term has type $t$, then there exists type $t'$ such that $t  \sim  t'$ and the
+  translation has type $ \llbracket  t'  \rrbracket $''. As we shall see, this is still incorrect.
+\end{remark}
+
+\begin{example} \label{eg:2} %
+  Consider term $e =   \Lambda   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}   .\,  \lambda   \ottmv{x}  :  \ottmv{a}   .\,  \lambda   \ottmv{y}  :  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}   .\, \ottmv{x}     \ || \  \ottmv{y} $.
+  It has type $ \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}   .\, \ottmv{a}   \rightarrow  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  \rightarrow   \ottmv{a}  \ || \  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}} $, and
+  its ``obvious'' translation is $\mathit{E} =   \Lambda (  \alpha   *   \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}  ) .\,  \lambda \ottmv{x}  :  \alpha  .\,  \lambda \ottmv{y}  :  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  .\, \ottmv{x}     \, ,, \,  \ottmv{y} $.
+  However, expression $\mathit{E}$ is ill-typed in \fnamee
+  for the reasons of coherence: think about
+  the result of evaluating $\ottsym{(}  \mathit{E} \, \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}} \, \ottsym{\{}  \ottmv{l}  \ottsym{=}   1   \ottsym{\}} \, \ottsym{\{}  \ottmv{l}  \ottsym{=}   2   \ottsym{\}}  \ottsym{)}  \ottsym{.}  \ottmv{l}$---it could evaluate to $1$ or $2$!
+\end{example}
+
+\begin{remark}
+  Let us think about why \rname allows type-checking $e$. Unlike \fnamee,
+  the existence of $e$ in \rname will not cause incoherence because \rname
+  would reject type application $e  \ottsym{[}  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  \ottsym{]}$ in the first place---more
+  generally, $e$ can only be applied to records that do not contain label
+  $\ottmv{l}$ due to the stringency of the compatibility relation. This example
+  underlines a crucial difference between the compatibility relation and the
+  disjointness relation. The former can only relate records with different
+  labels, whereas the latter is more fine-grained in the sense that it can also
+  relate records with the same label (\rref{D-rcdEq}). Note that \rref{D-rcdEq}
+  is very important for the applications of extensible designs, as we need to
+  combine records with the same label, which is impossible to do in \rname.
+\end{remark}
+
+
+\paragraph{Taming \rname.}
+
+It seems to imply that \rname and \fnamee are incompatible in that there are
+some \rname programs that are not typable in \fnamee, and vice versa. A careful
+comparison between the two calculi reveals that \rref{cmp-Base,ceq-Base} are
+``to blame''. For \rname in general, these two rules are reasonable, as ``the
+relevant properties of a record, for the purposes of consistency checking, are
+its atomic components''~\cite{Harper:1991:RCB:99583.99603}. As far as
+compatibility is concerned, a constraint list is just a list of labels and type
+variables, whereas in \fnamee, disjointness constraints also care about record
+types. This subtle discrepancy tells that we should have a different treatment
+for those records that appear in a constraint list from those that appear
+elsewhere: we translate a single-field record $\ottsym{\{}  \ottmv{l}  \ottsym{:}  t  \ottsym{\}}$ in a constraint list to $\ottsym{\{}  \ottmv{l}  \ottsym{:}  \bot  \ottsym{\}}$. For \cref{eg:1}, both $ \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}   .\, \ottmv{a}   \rightarrow  \ottmv{a}$ and $ \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Bool}  \ottsym{\}}   .\, \ottmv{a}   \rightarrow  \ottmv{a}$ translate to $ \forall (  \alpha   *   \ottsym{\{}  \ottmv{l}  \ottsym{:}  \bot  \ottsym{\}}  ) .\, \alpha   \rightarrow  \alpha$. For \cref{eg:2}, $e$ is translated to
+$\mathit{E}' =   \Lambda (  \alpha   *   \ottsym{\{}  \ottmv{l}  \ottsym{:}  \bot  \ottsym{\}}  ) .\,  \lambda \ottmv{x}  :  \alpha  .\,  \lambda \ottmv{y}  :  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  .\, \ottmv{x}     \, ,, \,  \ottmv{y} $, which
+type checks in \fnamee. Moreover, $\mathit{E}' \, \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}$ gets rejected because
+$ \bot $ is not disjoint with $ \mathsf{Int} $.
+
+
+
+\subsection{Type-Directed Translation}
+\label{sec:row_trans}
+
+\begin{figure}[t]
+  \centering
+\begin{tabular}{rrlllrlll} \toprule
+  $ \llbracket  t  \rrbracket  \defeq \,$ & $ \llbracket   \mathsf{Int}   \rrbracket $ & $=$ &  $ \mathsf{Int} $ & $,$ & $ \llbracket  t_{{\mathrm{1}}}  \rightarrow  t_{{\mathrm{2}}}  \rrbracket $ & $=$ & $ \llbracket  t_{{\mathrm{1}}}  \rrbracket   \rightarrow   \llbracket  t_{{\mathrm{2}}}  \rrbracket $ & $,$  \\
+                       &$ \llbracket   \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottnt{R}   .\, t   \rrbracket $ & $=$ &  $ \forall (  \alpha   *    \llbracket  \ottnt{R}  \rrbracket   ) .\,  \forall (  \alpha_{\bot}   *    \llbracket  \ottnt{R}  \rrbracket   ) .\,  \llbracket  t  \rrbracket   $ & $,$ & & & & \\
+                       &$ \llbracket  \ottmv{a}  \rrbracket $ & $=$ &  $\alpha$ & $,$ & $ \llbracket   \mathsf{Empty}   \rrbracket $ & $=$ & $ \top  $ & $,$ \\
+                       &$ \llbracket  \ottsym{\{}  \ottmv{l}  \ottsym{:}  t  \ottsym{\}}  \rrbracket $ & $=$ &  $\ottsym{\{}  \ottmv{l}  \ottsym{:}   \llbracket  t  \rrbracket   \ottsym{\}}$ & $,$ & $ \llbracket   \ottnt{r_{{\mathrm{1}}}}  \ || \  \ottnt{r_{{\mathrm{2}}}}   \rrbracket $ & $=$ & $ \llbracket  \ottnt{r_{{\mathrm{1}}}}  \rrbracket   \, \& \,   \llbracket  \ottnt{r_{{\mathrm{2}}}}  \rrbracket  $ \\
+  $ \llbracket  \ottnt{r}  \rrbracket_{\bot}  \defeq\,$ & $ \llbracket  \ottmv{a}  \rrbracket_{\bot} $ & $=$ &  $\alpha_{\bot}$ & $,$ & $ \llbracket   \mathsf{Empty}   \rrbracket_{\bot} $ & $=$ & $ \top  $ & $,$  \\
+                       &$ \llbracket  \ottsym{\{}  \ottmv{l}  \ottsym{:}  t  \ottsym{\}}  \rrbracket_{\bot} $ & $=$ &  $\ottsym{\{}  \ottmv{l}  \ottsym{:}  \bot  \ottsym{\}}$ & $,$ & $ \llbracket   \ottnt{r_{{\mathrm{1}}}}  \ || \  \ottnt{r_{{\mathrm{2}}}}   \rrbracket_{\bot} $ & $=$ & $ \llbracket  \ottnt{r_{{\mathrm{1}}}}  \rrbracket_{\bot}   \, \& \,   \llbracket  \ottnt{r_{{\mathrm{2}}}}  \rrbracket_{\bot}  $ \\
+  $ \llbracket  \ottnt{R}  \rrbracket  \defeq \,$  &$ \llbracket  \diamond  \rrbracket $ & $=$ &  $ \top $ & $,$ & $ \llbracket  \ottnt{r}  \ottsym{,}  \ottnt{R}  \rrbracket $ & $=$ & $ \llbracket  \ottnt{r}  \rrbracket_{\bot}   \, \& \,   \llbracket  \ottnt{R}  \rrbracket  $ \\
+  $ \llbracket  T  \rrbracket  \defeq \,$ & $ \llbracket  \diamond  \rrbracket $ & $=$ &  $ \bullet $ & $,$ & $ \llbracket   T  ,  \ottmv{a}  \,  \ottsym{\#}  \,  \ottnt{R}   \rrbracket $ & $=$ & $ \llbracket  T  \rrbracket   \ottsym{,}  \alpha  *   \llbracket  \ottnt{R}  \rrbracket   \ottsym{,}  \alpha_{\bot}  *   \llbracket  \ottnt{R}  \rrbracket  $  \\
+  $ \llbracket  G  \rrbracket  \defeq \,$ & $ \llbracket  \diamond  \rrbracket $ & $=$ &  $ \bullet $ & $,$ & $ \llbracket  G  \ottsym{,}  \ottmv{x}  \ottsym{:}  t  \rrbracket $ & $=$ & $ \llbracket  G  \rrbracket   \ottsym{,}  \ottmv{x}  \ottsym{:}   \llbracket  t  \rrbracket  $ \\   \bottomrule
+\end{tabular}
+\caption{Translation functions}
+\label{fig:trans_func}
+\end{figure}
+
+
+
+
+Now we can give a formal account of the translation. But there is still a twist.
+Having two ways of translating records does not work out of the box. To see
+this, consider $ \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottmv{b}   .\, \ottmv{b} $, and note that a reasonably defined translation function
+should commute with substitution, i.e., $ \llbracket  \ottsym{[}  \ottnt{r}  \ottsym{/}  \ottmv{a}  \ottsym{]}  t  \rrbracket  =  [   \llbracket  \ottnt{r}  \rrbracket   /  \alpha  ]   \llbracket  t  \rrbracket   $.
+We have LHS:
+$$ \llbracket  \ottsym{[}  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  \ottsym{/}  \ottmv{b}  \ottsym{]}  \ottsym{(}   \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottmv{b}   .\, \ottmv{b}   \ottsym{)}  \rrbracket  =   \llbracket   \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}   .\, \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}   \rrbracket  =  \forall (  \alpha   *   \ottsym{\{}  \ottmv{l}  \ottsym{:}  \bot  \ottsym{\}}  ) .\, \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}   $$
+which is not the same as RHS:
+$$ [   \llbracket  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  \rrbracket   /  \beta  ]   \llbracket   \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottmv{b}   .\, \ottmv{b}   \rrbracket   =  [   \llbracket  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  \rrbracket   /  \beta  ]  \ottsym{(}   \forall (  \alpha   *   \beta  ) .\, \beta   \ottsym{)}  =  \forall (  \alpha   *   \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}  ) .\, \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Int}  \ottsym{\}}   $$
+The tricky part is that we should also distinguish those record type variables
+that appear in a constraint list from those that appear elsewhere. To do so, we
+map record type variable $\ottmv{a}$ to a pair of type variables $\alpha$ and
+$\alpha_{\bot}$, where $\alpha_{\bot}$ is supposed to be substituted by records with bottom
+types. More specifically, we define the translation functions as in
+\cref{fig:trans_func}. There are two ways of translating records: $ \llbracket  \ottnt{r}  \rrbracket $ for
+regular translation and $ \llbracket  \ottnt{r}  \rrbracket_{\bot} $ for bottom translation; the latter is
+used by $ \llbracket  \ottnt{R}  \rrbracket $ for translating constraint lists. The most interesting one
+is translating quantifiers: each quantifier $ \forall   \ottmv{a}  \,  \ottsym{\#}  \,  \ottnt{R}   .\, t $ in \rname is
+split into two quantifiers $ \forall (  \alpha   *    \llbracket  \ottnt{R}  \rrbracket   ) .\,  \forall (  \alpha_{\bot}   *    \llbracket  \ottnt{R}  \rrbracket   ) .\,  \llbracket  t  \rrbracket   $ in \fnamee.
+Correspondingly, each record type variable $\ottmv{a}$ is translated to either
+$\alpha$ or $\alpha_{\bot}$, depending on whether it appears in a constraint list or
+not. The relative order of $\alpha$ and $\alpha_{\bot}$ is not so much relevant, as long
+as we respect the order when translating type applications. Now let us go back
+to the gray parts in \cref{fig:typing_rname}. In the type application $e  \ottsym{[}  \ottnt{r}  \ottsym{]}$ (\rref{wtt-AllE}), we first translate $\ottnt{e}$ to $\mathit{E}$. The translation
+$\mathit{E}$ is then applied to two types $ \llbracket  \ottnt{r}  \rrbracket $ and $ \llbracket  \ottnt{r}  \rrbracket_{\bot} $, because as
+we mentioned earlier, $\mathit{E}$ has two quantifiers resulting from the
+translation. It is of great importance that the relative order of $ \llbracket  \ottnt{r}  \rrbracket $ and
+$ \llbracket  \ottnt{r}  \rrbracket_{\bot} $ should match the order of $\alpha$ and $\alpha_{\bot}$ in translating
+quantifiers. There is a ``protocol'' that we must keep during translation: if
+$\alpha$ is substituted by $ \llbracket  \ottnt{r}  \rrbracket $, then $\alpha_{\bot}$ is substitute by $ \llbracket  \ottnt{r}  \rrbracket_{\bot} $. In other words, we can safely assume $\alpha_{\bot}  \ottsym{<:}  \alpha$ because $ \llbracket  \ottnt{r}  \rrbracket_{\bot}   \ottsym{<:}   \llbracket  \ottnt{r}  \rrbracket $ always holds.
+Similarly, in \rref{wtt-AllI} we translate constrained type abstractions to disjointness type abstractions
+with two quantifiers, matching the translation of constrained quantification.
+The other rules are mostly straightforward translations. Finally we show that our translation function does commute with
+substitution, but in a slightly involved form:
+
+\begin{restatable}{lemma}{substrt} \label{lemma:subst_rt}
+  $ \llbracket  \ottsym{[}  \ottnt{r}  \ottsym{/}  \ottmv{a}  \ottsym{]}  t  \rrbracket $ = $  [   \llbracket  \ottnt{r}  \rrbracket_{\bot}   /  \alpha_{\bot}  ]   [   \llbracket  \ottnt{r}  \rrbracket   /  \alpha  ]   \llbracket  t  \rrbracket    $.
+\end{restatable}
+
+% With the modified \rname, we are now ready to explain the gray parts in \cref{fig:typing_rname}. First we
+% show how to translate \rname types to \fnamee types in
+% \cref{fig:type_trans_rname}. Most of them are straightforward. Record merges are
+% translated into intersection types, so are the constraint lists. Next we look at the
+% translations of terms. Most of the them are quite intuitive. In \rref{wtt-eq},
+% we put annotation $\texttt{\textcolor{red}{<<no parses (char 5):  \mbox{$\mid$} rt***' \mbox{$\mid$}  >>}}$ around the translation of $e$. Record
+% restrictions are translated to annotated terms (\rref{wtt-Restr}) since we
+% already know the type without label $\ottmv{l}$. Record merges are translated to
+% general merges (\rref{wtt-Merge}). The translation of record selections (\rref{wtt-Select}) is  a bit
+% complicated. Note that we cannot simply translate to $\mathit{E}  \ottsym{.}  \ottmv{l}$ because our
+% typing rule for record selections (\rref{T-proj}) only applies when $\mathit{E}$ is a
+% single-field record. Instead, we need to first transform $\mathit{E}$ to a
+% single-field record by annotation, and then project.
+
+% \begin{remark}
+%   The acute reader may have noticed that in \rref{wtt-AllE}, the translation type
+%   $| \ottnt{r} |$ could be a quantifier, but our rule of type applications
+%   (\rref{T-tapp}) only applies to monotypes. The reason is that, for the
+%   purposes of translation, we lift the monotype restrictions, which does not
+%   compromise type-safety of \fnamee.
+% \end{remark}
+
+\paragraph{Type-safety of translation.}
+
+With everything in place, we prove that our translation in
+\cref{fig:typing_rname} is type-safe. The main idea is to map each judgment in
+\rname to a corresponding judgment in \fnamee: well-formedness to
+well-formedness, compatibility to disjointness, type-equivalence to subtyping.
+The reader can refer to \cref{appendix:proofs} for detailed proofs. We
+show a key lemma that bridges the ``gap'' (i.e., \rref{cmp-Base}) between row and disjoint polymorphism.
+
+\begin{restatable}{lemma}{cmprcd} \label{lemma:cmp-rcd}
+  If $ T   \vdash   \ottnt{r}  \, \# \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  t  \ottsym{\}} $ then $ \llbracket  T  \rrbracket   \vdash   \llbracket  \ottnt{r}  \rrbracket   *  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{A}  \ottsym{\}} $ and $ \llbracket  T  \rrbracket   \vdash   \llbracket  \ottnt{r}  \rrbracket_{\bot}   *  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{A}  \ottsym{\}}$
+  for all $A$.
+\end{restatable}
+
+Finally here is the central type-safety theorem:
+
+\begin{restatable}{theorem}{typesafe}
+  If $ T  ;  G    \vdash    e   :  t  \rulehl{ \rightsquigarrow   \mathit{E} } $ then $ \llbracket  T  \rrbracket   \ottsym{;}   \llbracket  G  \rrbracket   \vdash  \mathit{E} \, \Rightarrow \,  \llbracket  t  \rrbracket $.
+\end{restatable}
+% \begin{proof}
+%   By induction on the typing derivation.
+% \end{proof}
+
+
+
+
+% Local Variables:
+% TeX-master: "../paper"
+% org-ref-default-bibliography: "../paper.bib"
+% End:

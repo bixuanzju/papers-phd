@@ -1,0 +1,410 @@
+\newcommand{\rulehl}[2][gray!40]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+
+\section{Formalizing Typed First-Class Traits}
+\label{sec:typesystem}
+
+This section presents the syntax and semantics of \name. In particular,
+we show how to elaborate high-level source language constructs (self-references, abstract methods, first-class traits, dynamic inheritance, etc)
+in \name to \bname~\cite{alpuimdisjoint}, a pure record calculus with disjoint
+polymorphism. The treatment of the self-reference and dynamic dispatching is
+inspired by Cook and Palsberg's work on the denotational semantics for
+inheritance~\cite{cook1989denotational}. We then prove the elaboration is type
+safe, i.e., well-typed \name expressions are translated to well-typed \bname
+terms. Finally we show that \name is coherent. Full proofs can be found in the appendix.
+
+\subsection{Syntax}
+
+\begin{figure}[t]
+\centering
+\begin{tabular}{lrcl}
+  Types  & $[[A]], [[B]], [[C]]$ & $\Coloneqq$ & $[[top]] \mid [[Int]] \mid [[A -> B]] \mid [[A & B]] \mid  [[{ l : A }]] \mid [[a]] \mid [[forall ( a ** A ) . B]] \mid \hlmath{[[ Trait[A,B] ]]}$ \\
+  Expressions & $[[E]]$ & $\Coloneqq$ & $[[top]] \mid [[ii]] \mid [[x]] \mid [[\ x . E]] \mid [[E1 E2]] \mid [[blam  (a ** A)  . E]] \mid [[E A]] \mid [[E1 ,, E2]] \mid [[E : A]] $ \\
+         & & $\mid$ & $[[{ l = E }]] \mid [[E . l]] \mid [[letrec x : A = E1 in E2]] \mid \hlmath{[[new [ A ] (</ Ei // i />) ]]} \mid \hlmath{[[E1 ^ E2]]} $ \\
+         & & $\mid$ & $\hlmath{[[ trait [ self : B ] inherits </ Ei // i /> { </ lj = Ej' // j /> } : A ]]}$ \\
+  Contexts & $[[G]]$ & $\Coloneqq$ & $[[empty]] \mid [[G , x : A]] \mid [[G , a ** A]]$ \\ \\
+\end{tabular}
+\begin{tabular}{llll}
+  Record types & $[[ { l1 : A1 , ... , ln : An } ]] $ & := & $[[ { l1 : A1} & ... & { ln : An } ]]$ \\
+  Records &  $[[ { l1 = E1 , ... , ln = En } ]] $ & := & $ [[ { l1 = E1 } ,, ... ,, { ln = En } ]]$
+\end{tabular}
+\caption{\name core syntax and syntactic abbreviations}
+\label{fig:sedel_syntax}
+\end{figure}
+
+The core syntax of \name is shown in \cref{fig:sedel_syntax}, with trait related
+constructs \hll{highlighted}. For brevity of the meta-theoretic study, we do not
+consider definitions, which can be added in standard ways.
+%We omit mutable fields and other practical
+%constructs in order to focus on the basic mechanisms of traits. The omitted
+%constructs can be added in standard ways~\cite{DBLP:books/daglib/0005958}.
+
+\subparagraph{Types.}
+Metavariables $[[A]]$, $[[B]]$, $[[C]]$ range over types. Types include a top
+type $[[top]]$, type of integers $[[Int]]$, function types $[[A -> B]]$, intersection types $[[A & B]]$,
+singleton record types $[[{l : A}]]$,  type variables $[[a]]$ and disjoint
+(universal) quantification $[[forall (a ** A) . B]]$. The main
+novelty is the type of first-class traits $[[ Trait[A, B] ]]$, which expresses
+the requirement $[[A]]$ and the functionality $[[B]]$. We will use $[[ [ A / a ] B ]]$
+to denote capture-avoiding substitution of $[[A]]$ for $[[a]]$ inside $[[B]]$.
+
+
+\subparagraph{Expressions.}
+Metavariable $[[E]]$ ranges over expressions. We start with constructs required
+to encode objects based on records: term variables $[[x]]$, lambda abstractions $[[\x. E]]$, function
+applications $[[E1 E2]]$, singleton records $[[{l = E}]]$, record projections
+$[[E.l]]$, recursive let bindings $[[letrec x : A = E1 in E2]]$, disjoint type
+abstraction $[[blam (a ** A) . E]]$ and type application $[[E A]]$.
+The calculus also supports a merge construct $[[E1 ,, E2]]$ for creating values of intersection
+types and annotated expressions $[[E : A]]$. We also include a canonical top
+value $[[top]]$ and integer literals $[[ii]]$.
+
+\subparagraph{First-class traits and trait expressions.}
+The central construct of \name is the trait
+expression%\footnote{The abstract syntax of trait expressions is slightly different from the concrete syntax.}
+$[[ trait [ self : B ] inherits </ Ei // i /> { </ lj = Ej' // j /> } : A]]$,
+which specifies a (possibly empty) list
+of trait expressions $\overline{[[Ei]]}$ in the \lstinline{inherits} clause, an explicit
+$[[self]]$ reference (with type annotation $[[B]]$), and a set of
+methods $\{ \overline{l_j = E'_j} \}$. Intuitively this trait expression has
+type $[[ Trait[B, A] ]]$. Unlike the conventional trait model, a trait
+expression denotes a first-class value: it may occur anywhere where an
+expression is expected. Trait instantiation expressions $[[new [ A ] (</ Ei // i />) ]]$
+instantiate a composition of trait expressions $\overline{[[Ei]]}$ to create an
+object of type $[[A]]$. Finally $[[E1 ^ E2]]$ is the forwarding expression,
+where $[[E1]]$ should be some trait.
+
+\subparagraph{Abbreviations.}
+For ease of programming, multiple-field record types are merely syntactic sugar
+for intersections of single-field record types. Similarly, multi-field record
+expressions are syntactic sugar for merges of single-field records.
+
+
+
+
+\subsection{Semantics}
+
+% \jeremy{How many rules should we show?}
+% The type system of \name is based on the bidirectional type system of \bname.
+% For succinctness, we only present
+% rules regrading traits. The full set of rules can be found in the appendix.
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.9,right=#1,#2]
+    {#3}
+    {#4}
+}
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+  \drules[Sub]{$[[ A <: B ]]$}{Subtyping}{arr, trait}
+  \drules[WF]{$[[ G |- A ]]$}{Well formedness}{and, trait}
+  \end{small}
+  \caption{Subtyping and well-formedness of \name (excerpt)}
+  \label{fig:typesystem}
+\end{figure}
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.9,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
+
+\subparagraph{Subtyping and Well-formedness.}
+\Cref{fig:typesystem} shows the most relevant subtyping and well-formedness
+rules for \name. Omitted rules are standard and can be found in previous
+work~\cite{alpuimdisjoint}. The
+subtyping rule for trait types (\rref{Sub-trait}) resembles the one for function
+types (\rref{Sub-arr}) in that it is contravariant on the first type $[[A]]$
+and covariant on the second type $[[B]]$. The well-formedness rule for trait
+types is straightforward.
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+  \drules[D]{$[[ G |- A ** B ]]$}{Disjointness}{top, topSym, var, varSym, forall, rec, recn, arrow, andL, andR, trait, traitArrOne, traitArrTwo, ax}
+  \drules[Dax]{$[[ A **a B ]]$}{Disjointness axiom}{intTrait, traitForall, traitRec}
+  \end{small}
+  \caption{Disjointness rules of \name (excerpt)}
+  \label{fig:disjoint}
+\end{figure}
+
+
+\subparagraph{Disjointness.}
+\Cref{fig:disjoint} shows the disjointness judgment $[[G |- A ** B]]$, which is
+used for example in \rref{WF-and}. The disjointness checking is the underlying
+mechanism of conflict detection. We naturally extend the disjointness rules in
+\bname to cover trait types. We refer to
+their paper~\cite{alpuimdisjoint} for further explanation. Here we discuss
+the rules
+related with traits. \Rref{D-trait} says that as long as the functionalities
+that two traits provide are disjoint, the two trait types are disjoint.
+\Rref{D-traitArr1,D-traitArr2} deal with situations where one of the two types
+is a function type. At first glance, these two look strange because a trait type is
+\textit{different} from a function type, and they ought to be disjoint as an axiom. The reason
+is that \name has an elaboration semantics, and as we will see, trait types are translated to function
+types. In order to ensure the elaboration is type-safe, we have to have special treatment for trait
+and function types. In principle, if \name has its own semantics, then trait types are always disjoint
+to function types. The axiom rules of the form $[[ A **a B ]]$ take care of two types with different language constructs.
+% These rules capture the notion that any two types are disjoint unless one of
+% them is an intersection types, a type variable or $[[top]]$.
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.9,right=#1,#2]
+    {#3}
+    {#4}
+}
+
+\renewcommand{\rulehl}[1]{}
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+  \drules[Inf]{$[[ G  |- E => A ~~> e]]$}{Infer}{trait,forward,new}
+  \end{small}
+  \caption{Typing of \name (excerpt)}
+  \label{fig:type}
+\end{figure}
+
+\subparagraph{Typing Traits.}
+The typing rules of trait related constructs are shown in \cref{fig:type}. The full set of rules can be found in the appendix.
+The reader is advised to ignore the \hll{highlighted} parts for now.
+% As with conventional bidirectional type systems,
+\name employs two modes: the inference mode
+($[[=>]]$) and the checking mode ($[[<=]]$). The inference judgment $[[ G |- E => A]]$
+says that we can synthesize a type $A$ for expression $E$ in the context
+$[[G]]$. The checking judgment $[[G |- E <= A]]$ checks $[[E]]$ against $[[A]]$
+in the context $[[G]]$. One representative of inference rules is
+\begin{small}
+\begin{mathpar}
+ \drule{Inf-merge}
+\end{mathpar}
+\end{small}
+which says that a merge of two expressions is valid only if their types are disjoint. This is the underlying
+mechanism for conflict detection. One representative of checking rules is
+\begin{small}
+\begin{mathpar}
+ \drule{Chk-sub}
+\end{mathpar}
+\end{small}
+% typically known as the subsumption rule,
+where subtyping is used to coerce expressions of one type to another.
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.9,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
+
+To type-check a trait (\rref{Inf-trait}) we first type-check if its inherited traits $\overline{[[Ei]]}$ are valid
+traits. Note that each trait $[[Ei]]$ can possibly refer to $[[self]]$. Methods
+must all be well-typed in the usual sense. Apart from these, we have several
+side-conditions to make sure traits are well-behaved. The well-formedness
+judgment $[[G |- C1 & .. & Cn & C]]$ ensures that we do not have conflicting
+methods (in inherited traits and the body). The subtyping judgments $\overline{[[B <: Bi]]}$ ensure that the
+$[[self]]$ parameter satisfies the requirements imposed by each
+inherited trait. Finally the subtyping judgment $[[C1 & .. & Cn & C <: A]]$
+sanity-checks that the assigned type $[[A]]$ is compatible.
+
+Trait instantiation (\rref{Inf-new}) requires that each instantiated trait is valid.
+There are also several side-conditions, which serve the same
+purposes as in \rref{Inf-trait}.
+\Rref{Inf-forward} says that the first operand $[[E1]]$ of the forwarding operator must be a trait. Moreover, the type of the second operand
+$[[E2]]$ must satisfy the requirement of $[[E1]]$.
+
+
+\begin{figure}[t]
+\centering
+\begin{tabular}{lrcl}
+  Types  & $[[t]], [[tt]]$ & $\Coloneqq$ & $[[top]] \mid [[Int]] \mid [[t -> tt]] \mid [[t & tt]] \mid  [[{ l : t }]] \mid [[a]] \mid [[forall ( a ** t ) . tt]]$ \\
+  Expressions & $[[e]]$ & $\Coloneqq$ & $[[top]] \mid [[ii]] \mid [[x]] \mid [[\ x . e]] \mid [[e1 e2]] \mid [[blam  (a ** t)  . e]] \mid [[e t]] \mid [[e1 ,, e2]] \mid [[e : t]] $ \\
+         & & $\mid$ & $[[{ l = e }]] \mid [[e . l]] \mid [[letrec x : t = e1 in e2]] $
+  % Contexts & $[[gg]]$ & $\Coloneqq$ & $[[empty]] \mid [[gg , x : t]] \mid [[gg , a ** t]]$
+\end{tabular}
+\caption{Syntax of \bname with let bindings}
+\label{fig:fi_syntax}
+\end{figure}
+
+
+\subparagraph{Treatments of Exclusion, Super and Override.}
+One may have noticed that in \cref{fig:sedel_syntax} we did not include the
+exclusion operator in the core \name syntax, neither do \lstinline{super} and
+\lstinline{override} appear. The reason is that in principle all
+uses of the exclusion operator can be replaced by type annotations. For example
+to exclude a \lstinline{bar} field from \lstinline${foo = a, bar = b, baz = c}$,
+all we need is to annotate the record with type \lstinline${foo : A, baz : C}$
+(suppose \lstinline{a} has type \lstinline{A}, etc). By \rref{Chk-sub}, the resulting
+record is guaranteed to contain no \lstinline{bar} field. In the same vein,
+the use of \lstinline{override} can be explained using the exclusion operator.
+The \lstinline{super} keyword is internally a variable pointing to the \lstinline{inherits} clause
+(its typing rule is similar to \rref{inf-trait} and can be found in the appendix).
+We omit all of these features in the meta-theoretic study in order to focus our attention on
+the essence of first-class traits.
+However in practice, this is rather inconvenient as we need to write down
+all types we wish to retain rather than the one to exclude. So in our
+implementation we offer all of them.
+
+\subparagraph{Elaboration.}
+
+The operational semantics of \name is given by means of a type-directed
+translation into \bname extended with (lazy) recursive let bindings.
+This extension is standard and type-safe. The syntax of \bname is shown in \cref{fig:fi_syntax}. Let us go back to
+\cref{fig:type}, now focusing on the \hll{highlighted} parts, which
+denote the elaborated \bname terms. Most of them
+are straightforward translations and are thus omitted. We explain the most
+involved rules regarding traits. In \rref{Inf-trait}, a trait is translated into
+a lambda abstraction with $[[self]]$ as the formal parameter.
+In essence a trait corresponds to what Cook and Palsberg~\cite{cook1989denotational} call a \emph{generator}.
+ The translations
+of the inherited traits (i.e., $\overline{[[ei]]}$) are each applied to
+$[[self]]$ and then merged with the translation of the trait body $[[e]]$. Now
+it is clear why we require $[[B]]$ (the type of $[[self]]$) to be a subtype of each
+$[[Bi]]$ (the requirement of each inherited trait). Note that we abuse the bar
+notation here with the intention that $[[</ (ei self) // i IN 1..n />]]$ means
+$[[e1 self ,, .. ,, en self]]$.
+Here is an example of translating the \lstinline{ide_editor} trait from \cref{sec:overview} into
+plain \bname terms equipped with definitions (suppose \lstinline{modal_mixin} and \lstinline{spell_mixin}
+have been translated accordingly):
+\lstinputlisting[linerange=59-60]{../../examples/overview2.sl}% APPLY:linerange=TRANS
+
+The gray parts in \rref{Inf-new} show the translation of trait instantiation.
+First we apply every translation (i.e., $[[ei]]$) of the instantiated traits to the $[[self]]$ parameter,
+and then merge the applications together. The bar notation is
+interpreted similarly to the translation in \rref{Inf-trait}. Finally we compute the \emph{lazy}
+fixed-point of the resulting merge term, i.e., self-reference must be updated to refer to
+the whole composition. Taking the fixed-point of the
+traits/generators again follows the denotational inheritance model by 
+Cook and Palsberg.
+ This is the key to the correct implementation of dynamic
+ dispatching. Finally,
+\rref{Inf-forward} translates forwarding expressions to function
+applications. We show the translation of the
+\lstinline{a_editor1} object in \cref{sec:traits} to illustrate the
+translation of instantiation:
+\lstinputlisting[linerange=68-68]{../../examples/overview2.sl}% APPLY:linerange=NEW
+
+One remarkable point is that, while Cook and Palsberg work is done in
+an untyped setting, here we apply their ideas in a setting with
+disjoint intersection types and disjoint polymorphism. Our work shows that
+disjoint intersection types blend in quite nicely with Cook and
+Palsberg's denotational model of inheritance.
+
+\subparagraph{Flattening Property.}
+
+In the literature of traits~\cite{Ducasse_2006, scharli2003traits, JOT:issue_2006_05/article4},
+a distinguished feature of traits is the
+so-called \textit{flattening property}. This property says that a (non-overridden) method in a
+trait has the same semantics as if it were implemented directly in the class
+that uses the trait. It would be interesting to see if our trait model has this
+property. One problem in formulating such a property is that flattening is a
+property that talks about the equivalence between a flattened class (i.e., a
+class where all trait methods have been inlined) and a class that reuses code
+from traits. Since \name does not have classes, we cannot state exactly the same
+property. However, we believe that one way to talk about a similar property for \name is to have something
+along the lines of the following example:
+\begin{example}[Flattening]
+  Suppose we have \lstinline$m$ well-typed (i.e, conflict-free) traits \lstinline$trait t1 {l11 = E11, ..}, ..., trait tm {lm1 = Em1, ..}$,
+  each with some number of methods, then
+  \begin{tabular}{lll}
+   \lstinline|new (trait inherits t1 & ... & tm {})| & $=$ & \lstinline|new (trait {l11 = E11,..,lm1 = Em1,..})|
+  \end{tabular}
+\end{example}
+If we elaborate these two expressions, the property boils down to whether two merge terms
+$[[(E1 ,, E2) ,, E2]]$ and $[[E1 ,, (E2 ,, E3)]]$
+have the same semantics. As is shown by Bi et al.~\cite{xuan_nested}, merges are
+associative and commutative, so it is not hard to see that the above two expressions
+are semantically equivalent. We leave it as future work to formally state and prove flattening.
+
+% no gray anymore after this point
+\renewcommand{\rulehl}[1]{#1}
+
+\subsection{Type Soundness and Coherence}
+
+% \begin{figure}[t]
+%   \centering
+%   \drules[TI]{$[[ gg  |- e => t]]$}{Infer}{top, int, var, anno, app, tapp, merge, rec, proj, blam, lete}
+%   \drules[TC]{$[[ gg  |- e <= t]]$}{Check}{abs,sub}
+%   \caption{Typing  of \bname}
+%   \label{fig:fi_typing}
+% \end{figure}
+
+Since the semantics of \name is defined by elaboration into \bname~\cite{alpuimdisjoint} it
+is easy to show that key properties of \bname are also guaranteed by \name.
+In particular, we show that the type-directed elaboration is
+type-safe in the sense that well-typed \name expressions are elaborated into
+well-typed \bname terms. We also show that the source language is
+coherent and each valid source program has a unique (unambiguous)
+elaboration. 
+
+% To aid understanding of the type safety statement, we show the typing rules of
+% \bname in \cref{fig:fi_typing}. The interested reader can refer to
+% \cite{alpuimdisjoint} for further explanation.
+We need a meta-function $| \cdot |$ that translates \name types to \bname types, whose definition is
+straightforward. Only the translation of trait types deserves attention:
+\begin{mathpar}
+  | [[Trait[A,B] ]] | = [[|A| -> |B|]]
+\end{mathpar}
+That is, trait types are translated to
+function types. $| \cdot |$ extends naturally to typing contexts.
+Now we show several lemmas that are useful in the type-safety proof.
+
+\begin{lemma}
+  If $[[G |- A]]$ then $[[|G| |- |A|]]$.
+\end{lemma}
+\begin{proof}
+  By structural induction on the well-formedness judgment.
+\end{proof}
+
+\begin{lemma}
+  If $[[A <: B]]$ then $[[|A| <: |B|]]$.
+\end{lemma}
+\begin{proof}
+  By structural induction on the subtyping judgment.
+\end{proof}
+
+\begin{lemma}
+  If $[[G |- A ** B]]$ then $[[ |G| |- |A| ** |B| ]]$.
+\end{lemma}
+\begin{proof}
+  By structural induction on the disjointness judgment.
+\end{proof}
+% \begin{remark}
+%  Due to the elaboration semantics, \rref{D-traitArr1,D-traitArr2} are needed to make this lemma hold.
+% \end{remark}
+
+
+Finally we are in a position to establish the type safety property:
+\begin{theorem}[Type-safe translation]
+  We have that:
+  \begin{itemize}
+  \item If $[[G  |- E => A ~~> e]]$ then $ [[ |G|  |- e => |A| ]] $.
+  \item If $[[G  |- E <= A ~~> e]]$ then $ [[ |G|  |- e <= |A| ]] $.
+  \end{itemize}
+\end{theorem}
+\begin{proof}
+    By structural induction on the typing judgment.
+\end{proof}
+
+\begin{theorem}[Coherence] Each well-typed \name expression has a unique elaboration.
+\end{theorem}
+\begin{proof}
+  By examining every elaboration rule, it is easy to see that the elaborated
+  \bname term in the conclusion is uniquely determined by the elaborated \bname
+  terms in the premises. Then by the coherence property of \bname, we conclude
+  that each well-typed \name expression has a unique unambiguous elaboration,
+  thus \name is coherent.
+\end{proof}
+
+% \bruno{Say something about super?}
+% \bruno{Mention the appendix with proofs somewhere?}
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: ../paper.bib
+%%% End:

@@ -1,0 +1,454 @@
+
+\section{Introduction}
+\label{sec:introduction}
+
+Compositionality is a desirable property in programming
+designs. Broadly defined, it is the principle that a
+system should be built by composing smaller subsystems. For instance,
+in the area of programming languages, compositionality is
+a key aspect of \emph{denotational semantics}~\cite{scott1971toward, scott1970outline}, where
+the denotation of a program is constructed from the denotations of its parts.
+% For example, the semantics for a language of simple arithmetic expressions
+% is defined as:
+% 
+% \[\begin{array}{lcl}
+% \llbracket n \rrbracket_{E} & = & n \\
+% \llbracket e_1 + e_2 \rrbracket_{E} & = & \llbracket e_1 \rrbracket_E + \llbracket  e_2 \rrbracket_E \\
+% \end{array}\]
+% 
+% \bruno{Replace E by fancier symbol?}
+% Here there are two forms of expressions: numeric literals and
+% additions. The semantics of a numeric literal is just the numeric
+% value denoted by that literal. The semantics of addition is the
+% addition of the values denoted by the two subexpressions.
+Compositional definitions have many benefits.
+One is ease of reasoning: since compositional
+definitions are recursively defined over smaller elements they
+can typically be reasoned about using induction. Another benefit
+is that compositional definitions are easy to extend,
+without modifying previous definitions.
+% For example, if we also wanted to support multiplication,
+% we could simply define an extra case:
+% 
+% \[\begin{array}{lcl}
+% \llbracket e_1 * e_2 \rrbracket_E & = & \llbracket e_1 \rrbracket_E * \llbracket  e_2 \rrbracket_E \\
+% \end{array}\]
+
+Programming techniques that support compositional
+definitions include:
+\emph{shallow embeddings} of
+Domain Specific Languages (DSLs)~\cite{DBLP:conf/icfp/GibbonsW14}, \emph{finally
+  tagless}~\cite{CARETTE_2009}, \emph{polymorphic embeddings}~\cite{hofer_polymorphic_2008} or
+\emph{object algebras}~\cite{oliveira2012extensibility}. These techniques allow us to create
+compositional definitions, which are easy to extend without
+modifications. Moreover, when modeling semantics, both finally tagless and object algebras
+support \emph{multiple interpretations} (or denotations) of
+syntax, thus offering a solution to the well-known \emph{Expression Problem}~\cite{wadler1998expression}.
+Because of these benefits these techniques have become
+popular both in the functional and object-oriented
+programming communities.
+
+However, programming languages often only support simple compositional designs
+well, while support for more sophisticated compositional designs is lacking.
+For instance, once we have multiple interpretations of syntax, we may wish to
+compose them. Particularly useful is a \emph{merge} combinator,
+which composes two interpretations~\cite{oliveira2012extensibility,
+oliveira2013feature, rendel14attributes} to form a new interpretation that,
+when executed, returns the results of both interpretations. 
+
+% For example, consider another pretty printing interpretation (or
+% semantics) $\llbracket \cdot \rrbracket_P$ for arithmetic expressions, which
+% returns the string that denotes the concrete syntax of the
+% expression. Using merge we can compose the two interpretations to
+% obtain a new interpretation that executes both printing and evaluation:
+% \jeremy{Explain what is $E\,\&\,P$?}
+% 
+% \[\begin{array}{lcl}
+% \llbracket \cdot \rrbracket_E \otimes \llbracket \cdot \rrbracket_P & = & \llbracket \cdot \rrbracket_{E\,\&\,P} \\
+% \end{array}\]
+
+The merge combinator can be manually defined in existing programming languages,
+and be used in combination with techniques such as finally tagless or object
+algebras. Moreover variants of the merge combinator are useful to
+model more complex combinations
+of interpretations. A good example are so-called \emph{dependent} interpretations,
+where an interpretation does not depend \emph{only} on itself, but also on 
+a different interpretation. These definitions with dependencies are quite
+common in practice, and, although they are not orthogonal to the interpretation they
+depend on, we would like to model them (and also mutually dependent interpretations)
+in a modular and compositional style.
+
+% For example consider the following two
+% interpretations ($\llbracket \cdot \rrbracket_{\mathsf{Odd}}$ and
+% $\llbracket \cdot \rrbracket_{\mathsf{Even}}$) over Peano-style natural numbers:
+
+% \[\begin{array}{lclclcl}
+% \llbracket 0 \rrbracket_{\mathsf{Even}}  & = & \mathsf{True} & ~~~~~~~~~~~~~~~~~~~~ & \llbracket 0 \rrbracket_{\mathsf{Odd}} & = & \mathsf{False} \\
+% \llbracket S~e \rrbracket_{\mathsf{Even}} & = & \llbracket e \rrbracket_{\mathsf{Odd}} & ~~ & \llbracket S~e \rrbracket_{\mathsf{Odd}} & = & \llbracket e \rrbracket_{\mathsf{Even}}\\
+% \end{array}\]
+
+% \emph{Are these interpretations compositional or not?} Under
+% a strict definition of compositionality they are not because
+% the interpretation of the parts does not depend \emph{only} on the
+% interpretation being defined. Instead both interpretations also depend
+% on the other interpretation of the parts. In general,
+% definitions with dependencies are quite common in practice.
+% In this paper we consider these
+% interpretations compositional, and we
+% would like to model such dependent (or even mutually dependent)
+% interpretations in a modular and compositional style.
+
+Defining the merge combinator in existing
+programming languages is verbose and cumbersome, requiring code for every
+new kind of syntax. Yet, that code is essentially mechanical and ought to be
+automated. While using advanced meta-programming techniques enables automating
+the merge combinator to a large extent in existing programming
+languages~\cite{oliveira2013feature, rendel14attributes}, those techniques have
+several problems: error messages can be problematic, type-unsafe reflection
+is needed in some approaches~\cite{oliveira2013feature} and
+advanced type-level features are required in others~\cite{rendel14attributes}.
+
+This paper presents a calculus and polymorphic type system with
+\emph{(disjoint) intersection types}~\cite{oliveira2016disjoint},
+called \fnamee~\footnote{The ``+'' symbol stands for two extra features
+compared to \fname: \emph{BCD subtyping} and \emph{unrestricted intersections}.}, that
+supports our broader notion of compositional designs, and enables
+the development of highly modular and reusable programs. \fnamee
+has a built-in merge operator and a powerful subtyping relation that
+are used to automate the composition of multiple (possibly dependent) interpretations.
+% \jeremy{How about a figure that depicts the relationships between
+%   \oname, \fname, \namee and \fnamee?}\bruno{Great idea, by I think it
+% makes more sense in related work.}
+\fnamee continues a line of
+research on disjoint intersection types.
+ Previous work on
+\emph{disjoint polymorphism} (the \fname calculus)~\cite{alpuimdisjoint} studied the
+combination of parametric polymorphism and disjoint intersection
+types, but its subtyping relation does not support
+BCD-style distributivity rules~\cite{Barendregt_1983} and the type system
+also prevents unrestricted intersections~\cite{dunfield2014elaborating}. More recently the \name
+calculus (or \namee)~\cite{bi_et_al:LIPIcs:2018:9227} introduced a system with \emph{disjoint
+  intersection types} and BCD-style distributivity rules, but did not
+account for parametric polymorphism. \fnamee is unique in that it
+combines all three features in a single calculus:
+\emph{disjoint intersection types} and a \emph{merge operator};
+\emph{parametric (disjoint) polymorphism}; and a BCD-style subtyping
+relation with \emph{distributivity rules}. The three features together
+allow us to improve upon the finally tagless and object
+algebra approaches and support advanced compositional designs.
+Moreover previous work on disjoint intersection types has shown 
+various other applications that are also possible in \fnamee, including: \emph{first-class
+  traits} and \emph{dynamic inheritance}~\cite{bi_et_al:LIPIcs:2018:9214}, \emph{extensible records} and \emph{dynamic
+  mixins}~\cite{alpuimdisjoint}, and \emph{nested composition} and \emph{family polymorphism}~\cite{bi_et_al:LIPIcs:2018:9227}. 
+
+
+Unfortunately the combination of the three features has non-trivial
+complications. The main technical challenge (like for most other
+calculi with disjoint intersection types) is the proof of coherence
+for \fnamee. Because of the presence of BCD-style distributivity
+rules, our coherence proof is based on the recent approach employed in
+\namee~\cite{bi_et_al:LIPIcs:2018:9227}, which uses a
+\emph{heterogeneous} logical relation called \emph{canonicity}. To account for polymorphism,
+which \namee's canonicity does not support, we originally wanted
+to incorporate the relevant parts of System~F's logical relation~\cite{reynolds1983types}.
+However, due to a mismatch between the two relations, this did not work. The
+parametricity relation has been carefully set up with a delayed type
+substitution to avoid ill-foundedness due to its impredicative polymorphism.
+Unfortunately, canonicity is a heterogeneous relation and needs to account for
+cases that cannot be expressed with the delayed substitution setup of the
+homogeneous parametricity relation. Therefore, to handle those heterogeneous
+cases, we resorted to immediate substitutions and 
+% restricted \fnamee to
+\emph{predicative instantiations}.
+%other
+%measures to avoid the ill-foundedness of impredicative instantiation.
+%We have settled on restricting \fnamee to \emph{predicative polymorphism} to
+%keep the coherence proof manageable. 
+We do not believe that predicativity is a severe restriction in practice, since many source
+languages (e.g., those based on the Hindley-Milner type system like Haskell and
+OCaml) are themselves predicative and do not require the full generality of an
+impredicative core language. Should impredicative instantiation be required,
+we expect that step-indexing~\cite{ahmed2006step} can be used to recover well-foundedness, though
+at the cost of a much more complicated coherence proof.
+
+The formalization and metatheory of \fnamee are a significant advance over that of
+\fname. Besides the support for distributive subtyping, \fnamee removes 
+several restrictions imposed by the syntactic coherence
+proof in \fname. In particular \fnamee supports unrestricted
+intersections, which are forbidden in \fname. Unrestricted
+intersections enable, for example, encoding certain forms of 
+bounded quantification~\cite{pierce1991programming}.
+Moreover the new proof method is more robust
+with respect to language extensions. For instance, \fnamee supports the bottom
+type without significant complications in the proofs, while it was a challenging
+open problem in \fname.
+A final interesting aspect is that \fnamee's type-checking is decidable. In the
+design space of languages with polymorphism and subtyping, similar mechanisms
+have been known to lead to undecidability. Pierce's seminal paper
+``\emph{Bounded quantification is undecidable}''~\cite{pierce1994bounded} shows
+that the contravariant subtyping rule for bounded quantification in
+\fsub leads to undecidability of subtyping.  In \fnamee the
+contravariant rule for disjoint quantification retains decidability. 
+Since with unrestricted intersections \fnamee can express several
+use cases of bounded quantification, \fnamee could be an interesting and
+decidable alternative to \fsub.
+
+\begin{comment}
+Besides coherence, we show
+several other important meta-theoretical results, such as type-safety, 
+sound and complete algorithmic subtyping, and
+decidability of the type system. Remarkably, unlike 
+\fsub's \emph{bounded polymorphism}, disjoint polymorphism
+in \fnamee supports decidable type-checking.
+\end{comment}
+
+In summary the contributions of this paper are:
+\begin{itemize}
+
+\item {\bf The \fnamee calculus,} which is the first calculus to combine 
+disjoint intersection types, BCD-style distributive subtyping and 
+disjoint polymorphism. 
+   We show several meta-theoretical results, such as \emph{type-safety}, 
+\emph{sound and complete algorithmic subtyping}, \emph{coherence} and
+\emph{decidability} of the type system.
+
+\item {\bf An extension of the canonicity relation with polymorphism,} which enables the proof
+    of coherence of \fnamee. We show that the ideas of
+  System F's \emph{parametricity} cannot be ported to
+  \fnamee. To overcome the problem we use a technique based on
+  immediate substitutions and a predicativity restriction.
+
+\item {\bf Disjoint intersection types in the presence of bottom:}
+  Our calculus includes the bottom type, which was considered to be a
+significant challenge in previous work on disjoint polymorphism~\cite{alpuimdisjoint}.
+
+\item {\bf Improved compositional designs:} We show that \fnamee's combination of features
+enables improved
+compositional programming designs and supports automated composition
+of interpretations in programming techniques like object algebras and
+finally tagless.
+
+\item {\bf Implementation and proofs:} All of the metatheory
+  of this paper, except some manual proofs of decidability, has been
+  mechanically formalized in Coq. Furthermore, \fnamee is
+  implemented and all code presented in the paper is available. The
+  implementation, Coq proofs and extended version with appendices can be found in
+  \url{https://github.com/bixuanzju/ESOP2019-artifact}.
+
+\end{itemize}
+
+% \bruno{
+% Still need to figure out how to integrate row types in the intro story
+% Furthermore, we provide a detailed
+% comparison between \emph{distributive disjoint polymorphism} and
+% \emph{row types}.
+% }
+
+% Compositionality is a desirable property in programming
+% designs. Broadly defined, compositionality is the principle that a
+% system should be built by composing smaller subsystems.
+% In the area of programming languages compositionality is
+% a key aspect of \emph{denotational semantics}~\cite{scott1971toward, scott1970outline}, where
+% the denotation of a program is constructed from denotations of its parts.
+% For example, the semantics for a language of simple arithmetic expressions
+% is defined as:
+% 
+% \[\begin{array}{lcl}
+% \llbracket n \rrbracket_{E} & = & n \\
+% \llbracket e_1 + e_2 \rrbracket_{E} & = & \llbracket e_1 \rrbracket_E + \llbracket  e_2 \rrbracket_E \\
+% \end{array}\]
+% 
+% \bruno{Replace E by fancier symbol?}
+% Here there are two forms of expressions: numeric literals and
+% additions. The semantics of a numeric literal is just the numeric
+% value denoted by that literal. The semantics of addition is the
+% addition of the values denoted by the two subexpressions.
+% Compositional definitions have many benefits.
+% One is ease of reasoning: since compositional
+% definitions are recursively defined over smaller elements they
+% can typically be reasoned about using induction. Another benefit
+% of compositional definitions is that they are easy to extend,
+% without modifying previous definitions.
+% For example, if we also wanted to support multiplication,
+% we could simply define an extra case:
+% 
+% \[\begin{array}{lcl}
+% \llbracket e_1 * e_2 \rrbracket_E & = & \llbracket e_1 \rrbracket_E * \llbracket  e_2 \rrbracket_E \\
+% \end{array}\]
+% 
+% Programming techniques that support compositional
+% definitions include:
+% \emph{shallow embeddings} of
+% Domain Specific Languages (DSLs)~\cite{DBLP:conf/icfp/GibbonsW14}, \emph{finally
+%   tagless}~\cite{CARETTE_2009}, \emph{polymorphic embeddings}~\cite{} or
+% \emph{object algebras}~\cite{oliveira2012extensibility}. All those techniques allow us to easily create
+% compositional definitions, which are easy to extend without
+% modifications. Moreover both finally tagless and object algebras
+% support \emph{multiple interpretations} (or denotations) of
+% the syntax, thus offering a solution to the infamous \emph{Expression Problem}~\cite{wadler1998expression}.
+% Because of these benefits they have become
+% popular both in the functional and object-oriented
+% programming communities.
+% 
+% However, programming languages often only support simple
+% compositional designs well, while language support for more sophisticated
+% compositional designs is lacking. Once we have multiple
+% interpretations of syntax, then we may wish to compose those
+% interpretations. In particular, when multiple interpretations exist, a useful operation
+% is a \emph{merge} combinator ($\otimes$) that composes two
+% interpretations~\cite{oliveira2012extensibility, oliveira2013feature, rendel14attributes}, forming a
+% new interpretation that, when executed, returns the results of both
+% interpretations. For example, consider another pretty printing interpretation (or
+% semantics) $\llbracket \cdot \rrbracket_P$ for arithmetic expressions, which
+% returns the string that denotes the concrete syntax of the
+% expression. Using merge we can compose the two interpretations to
+% obtain a new interpretation that executes both printing and evaluation:
+% \jeremy{Explain what is $E\,\&\,P$?}
+% 
+% \[\begin{array}{lcl}
+% \llbracket \cdot \rrbracket_E \otimes \llbracket \cdot \rrbracket_P & = & \llbracket \cdot \rrbracket_{E\,\&\,P} \\
+% \end{array}\]
+% 
+% Such merge combinator can be manually defined in existing programming 
+% The merge combinator can be manually defined in existing programming
+% languages, and be used in combination with techniques such as finally
+% tagless or object algebras. Furthermore variants of the
+% merge combinator can help express more complex combinations of multiple
+% interpretations. For example consider the following two
+% interpretations ($\llbracket \cdot \rrbracket_{\mathsf{Odd}}$ and
+% $\llbracket \cdot \rrbracket_{\mathsf{Even}}$) over Peano-style natural numbers:
+% 
+% \[\begin{array}{lclclcl}
+% \llbracket 0 \rrbracket_{\mathsf{Even}}  & = & \mathsf{True} & ~~~~~~~~~~~~~~~~~~~~ & \llbracket 0 \rrbracket_{\mathsf{Odd}} & = & \mathsf{False} \\
+% \llbracket S~e \rrbracket_{\mathsf{Even}} & = & \llbracket e \rrbracket_{\mathsf{Odd}} & ~~ & \llbracket S~e \rrbracket_{\mathsf{Odd}} & = & \llbracket e \rrbracket_{\mathsf{Even}}\\
+% \end{array}\]
+% 
+% \emph{Are these interpretations compositional or not?} Under
+% a strict definition of compositionality they are not because
+% the interpretation of the parts does not depend \emph{only} on the
+% interpretation being defined. Instead both interpretations also depend
+% on the other interpretation of the parts. In general,
+% definitions with dependencies are quite common in practice.
+% In this paper we consider these
+% interpretations compositional, and we
+% would like to model such dependent (or even mutually dependent)
+% interpretations in a modular and compositional style.
+% 
+% However defining the merge combinator in existing programming
+% languages is verbose and cumbersome, and requires code for every new
+% kind of syntax. Yet, that code is essentially mechanical and
+% ought to be automated. While using advanced meta-programming
+% techniques enables automating the merge combinator to a large extent
+% in existing programming languages~\cite{oliveira2013feature, rendel14attributes}, those techniques have
+% several problems. For example, error messages can be problematic, some
+% techniques rely on type-unsafe reflection, while other techniques
+% require highly advanced type-level features.
+% 
+% This paper presents a calculus and polymorphic type system with
+% \emph{(disjoint) intersection types}~\cite{oliveira2016disjoint}, called \fnamee, that
+% supports our broader notion of compositional designs, and enables
+% the development of highly modular and reusable programs. \fnamee
+% has a built-in merge operator and a powerful subtyping relation that
+% are used to automate the composition of multiple interpretations
+% (including dependent interpretations). \fnamee continues a line of
+% research on disjoint intersection types. Previous work on
+% \emph{disjoint polymorphism} (the \fname calculus) studied the
+% combination between parametric polymorphism and disjoint intersection
+% types, but the subtyping relation did not support
+% BCD-style distributivity rules~\cite{Barendregt_1983}. More recently the \name
+% calculus (or \namee) studied a system with \emph{disjoint
+%   intersection types} and BCD-style distributivity rules, but did not
+% account for parametric polymorphism. \fnamee is unique in that it
+% allows the combination of three useful features in a single calculus:
+% \emph{disjoint intersection types} and a \emph{merge operator};
+% \emph{parametric (disjoint) polymorphism}; and a BCD-style subtyping
+% relation with \emph{distributivity rules}. All three features are
+% necessary to use improved versions of finally tagless or object
+% algebras that support improved compositional designs.
+% 
+% Unfortunatelly the combination of the three features has non-trivial
+% complications. The main technical challenge (as often is the case for
+% calculi with disjoint intersection types) is the proof of coherence
+% for \fnamee. Because of the presence BCD-style distributivity
+% rules, the proof of coherence is based on the approach using a
+% \emph{heterogeneous} logical relation employed in
+% \namee~\cite{bi_et_al:LIPIcs:2018:9227}. However the logical relation in
+% \namee, which we call here \emph{canonicity}, does not
+% account for polymorphism. To account for polymorphism we originally
+% expected to simply borrow ideas from \emph{parametricity}~\cite{reynolds1983types} in
+% System F~\cite{reynolds1974towards} and adapt them to fit with the canonicity relation.
+% However, this did not work. The problem is partly due to the fact that
+% canonicity (unlike parametricity) is an heterogenous relation and
+% needs to account for heterogeneous cases that are not considered in an
+% homogeneous relation such as parametricity. Those heterogeneous cases, combined
+% with \emph{impredicative polymorphism}, resulted in an ill-founded logical
+% relation. Fortunatelly it turns out that
+% restricting the calculus to \emph{predicative polymorphism} and using
+% an approach based on substitutions is
+% sufficient to recover a well-founded canonicity relation.
+% Therefore we
+% adopted this approach in \fnamee.
+% We do not view
+% the predicativity restriction as being very severe in practice, since many
+% practical languages have such restriction as well. For example languages based
+% on Hindley-Milner style type systems (such as Haskell, OCaml or ML)
+% \ningning{it's hard to say this is true. When we say Hindley-Milner type system,
+%   or Haskell, we are referring to the source language. However, the core
+%   language for, for example Haskell, which is System FC, is impredicative.
+%   \fnamee is more close to a core language (which usually has explicit type
+%   abstractions/applications). In this sense it's unfair to compare it with other
+%   source languages.} all use predicative polymorphism. Furthermore with the
+% predicativity restriction, the canonicity relation and corresponding proofs
+% remain relatively simple and do not require emplying more complex approaches
+% such as \emph{step-indexed logical relations}. \ningning{we should emphasize
+%   that predicativity is not a restriction, rather it's choice we made in order
+%   to prove coherence in Coq. Step-indexed logical relation might work for
+%   impredicativity; it's just we don't know.}
+% 
+% In summary the contributions of this paper are:
+% 
+% \begin{itemize}
+% 
+% \item {\bf The \fnamee calculus,} which integrates disjoint intersection types,
+%     distributivity and disjoint polymorphism. \fnamee
+%     is the first calculus puts all three features together. The
+%     combination is non-trivial, expecially with respect to the
+%     coherence proof.
+% 
+% \bruno{improve text}
+% \item {\bf The canonicity logical relation,} which enables the proof
+%     of coherence of \fnamee. We show that the ideas of
+%   System F's \emph{parametricity} cannot be ported to
+%   \fnamee. To overcome the problem we develop a canonicity
+%   relation that enables a proof of coherence.
+% 
+% \item {\bf Disjoint intersection types in the presence of bottom:}
+%   Our calculus includes a bottom type, which was considered to be a
+% significant challenge in previous work.
+% 
+% \item {\bf Improved compositional designs:} We show how \fnamee has all the
+% features that enable improved
+% compositional programming designs and support automated composition
+% of interpretations in programming techniques like object algebras and
+% finally tagless.
+% 
+% \item {\bf Implementation and proofs:} All proofs
+% (including type-safety, coherence and decidability of the type system)
+% are proved in the Coq theorem prover. Furthermore \sedel \ningning{where comes the name \sedel?} and
+% \fnamee are implemented and all code presented in the paper is
+% available. The implementation, proofs and examples can be found in:
+% 
+% \url{MISSING}
+% 
+% \end{itemize}
+% 
+% \bruno{
+% Still need to figure out how to integrate row types in the intro story
+% Furthermore, we provide a detailed
+% comparison between \emph{distributive disjoint polymorphism} and
+% \emph{row types}.
+% }
+
+% Local Variables:
+% org-ref-default-bibliography: "../paper.bib"
+% End:

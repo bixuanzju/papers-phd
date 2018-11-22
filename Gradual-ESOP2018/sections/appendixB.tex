@@ -1,0 +1,119 @@
+\section{Discussion of Variants of the Type System}
+
+In \cref{sec:type-system} we present our declarative system in terms of the
+matching and consistent subtyping judgments. The rationale behind this design
+choice is that the result declarative system is syntax-directed, thus making it
+easier to design an algorithmic system accordingly. Still, one may wonder if it
+is possible to design a more declarative specification. For example, even though
+we mentioned that the subsumption rule is incompatible with consistent
+subtyping, it might be possible that accommodating a subsumption rule for normal subtyping
+(instead of consistent subtyping) would work. In this section, we discuss two
+alternatives for the design of the declarative system.
+
+\subsection{Variant I: The Naive Design}
+
+A first obvious attempt is to replace the rule \rul{App} in \cref{fig:decl-typing} with the
+following two rules:
+\begin{mathpar}
+  \inferrule{
+          \tctx \byinf e : A 
+       \\ A \tsub B
+          }{
+          \tctx \byinf e : B
+          }\rname{V-Sub}
+
+  \inferrule{
+          \tctx \byinf e_1 : A 
+       \\ \tctx \byinf e_2 : A_1
+       \\ A \sim A_1 \to A_2
+          }{
+          \tctx \byinf e_1 ~ e_2 : A_2
+          }\rname{V-App1}
+\end{mathpar}
+Rule \rul{V-Sub} is the standard subsumption rule: if an expression $e$ has type
+$A$, then it can be assigned some type $B$ that is a supertype of $A$. Rule
+\rul{V-App1} first infers that $e_1$ has type $A$, and $e_2$ has type $A_1$, then
+it finds some $A_2$ so that $A$ is consistent with $A_1 \to A_2$.
+
+There would be two obvious benefits of this variant if it did work:
+firstly this approach closely resembles
+the traditional declarative type systems for calculi with subtyping; secondly it
+saves us from discussing various forms of $A$ in \rul{V-App1}, leaving the job
+to the consistency judgment.
+
+As intuitive as this variant may seem, it actually does not work! The reason lies
+in the information loss caused by the choice of $A_2$ in \rul{V-App1}. Suppose
+we have $\mathsf{succ} : \nat \to \nat$, and we apply it to $1$ to get
+$\mathsf{succ}~{1}$. According to \rul{V-App1}, we have $\nat \to \nat \sim \nat
+\to \bool$, which means that we have $\mathsf{succ}~1 : \bool$. This is obviously
+wrong! The moral of the story is that we should be very careful when using type consistency.
+We hypothesize that it is inevitable to do case analysis for the type of the
+function in an application (i.e., $A$ in \rul{V-App1}).
+
+
+\subsection{Variant II}
+
+The second variant refines the first variant by carefully separating
+\rul{V-App1} into two cases based on the typing result of $e_1$: (1) when it is
+an arrow type, and (2) when it is an unknown type. In this variant, we replace
+the rule \rul{App} in \cref{fig:decl-typing} with the following three rules:
+\begin{mathpar}
+  \inferrule{
+          \tctx \byinf e : A 
+       \\ A \tsub B
+          }{
+          \tctx \byinf e : B
+          }\rname{V-Sub}
+
+  \inferrule{
+          \tctx \byinf e_1 : \unknown
+       \\ \tctx \byinf e_2 : A
+          }{
+          \tctx \byinf e_1 ~ e_2 : \unknown
+          }\rname{V-App2}
+
+  \inferrule{
+          \tctx \byinf e_1 : A_1 \to A_2 
+       \\ \tctx \byinf e_2 : A_3
+       \\ A_1 \sim A_3
+          }{
+          \tctx \byinf e_1 ~ e_2 : A_2
+          }\rname{V-App3}
+\end{mathpar}
+Rule \rul{V-Sub} is the same as the first variant. In rule \rul{V-App2}, we
+infer that $e_1$ has type $\unknown$. Under this situation, $e_2$ can have any
+type $A$, and the application result is of type $\unknown$. In rule
+\rul{V-App3}, we infer that $e_1$ has an arrow type $A_1 \to A_2$, then we need to
+ensure that the argument type $A_3$ is consistent with $A_1$, and use $A_2$ as
+the result type of the application. These two application rules are closely
+related to the ones in \citet{siek2006gradual} and \citet{siek2007gradual}.
+
+It turns out that the new system with these rules actually works. In the
+following we discuss the relation between this new type system and the one we
+presented in \cref{sec:type-system}.
+
+Firstly, this system indeed provides a more declarative specification without
+using the consistent subtyping or matching judgment. However, the more
+declarative nature of this system also implies that it is highly non-syntax
+directed, in the sense that rule \rul{V-Sub} can be applied anywhere.
+
+% Meanwhile, the declarative system in \cref{sec:type-system}, making use of
+% consistent subtyping and matching, is syntax-directed, and is an important step
+% towards an algorithm of the type system.
+
+Secondly, we have proved in Coq the following lemmas to establish soundness and
+completeness of this system with respect to our original system (to avoid
+ambiguity, we use the notation $\byminf$ to indicate the more declarative
+version):
+\begin{clemma}[Completeness of $\byminf$]
+  If $\tctx \byinf e : A$, then $\tctx \byminf e : A$.
+\end{clemma}
+\begin{clemma}[Soundness of $\byminf$]
+  If $\tctx \byminf e : A$, then there exists some $B$, such that $\tctx \byinf e : B$ and $\tctx \bysub B \tsub A$.
+\end{clemma}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: ../paper.bib
+%%% End:

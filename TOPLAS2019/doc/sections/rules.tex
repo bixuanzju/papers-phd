@@ -1,0 +1,131 @@
+
+
+\section{Original higher-ranked type system}
+
+\begin{tabular}{lrcl}
+  Expr & $e$ & \syndef & $x \mid n \mid
+                         \blam x A e \mid e_1~e_2$\\
+  Type & $A, B$ & \syndef & $ \nat \mid a \mid A \to B \mid \forall a. A$ \\
+  Mono Type & $\tau$ & \syndef & $ \nat \mid a \mid \tau_1 \to \tau_2$ \\
+
+  Typing Context & $\tctx$ & \syndef & $\ctxinit \mid \tctx,x: A \mid \tctx, a$ \\
+\end{tabular}
+
+\begin{mathpar}
+  \framebox{$\tpreinf e \infto A$}
+  {\quad Typing} \\
+  \NVar \and \NNat \and \NLamAnnA \and \NApp \and \NSub
+\end{mathpar}
+
+\section{Declarative higher-ranked type system}
+
+\begin{tabular}{lrcl}
+  Expr & $e$ & \syndef & $x \mid n \mid
+                         \blam x A e \mid e_1~e_2
+                         \mid \erlam x e \equiv \blam x \unknown e $ \\
+
+  Type & $A, B$ & \syndef & $ \nat \mid a \mid A \to B \mid \forall a. A \mid \unknown$ \\
+  Mono Type & $\tau$ & \syndef & $ \nat \mid a \mid \tau_1 \to \tau_2$ \\
+
+  Typing Context & $\tctx$ & \syndef & $\ctxinit \mid \tctx,x: A \mid \tctx, a$ \\
+\end{tabular}
+
+\begin{mathpar}
+  \framebox{$\tpreinf e \infto A$}
+  {\quad Typing} \\
+  \DVar \and \DNat \and \DLamAnnA \and \DApp
+\end{mathpar}
+
+\begin{mathpar}
+  \framebox{$\tprematch A \match A_1 \to A_2$}{\quad Matching} \\
+  \MMC \and \MMA \and \MMB
+\end{mathpar}
+
+\begin{mathpar}
+  \framebox{$\tpresub A \tsub B$}{\quad Subtyping} \\
+  \HSForallR \and \HSForallL \and \HSFun \and
+  \HSTVar \and \HSInt \and \HSUnknown
+\end{mathpar}
+
+\begin{mathpar}
+  \framebox{$\tpresub A \tconssub B$}
+  {\quad Consistent~Subtyping} \\
+  \CSForallR \and \CSForallL \and \CSFun \and
+  \CSTVar \and \CSInt \and \CSUnknownL \and \CSUnknownR
+\end{mathpar}
+
+\begin{mathpar}
+  \framebox{$A \sim B$}{\quad Consistency} \\
+  \CD \and \CA \and \CB \and \CC \and \CE
+\end{mathpar}
+
+
+\subsection{Target: Polymorphic Blame Calculus}
+
+\begin{tabular}{lrcl}
+  Expr & $e$ & \syndef & $x \mid n \mid
+                         \blam x A e \mid e_1~e_2
+                         \mid \Lambda X .t \mid e ~ [A]
+                         \mid \cast A B e$\\
+
+  Type & $A, B$ & \syndef & $ \nat \mid a \mid A \to B \mid \forall a. A \mid \unknown$ \\
+
+  Typing Context & $\tctx$ & \syndef & $\ctxinit \mid \tctx,x: A \mid \tctx, X$ \\
+\end{tabular}
+
+\begin{mathpar}
+  \framebox{$\tctx \bypinf e \infto A$}{\quad Typing} \\
+  \PBCVar \and \PBCNat \and \PBCApp \and
+  \PBCLam \and \PBCBLam \and \PBCTApp \and
+  \PBCCast
+\end{mathpar}
+
+Compatibility
+
+\begin{mathpar}
+  \CompRefl \and \CompUnknownR \and \CompUnknownL \and
+  \CompArrow \and \CompAllR \and \CompAllL
+\end{mathpar}
+
+
+
+\section{Algorithmic higher-ranked type system}
+
+\begin{mathpar}
+  \framebox{$\tpreinf e \infto A \toctxr $}
+  {\quad \text{Typing ($A$ output)}} \\  \\
+
+  \AVar \and \ANat \and \ALamAnnA \and \AApp
+
+\end{mathpar}
+
+\begin{mathpar}
+  \framebox{$\tprematch A \match A_1 \to A_2 \toctxr$}
+  {\quad \text{Matching ($A_1$, $A_2$ outputs)}} \\ \\
+  \AMMC \and \AMMA \and \AMMB \and \AMMD
+\end{mathpar}
+
+\begin{mathpar}
+  \framebox{$\tpresub A \tconssub B \toctxr$}
+  {\quad \text{Consistent Subtyping ($A$, $B$ inputs)}} \\
+  \ACSTVar \and \ACSExVar \and \ACSInt \and \ACSUnknownL \and \ACSUnknownR \and
+  \ACSForallR \and \ACSForallL \and \ACSFun \and \AInstantiateL \and
+  \AInstantiateR
+\end{mathpar}
+
+\begin{mathpar}
+  \framebox{$\tctx \vdash \genA \unif A \toctxr$}
+  {\quad \text{Instantiation ($\genA$, $A$ inputs)}} \\
+
+  \InstLSolve \and   \InstLReach \and \InstLArr \and \InstLAllR
+
+\end{mathpar}
+
+
+\begin{mathpar}
+  \framebox{$\tctx \vdash A \unif \genA  \toctxr$}
+  {\quad \text{Instantiation ($\genA$, $A$ inputs)}} \\
+
+  \InstRSolve \and   \InstRReach \and \InstRArr \and \InstRAllL
+
+\end{mathpar}

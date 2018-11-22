@@ -1,0 +1,345 @@
+POPL '18 Paper #2 Reviews and Comments
+===========================================================================
+Paper #245 Consistent Subtyping for All
+
+
+Review #245A
+===========================================================================
+
+Overall merit
+-------------
+3. Weak reject - will not argue against
+
+Reviewer expertise
+------------------
+X. Expert
+
+Paper summary
+-------------
+This work studies gradual typing equipped with both implicit polymorphism and
+subtyping, extending consistent subtyping of Siek and Taha and proving
+properties that should be satisfied by well-mannered gradual typing.
+Instantiation of type variables follow the prior work, that is, they are
+replaced with only static types.  But what types should be substituted is
+unclear in the declarative type system.  Hence, this work also proposes an
+algorithmic type system which is sound and complete with respect to the
+declarative system.  The work furthermore demonstrates the "robustness" of the
+new consistent subtyping by considering addition of the Top type.
+
+
+The idea to address the issue of the existing consistent subtyping combined with
+implicit polymorphism is reasonable; the paper clarifies what is desired between
+subtyping and consistent subtyping (Observations 1 & 2) and, from that, leads to
+acceptable definition of a new consistent subtyping.  This work also recognizes
+weakness of the declarative type system and solves that by the algorithmic
+system.  Furthermore, it discusses a subtle issue that how unsolved type
+variables should be interpreted.
+
+
+Despite these positive points, my overall evaluation is a weak reject for the
+issues discussed below.
+
+- The language seems much weaker than it should be.  In fact, the type
+  system in this paper seems to lack a rule to introduce forall types
+  (\textsc{Gen} in Odersky-L{\"{a}}ufer).  At first, I thought we
+  could dispense with Gen by using subtyping but it's not clear.
+  Dunfield and Krishnaswami 2013 also has a similar rule to introduce
+  forall types as well.
+
+  Another possibly related point is that in \textsc{ForallR} a bound
+  type variable on the right-hand side may be captured by type $A$ on
+  the left-hand side, while the Odersky-L{\"{a}}ufer type system
+  disallows it by giving a side condition.  (Maybe it is just due to a
+  sloppy presentation -- Dunfield and Krishnaswami 2013 has the same
+  problem, by the way.)  If it's capture-avoiding, it doesn't seem
+  possible to derive, say, X->X <: \forall X.X->X, so a rule like Gen
+  seems to be needed to introduce forall types.  If it's not, X->X <:
+  \forall X.X->X can be derived but such a rule is odd.
+
+- There are no examples of using gradual typing with both subtyping
+  and implicit higher-rank polymorphism, and so this work is not well
+  motivated.  Especially, it is not fully clarified why this work is
+  significant, why introducing implicit higher-rank polymorphism to
+  gradual typing is important, and what new programs one can write in
+  that system?
+
+- The paper shows what properties consistent subtyping should satisfy
+  but does not explain fully why the usual consistent subtyping with
+  implicit polymorphism does not satisfy.  Although it is a natural
+  path to Definition 2 from counterexamples in Figure 5 and
+  Observations 1 and 2, I'd like to see deeper analysis why the
+  introduction of higher-rank types in the style of
+  Odersky-L{\"{a}}ufer breaks Def. 1.
+
+Comments for author
+-------------------
+* Fig. 1 doesn't seem so effective here because many notations are not
+  introduced yet.  I think there would be a more adequate place to be put.
+
+* (ForallL) in Fig. 3 refers to well-formedness judgment of types in the
+  premise, but I couldn't find the formal nor informal definition of it.
+
+* Fig. 5(a) is not quite a counterexample because:
+
+  (\forall a.a) -> Int  <: (\forall a.a) -> Int  (reflexivity)
+                        ~   * -> Int            (because forall a.a ~ *)
+
+* p.10: "Suppose we try to" --> "Suppose that we try to"
+
+* Section 4.4 is concerned about only the static aspects of gradual
+typing, while the abstract sounds like all the refined criteria are
+shown to be satisfied.  Many papers on gradual typing such as "Refined
+Criteria ..." put T \sqleq * (read "T is more precise than *") but
+Cimini and Siek 2015 reversed the direction (namely they put * \sqleq
+T), which I found really confusing.  I have no idea why they did so, but
+think it was a bad idea.  Please don't follow.
+
+* p.17: I think variables bound by contexts should be distinct, but it doesn't
+  seem to be mentioned explicitly.
+
+* Fig. 13 in Section 5.2 shows algorithmic consistent subtyping rules, but they
+are not syntax-directed---e.g., we have 4 applicable rules for cases that the
+left-hand side is a polymorphic type---so it is not (immediately) clear that
+constraint generation by this system is algorithmic.  The same thing happens
+also in Fig.  14.  For example, for \tau1 -> \tau2, both (InstLSolve) and (InstLArr)
+can be applied, because monotypes can be seen as types.
+
+* p.20: In the derivation tree, the sub-derivation for the argument types is
+  omitted without saying it.
+
+* p.21: The formal definition of context extension is not shown; I think the
+  authors have space enough for it.
+
+* p.22: I couldn't find where function `unsolved` is explained.
+
+* p.23: "Similarly to the analysis" --> "As the analysis"
+
+* p.24: The "Jack-of-All-Trade Principle" is still left as a conjecture.
+Please consult:
+
+  Blame for All (revised), Amal Ahmed, James T. Perconti, Jeremy G. Siek, and Philip Wadler. draft.  (available from https://wphomes.soic.indiana.edu/jsiek/)
+
+for more details.
+
+* p.25: "it seems our calculus can ..." --> "it seems that our calculus can ..."
+
+* The entry for "A Theory of Gradual Effect Systems" should come
+earlier because the family name of the first author is "Ba\~nados
+Schwerter".
+
+
+
+Review #245B
+===========================================================================
+
+Overall merit
+-------------
+4. Weak accept - will not argue for
+
+Reviewer expertise
+------------------
+X. Expert
+
+Paper summary
+-------------
+
+This paper develops a refined notion of consistent subtyping that supports
+implicit higher-rank polymorphism, and uses it to develop a gradually-typed
+calculus. It also shows that one can develop an inference algorithm for this
+calculus by simply ignoring dynamic types during unification.
+
+The paper starts by explaining how consistent subtyping as defined by Siek and
+Taha [2007] does not work "as is" in a language with implicit polymorphism. ST's
+definition was given by two characterizations: one can establish consistent
+subtyping either by using first one step of consistency and then subtyping, or
+by using first subtyping and then one step of consistency. The paper gives
+examples where none of these options work. The proposed generalization is fairly
+trivial: just allow the use of subtyping before /and/ after the use of the
+consistency step. This simple extension obviously subsumes ST's definition, and
+is shown to be sufficient to properly deal with the implicit polymorphism case.
+Towards the end, the paper also shows that adding a top type to the system is
+supported.
+
+In passing, the paper also compares to other approaches to integrating gradual
+types and polymorphism (though in different settings, namely a cast calculus and
+a language with explicit polymorphism), for which the relations are not
+consistent subtyping, and, as argued, are either too permissive or too
+restrictive.
+
+Because the proposed definition includes two points of non determinism (namely,
+the intermediate types at which consistency is applied), the paper presents an
+inductive definition of consistent subtyping, equivalent to the former. The
+inductive definition still has one bit of non-determinism, namely in the
+choosing of the monotype by which to substitute in the body of a forall type
+when comparing it on the left of a consistent subtyping relation. This case
+corresponds to the same rule in the declarative static system. The algorithmic
+realization of consistent subtyping is defered to later in the paper, after the
+gradual language is developed.
+
+The gradual language is presented by giving its declarative typing rules, and
+then a type-directed translation to the polymorphic blame calculus of Ahmed et
+al. The expected criteria of a gradual language are proven, except for the
+dynamic gradual guarantee. This is an important omission that should be
+mentioned - if not addressed. (The ICFP 2017 paper on PBC does not prove the
+counterpart of the dynamic gradual guarantee.)
+
+Section 5 gives the algorithmic typing system, and Section 6 discusses its
+soundness and completeness.
+
+Finally Section 7 briefly discusses the addition of a Top type, and a "fix" to
+avoid the nondeterminsm of the declarative type-directed translation: namely,
+use * to replace unconstrained monotype variables obtained by the algorithm.
+
+Points in favor
+- well motivated and explained
+- valuable contribution to the space of gradual typing & polymorphism
+- technically solid
+- shows that two simple things (definition of consistent subtyping, approach to deal with dynamic type in unification) actually do work in this setting
+
+Points against
+- rather straightforward extension of consistent subtyping and then "turning the crank"
+- quite some guess work involved to come up with the "good" definitions
+- some claims should be softened
+- no treatment of the dynamic gradual guarantee
+
+Comments for author
+-------------------
+
+The paper is overall very elegantly written, and manages to communicate the key
+issues and technical details clearly and effectively. The proposed
+generalization of consistent subtyping is unsurprising and not "deep", but the
+fact that it suffices to address the gradualization of a language with implicit
+higher-rank polymorphism is interesting. The treatment of the algorithmic
+aspects of typing is likewise well carried out.
+
+Similarly to ST's original paper on gradual typing for objects, I find that this
+paper has too much guesswork involved in the proposed design, but at least it
+does explain properly the reasoning that led the authors to it.
+
+Overall, my major observation is that the paper should soften some of the claims
+and critics, as elaborated hereafter.
+
+First, the claim of wide applicability to "a wide range of typing disciplines" /
+"independent of language features" is both unjustified and unnecessary. It might
+be a conjecture that the authors wish to declare in the future work, but it is
+certainly not a contribution of this paper. This paper only shows that the
+definition accommodates one particular form of subtyping/polymorphism, and that
+it accommodates the addition of top. Whether the approach scales to other
+settings such as higher-kinded types, impredicative polymorphism, effect types,
+ownership types, security types, etc. is really an open question. Furthermore,
+the paper does not need to make such a claim: I think it stands on its own with
+what is actually delivered in the paper. (This remark also concerns the
+different occurrences of claims that the proposed definition is "the correct
+definition" of consistent subtyping -- being as operational as ST's definition,
+the claim is quite questionable.)
+
+Second, the paper says that both the Gradualizer and AGT "cannot instruct us how
+to define consistent subtyping for polymorphic types". While this critic is true
+for the Gradualizer, which has a baked-in notion of consistent subtyping, it
+does not fairly apply to AGT. AGT does provides a generally applicable recipe to
+lift any static relation to gradual types, and therefore, it does naturally
+provide "a" definition of the consistent lifting of the static subtyping
+relation for polymorphic types (Figure 4). Whether or not the AGT-induced
+definition coincides with the proposed definition on polymorphic types is, as
+mentioned in Section 3.4, an interesting open question. But it is certainly
+incorrect to claim that the abstract interpretation approach has no
+applicability in this context. Similarly, the note at the beginning of 7.1 is
+incorrect: the paper has not shown that AGT cannot deal with polymorphic types.
+(Also, I suppose that the difficulty of applying AGT to polymorphism is most
+likely related to the dynamics--how to preserve parametricity with the
+evidence-based runtime semantics--and not to the lifting of the static type
+predicates.)
+
+Third, the discussion of the coherence of the declarative system seems a bit far
+fetched. A "cleaner" way to express what is there would be to introduce a weaker
+notion of coherence (say "weak coherence" or "coherence up-to cast errors"), and
+then recognize that the declarative system only satisfies this weaker notion.
+This is indeed only a matter of phrasing, but I believe more adequate.
+
+In the discussion of PBC on page 25, an example is given that involves a cast
+from `*->Int` to `forall.a->a`, arguing that it's best to reject it statically.
+Indeed, with the add1 function, it makes sense. The paper needs to explain why a
+similar cast with an underlying function that is “morally valid” (eg. `\x:*.x`
+typed at `*->Int`) should also always fail.
+
+Finally, I find it noteworthy that the approach of ignoring dynamic types during
+unification, which was discarded by Siek and Vachharajani, actually works here.
+It would be good if the paper could try to communicate more clearly the essence
+of why it does work here, and in SV's work.
+
+
+Details: - p6 l293 - the syntax of Fig 3 does not explain that monotypes do not
+contain the unknown type, since there is no unknown on that figure. In fact, the
+syntactic category to which * is added is not explicitly described before. - p16
+l783 - "which has no analogy in the DK system": before it was stated that
+matching was inspired by the application judgment of DK - a more detailed
+discussion (in footnote) would be welcome. (There is a sentence at the end of
+the related work, but that's a bit late.) - 5.1: make clear upfront that
+algorithmic contexts are ordered - p19 l926: this is the first literal
+mentioning of the predicativity of the system. - p20 l963: the explanation of
+AM-Unknown should rather first appear in 4.2 for M-unknown, where it isn't
+explained.
+
+
+
+Review #245C
+===========================================================================
+
+Overall merit
+-------------
+4. Weak accept - will not argue for
+
+Reviewer expertise
+------------------
+Z. Outsider
+
+Paper summary
+-------------
+
+This paper contributes a new definition of consistent subtyping which
+generalizes the original definition by Siek and Taha. Based on this, they
+develop a new design for a gradually typed calculus with implicit higher-order
+polymorphism. While they use the same dynamic semantics as the polymorphic blame
+calculus of Ahmed et al, they are able to catch more errors (violating
+parametricity) statically. The authors provide design rationale, calculus,
+declarative and algorithmic typing and (mostly mechanized) proofs.
+
+Pros:
+- Well-written.
+
+- Design strives for orthogonal mix of gradual typing consistency and subtyping.
+  The definition of consistency given is an understandable tweak of original.
+  Paper shows two cases (polymorphism and top type) where the tweak works. This
+  is an improvement in state of art /understanding.
+
+- Calculus seems like an improvement over previous work on polymorphic blame
+  calculus.
+
+Cons:
+
+- Results seem incremental? Calculus seems like a small improvement overall:
+  basically same polymorphic blame calculus with more precise static typing.
+  Similarly, top extension seems small as validation albeit not originally
+  supported.
+
+- Unclear what is the bigger motivation for this work? The paper seems to dive
+  into the technical motivation to reconcile consistency and subtyping while
+  keeping them orthogonal. But why is this exciting overall? The authors leave
+  as future work that this orthogonal design scales to many features, larger
+  gradual systems. Even then, the orthogonal design does not automatically
+  provide a recipe on how to integrate a new feature?
+
+Comments for author
+-------------------
+"there is still same flavour"
+
+p. 24 paragraph titled with question asks opposite question in text and answers
+no implying answer yes to title question. Consider rephrasing so answer is
+consistently yes, which avoids confusion and allows skimming.
+
+Abstract and related work. Isn't it disingenuous to characterize "Igarashi's et
+al's notion of type consistency as too conservative" given that it is perfectly
+sensible for their setting with explicit polymorphism? In related work, rather
+than just claiming this was already discussed extensively, it would be better to
+summarize the discussion: e.g. "does not apply to our setting" [because we study
+implicit instead of explicit polymorphism].

@@ -1,0 +1,226 @@
+%%% !!! WARNING: AUTO GENERATED. DO NOT MODIFY !!! %%%
+
+\section{Full Typing Rules of \fnamee}
+\label{appendix:fnamee}
+
+\drules[swfte]{$ \vdash  \Delta $}{Well-formedness}{empty, var}
+
+\drules[swfe]{$ \Delta  \vdash  \Gamma $}{Well-formedness}{empty, var}
+
+\drules[swft]{$\Delta  \vdash  \ottnt{A}$}{Well-formedness of type}{top, bot, nat, var, rcd, arrow, all, and}
+
+\drules[S]{$  \ottnt{A}  <:  \ottnt{B}  \rulehl{ \rightsquigarrow   co }   $}{Declarative subtyping}{refl,trans,top,rcd,andl,andr,arr,and,distArr,topArr,distRcd,topRcd,bot,forall,topAll,distAll}
+
+\drules[TL]{$ \rceil  \ottnt{A}  \lceil $}{Top-like types}{top,and,arr,rcd,all}
+
+\drules[D]{$\Delta  \vdash  \ottnt{A}  *  \ottnt{B}$}{Disjointness}{topL, topR, arr, andL, andR, rcdEq, rcdNeq, tvarL, tvarR, forall,ax}
+
+\drules[Dax]{$ \ottnt{A}  *_{ax}  \ottnt{B} $}{Disjointness Axiom}{intArr, intRcd, intAll, arrAll, arrRcd, allRcd}
+
+\textbf{Note:}   For each form $ \ottnt{A}  *_{ax}  \ottnt{B} $, we also have a symmetric one $ \ottnt{B}  *_{ax}  \ottnt{A} $.
+
+
+\drules[T]{$ \Delta  ;  \Gamma    \vdash    \mathit{E}    \Rightarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e} } $}{Inference}{top, nat, var, app, merge, anno, tabs, tapp, rcd, proj}
+
+\drules[T]{$ \Delta  ;  \Gamma    \vdash    \mathit{E}    \Leftarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e} } $}{Checking}{abs, sub}
+
+\begin{definition}
+  \begin{align*}
+     \llbracket  \ottsym{[]}  \rrbracket^{\top}  &=   \mathsf{top}  \\
+     \llbracket   \ottmv{l}  ,  \mathcal{Q}   \rrbracket^{\top}  &=   \llbracket  \mathcal{Q}  \rrbracket^{\top}   \circ  \mathsf{id}  \\
+     \llbracket   \ottnt{A}  ,  \mathcal{Q}   \rrbracket^{\top}  &=  \ottsym{(}  \mathsf{top}  \rightarrow   \llbracket  \mathcal{Q}  \rrbracket^{\top}   \ottsym{)}  \circ  \mathsf{top}_{\rightarrow}  \\
+     \llbracket   \alpha  *  \ottnt{A}  ,  \mathcal{Q}   \rrbracket^{\top}  &=    \llbracket  \mathcal{Q}  \rrbracket^{\top}  _{\forall}   \circ  \mathsf{top}_{\forall}  \\ \\
+     \llbracket  \ottsym{[]}  \rrbracket^{\&}  &=   \mathsf{id}  \\
+     \llbracket   \ottmv{l}  ,  \mathcal{Q}   \rrbracket^{\&}  &=   \llbracket  \mathcal{Q}  \rrbracket^{\&}   \circ  \mathsf{id}  \\
+     \llbracket   \ottnt{A}  ,  \mathcal{Q}   \rrbracket^{\&}  &=  \ottsym{(}  \mathsf{id}  \rightarrow   \llbracket  \mathcal{Q}  \rrbracket^{\&}   \ottsym{)}  \circ  \mathsf{dist}_{\rightarrow}  \\
+     \llbracket   \alpha  *  \ottnt{A}  ,  \mathcal{Q}   \rrbracket^{\&}  &=    \llbracket  \mathcal{Q}  \rrbracket^{\&}  _{\forall}   \circ  \mathsf{dist}_{\forall} 
+  \end{align*}
+\end{definition}
+
+\drules[A]{$ \mathcal{Q}   \vdash   \ottnt{A}  <:  \ottnt{B}  \rulehl{ \rightsquigarrow   co } $}{Algorithmic subtyping}{const, top, bot,and,arr,rcd,forall,arrConst,rcdConst,andConst,allConst}
+
+
+\drules[CTyp]{$\mathcal{C}  \ottsym{:}  \ottsym{(}  \Delta  \ottsym{;}  \Gamma \, \Rightarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Delta'  \ottsym{;}  \Gamma' \, \Rightarrow \, \ottnt{B}  \ottsym{)}  \rightsquigarrow  \mathcal{D}$}{Context typing I}{emptyOne, appLOne, appROne, mergeLOne, mergeROne, rcdOne, projOne, annoOne, tabsOne,tappOne}
+
+\drules[CTyp]{$\mathcal{C}  \ottsym{:}  \ottsym{(}  \Delta  \ottsym{;}  \Gamma \, \Leftarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Delta'  \ottsym{;}  \Gamma' \, \Leftarrow \, \ottnt{B}  \ottsym{)}  \rightsquigarrow  \mathcal{D}$}{Context typing II}{emptyTwo, absTwo}
+
+\drules[CTyp]{$\mathcal{C}  \ottsym{:}  \ottsym{(}  \Delta  \ottsym{;}  \Gamma \, \Leftarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Delta'  \ottsym{;}  \Gamma' \, \Rightarrow \, \ottnt{B}  \ottsym{)}  \rightsquigarrow  \mathcal{D}$}{Context typing III}{appLTwo, appRTwo, mergeLTwo, mergeRTwo, rcdTwo, projTwo, annoTwo, tabsTwo, tappTwo}
+
+\drules[CTyp]{$\mathcal{C}  \ottsym{:}  \ottsym{(}  \Delta  \ottsym{;}  \Gamma \, \Rightarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Delta'  \ottsym{;}  \Gamma' \, \Leftarrow \, \ottnt{B}  \ottsym{)}  \rightsquigarrow  \mathcal{D}$}{Context typing IV}{absOne}
+
+
+
+\section{Full Typing Rules of \tnamee}
+
+\drules[wfe]{$\Phi  \vdash  \Psi$}{Well-formedness of value context}{empty, var}
+
+\drules[wft]{$\Phi  \vdash  \tau$}{Well-formedness of types}{unit, nat, var, arrow,prod, all}
+
+\drules[ct]{$ co  ::  \tau_{{\mathrm{1}}}   \triangleright   \tau_{{\mathrm{2}}} $}{Coercion typing}{refl,trans,top,bot,topArr,arr,pair,distArr,distAll,projl,projr,forall,topAll}
+
+\drules[t]{$\Phi  \ottsym{;}  \Psi  \vdash  \ottnt{e}  \ottsym{:}  \tau$}{Static semantics}{unit, nat, var, abs, app, tabs, tapp, pair, capp}
+
+\drules[r]{$\ottnt{e}  \longrightarrow  \ottnt{e'}$}{Single-step reduction}{topArr,topAll,distArr,distAll,id,trans,top,arr,pair,projl,projr,forall,app,tapp,ctxt}
+
+% \section{Well-Foundedness}
+
+% \wellfounded*
+
+
+\section{Decidability}
+\label{appendix:decidable}
+
+\begin{definition}[Size of $\mathcal{Q}$]
+  \begin{align*}
+    size(\ottsym{[]}) &=  0 \\
+    size( \mathcal{Q}  ,  \ottmv{l} ) &= size(\mathcal{Q}) \\
+    size( \mathcal{Q}  ,  \ottnt{A} ) &= size(\mathcal{Q}) + size (\ottnt{A}) \\
+    size( \mathcal{Q}  ,  \alpha  *  \ottnt{A} ) &= size(\mathcal{Q}) + size(\ottnt{A}) \\
+  \end{align*}
+\end{definition}
+
+\begin{definition}[Size of types]
+  \begin{align*}
+    size(c) &= 1 \\
+    size(\ottnt{A}  \rightarrow  \ottnt{B}) &= size(\ottnt{A}) + size(\ottnt{B}) + 1 \\
+    size(\ottnt{A}  \, \& \,  \ottnt{B}) &= size(\ottnt{A}) + size(\ottnt{B}) + 1 \\
+    size(\ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{A}  \ottsym{\}}) &= size(\ottnt{A}) + 1 \\
+    size( \forall (  \alpha   *   \ottnt{A}  ) .\, \ottnt{B} ) &= size(\ottnt{A}) + size(\ottnt{B}) + 1
+  \end{align*}
+\end{definition}
+
+% \begin{theorem}[Decidability of Algorithmic Subtyping]
+%   \label{lemma:decide-sub}
+%   Given $\mathcal{Q}$, $\ottnt{A}$ and $\ottnt{B}$, it is decidable whether there exists
+%   $co$, such that $ \mathcal{Q}   \vdash   \ottnt{A}  <:  \ottnt{B}  \rulehl{ \rightsquigarrow   co } $.
+% \end{theorem}
+\decidesub*
+\proof
+Let the judgment $ \mathcal{Q}   \vdash   \ottnt{A}  <:  \ottnt{B}  \rulehl{ \rightsquigarrow   co } $ be measured by $size(\mathcal{Q}) +
+size(\ottnt{A}) + size(\ottnt{B})$. For each subtyping rule, we show that every
+inductive premise
+is smaller than the conclusion.
+
+\begin{itemize}
+  \item Rules \rref*{A-const,A-top, A-bot} have no premise.
+    \item Case \[ \drule{A-and} \]
+      In both premises, they have the same $\mathcal{Q}$ and $\ottnt{A}$, but $\ottnt{B_{{\mathrm{1}}}}$
+      and $\ottnt{B_{{\mathrm{2}}}}$ are smaller than $\ottnt{B_{{\mathrm{1}}}}  \, \& \,  \ottnt{B_{{\mathrm{2}}}}$.
+    \item Case \[\drule{A-arr} \]
+      The size of premise is smaller than the conclusion as $size(\ottnt{B_{{\mathrm{1}}}}  \rightarrow  \ottnt{B_{{\mathrm{2}}}})
+      = size(\ottnt{B_{{\mathrm{1}}}}) + size(\ottnt{B_{{\mathrm{2}}}}) + 1$.
+    \item Case \[ \drule{A-rcd} \]
+      In premise, the size is $size( \mathcal{Q}  ,  \ottmv{l} ) + size (\ottnt{A}) + size(\ottnt{B}) =
+      size(\mathcal{Q}) + size(\ottnt{A}) + size(\ottnt{B})$, which is smaller than
+      $size(\mathcal{Q}) + size(\ottnt{A}) + size(\ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{B}  \ottsym{\}}) = size(\mathcal{Q}) + size(\ottnt{A})
+      + size(\ottnt{B}) + 1$.
+    \item Case \[\drule{A-forall} \]
+      The size of premise is smaller than the conclusion as $size(\mathcal{Q}) +
+      size(\ottnt{A}) + size( \forall (  \alpha   *   \ottnt{B_{{\mathrm{1}}}}  ) .\, \ottnt{B_{{\mathrm{2}}}} )
+      = size(\mathcal{Q}) + size(\ottnt{A}) + size(\ottnt{B_{{\mathrm{1}}}}) + size(\ottnt{B_{{\mathrm{2}}}}) + 1
+      > size( \mathcal{Q}  ,  \alpha  *  \ottnt{B_{{\mathrm{1}}}} ) + size(\ottnt{A}) + size(\ottnt{B_{{\mathrm{2}}}})
+      = size(\mathcal{Q}) + size(\ottnt{B_{{\mathrm{1}}}}) + size(\ottnt{A}) + size(\ottnt{B_{{\mathrm{2}}}})$.
+    \item Case \[\drule{A-arrConst} \]
+      In the first premise, the size is smaller than the conclusion because of
+      the size of $\mathcal{Q}$ and $\ottnt{A_{{\mathrm{2}}}}$. In the second premise, the size is
+      smaller than the conclusion because $size(\ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}) > size(\ottnt{A_{{\mathrm{2}}}})$.
+    \item Case \[\drule{A-rcdConst} \]
+      The size of premise is smaller as $size( \ottmv{l}  ,  \mathcal{Q} ) + size(\ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{A}  \ottsym{\}}) +
+      size(c)
+      = size(\mathcal{Q}) + size(\ottnt{A}) + size(c) + 1
+      > size(\mathcal{Q}) + size(\ottnt{A}) + size(c)$.
+    \item Case \[\drule{A-andConst} \]
+      The size of premise is smaller as $size(\ottnt{A_{{\mathrm{1}}}}  \, \& \,  \ottnt{A_{{\mathrm{2}}}}) = size(\ottnt{A_{{\mathrm{1}}}}) +
+      size(\ottnt{A_{{\mathrm{2}}}}) + 1 > size(\ottnt{A_{\ottmv{i}}})$.
+    \item Case \[\drule{A-allConst} \]
+      In the first premise, the size is smaller than the conclusion because of
+      the size of $\mathcal{Q}$ and $\ottnt{A_{{\mathrm{2}}}}$. In the second premise, the size is
+      smaller than the conclusion because $size( \forall (  \beta   *   \ottnt{A_{{\mathrm{1}}}}  ) .\, \ottnt{A_{{\mathrm{2}}}} ) > size(\ottnt{A_{{\mathrm{2}}}})$.
+\end{itemize}
+\qed
+
+\begin{lemma}[Decidability of Top-like types]
+  \label{lemma:decide-top}
+  Given a type $\ottnt{A}$, it is decidable whether $ \rceil  \ottnt{A}  \lceil $.
+\end{lemma}
+\proof Induction on the judgment $ \rceil  \ottnt{A}  \lceil $. For each subtyping rule, we show
+that every inductive premise is smaller than the conclusion.
+\begin{itemize}
+  \item \rref{TL-top} has no premise.
+  \item Case \[\drule{TL-and}\]
+    $size(\ottnt{A}  \, \& \,  \ottnt{B}) = size(\ottnt{A}) + size(\ottnt{B}) + 1$, which is greater than
+    $size(\ottnt{A})$ and $size(\ottnt{B})$.
+  \item Case \[\drule{TL-arr}\]
+    $size(\ottnt{A}  \rightarrow  \ottnt{B}) = size(\ottnt{A}) + size(\ottnt{B}) + 1$, which is greater than
+    $size(\ottnt{B})$.
+  \item Case \[\drule{TL-rcd}\]
+    $size(\ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{A}  \ottsym{\}}) = size(\ottnt{A}) + 1$, which is greater than
+    $size(\ottnt{A})$.
+  \item Case \[\drule{TL-all}\]
+    $size( \forall (  \alpha   *   \ottnt{A}  ) .\, \ottnt{B} ) = size(\ottnt{A}) + size(\ottnt{B}) + 1$, which is greater than
+    $size(\ottnt{B})$.
+\end{itemize}
+\qed
+
+\begin{lemma}[Decidability of disjointness axioms checking]
+  \label{lemma:decide-disa}
+  Given $\ottnt{A}$ and $\ottnt{B}$, it is decidable whether $ \ottnt{A}  *_{ax}  \ottnt{B} $.
+\end{lemma}
+\proof $ \ottnt{A}  *_{ax}  \ottnt{B} $ is decided by the shape of types, and thus it's
+decidable. 
+\qed
+
+% \begin{theorem}[Decidability of disjointness checking]
+%   \label{lemma:decide-dis}
+%   Given $\Delta$, $\ottnt{A}$ and $\ottnt{B}$, it is decidable whether $\Delta  \vdash  \ottnt{A}  *  \ottnt{B}$.
+% \end{theorem}
+\decidedis*
+\proof
+Let the judgment $\Delta  \vdash  \ottnt{A}  *  \ottnt{B}$ be measured by $ size(\ottnt{A}) +
+size(\ottnt{B})$. For each subtyping rule, we show that every inductive premise
+is smaller than the conclusion.
+\begin{itemize}
+\item Case \[\drule{D-topL}\]
+  By \cref{lemma:decide-top}, we know $ \rceil  \ottnt{A}  \lceil $ is decidable.
+\item Case \[\drule{D-topR}\]
+  By \cref{lemma:decide-top}, we know $ \rceil  \ottnt{B}  \lceil $ is decidable.
+\item Case \[\drule{D-arr}\]
+  $size(\ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}) + size (\ottnt{B_{{\mathrm{1}}}}  \rightarrow  \ottnt{B_{{\mathrm{2}}}}) > size(\ottnt{A_{{\mathrm{2}}}}) + size(\ottnt{B_{{\mathrm{2}}}})$.
+\item Case \[\drule{D-andL}\]
+  $size(\ottnt{A_{{\mathrm{1}}}}  \, \& \,  \ottnt{A_{{\mathrm{2}}}}) + size (\ottnt{B})$ is greater than $size(\ottnt{A_{{\mathrm{1}}}}) +
+  size(\ottnt{B})$ and $size(\ottnt{A_{{\mathrm{2}}}}) + size(\ottnt{B})$.
+\item Case \[\drule{D-andR}\]
+  $size(\ottnt{B_{{\mathrm{1}}}}  \, \& \,  \ottnt{B_{{\mathrm{2}}}}) + size (\ottnt{A})$ is greater than $size(\ottnt{B_{{\mathrm{1}}}}) +
+  size(\ottnt{A})$ and $size(\ottnt{B_{{\mathrm{2}}}}) + size(\ottnt{A})$.
+\item Case \[\drule{D-rcdEq}\]
+  $size(\ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{A}  \ottsym{\}}) + size (\ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{B}  \ottsym{\}})$ is greater than $size(\ottnt{A}) +
+  size(\ottnt{B})$.
+\item Case \[\drule{D-rcdNeq}\]
+  It's decidable whether $\ottmv{l_{{\mathrm{1}}}}$ is equal to $\ottmv{l_{{\mathrm{2}}}}$.
+\item Case \[\drule{D-tvarL}\]
+  By \cref{lemma:decide-sub}, it's decidable whether $\ottnt{A}  <:  \ottnt{B}$.
+\item Case \[\drule{D-tvarR}\]
+  By \cref{lemma:decide-sub}, it's decidable whether $\ottnt{A}  <:  \ottnt{B}$.
+\item Case \[\drule{D-forall}\]
+  $size( \forall (  \alpha   *   \ottnt{A_{{\mathrm{1}}}}  ) .\, \ottnt{B_{{\mathrm{1}}}} ) + size ( \forall (  \alpha   *   \ottnt{A_{{\mathrm{2}}}}  ) .\, \ottnt{B_{{\mathrm{2}}}} )$ is greater than $size(\ottnt{B_{{\mathrm{1}}}}) +
+  size(\ottnt{B_{{\mathrm{2}}}})$.
+\item Case \[\drule{D-ax}\]
+  By \cref{lemma:decide-disa} it's decidable whether $ \ottnt{A}  *_{ax}  \ottnt{B} $.
+\end{itemize}
+\qed
+
+% \begin{theorem}[Decidability of typing]
+%   \label{lemma:decide-typing}
+%   Given $\Delta$, $\Gamma$, $\mathit{E}$ and $\ottnt{A}$, it is decidable whether $\Delta  \ottsym{;}  \Gamma  \vdash  \mathit{E} \, \Leftrightarrow \, \ottnt{A}$.
+% \end{theorem}
+% \decidetyp*
+% \proof
+% The typing judgment $\Delta  \ottsym{;}  \Gamma  \vdash  \mathit{E} \, \Leftrightarrow \, \ottnt{A}$ is syntax-directed.
+% And by \cref{lemma:decide-sub} and \cref{lemma:decide-dis}, we know that typing
+% is decidable.
+% \qed
+
+\section{Circuit Embeddings}
+\label{appendix:circuit}
+
+\lstinputlisting[language=haskell,linerange=2-140]{./examples/Scan2.hs}% APPLY:linerange=DSL_FULL

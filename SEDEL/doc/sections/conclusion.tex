@@ -1,0 +1,37 @@
+\section{Conclusion}
+
+This paper presents \name: the first design for a polymorphic statically-typed
+language with first-class traits, supporting dynamic inheritance as well as
+conventional OO features such as dynamic dispatching and abstract methods. The
+paper also shows how high-level source language constructs can be elaborated
+into a core record calculus with disjoint polymorphism. Finally the paper
+illustrates the applicability of \name by showing greatly improved design
+patterns such as Object Algebras and Extensible \textsc{Visitor}s, leveraging
+first-class traits. As for future work, we are interested to study how
+first-class traits interacts with features such as mutable state and recursive
+types. For mutable state, one immediate issue of supporting mutation is how it
+affects the coherence property of \bname, and we foresee major
+technical challenges to adjust the previous coherence proof. A more powerful proof method such as
+logical relations~\cite{xuan_nested, ahmed2004semantics} may be needed.
+
+% \jeremy{future work}
+
+% This paper describes \name: a polymorphic, statically-typed and delegation-based
+% programming language. \name provides a powerful form of conflict-free multiple
+% inheritance mechanism called dynamically composable traits. \name is both safe
+% and flexible. Throughout the paper, we have shown how the mechanisms of \name
+% improve extensibility design pattern such as Extensible Visitors and Object
+% Algebras.
+
+% There are many avenues for future work. On one hand, we intend to port the core
+% functionality of \name into a JVM-based compiler. One the other hand, \name is
+% still very simple, lacking interesting features such as state variables,
+% recursive types, \textbf{super} keyword, etc. So we are interested to see how
+% our trait model interacts with those features. Finally we plan to further study
+% the formal meta-theory of the extended version of \bname.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: ../paper.bib
+%%% End:

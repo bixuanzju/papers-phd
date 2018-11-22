@@ -1,0 +1,356 @@
+%% For double-blind review submission
+\documentclass[acmsmall,10pt,review,anonymous]{acmart}\settopmatter{printfolios=true}
+%% For single-blind review submission
+%\documentclass[acmsmall,10pt,review]{acmart}\settopmatter{printfolios=true}
+%% For final camera-ready submission
+%\documentclass[acmsmall10pt,]{acmart}\settopmatter{}
+
+%% Note: Authors migrating a paper from PACMPL format to traditional
+%% SIGPLAN proceedings format should change 'acmsmall' to
+%% 'sigplan'.
+
+
+%% Some recommended packages.
+\usepackage{booktabs}   %% For formal tables:
+                        %% http://ctan.org/pkg/booktabs
+\usepackage{subcaption} %% For complex figures with subfigures/subcaptions
+                        %% http://ctan.org/pkg/subcaption
+
+% Hyper links
+\usepackage{url}
+\usepackage{
+  nameref,%\nameref
+  hyperref,%\autoref
+  % n.b. \Autoref is defined by thmtools
+  cleveref,% \cref
+  % n.b. cleveref after! hyperref
+}
+\hypersetup{
+   colorlinks,
+   citecolor=black,
+   filecolor=black,
+   linkcolor=black,
+   urlcolor=black
+}
+
+% AMS packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm, thmtools, thm-restate}
+
+\declaretheorem{utheorem}
+
+\declaretheorem[name=Proposition]{mprop}
+\declaretheorem[name=Definition]{mdef}
+
+\declaretheorem[name=Lemma,
+  refname={lemma,lemmas},
+  Refname={Lemma,Lemmas}]{mlemma}
+
+\declaretheorem[name=$\mathcal{L}$emma,
+  numberwithin=section,
+  refname={lemma,lemmas},
+  Refname={Lemma,Lemmas}]{clemma}
+
+\declaretheorem[name=Theorem,
+  refname={theorem,theorems},
+  Refname={Theorem,Theorems}]{mtheorem}
+
+\declaretheorem[name=$\mathcal{T}$heorem,
+  numberwithin=section,
+  refname={theorem,theorems},
+  Refname={Theorem,Theorems}]{ctheorem}
+
+
+\declaretheorem[name=Observation]{observation}
+
+
+\usepackage{mathtools}
+\usepackage{mdwlist}
+\usepackage{pifont}
+
+
+% Miscellaneous
+\usepackage{paralist}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{multirow}
+
+
+% Revision tools
+\usepackage{xspace}
+\usepackage{comment}
+\newcommand\mynote[3]{\textcolor{#2}{#1: #3}}
+\newcommand\bruno[1]{\mynote{Bruno}{red}{#1}}
+\newcommand\ningning[1]{\mynote{Ningning}{orange}{#1}}
+\newcommand\jeremy[1]{\mynote{Jeremy}{blue}{#1}}
+
+\newcommand{\hl}[2][gray!40]{\colorbox{#1}{#2}}
+\newcommand{\hlmath}[2][gray!40]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+
+% Graphs
+\usepackage{tikz}
+\usetikzlibrary{matrix}
+\usetikzlibrary{arrows,automata}
+\usetikzlibrary{positioning}
+
+
+\input{paper_utility.tex}
+
+\input{sections/formal.tex}
+
+
+
+
+
+% \makeatletter\if@ACM@journal\makeatother
+% %% Journal information (used by PACMPL format)
+% %% Supplied to authors by publisher for camera-ready submission
+% \acmJournal{PACMPL}
+% \acmVolume{1}
+% \acmNumber{1}
+% \acmArticle{1}
+% \acmYear{2017}
+% \acmMonth{1}
+% \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+% \startPage{1}
+% \else\makeatother
+% %% Conference information (used by SIGPLAN proceedings format)
+% %% Supplied to authors by publisher for camera-ready submission
+% \acmConference[PL'17]{ACM SIGPLAN Conference on Programming Languages}{January 01--03, 2017}{New York, NY, USA}
+% \acmYear{2017}
+% \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
+% \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+% \startPage{1}
+% \fi
+
+
+%% Copyright information
+%% Supplied to authors (based on authors' rights management selection;
+%% see authors.acm.org) by publisher for camera-ready submission
+\setcopyright{none}             %% For review submission
+%\setcopyright{acmcopyright}
+%\setcopyright{acmlicensed}
+%\setcopyright{rightsretained}
+%\copyrightyear{2017}           %% If different from \acmYear
+
+
+%% Bibliography style
+\bibliographystyle{ACM-Reference-Format}
+%% Citation style
+%% Note: author/year citations are required for papers published as an
+%% issue of PACMPL.
+\citestyle{acmauthoryear}   %% For author/year citations
+
+
+
+\begin{document}
+
+%% Title information
+\title{Consistent Subtyping for All}
+\ifdefined\submitoption
+\subtitle{Long version of paper, including supplementary meterial}         %% [Short Title] is optional;
+\fi
+
+                                        %% when present, will be used in
+                                        %% header instead of Full Title.
+% \titlenote{with title note}             %% \titlenote is optional;
+                                        %% can be repeated if necessary;
+                                        %% contents suppressed with 'anonymous'
+% \subtitle{Subtitle}                     %% \subtitle is optional
+% \subtitlenote{with subtitle note}       %% \subtitlenote is optional;
+                                        %% can be repeated if necessary;
+                                        %% contents suppressed with 'anonymous'
+
+
+%% Author information
+%% Contents and number of authors suppressed with 'anonymous'.
+%% Each author should be introduced by \author, followed by
+%% \authornote (optional), \orcid (optional), \affiliation, and
+%% \email.
+%% An author may have multiple affiliations and/or emails; repeat the
+%% appropriate command.
+%% Many elements are not rendered, but should be provided for metadata
+%% extraction tools.
+
+%% Author with single affiliation.
+\author{First1 Last1}
+\authornote{with author1 note}          %% \authornote is optional;
+                                        %% can be repeated if necessary
+\orcid{nnnn-nnnn-nnnn-nnnn}             %% \orcid is optional
+\affiliation{
+  \position{Position1}
+  \department{Department1}              %% \department is recommended
+  \institution{Institution1}            %% \institution is required
+  \streetaddress{Street1 Address1}
+  \city{City1}
+  \state{State1}
+  \postcode{Post-Code1}
+  \country{Country1}
+}
+\email{first1.last1@inst1.edu}          %% \email is recommended
+
+%% Author with two affiliations and emails.
+\author{First2 Last2}
+\authornote{with author2 note}          %% \authornote is optional;
+                                        %% can be repeated if necessary
+\orcid{nnnn-nnnn-nnnn-nnnn}             %% \orcid is optional
+\affiliation{
+  \position{Position2a}
+  \department{Department2a}             %% \department is recommended
+  \institution{Institution2a}           %% \institution is required
+  \streetaddress{Street2a Address2a}
+  \city{City2a}
+  \state{State2a}
+  \postcode{Post-Code2a}
+  \country{Country2a}
+}
+\email{first2.last2@inst2a.com}         %% \email is recommended
+\affiliation{
+  \position{Position2b}
+  \department{Department2b}             %% \department is recommended
+  \institution{Institution2b}           %% \institution is required
+  \streetaddress{Street3b Address2b}
+  \city{City2b}
+  \state{State2b}
+  \postcode{Post-Code2b}
+  \country{Country2b}
+}
+\email{first2.last2@inst2b.org}         %% \email is recommended
+
+
+%% Paper note
+%% The \thanks command may be used to create a "paper note" ---
+%% similar to a title note or an author note, but not explicitly
+%% associated with a particular element.  It will appear immediately
+%% above the permission/copyright statement.
+% \thanks{with paper note}                %% \thanks is optional
+                                        %% can be repeated if necesary
+                                        %% contents suppressed with 'anonymous'
+
+
+%% Abstract
+%% Note: \begin{abstract}...\end{abstract} environment must come
+%% before \maketitle command
+\begin{abstract}
+Consistent subtyping is employed in some gradual type systems to
+validate type conversions. The original
+definition, proposed by \citeauthor{siek2007gradual}, serves as a guideline for
+designing many gradual type systems with subtyping. Polymorphic types \`a la
+System F also induce a subtyping relation that relates polymorphic types
+to their instantiations. However \citeauthor{siek2007gradual}'s definition
+is not adequate for some kinds of subtyping, including the subtyping
+relation arising from implicit polymorphism.
+
+The first goal of this paper is to propose a generalization of consistent
+subtyping that is adequate for polymorphic subtyping, and subsumes the original
+definition by \citeauthor{siek2007gradual}. The new definition of consistent
+subtyping provides novel insights with respect to previous polymorphic gradual
+type systems, which did not employ consistent subtyping. For instance both
+\citeauthor{ahmed2011blame} (in the Polymorphic Blame Calculus) and
+\citeauthor{yuu2017poly} use, respectively, 
+notions of \emph{compatibility} and \emph{type consistency} instead
+of consistent subtyping to validate casts. We argue that, for implicit
+polymorphism, \citeauthor{ahmed2011blame}'s notion of
+compatibility is too permissive (i.e. too many programs are allowed to
+type-check), and that \citeauthor{yuu2017poly}'s notion of type consistency is too
+conservative (i.e. programs that should type check are rejected).
+To further validate our
+generalized notion of consistent subtyping we also study the addition 
+of top types to gradual type systems. Like polymorphism, the notion of 
+consistent subtyping proposed by \citeauthor{siek2007gradual} does not work for top
+types, but our revised definition can account for top types.
+%To further validate our revised notion of
+%consistent subtyping, we show that it coincides with a notion of
+%consistent subtyping arizing from an extension of 
+%Garcia et al.'s \emph{Abstracting Gradual Typing} (AGT) (2016) with
+%polymorphism. 
+The second goal of this paper is to present a gradually typed calculus for
+implicit (higher-rank) polymorphism that uses our new notion of consistent
+subtyping. We develop both declarative and algorithmic versions for the type
+system. The algorithmic version employs techniques developed by
+\citeauthor{dunfield2013complete} to deal with instantiation. We prove that the
+new calculus satisfies all of the refined criteria for gradual typing. All of
+the metatheory of this paper, except some manual proofs for the algorithmic type
+system, has been mechanically formalized using the Coq proof assistant.
+\end{abstract}
+
+
+%% 2012 ACM Computing Classification System (CSS) concepts
+%% Generate at 'http://dl.acm.org/ccs/ccs.cfm'.
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10011007.10011006.10011008</concept_id>
+<concept_desc>Software and its engineering~General programming languages</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10003456.10003457.10003521.10003525</concept_id>
+<concept_desc>Social and professional topics~History of programming languages</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+% \ccsdesc[500]{Software and its engineering~General programming languages}
+% \ccsdesc[300]{Social and professional topics~History of programming languages}
+%% End of generated code
+
+
+%% Keywords
+%% comma separated list
+% \keywords{keyword1, keyword2, keyword3}  %% \keywords is optional
+
+
+%% \maketitle
+%% Note: \maketitle command must come after title commands, author
+%% commands, abstract environment, Computing Classification System
+%% environment and commands, and keywords command.
+\maketitle
+
+
+%% -- Starting Point --
+
+\input{sections/introduction.tex}
+\input{sections/background.tex}
+\input{sections/exploration.tex}
+\input{sections/typesystem.tex}
+\input{sections/algorithm.tex}
+\input{sections/discussion.tex}
+\input{sections/related.tex}
+\input{sections/conclusion.tex}
+
+
+
+
+%% Acknowledgments
+\begin{acks}                            %% acks environment is optional
+                                        %% contents suppressed with 'anonymous'
+  %% Commands \grantsponsor{<sponsorID>}{<name>}{<url>} and
+  %% \grantnum[<url>]{<sponsorID>}{<number>} should be used to
+  %% acknowledge financial support and will be used by metadata
+  %% extraction tools.
+  This material is based upon work supported by the
+  \grantsponsor{GS100000001}{National Science
+    Foundation}{http://dx.doi.org/10.13039/100000001} under Grant
+  No.~\grantnum{GS100000001}{nnnnnnn} and Grant
+  No.~\grantnum{GS100000001}{mmmmmmm}.  Any opinions, findings, and
+  conclusions or recommendations expressed in this material are those
+  of the author and do not necessarily reflect the views of the
+  National Science Foundation.
+\end{acks}
+
+%% Bibliography
+\bibliography{paper}
+
+\ifdefined\submitoption
+\newpage
+\appendix
+\input{sections/appendix.tex}
+\fi
+
+\end{document}

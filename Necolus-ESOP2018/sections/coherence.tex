@@ -1,0 +1,407 @@
+
+\section{Coherence}
+\label{sec:cohe}
+
+This section constructs logical relations to
+establish the coherence of \name. It turns out that finding a
+suitable definition of coherence for \name is already challenging in its own
+right. In what follows we reproduce the steps of finding a definition for coherence
+that is both intuitive and applicable. Then we present the
+construction of logical (equivalence) relations tailored to this 
+definition, and the connection between logical equivalence and coherence.
+
+
+
+\subsection{In Search of Coherence}
+
+In both \oname and \fname the definition of coherence is based on
+$\alpha$-equivalence. More specifically, their coherence property states that
+any two target terms that a source expression elaborates into must be exactly the same (up to
+$\alpha$-equivalence). Unfortunately this syntactic notion of coherence is
+very fragile with respect to extensions.
+For example, it is not obvious how to retain this notion of coherence when adding more subtyping
+rules such as those in \cref{fig:subtype_decl}.
+
+If we permit ourselves to consider only the syntactic aspects of expressions,
+then very few expressions can be considered equal. The syntactic view is also in conflict
+with the intuition that the significance of an expression lies in its
+contribution to the \textit{outcome} of a computation~\citep{Harper_2016}.
+Drawing inspiration from a wide range of literature on contextual
+equivalence~\citep{morris1969lambda}, we want a context-based notion of
+coherence. It is helpful to consider several examples before presenting the
+formal definition of our new semantically founded notion of coherence.
+
+\begin{example} \label{eg:1}
+The same \name expression $3$ can be typed $[[nat]]$ in at least two ways: by
+\rref{T-sub,S-refl}; or by \rref{T-sub,S-trans,S-refl}, resulting in two \tname
+terms $\app{[[id]]}{3}$ and $\app{([[id o id]])}{3}$, respectively. It is apparent
+that these two \tname terms are ``equal'' in the sense that both reduce to the
+same numeral $3$.
+\end{example}
+
+\paragraph{Expression Contexts and Contextual Equivalence.} To formalize the intuition,
+we introduce the notion of \textit{expression contexts}. An expression context $[[cc]]$
+is a term with a single hole $[[__]]$ (possibly under some binders) in it. The
+syntax of expression contexts can be found in \cref{fig:contexts}. The typing
+judgement for expression contexts has the form $[[cc : (G |- T) ~~> (G' |- T')]]$ where $([[G |- T]])$ indicates
+the type of the hole. This judgement essentially says that plugging a well-typed
+term $[[G |- e : T]]$ into the context $[[cc]]$ gives another well-typed term
+$[[G' |- cc{e} : T']]$. We define a \textit{complete program} to mean any closed
+term of type $[[nat]]$. The following two definitions capture the notion of
+\textit{contextual equivalence}.
+
+\begin{figure}[t]
+  \centering
+\begin{tabular}{llll}\toprule
+  \tname contexts & $[[cc]]$ & $\Coloneqq$ & $[[__]] \mid [[\x . cc]] \mid [[cc e2]] \mid [[e1 cc]] \mid [[< cc, e2 >]] \mid [[< e1, cc >]] \mid [[c cc]] \mid [[ { l = cc }]] \mid [[ cc. l ]]$ \\
+  \name contexts & $[[C]]$ & $\Coloneqq$ & $[[__]] \mid [[\x . C]] \mid [[C ee2]] \mid [[ee1 C]] \mid [[ee1 ,, C]] \mid [[C ,, ee2]] \mid [[C : A]] \mid [[ { l = C } ]] \mid [[C.l]]$ \\ \bottomrule
+\end{tabular}
+  \caption{Expression contexts of \name and \tname}
+  \label{fig:contexts}
+\end{figure}
+
+\begin{definition}[Kleene Equality]
+  Two complete programs, $[[e]]$ and $[[e']]$, are Kleene equal, written
+  $\kleq{[[e]]}{[[e']]}$, iff there exists $i$ such that $[[e -->> i]]$ and $[[e' -->> i]]$.
+\end{definition}
+
+\begin{definition}[Contextual Equivalence] \label{def:cxtx}
+  Let $[[G |- e1 : T]]$ and $[[G |- e2 : T]]$.
+  \[
+    [[G |- e1 ~= e2 : T]] \defeq \forall [[cc : (G |- T) ~~> (empty |- nat)]]  \Longrightarrow
+    \kleq{[[cc{e1}]]}{[[cc{e2}]]}
+  \]
+\end{definition}
+
+\noindent Regarding Example~\ref{eg:1}, it seems adequate to say that $\app{[[id]]}{3}$ and
+$\app{([[id o id]])}{3}$ are contextually equivalent. Does this imply that coherence
+can be based on \cref{def:cxtx}? Unfortunately it cannot, as demonstrated by the
+following example.
+
+
+\begin{example} \label{eg:2} It may be counter-intuitive that two \tname terms
+  $[[\x . p1 x]]$ and $[[\x . p2 x]]$ should also be considered equal. To see
+  why, first note that they are both translations of the same \name expression:
+  $[[(\x . x) : nat & nat -> nat]]$. What can we do with this lambda
+  abstraction? We can apply it to $1 : [[nat & nat]]$ for example. In that case,
+  we get two translations $\app{[[(\x . p1 x)]]}{\pair{1}{1}}$ and $\app{[[(\x .
+    p2 x)]]}{\pair{1}{1}}$, which both reduce to the same numeral $1$. 
+  % TOM: I do not think this sentence contributes to the story:
+  % We can
+  % keep trying with different arguments, until we are certain that all the
+  % translations of $[[(\x . x) : nat & nat -> nat]]$ really contribute the same
+  % to the outcome of a computation. 
+  However, $[[\x . p1 x]]$ and $[[\x . p2 x]]$
+  are definitely not equal according to \cref{def:cxtx}, as one can find a
+  context $\app{[[__]]}{\pair{1}{2}}$ where the two terms reduce to two
+  different numerals. The problem is that not every well-typed \tname term
+  can be obtained from a well-typed \name expression through the
+  elaboration semantics. For
+  example, $\app{[[__]]}{\pair{1}{2}}$ should not be considered because the
+  (non-disjoint) source expression $\mer{1}{2}$ is rejected by the type system
+  of the source calculus \name and thus never gets elaborated into $\pair{1}{2}$.
+\end{example}
+
+\paragraph{\name Contexts and Refined Contextual Equivalence.}
+\Cref{eg:2} hints at a shift from \tname contexts to \name contexts $[[C]]$,
+whose syntax is shown in \cref{fig:contexts}. Due to the bidirectional
+nature of the type system, the typing judgement of $[[C]]$ features 4
+different forms:
+\begin{mathpar}
+  [[C : (GG => A) ~> (GG' => A') ~~> cc]] \and
+  [[C : (GG <= A) ~> (GG' => A') ~~> cc]] \and
+  [[C : (GG => A) ~> (GG' <= A') ~~> cc]] \and
+  [[C : (GG <= A) ~> (GG' <= A') ~~> cc]]
+\end{mathpar}
+Take $[[C : (GG => A) ~> (GG' => A') ~~> cc]]$ for example, it reads given a
+well-typed \name expression $[[GG |- ee => A]]$, we have $[[GG' |- C{ee} => A']]$. The judgement also generates a \tname context $[[cc]]$ such that $[[cc : (|GG| |- |A|) ~~> (|GG'| |- |A'|)]]$ by
+construction. The typing rules appear in the appendix. Now we are ready to
+refine \cref{def:cxtx}'s contextual equivalence to take into
+consideration both \name and \tname contexts.
+
+\begin{definition}[Refined Contextual Equivalence]  \label{def:cxtx2}
+  Let $([[<=>1]], [[<=>2]]) \, \in \{ [[=>]] , [[<=]] \} \times \{ [[=>]] , [[<=]] \} $, $[[GG |- ee1 <=>1 A ~~> e1]]$ and
+  $[[GG |- ee2 <=>1 A ~~> e2]]$, two \name expressions are contextually
+  equivalent, written $[[GG |- ee1 ~= ee2 : A]]$, iff
+  \[
+    \forall [[C : (GG <=>1 A) ~> (empty <=>2 nat) ~~> cc]] \Longrightarrow \kleq{[[cc{e1}]]}{[[cc{e2}]]}
+  \]
+\end{definition}
+
+\noindent Regarding \cref{eg:2}, a possible \name context is $\app{[[__]]}{(1 :
+  [[nat & nat]])}$. According to \cref{def:cxtx2}, a corresponding \tname
+context is $\app{[[__]]}{\pair{1}{1}}$. Now both $[[\x . p1 x]]$ and $[[\x . p2
+x]]$ produce the same numeral $1$ in this context. Of course we should consider
+all possible contexts to be certain they are truly equal. From now on, we
+use the symbol $\backsimeq_{ctx}$ to refer to contextual equivalence in
+\cref{def:cxtx2}. With \cref{def:cxtx2} we can formally state that \name is coherent
+in the following theorem:
+
+\begin{restatable}[Coherence]{mtheorem}{coherence} \label{thm:coherence}
+  For every $[[GG]]$, $[[ee]]$ and $[[A]]$ we have
+  $[[GG |- ee ~= ee : A]]$.
+\end{restatable}
+
+\noindent The rest of the section is devoted to proving that \cref{thm:coherence} holds.
+
+\subsection{Logical Relations}
+
+Intuitive as \cref{def:cxtx2} may seem, it is generally very hard to prove
+contextual equivalence directly, since it involves quantification over
+\textit{all} possible contexts. Worse still, two kinds of contexts are involved
+in \cref{thm:coherence}, which makes reasoning even more tedious. The key to
+simplifying the reasoning is to exploit types by using logical
+relations~\citep{tait, statman1985logical, plotkin1973lambda}.
+
+
+\paragraph{In Search of a Logical Relation.}
+It is worth pausing to ponder what kind of relation we are looking for. % From
+% \cref{eg:2}, it is clear that pairs have a special status in \tname. Indeed they
+% ought to be, since pairs originate from merges or subtyping. Also disjointness
+% on intersection types should correspond to some sort of constraints over pairs.
+The high-level intuition behind the relation is to capture the
+notion of ``coherent'' values. These values are unambiguous in every context. A
+moment of thought leads us to the following important observations:
+
+\begin{observation}[Disjoint values are unambiguous] \label{ob:1} The relation should contain values originating
+  from disjoint intersection types. Those values are essentially translated from
+  merges, and since \rref{T-merge} ensures disjointness, they are unambiguous.
+  For example, $\pair{1}{\recordCon{l}{1}}$ corresponds to the type $[[nat & {l
+    : nat}]]$. It is always clear which one to choose ($1$ or
+  $\recordCon{l}{1}$) no matter how this pair is used in certain contexts.
+\end{observation}
+
+\begin{observation}[Duplication is unambiguous] \label{ob:2} The relation should
+  contain values originating from non-disjoint intersection types. This may
+  sound baffling since the whole point of disjointness is to rule out
+  (ambiguous) expressions such as $\mer{1}{2}$. However, $\mer{1}{2}$ never gets
+  elaborated, and the only values corresponding to $[[nat & nat]]$ are those
+  pairs such as $\pair{1}{1}$, $\pair{2}{2}$, etc. Those values are essentially
+  generated from \rref{T-sub} and are also unambiguous.
+\end{observation}
+
+To formalize values being ``coherent'' based on the above observations,
+\Cref{fig:logical} defines two (binary) logical relations for \tname, one for
+values ($\valR{[[T1]]}{[[T2]]}$) and one for terms ($\eeR{[[T1]]}{[[T2]]}$). We
+require that any two values $([[v1]], [[v2]]) \in \valR{[[T1]]}{[[T2]]}$ are
+closed and well-typed. For succinctness, we write $\valRR{\tau}$ to mean
+$\valR{\tau}{\tau}$, and similarly for $\eeRR{\tau}$.
+
+\begin{figure}[t]
+  \centering
+\begin{align*}
+  [[(v1 , v2) in V ( nat ; nat )]] &\defeq \exists i, v_1 = v_2 = i \\
+  [[(v1, v2) in V (T1 -> T2 ; T1' -> T2')]] &\defeq \forall [[(v, v') in V (T1 ; T1')]], [[(v1 v, v2 v') in E (T2 ; T2')]] \\
+  [[( {l = v1} , {l = v2}) in V ( {l : T1} ; { l : T2 } )]] &\defeq [[(v1, v2) in V (T1; T2)]] \\
+  [[(<v1, v2> , v3) in V (T1 * T2 ; T3)]] &\defeq [[(v1, v3) in V (T1; T3)]] \land [[(v2, v3) in V (T2; T3)]] \\
+  [[(v3, <v1, v2> ) in V (T3; T1 * T2)]] &\defeq [[(v3, v1) in V (T3; T1)]] \land [[(v3, v2) in V (T3; T2)]] \\
+  [[(v1 , v2) in V (T1; T2)]]  &\defeq \mathsf{true} \quad \text{otherwise}
+\end{align*}
+\[
+  [[(e1, e2) in E (T1; T2)]] \defeq \exists [[v1]] [[v2]], [[e1 -->> v1]] \land [[e2 -->> v2]] \land [[(v1, v2) in V (T1; T2)]]
+\]
+  \caption{Logical relations for \tname}
+  \label{fig:logical}
+\end{figure}
+
+
+\begin{remark}
+  The logical relations are heterogeneous, parameterized by two types, one for
+  each argument. This is intended to relate values of different types.
+\end{remark}
+
+
+\begin{remark}
+  The logical relations resemble those given by \citet{biernacki2015logical}, as
+  both are heterogeneous. However, two important differences are worth pointing
+  out. Firstly, our value relation for product types ($\valR{[[T1 * T2]]}{[[T3]]}$ and $\valR{[[T3]]}{[[T1 * T2]]}$) is unusual. As we explain
+  shortly, this is related to disjointness of intersection types. Secondly,
+  their value relation disallows relating functions with natural numbers, while
+  ours does not (because their types are \textit{disjoint}).
+\end{remark}
+
+
+First let us consider $\valR{[[T1]]}{[[T2]]}$. The first three cases are
+standard: Two natural numbers are related iff they are the same numeral. Two
+functions are related iff they map related arguments to related results. Two
+singleton records are related iff they have the same label and their fields are
+related. These cases reflect Observation~\ref{ob:2} in that the same type
+corresponds to the same value.
+
+In the next two cases one of the parameterized types is a product type. In those
+cases, the relation distributes over the product constructor $[[*]]$. This may
+look strange at first, since the traditional way of relating pairs is by
+relating their components pairwise. That is, $[[<v1,v2>]]$ and $[[<v1', v2'>]]$
+are related iff (1) $[[v1]]$ and $[[v1']]$ are related and (2) $[[v2]]$ and
+$[[v2']]$ are related. According to our definition, we also require that (3)
+$[[v1]]$ and $[[v2']]$ are related and (4) $[[v2]]$ and $[[v1']]$ are related.
+The design of these two cases is influenced by the disjointness of intersection
+types. Below are two rules dealing with intersection types:
+\begin{mathpar}
+ \drule{D-andL} \and \drule{D-andR}
+\end{mathpar}
+Notice the structural similarity between these two rules and the two cases. Now
+it is clear that the cases for products manifest disjointness of intersection
+types, reflecting Observation~\ref{ob:1}. Together with the last case, we can
+show that disjointness and the value relation are connected by the following
+lemma:
+
+\begin{lemma}[Disjoint values are in a value relation]\label{lemma:disjoint}
+  If $[[A1 ** A2]]$ and $v_1 : |A_1|$ and $v_2 : |A_2|$, then $[[(v1, v2) in V (|A1| ; |A2|)]]$.
+\end{lemma}
+\begin{proof}
+  By induction on the derivation of disjointness. \qed
+\end{proof}
+
+Next we consider $\eeR{[[T1]]}{[[T2]]}$, which is standard. Informally it expresses
+that two closed terms $[[e1]]$ and $[[e2]]$ are related iff
+they evaluate to two values $[[v1]]$ and $[[v2]]$ that are related.
+
+
+
+\paragraph{Logical Equivalence.}
+The logical relations can be lifted to open terms in the usual way. First we give the
+semantic interpretation of typing contexts:
+\begin{definition}[Interpretation of Typing Contexts]
+  $(\gamma_1, \gamma_2) \in \ggR{[[G1]]}{[[G2]]}$ is inductively defined as follows:
+  \begin{mathpar}
+    \ottaltinferrule{}{}{ }{(\emptyset, \emptyset) \in  \ggR{[[empty]]}{[[empty]]}} \and
+    \ottaltinferrule{}{}{ [[(v1, v2) in V (T1; T2)]]  \\ (\gamma_1,\gamma_2) \in \ggR{[[G1]]}{[[G2]]} \\ \mathsf{fresh}\, x }{(\gamma_1[x \mapsto v_1], \gamma_2[x \mapsto v_2]) \in \ggR{[[G1, x : T1]]}{[[G2 , x : T2]]}}
+  \end{mathpar}
+\end{definition}
+Two open terms are related when every pair of related closing substitutions
+makes them related:
+\begin{definition}[Logical equivalence]
+  Let $[[G1 |- e1 : T1]]$ and $[[G2 |- e2 : T2]]$
+  \[
+    [[G1 ; G2 |- e1 == e2 : T1 ; T2]] \defeq \forall (\gamma_1, \gamma_2) \in
+    \ggR{[[G1]]}{[[G2]]}, (\app{\gamma_1}{[[e1]]}, \app{\gamma_2}{[[e2]]}) \in
+    \eeR{[[T1]]}{[[T2]]}
+  \]
+\end{definition}
+For succinctness, we write $[[G |- e1 == e2 : T]]$ to mean $[[G ; G |- e1 == e2 : T ; T]]$.
+
+
+\subsection{Establishing Coherence}
+
+With all the machinery in place, we now show several auxiliary
+lemmas that are crucial in the subsequent proofs. % The proof strategy roughly
+% follows that of \citet{biernacki2015logical}.
+
+First we show compatibility lemmas, which state that logical equivalence
+is preserved by every language construct. Most are standard and thus are
+omitted. We show only one compatibility lemma that is specific to our relations:
+
+\begin{lemma}[Coercion Compatibility]   \label{lemma:co-compa}
+  Let $[[c |- T1 tri T2]]$
+  % The logical relation is preserved by coercion application.
+  \begin{itemize}
+  \item If $[[G1 ; G2 |- e1 == e2 : T1 ; T0]]$ then $[[G1 ; G2 |- c e1 == e2 : T2 ; T0]]$.
+  \item If $[[G1 ; G2 |- e1 == e2 : T0 ; T1]]$ then $[[G1 ; G2 |- e1 == c e2 : T0 ; T2]]$.
+  \end{itemize}
+\end{lemma}
+\begin{proof}
+  By induction on the typing derivation of the coercion $[[c]]$. \qed
+\end{proof}
+
+Next we show that logical equivalence is preserved by \name contexts:
+
+\begin{lemma}[Congruence] \label{lemma:cong}
+  Let $ ([[<=>1]], [[<=>2]]) \, \in \{ [[=>]] , [[<=]] \} \times \{ [[=>]] , [[<=]] \}$, $[[GG |- ee1 <=>1 A ~~> e1]]$,
+  $[[GG |- ee2 <=>1 A ~~> e2]]$ and $[[|GG| |- e1 == e2 : |A|]]$
+  \[
+    \forall [[C : (GG <=>1 A) ~> (GG' <=>2 A') ~~> cc]] \Longrightarrow [[|GG'| |- cc{e1} == cc{e2} : |A'|]]
+  \]
+\end{lemma}
+\begin{proof}
+  By induction on the typing derivation of the context $[[C]]$, and applying
+  the compatibility lemmas where appropriate. \qed
+\end{proof}
+
+
+We now are in a position to establish coherence. We
+require \cref{lemma:uniq}, which is always true in \oname, \fname and \name.
+
+\begin{mtheorem}[Uniqueness of Type-Inference] \label{lemma:uniq}
+  If $[[GG |- ee => A1]]$ and $[[GG |- ee => A2]]$, then $[[A1]] \equiv [[A2]]$.
+\end{mtheorem}
+
+Finally we show that \name is coherent with respect to logical equivalence:
+
+\begin{lemma}[Coherence wrt Logical Equivalence]  \label{thm:co-log} \leavevmode
+  Let $ [[<=>]] \, \in \{ [[=>]] , [[<=]] \}$, $[[GG |- ee <=> A ~~> e]]$ and
+  $[[GG |- ee <=> A ~~> e']]$, we have $[[|GG| |- e == e' : |A| ]]$.
+\end{lemma}
+\begin{proof}
+  The proof follows by induction on the first derivation. The most interesting case is \rref{T-sub}:
+  \begin{mathpar}
+    \drule{T-sub}
+  \end{mathpar}
+  We need \cref{lemma:uniq} to show that $[[A]]$ is unique so that we can
+  apply the induction hypothesis. Then we apply \cref{lemma:co-compa} to say
+  that $[[c]]$ preserves the relation between terms. For the other cases
+  we use the appropriate compatibility lemmas. \qed
+\end{proof}
+
+\begin{remark}
+  Usually, with logical relations, we need to prove the \textit{fundamental
+    property}, which states that if $[[G |- e : T]]$ then $[[G |- e == e : T]]$.
+  Clearly this does not hold for every well-typed \tname term. However, as we
+  have emphasized, we do not need to consider every \tname term. Instead, \Cref{thm:co-log}
+  acts as a kind of fundamental property for
+  well-typed \name expressions.
+\end{remark}
+
+We restate the central theorem below:
+\coherence*
+\begin{proof}
+  By \cref{thm:co-log,lemma:cong} and the definition of logical equivalence.
+  \qed
+\end{proof}
+
+\subsection{Some Interesting Corollaries}
+
+To showcase the strength of the new proof method, we can derive some
+interesting corollaries. For the most part, they are direct consequences of
+logical equivalence which carry over to contextual equivalence.
+
+
+\Cref{lemma:neutral} says that merging a term of some type with something else
+does not affect its semantics. \Cref{lemma:commu,lemma:assoc} express that
+merges are commutative and associative, respectively. \Cref{lemma:coercion_same}
+states that coercions from the same types are ``coherent''.
+
+\begin{corollary}[Merge is Neutral] \label{lemma:neutral}
+  For every $[[GG]]$, $[[ee1]]$, $[[ee2]]$ and $[[A]]$ we have
+  \[
+  [[GG |- ee1 ~= ee1 ,, ee2 : A]]
+  \]
+\end{corollary}
+
+\begin{corollary}[Merge is Commutative] \label{lemma:commu}
+  For every $[[GG]]$, $[[ee1]]$, $[[ee2]]$ and $[[A]]$ we have
+  \[
+  [[GG |- ee1 ,, ee2 ~= ee2 ,, ee1 : A]]
+  \]
+\end{corollary}
+
+
+\begin{corollary}[Merge is Associative] \label{lemma:assoc}
+  For every $[[GG]]$, $[[ee1]]$, $[[ee2]]$, $[[ee3]]$ and $[[A]]$ we have
+  \[
+  [[GG |- (ee1 ,, ee2) ,, ee3 ~= ee1 ,, (ee2 ,, ee3) : A]]
+  \]
+\end{corollary}
+
+
+
+\begin{corollary}[Coercions Preserve Semantics]
+  \label{lemma:coercion_same}
+  If $[[A <: B ~~> c1]]$ and $[[A <: B ~~> c2]]$, then $[[\x . c1 x]]$ and $[[\x
+  . c2 x]]$ can be used interchangeably.
+\end{corollary}
+
+
+% Local Variables:
+% org-ref-default-bibliography: ../paper.bib
+% End:

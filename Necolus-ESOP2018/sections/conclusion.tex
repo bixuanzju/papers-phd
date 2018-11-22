@@ -1,0 +1,51 @@
+
+\section{Conclusions and Future Work}
+\label{sec:conclusion}
+
+We have proposed \name, a type-safe and coherent calculus with disjoint
+intersection types, and support for nested composition/subtyping. \name
+improves upon earlier work with a more
+flexible notion of disjoint intersection types, which leads to
+a clean and elegant formulation of the type system. Due to the added
+flexibility we have had to employ a more powerful proof method based on logical
+relations to rigorously prove coherence.
+We also show how \name supports essential features of family
+polymorphism, such as nested composition. We believe \name provides insights into family polymorphism, and
+has potential for practical applications for extensible software designs.
+
+A natural direction for future work is to enrich \name with parametric
+polymorphism. There is abundant literature on logical relations for parametric
+polymorphism~\citep{reynolds1983types} and we foresee no fundamental
+difficulties in extending our proof method.\footnote{
+Our prototype
+  implementation already supports polymorphism, but we
+  are still in the process of extending our Coq development with polymorphism. } The resulting calculus will be
+more expressive than \fname. An interesting application that we intend to investigate
+is native support for \textit{object algebras}~\citep{oliveira2012extensibility}
+(or the finally tagless approach~\citep{CARETTE_2009}). For example, we can
+define the object algebra interfaces for the Expression Problem example in
+\cref{sec:overview} as follows:
+\lstinputlisting[linerange=75-76]{../../impl/examples/overview.sl}% APPLY:linerange=LANG_EXT_INTER
+By instantiating \lstinline{E} with \lstinline{IPrint}, i.e.,
+\lstinline{ExpAlg[IPrint]}, we get the interface of the \lstinline{Lang} family.
+In that sense, object algebra interfaces can be viewed as family interfaces.
+Moreover, combing algebras implementing \lstinline{ExpAlg[IPrint]} and
+\lstinline{ExpAlg[IEval]} to form \lstinline{ExpAlg[IPrint & IEval]} is trivial
+with nested composition. Polymorphism also improves code reuse across expressions in the
+base and extended languages. For example, the following creates two expressions,
+one in the base language, the other in the extended language:
+\lstinputlisting[linerange=81-82]{../../impl/examples/overview.sl}% APPLY:linerange=LANG_EXT
+Notice how we can  reuse \lstinline{e1} of the base language in the definition
+of \lstinline{e2}.
+
+
+
+% \jeremy{creating expressions using base and extended expressions, and show more reuse}
+
+% \jeremy{future work} \jeremy{mention in passing this rule is unsound with
+%   effects, see ``Intersection types and computational effects''}
+
+% Local Variables:
+% mode: latex
+% TeX-master: "../paper"
+% End:

@@ -1,0 +1,41 @@
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+In this paper, we have presented a generalized definition of consistent subtyping
+that works for polymorphic types.
+Based on this new
+definition, we have developed \name: a gradually typed calculus
+with predicative implicit higher-rank polymorphism, and corresponding
+algorithms that can be used to
+implement the calculus.
+
+As far as we know, our work is the first to integrate gradual typing with
+implicit (higher-rank) polymorphism, which we believe is a major step
+towards gradualizing modern functional languages, such as Haskell. Moreover, our
+extension with type parameters and the extensive discussion of related
+properties (e.g., representative translations) provides insight into the
+dynamic semantics for gradual languages with implicit polymorphism.
+With respect to the dynamic gradual guarantee, we discuss an extension
+of the calculus with static and gradual type parameters. We propose a
+variant of the dynamic gradual guarantee with representative
+translations. Then we show that our calculus supports this property
+if:
+1) \pbc does indeed have the dynamic gradual guarantee (which is unknown at the
+time of writing); and 2) our coherence conjecture can be proved.
+
+As future work, we want to investigate whether our notion of consistent
+subtyping has a more fundamental conceptual explanation, for example, whether it
+coincides with AGT on polymorphic types. It is also interesting to see whether
+our results can scale to real-world languages (e.g. Haskell) and other
+programming language features, such as recursive types, union types and
+intersection types. Recent work by \citet{castagna2017gradual} on gradual typing
+with union and intersection types in a simply typed setting may shed some light
+on this direction.
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: "../paper.bib"
+%%% End:

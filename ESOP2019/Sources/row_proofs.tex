@@ -1,0 +1,1535 @@
+
+
+
+\section{Full Typing Rules of \rname}
+\label{appendix:rname}
+
+\drules[wftc]{$[[  Ttx ok ]]$}{Well-formed type contexts}{Empty, Tvar}
+
+\drules[wfc]{$[[  Ttx |- Gtx ok ]]$}{Well-formed term contexts}{Empty, Var}
+
+\drules[wfrt]{$[[  Ttx |- rt type ]]$}{Well-formed types}{Prim, Arrow, All, Rec}
+
+\drules[wfr]{$[[  Ttx |- r record ]]$}{Well-formed record types}{Var, Base, Empty, Merge}
+
+\drules[wfcl]{$[[  Ttx |- R ok ]]$}{Well-formed constraint lists}{Nil, Cons}
+
+\drules[cmp]{$[[  Ttx |- r1 # r2 ]]$}{Compatibility}{Eq, Symm, Base, Tvar, MergeE,MergeI,BaseBase,Empty}
+
+\drules[cmpList]{$[[  Ttx |- r # R ]]$}{Constraint list satisfaction}{Nil, Cons}
+
+\drules[teq]{$[[  rt1 ~ rt2 ]]$}{Type equivalence}{Refl,Symm,Trans,CongArrow,CongAll,CongBase,CongMerge,MergeUnit,MergeAssoc,MergeComm}
+
+\drules[ceq]{$[[  R1 ~ R2 ]]$}{Constraint list equivalence}{Refl,Symm,Trans,Inner,Swap,Empty,Merge,Dupl,Base}
+
+\drules[wtt]{$[[  Ttx ; Gtx |- re : rt ~~> ee  ]]$}{Type-directed translation}{Eq,Var,ArrowI,ArrowE,Base,Restr,Empty,Merge,Select,AllI,AllE}
+
+
+
+\section{Auxiliary Lemmas about Disjointness}
+
+\begin{lemma} \label{lemma:dis_and}
+  If $[[ DD |- A ** B & C ]]$ then $[[  DD |- A ** B  ]]$ and $[[  DD |- A ** C ]]$.
+\end{lemma}
+
+\begin{lemma} \label{lemma:dis_well_form}
+  If $[[ DD |- A ** B]]$ then $[[  DD |- A ]]$ and $[[  DD |- B ]]$.
+\end{lemma}
+
+\section{Full Proofs of Translation of \rname}
+\label{appendix:proofs}
+
+
+% \subsection{Translation Functions}
+
+
+% \begin{definition}[Type translation] \leavevmode
+%   \begin{align*}
+%     [[ <base> ]] & =  [[nat]] \\
+%     [[< rt1 -> rt2 >]] & =  [[<rt1> -> <rt2>]] \\
+%     [[< \/ a # R . rt>]] & =  [[\ X ** <R>. \ Xb ** <R>. <rt>]] \\
+%     [[ <a> ]]          & =  [[X]]  \\
+%     [[<Empty>]]     & = [[Top]]  \\
+%     [[<{l:rt}>]]    & =  [[{l:<rt>}]]  \\
+%     [[<r1 ||  r2>]] & =  [[ <r1> & <r2> ]]
+%   \end{align*}
+% \end{definition}
+
+
+% \begin{definition}[Constraint list translation] \leavevmode
+%   \begin{align*}
+%     [[<<>>]]      & =  [[Top]]  \\
+%     [[<r, R>]]      & =  [[<r>_b & <R>]]
+%   \end{align*}
+% \end{definition}
+
+
+% \begin{definition}[Record bottom translation] \leavevmode
+%   \begin{align*}
+%     [[<a>_b]]      & =  [[Xb]]   \\
+%     [[<Empty>_b]]    & =  [[Top]]   \\
+%     [[<{l:rt}>_b]]   & =  [[{l:Bot}]]   \\
+%     [[<r1 ||  r2>_b]] & =  [[ <r1>_b & <r2>_b ]]
+%   \end{align*}
+% \end{definition}
+
+
+% \begin{definition}[Context translation] \leavevmode
+%   \begin{align*}
+%     [[ < <> > ]]      & =  [[ empty ]]  \\
+%     [[ <Ttx, a # R> ]]    & =  [[ <Ttx>, X ** <R>, Xb ** <R>]]   \\ \\
+%     [[ < <> > ]]      & =  [[ empty ]]  \\
+%     [[ <Gtx, x : rt> ]]    & =  [[ <Gtx>, x : <rt> ]]
+%   \end{align*}
+% \end{definition}
+
+
+% \begin{figure}[h]
+%     % \centering
+%   \begin{subfigure}[b]{\textwidth}
+%       \begin{align*}
+%         [[ <base> ]] & =  [[nat]] \\
+%         [[< rt1 -> rt2 >]] & =  [[<rt1> -> <rt2>]] \\
+%         [[< \/ a # R . rt>]] & =  [[\ X ** <R>. \ Xb ** <R>. <rt>]] \\
+%         [[ <a> ]]          & =  [[X]]  \\
+%         [[<Empty>]]     & = [[Top]]  \\
+%         [[<{l:rt}>]]    & =  [[{l:<rt>}]]  \\
+%         [[<r1 ||  r2>]] & =  [[ <r1> & <r2> ]]
+%       \end{align*}
+%       \subcaption{Type translation}
+%     \end{subfigure}
+%     \begin{subfigure}[b]{\textwidth}
+%       \begin{align*}
+%         [[<<>>]]      & =  [[Top]] &  \\
+%         [[<r, R>]]      & =  [[<r>_b & <R>]] &  \\
+%       \end{align*}
+%       \subcaption{Constraint list translation}
+%     \end{subfigure}
+%     \begin{subfigure}[b]{\textwidth}
+%       \begin{align*}
+%         [[<a>_b]]      & =  [[Xb]] &  \\
+%         [[<Empty>_b]]    & =  [[Top]] &  \\
+%         [[<{l:rt}>_b]]   & =  [[{l:Bot}]] &  \\
+%         [[<r1 ||  r2>_b]] & =  [[ <r1>_b & <r2>_b ]] &
+%       \end{align*}
+%       \subcaption{record bottom translation}
+%     \end{subfigure}
+%     \begin{subfigure}[b]{\textwidth}
+%       \begin{align*}
+%         [[ < <> > ]]      & =  [[ empty ]] &  \\
+%         [[ <Ttx, a # R> ]]    & =  [[ <Ttx>, X ** <R>, Xb ** <R>]] &  \\
+%       \end{align*}
+%       \subcaption{type context translation}
+%     \end{subfigure}
+%     \begin{subfigure}[b]{\textwidth}
+%       \begin{align*}
+%         [[ < <> > ]]      & =  [[ empty ]] &  \\
+%         [[ <Gtx, x : rt> ]]    & =  [[ <Gtx>, x : <rt> ]] &  \\
+%       \end{align*}
+%       \subcaption{value context translation}
+%     \end{subfigure}
+%     \caption{Type translation}
+% \end{figure}
+
+
+\subsection{Property of Substitution and Translation}
+
+\begin{lemma}
+  \label{lemma:subst_rcd}
+  $[[ <[r / a] r1>_b ]]$ = $ [[ <r1>_b [X ~> <r>] [Xb ~> <r>_b] ]] $.
+\end{lemma}
+\proof
+By induction on $[[r1]]$.
+\begin{itemize}
+  \item Case $[[r1]] = [[a]]$.
+  \begin{longtable}[l]{ll|l}
+    & $[[ <[r / a] a>_b ]]$& \\
+    & = $[[ <r>_b ]]$&  By substitution\\
+    & = $[[ Xb [X ~> <r>][Xb ~> <r>_b] ]]$&  By substitution\\
+    & = $[[ <a>_b [X ~> <r>] [Xb ~> <r>_b] ]]$&  By translation
+  \end{longtable}
+  \item Case $[[r1]] = [[b]]$ and $[[b]] \neq [[a]]$. Thus $[[<b>_b]] \neq [[Xb]]$.
+  \begin{longtable}[l]{ll|l}
+    & $[[ <[r / a] b>_b ]]$& \\
+    & = $[[ <b>_b ]]$&  By substitution\\
+    & = $[[ <b>_b [X ~> <r>] [Xb ~> <r>_b] ]]$&  By substitution
+  \end{longtable}
+\item Case $[[r1]] = [[Empty]]$. Trivially true as
+  $[[ <[r / a] Empty>_b ]]
+  = [[<Empty>_b]]
+  = [[Top]]
+  = [[Top  [X ~> <r>][Xb ~> <r>_b] ]]
+  = [[<Empty>_b [X ~> <r>][Xb ~> <r>_b] ]]$.
+\item Case $[[r1]] = [[{l:rt}]]$.
+  \begin{longtable}[l]{ll|l}
+    & $[[ <[r / a] {l:rt}>_b ]]$& \\
+    & = $[[ <{l: [r/a]rt}>_b ]]$&  By substitution\\
+    & = $[[ {l: Bot} ]]$&  By translation\\
+    & = $[[ ({l: Bot}) [X ~> <r>][Xb ~> <r>_b] ]]$&  By substitution\\
+    & = $[[ <{l:rt}>_b [X ~> <r>][Xb ~> <r>_b] ]]$ & By translation
+  \end{longtable}
+\item Case $[[r1]] = [[r2 ||  r3]]$.
+  \begin{longtable}[l]{ll|l}
+    & $[[ <[r / a] r2>_b ]]$ = $ [[ <r2>_b[X ~> <r>] [Xb ~> <r>_b] ]] $ & I.H. \\
+    & $[[ <[r / a] r3>_b ]]$ = $ [[ <r3>_b [X ~> <r>][Xb ~> <r>_b] ]] $ & I.H. \\
+    & $[[ <[r / a] (r2||r3)>_b ]]$ & \\
+    & = $ [[ <([r / a] r2) || ([r / a]r3)>_b ]] $ & By substitution \\
+    & = $ [[ <([r / a] r2)>_b & <([r / a]r3)>_b ]] $ & By translation \\
+    & = $ [[ (<r2>_b [X ~> <r>] [Xb ~> <r>_b])  &  (<r3>_b [X ~> <r>] [Xb ~> <r>_b]) ]] $ & Apply I.H. \\
+    & = $ [[ (<r2>_b & <r3>_b) [X ~> <r>] [Xb ~> <r>_b] ]] $ & By property of substitution \\
+    & = $ [[ (<r2 || r3>_b)[X ~> <r>] [Xb ~> <r>_b] ]] $ & By translation
+  \end{longtable}
+\end{itemize}
+\qed
+
+
+\begin{lemma}
+  \label{lemma:subst_rlist}
+  $[[ <[r/ a] R> ]]$ = $ [[ <R> [X ~> <r>][Xb ~> <r>_b] ]] $.
+\end{lemma}
+\proof By induction on $[[R]]$.
+\begin{itemize}
+  \item Case $[[R]] = [[<>]]$. Trivially true as
+  $[[ <[r / a] <> > ]]$ = $[[< <> >]]$ = $[[Top]]$ = $ [[ Top[X ~> <r>] [Xb ~> <r>_b] ]] $
+  = $[[ < <> >[X ~> <r>]  [Xb ~> <r>_b] ]]$.
+  \item Case $[[R]] = [[r1, R1]]$.
+  \begin{longtable}[l]{ll|l}
+    & $[[ <[r / a] R1> ]] = [[ <R1>[X ~> <r>][Xb ~> <r>_b] ]] $ & I.H. \\
+    & $[[ <[r / a] (r1, R1)> ]]$ & \\
+    & = $[[ <[r / a] r1, [r / a]R1> ]]$ & Property of substitution\\
+    & = $[[ <[r / a] r1>_b & <[r / a]R1> ]]$ & By translation \\
+    & = $[[  <r1>_b[X ~> <r>] [Xb ~> <r>_b]  & <[r / a]R1> ]]$ & By \cref{lemma:subst_rcd} \\
+    & = $[[  (<r1>_b[X ~> <r>] [Xb ~> <r>_b])  &  (<R1>[X ~> <r>][Xb ~> <r>_b])  ]]$ & Apply I.H. \\
+    & = $[[  (<r1>_b & <R1>)[X ~> <r>] [Xb ~> <r>_b]  ]]$ & By substitution \\
+    & = $[[  <r1 , R1>[X ~> <r>] [Xb ~> <r>_b] ]]$ & By translation
+  \end{longtable}
+\end{itemize}
+\qed
+
+\substrt*
+\proof
+Induction on $[[rt]]$.
+\begin{itemize}
+\item Case $[[rt]] = [[base]]$. Trivially true as $[[ <[r / a] base> ]] =
+  [[<base>]] = [[nat]] = [[ (<nat> [X ~> <r>]) [Xb ~> <r>_b] ]]$.
+\item Case $[[rt]] = [[rt1 -> rt2]]$.
+  \begin{longtable}[l]{ll|l}
+    & $[[ <[r / a] rt1> ]]$ = $ [[ (<rt1> [X ~> <r>]) [Xb ~> <r>_b] ]] $. & I.H. \\
+    & $[[ <[r / a] rt2> ]]$ = $ [[ (<rt2> [X ~> <r>]) [Xb ~> <r>_b] ]] $. & I.H. \\
+    & $[[ <[r / a] (rt1 -> rt2)> ]]$ & \\
+    & = $[[ <([r / a] rt1)  ->  ([r / a] rt2)> ]] $. & Property of substitution \\
+    & = $[[ <([r / a] rt1)> -> <([r / a] rt2)> ]] $. & By translation \\
+    & = $[[ (<rt1> [X ~> <r>]) [Xb ~> <r>_b] ->  (<rt2> [X ~> <r>]) [Xb ~> <r>_b] ]] $. & Apply I.H. \\
+    & = $[[ ((<rt1> -> <rt2>) [X ~> <r>]) [Xb ~> <r>_b] ]] $. & Property of substitution \\
+    & = $[[ ((<rt1 -> rt2>) [X ~> <r>]) [Xb ~> <r>_b] ]] $. & By translation \\
+  \end{longtable}
+\item Case $[[rt]] = [[\/ b # R .  rt1]]$.
+  \begin{longtable}[l]{ll|l}
+    & $[[ <[r / a] rt1> ]]$ = $ [[ (<rt1> [X ~> <r>]) [Xb ~> <r>_b] ]] $. & I.H. \\
+    & $[[ <[r / a] (\/ b # R .  rt1)> ]]$ & \\
+    & = $[[ < \/ b # ([r / a] R)  .  ([r / a] rt1)> ]] $. & By substitution \\
+    & = $[[ \ Y ** <([r / a] R)> . \ Yb ** <([r / a] R)> . <([r / a] rt1)> ]] $. & By translation \\
+    & = $[[ \ Y ** <R>[X ~> <r>][Xb ~> <r>_b] . \ Yb ** <R>[X ~> <r>][Xb ~> <r>_b] . <([r / a] rt1)> ]] $. & By \cref{lemma:subst_rlist} \\
+    & = $[[ \ Y ** <R>[X ~> <r>][Xb ~> <r>_b] . \ Yb ** <R>[X ~> <r>][Xb ~>
+      <r>_b] .  (<rt1> [X ~> <r>]) [Xb ~> <r>_b]  ]] $. & Apply I.H.\\
+    & = $[[ (\ Y ** <R>. \ Yb ** <R>.  <rt1>) [X ~> <r>][Xb ~> <r>_b]  ]] $. & By substitution.\\
+    & = $[[ (<\/ b # R. rt1>) [X ~> <r>][Xb ~> <r>_b]  ]] $. & By translation.
+  \end{longtable}
+\item Case $[[rt]] = [[a]]$.
+  \begin{longtable}[l]{ll|l}
+    & $[[Xb]] \notin [[<r>]]$ & Follows by translation \\
+    & $[[ <[r / a] a> ]]$ & \\
+    & = $[[<r>]]$ & By substitution \\
+    & = $ [[ <r> [Xb ~> <r>_b] ]] $. & Because $[[Xb]] \notin [[<r>]]$ \\
+    & = $ [[ (X [X ~> <r>]) [Xb ~> <r>_b] ]] $. & By substitution \\
+    & = $ [[ (<a> [X ~> <r>]) [Xb ~> <r>_b] ]] $. & By translation \\
+  \end{longtable}
+\item Case $[[rt]] = [[b]]$ and $[[b]] \neq [[a]]$.
+  \begin{longtable}[l]{ll|l}
+    & $[[ <[r / a] b> ]]$ & \\
+    & = $[[<b>]]$ & By substitution \\
+    & = $ [[ (<b> [X ~> <r>]) [Xb ~> <r>_b] ]] $. & By substitution \\
+  \end{longtable}
+\item Case $[[rt]] = [[Empty]]$. Trivially true as
+  $ [[ <[r/a] Empty> ]]
+  = [[ <Empty> ]]
+  = [[ Top ]]
+  = [[ Top [X ~> <r>] [Xb ~> <r>_b] ]]
+  $.
+\item Case $[[rt]] = [[{l:rt1}]]$.
+  \begin{longtable}[l]{ll|l}
+    & $[[ <[r / a] rt1> ]] = [[ (<rt1> [X ~> <r>]) [Xb ~> <r>_b] ]]$  & I.H.\\
+    & $[[ <[r / a] {l:rt1}> ]]$& \\
+    & = $[[ <{l: [r/a]rt1}> ]]$&  By substitution\\
+    & = $[[ {l: <[r/a]rt1>} ]]$&  By translation\\
+    & = $[[ { l: ((<rt1> [X ~> <r>]) [Xb ~> <r>_b])  } ]]$&  Apply I.H. \\
+    & = $[[ <{l: rt1}> [X ~> <r>] [Xb ~> <r>_b] ]]$&  By translation. \\
+  \end{longtable}
+\item Case $[[rt]] = [[r1 ||  r2]]$.
+  \begin{longtable}[l]{ll|l}
+    & $[[ <[r / a] r1> ]]$ = $ [[ <r1>[X ~> <r>] [Xb ~> <r>] ]] $ & I.H. \\
+    & $[[ <[r / a] r2> ]]$ = $ [[ <r2> [X ~> <r>][Xb ~> <r>] ]] $ & I.H. \\
+    & $[[ <[r / a] (r1||r2)> ]]$ & \\
+    & = $ [[ <([r / a] r1) || ([r / a]r2)> ]] $ & By substitution \\
+    & = $ [[ <([r / a] r1)> & <([r / a]r2)> ]] $ & By translation \\
+    & = $ [[ (<r1> [X ~> <r>] [Xb ~> <r>_b])  &  (<r2> [X ~> <r>] [Xb ~> <r>_b]) ]] $ & Apply I.H. \\
+    & = $ [[ (<r1> & <r2>) [X ~> <r>] [Xb ~> <r>_b] ]] $ & By property of substitution \\
+    & = $ [[ (<r1 || r2>)[X ~> <r>] [Xb ~> <r>_b] ]] $ & By translation
+  \end{longtable}
+\end{itemize}
+\qed
+
+\subsection{Well-formedness of Translation}
+
+\begin{lemma}\leavevmode
+  \label{lemma:trans-well-form}
+  \begin{itemize}
+  \item If $[[ Ttx ok ]]$ then $[[  ||- < Ttx > ]]$.
+  \item If $[[ Ttx |- R ok ]]$ then $[[  < Ttx > |- < R > ]]$.
+  \item If $[[ Ttx |- r record ]]$ then $[[ < Ttx > |- < r > ]]$ and $[[ < Ttx >
+    |- < r >_b ]]$.
+  \item If $[[ Ttx |- rt type ]]$ then $[[  < Ttx > |- < rt > ]]$.
+  \end{itemize}
+\end{lemma}
+\proof By simultaneous induction on the judgments. Because all judgments are
+structurally defined, the proof terminate.
+\begin{description}
+\item [Part 1]
+  \begin{itemize}
+    \item Case \[\drule{wftc-Empty}\]
+      As $[[< <> >]] = [[ empty ]]$. By \rref{swfte-empty} we are done.
+    \item Case \[\drule{wftc-Tvar}\]
+      \begin{longtable}[l]{ll|l}
+        & $[[< Ttx , a # R >]]$ & \\
+        & = $[[< Ttx >, X ** <R>, Xb ** <R> ]]$ & By translation \\
+        &  $[[ ||- <Ttx> ]]$& I.H. \\
+        &  $[[ Ttx |- R ok ]]$& Given \\
+        &  $[[ <Ttx> |- <R> ]]$& By using Part 2 \\
+        &  $[[ ||- <Ttx>, X ** <R>, Xb ** <R> ]]$& By applying \rref{swfte-var} twice.
+      \end{longtable}
+  \end{itemize}
+\item[Part 2]
+  \begin{itemize}
+    \item Case \[ \drule{wfcl-Nil} \]
+      \begin{longtable}[l]{ll|l}
+        &  $[[ < <> > ]] = [[Top]]$ & By translation \\
+        &  $ [[ <Ttx> |- Top ]]$ & By \rref{swft-top} we are done
+      \end{longtable}
+    \item Case \[ \drule{wfcl-Cons} \]
+      \begin{longtable}[l]{ll|l}
+        & $ [[Ttx |- r record]]$ & Given \\
+        & $ [[ <Ttx> |- <r>_b ]]$ & (1) By Part 3 \\
+        & $ [[Ttx |- R ok]]$ & Given \\
+        & $ [[ <Ttx> |- <R> ]]$ & (2) By Part 2 \\
+        & $ [[ <Ttx> |- <r>_b & <R> ]]$ & By (1), (2) and \rref{swft-and} \\
+        & $ [[ <Ttx> |- <r, R> ]]$ & By translation
+      \end{longtable}
+  \end{itemize}
+\item[Part 3]
+  \begin{itemize}
+    \item Case \[ \drule{wfr-Empty} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <Empty> ]] = [[<Empty>_b]] = [[Top]]$ & By translation \\
+        & $[[<Ttx> |- Top]]$ & By \rref{swft-top}
+      \end{longtable}
+    \item Case \[ \drule{wfr-Base} \]
+      \begin{longtable}[l]{ll|l}
+        First goal: & $[[<{l:rt}>]] = [[{l:<rt>}]]$ & By translation\\
+        &$[[Ttx |- rt type]]$ & Given \\
+        &$[[ <Ttx> |- <rt> ]]$ & By Part 4 \\
+        &$[[ <Ttx> |- {l:<rt>} ]]$ & By \rref{swft-rcd} \\
+        Second goal:& $[[<{l:rt}>_b]] = [[{l:Bot}]]$ & By translation\\
+        & $[[<Ttx> |- Bot]] $  & By \rref{swft-bot} \\
+        &$[[ <Ttx> |- {l:Bot} ]]$ & By \rref{swft-rcd}
+      \end{longtable}
+    \item Case \[ \drule{wfr-Var} \]
+      \begin{longtable}[l]{ll|l}
+        First goal: & $[[(a # R) in Ttx]]$ & Given \\
+        & $[[(X ** <R>) in <Ttx> ]]$ & By translation \\
+        & $[[<a> ]] = [[X]]$ & By translation \\
+        & $[[<Ttx> |- X ]] $ & By \rref{swft-var} \\
+        Second goal: & $[[(a # R) in Ttx]]$ & Given \\
+        & $[[(Xb ** <R>) in <Ttx> ]]$ & By translation \\
+        & $[[<a>_b ]] = [[Xb]]$ & By translation \\
+        & $[[<Ttx> |- Xb ]] $ & By \rref{swft-var} \\
+      \end{longtable}
+    \item Case \[ \drule{wfr-Merge} \]
+      \begin{longtable}[l]{ll|l}
+        First goal :& $[[<Ttx> |- <r1>]]$& I.H. \\
+        & $[[<Ttx> |- <r2>]]$& I.H. \\
+        & $[[<r1 || r2>]] = [[<r1> & <r2>]]$& By translation \\
+        & $[[ <Ttx> |- <r1> & <r2>]]$& By \rref{swft-and} \\
+        Second goal: & $[[<Ttx> |- <r1>_b]]$& I.H. \\
+        & $[[<Ttx> |- <r2>_b]]$& I.H. \\
+        & $[[<r1 || r2>_b]] = [[<r1>_b & <r2>_b]]$& By translation \\
+        & $[[ <Ttx> |- <r1>_b & <r2>_b]]$& By \rref{swft-and} \\
+      \end{longtable}
+  \end{itemize}
+\item[Part 4]
+  \begin{itemize}
+    \item Case \[\drule{wfrt-Prim}\]
+      \begin{longtable}[l]{ll|l}
+        & $[[<base>]] = [[nat]]$& By translation \\
+        & $[[<Ttx> |- nat]]$ & By \rref{swft-nat}
+      \end{longtable}
+    \item Case \[\drule{wfrt-Arrow}\]
+      \begin{longtable}[l]{ll|l}
+        & $[[<Ttx> |- <rt1>]]$& I.H. \\
+        & $[[<Ttx> |- <rt2>]]$& I.H. \\
+        & $[[<rt1->rt2>]] = [[<rt1> -> <rt2>]]$ & By translation \\
+        & $[[<Ttx> |- <rt1> -> <rt2> ]]$& By \rref{swft-arrow} \\
+      \end{longtable}
+    \item Case \[\drule{wfrt-All}\]
+      \begin{longtable}[l]{ll|l}
+        & $[[<\/ a # R . rt >]] = [[\ X ** <R>. \ Xb ** <R>. <rt>]] $ & By translation \\
+        & $[[<Ttx, a # R>]] = [[ <Ttx>, X ** <R>, Xb ** <R>]]$& By translation\\
+        &$[[ <Ttx>, X ** <R>, Xb ** <R> |- <rt>]]$ & I.H. \\
+        &$[[ <Ttx> |- \ X ** <R>. \ Xb ** <R>. <rt>]]$ & By \rref{swft-all} twice \\
+      \end{longtable}
+    \item Case \[\drule{wfrt-Rec}\]
+      \begin{longtable}[l]{ll|l}
+        & $[[Ttx |- r record]]$& Given \\
+        & $[[<Ttx> |- <r>]]$& By Part 3 \\
+      \end{longtable}
+  \end{itemize}
+\end{description}
+\qed
+
+\begin{lemma}
+  \label{lemma:trans-well-form-g}
+  If $[[ Ttx |- Gtx ok ]]$ then $[[  < Ttx > |- < Gtx > ]]$.
+\end{lemma}
+\proof By induction on the judgment.
+\begin{itemize}
+  \item Case \[\drule{wfc-Empty}\]
+      \begin{longtable}[l]{ll|l}
+        & $[[ < <> > ]] = [[empty]]$& \\
+        & $[[ <Ttx> ||- empty ]] $& By \rref{swfe-empty} \\
+      \end{longtable}
+  \item Case \[\drule{wfc-Var}\]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <Gtx, x: rt>  ]] = [[<Gtx>, x:<rt>]]$& By translation \\
+        & $[[ <Ttx> ||- <Gtx> ]] $& I.H. \\
+        & $[[Ttx |- rt type]] $& Given \\
+        & $[[<Ttx> |- <rt>]] $& By \cref{lemma:trans-well-form} \\
+        & $[[<Ttx> ||- <Gtx>, x: <rt>]] $& By \rref{swfe-var}
+      \end{longtable}
+\end{itemize}
+\qed
+
+\subsection{Translation of Equivalence}
+
+\begin{lemma} \leavevmode
+  \label{lemma:trans-equiv}
+  \begin{itemize}
+  \item If $[[ rt ~ rt' ]]$ then $[[ < rt > <: < rt' > ]] \land [[ < rt'> <: < rt > ]]$;
+  \item If $[[ R ~ R' ]]$ then $[[ < R > <: < R' > ]] \land [[ < R' > <: < R >    ]]$.
+  \item If $[[ r ~ r' ]]$ then $[[ < r>_b <: < r'>_b ]] \land [[ < r'>_b <: < r >_b ]]$;
+  \end{itemize}
+\end{lemma}
+\proof By simultaneous induction on the judgment. When one part calls the other,
+the structure is strictly decreased and thus the proof terminates.
+\begin{description}
+\item[Part 1]
+\begin{itemize}
+  \item Case \[ \drule{teq-Refl} \]
+    $[[<rt> <: <rt> ]]$ by \rref{S-refl}.
+  \item Case \[ \drule{teq-Symm} \]
+      \begin{longtable}[l]{ll|l}
+        First goal: & $[[<rt> <: <rt'>]]$& I.H. \\
+        Second goal: & $[[<rt'> <: <rt>]]$& I.H. \\
+      \end{longtable}
+  \item Case \[ \drule{teq-Trans} \]
+      \begin{longtable}[l]{ll|l}
+        First goal: & $[[<rt> <: <rt'>]]$& I.H. \\
+        & $[[<rt'> <: <rt''>]]$& I.H. \\
+        & $[[<rt> <: <rt''>]]$& By \rref{S-trans} \\
+        Second goal: & $[[<rt''> <: <rt'>]]$& I.H. \\
+        & $[[<rt'> <: <rt>]]$& I.H. \\
+        & $[[<rt''> <: <rt>]]$& By \rref{S-trans} \\
+      \end{longtable}
+  \item Case \[ \drule{teq-CongArrow} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[<rt1> <: <rt1'>]]$& I.H. \\
+        & $[[<rt1'> <: <rt1>]]$& I.H. \\
+        & $[[<rt2> <: <rt2'>]]$& I.H. \\
+        & $[[<rt2'> <: <rt2'>]]$& I.H. \\
+        First goal:& $[[<rt1> -> <rt2> <: <rt1'> -> <rt2'>]]$& By \rref{S-arr} \\
+        Second goal: & $[[<rt1'> -> <rt2'> <: <rt1> -> <rt2>]]$& By \rref{S-arr} \\
+      \end{longtable}
+  \item Case \[ \drule{teq-CongAll} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <\/a#R. rt>]] = [[ \X ** <R>. \Xb ** <R> . <rt>]]$ & By translation \\
+        & $[[ <\/a#R'. rt>]] = [[ \X ** <R'>. \Xb ** <R'> . <rt>]]$ & By translation \\
+        & $[[ < R > <: < R' > ]] \land [[ < R' > <: < R >    ]]$& By Part 2 \\
+        & $[[ < rt > <: < rt' > ]] \land [[ < rt' > <: < rt >    ]]$& I.H. \\
+        First goal:& $[[ \X **< R >. \Xb ** <R> . <rt>  <: \X**<R'> . \Xb ** <R'>. <rt'> ]]$& By \rref{S-forall} \\
+        Second goal: & $[[ \X **< R' >. \Xb ** <R> . <rt'>  <: \X**<R> . \Xb ** <R> . <rt> ]]$& By \rref{S-forall}
+      \end{longtable}
+  \item Case \[ \drule{teq-CongBase} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <{l:rt}>]] = [[ {l:<rt>}]]$ & By translation \\
+        & $[[ <{l:rt'}>]] = [[ {l:<rt'>}]]$ & By translation \\
+        & $[[ < rt > <: < rt' > ]] \land [[ < rt' > <: < rt >    ]]$& I.H. \\
+        First goal:& $[[ {l:< rt >} <: {l:< rt' >} ]]$& By \rref{S-rcd}\\
+        Second goal: & $[[  {l:< rt' > }<: {l:< rt >}]]$ & By \rref{S-rcd}
+      \end{longtable}
+  \item Case \[ \drule{teq-CongMerge} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <r1 || r2>]] = [[ <r1> & <r2>]]$ & By translation \\
+        & $[[ <r1' || r2'>]] = [[ <r1'> & <r2'>]]$ & By translation \\
+        & $[[ <r1> <: <r1'> ]]$ & (1) I.H. \\
+        & $[[ <r1'> <: <r1> ]]$ & (2) I.H. \\
+        & $[[ <r2> <: <r2'> ]] $ & (3) I.H. \\
+        & $[[ <r2'> <: <r2> ]]$ & (4) I.H. \\
+        First goal:& $[[ <r1> & <r2>  <: <r1>  ]]$ & (5) By \rref{S-andl} \\
+        & $[[ <r1> & <r2>  <: <r1'>  ]]$ & (6) By (1), (5) and \rref{S-trans} \\
+        & $[[ <r1> & <r2>  <: <r2>  ]]$ & (7) By \rref{S-andr} \\
+        & $[[ <r1> & <r2>  <: <r2'>  ]]$ & (8) By (3), (7) By \rref{S-trans} \\
+        & $[[ <r1> & <r2>  <: <r1'> & <r2'>  ]]$ & By (6), (8) By \rref{S-and} \\
+        Second goal: & $[[ <r1'> & <r2'>  <: <r1'>  ]]$ & (9) By \rref{S-andl} \\
+        & $[[ <r1'> & <r2'>  <: <r1>  ]]$ & (10) By (2), (9) and \rref{S-trans} \\
+        & $[[ <r1'> & <r2'>  <: <r2'>  ]]$ & (11) By \rref{S-andr} \\
+        & $[[ <r1'> & <r2'>  <: <r2>  ]]$ & (12) By (4), (11) By \rref{S-trans} \\
+        & $[[ <r1'> & <r2'>  <: <r1> & <r2>  ]]$ & By (10), (12) By \rref{S-and} \\
+      \end{longtable}
+  \item Case \[ \drule{teq-MergeUnit} \]
+      \begin{longtable}[l]{ll|l}
+        First goal:& $[[ <r || Empty>]] = [[ <r> & <Empty>]] = [[<r> & Top]]$ & By translation \\
+        & $[[ <r> & Top <: <r>]] $ & By \rref{S-andl} \\
+        Second goal: & $[[ <r> <: <r>]] $ & By \rref{S-refl} \\
+        & $[[ <r> <: Top]] $ & By \rref{S-top} \\
+        & $[[ <r> <: <r> & Top]] $ & By \rref{S-and} \\
+      \end{longtable}
+  \item Case \[ \drule{teq-MergeAssoc} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <r1 || ( r2 || r3 )>]] = [[ <r1> & (<r2> & <r3>) ]] $ & By translation \\
+        & $[[ <(r1 || r2) || r3>]] = [[ (<r1> & <r2>) & <r3> ]] $ & By translation \\
+        & $[[ <r1> & (<r2> & <r3>) <: <r1> ]] $ & By \rref{S-andl} \\
+        & $[[ <r1> & (<r2> & <r3>) <: <r2> ]] $ & By first \rref{S-andr}, and
+                                                  then \rref{s-andl} \\
+        & $[[ <r1> & (<r2> & <r3>) <: <r3> ]] $ & By \rref{S-andr} twice \\
+        First goal:& $[[ <r1> & (<r2> & <r3>) <: (<r1> & <r2>) & <r3> ]] $ & By \rref{S-and} twice \\
+        Second goal: & $[[ (<r1> & <r2>) & <r3> <: <r1> & (<r2> & <r3>) ]] $ & Similarly we
+                                                                  can derive \\
+      \end{longtable}
+  \item Case \[ \drule{teq-MergeComm} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <r1 || r2> ]] = [[ <r1> & <r2> ]] $ & By translation \\
+        & $[[ <r2 || r1> ]] = [[ <r2> & <r1> ]] $ & By translation \\
+        & $[[ <r1> & <r2> <: <r1> ]] $ & By \rref{S-andl} \\
+        & $[[ <r1> & <r2> <: <r2> ]] $ & By \rref{S-andr} \\
+        First goal:& $[[ <r1> & <r2> <: <r2> & <r1> ]] $ & By \rref{S-and} \\
+        Second goal: & $[[ <r2> & <r1> <: <r1> & <r2> ]] $ & Similarly we can derive
+      \end{longtable}
+\end{itemize}
+\item[Part 2]
+  \begin{itemize}
+    \item Case \[ \drule{ceq-Refl} \]
+    $[[<R> <: <R> ]]$ by \rref{S-refl}.
+    \item Case \[ \drule{ceq-Symm} \]
+      \begin{longtable}[l]{ll|l}
+        First goal:& $[[<R'> <: <R>]]$& I.H. \\
+        Second goal: & $[[<R> <: <R'>]]$& I.H. \\
+      \end{longtable}
+    \item Case \[ \drule{ceq-Trans} \]
+      \begin{longtable}[l]{ll|l}
+        First goal:& $[[<R> <: <R'>]]$& I.H. \\
+        & $[[<R'> <: <R''>]]$& I.H. \\
+        & $[[<R> <: <R''>]]$& By \rref{S-trans} \\
+        Second goal: & $[[<R''> <: <R'>]]$& I.H. \\
+        & $[[<R'> <: <R>]]$& I.H. \\
+        & $[[<R''> <: <R>]]$& By \rref{S-trans} \\
+      \end{longtable}
+    \item Case \[ \drule{ceq-Inner} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <r, R> ]] = [[<r>_b & <R>]]$& By translation \\
+        & $[[ <r', R'> ]] = [[<r'>_b & <R'>]]$& By translation \\
+        & $[[ <r'>_b <: <r>_b ]] $ & (1) By Part 3 \\
+        & $[[ <r>_b <: <r'>_b ]] $ & (2) By Part 3 \\
+        & $[[ <R> <: <R'> ]] $ & (3) I.H. \\
+        & $[[ <R'> <: <R> ]] $ & (4) I.H. \\
+        First goal:& $[[ <r>_b & <R> <: <r>_b ]] $ & (5) By \rref{S-andl} \\
+        & $[[ <r>_b & <R> <: <r'>_b ]] $ & (6) By (2), (5), and \rref{S-trans} \\
+        & $[[ <r>_b & <R> <: <R> ]] $ & (7) By \rref{S-andr} \\
+        & $[[ <r>_b & <R> <: <R'> ]] $ & (8) By (3), (7), and \rref{S-trans} \\
+        & $[[ <r>_b & <R> <: <r'>_b & <R'> ]] $ & By (6), (8), and \rref{S-and} \\
+        Second goal: & $[[ <r'>_b & <R'> <: <r>_b & <R> ]] $ & Similarly we can derive \\
+      \end{longtable}
+    \item Case \[ \drule{ceq-Swap} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <r, (r', R)> ]] = [[<r>_b & (<r'>_b & <R>)]]$& By translation \\
+        & $[[ <r', (r, R)> ]] = [[<r'>_b & (<r>_b & <R>)]]$& By translation \\
+        First goal:& $[[ <r>_b & (<r'>_b & <R>) <: <r>_b ]]$& By \rref{S-andl} \\
+        & $[[ <r>_b & (<r'>_b & <R>) <: <r'>_b ]]$& By first \rref{S-andr,S-andl} \\
+        & $[[ <r>_b & (<r'>_b & <R>) <: <R> ]]$& By \rref{S-andr} twice \\
+        & $[[ <r>_b & (<r'>_b & <R>) <: <r'>_b & (<r>_b & <R>) ]]$& By \rref{S-and}
+                                                            twice \\
+        Second goal: & $[[ <r'>_b & (<r>_b & <R>) <: <r>_b & (<r'>_b & <R>) ]]$& Similarly we can derive
+      \end{longtable}
+    \item Case \[ \drule{ceq-Empty} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <Empty, R>]] = [[ Top & <R>]] $ & By translation \\
+        First goal:& $[[ Top & <R> <: <R> ]] $ & By \rref{S-andr} \\
+        Second goal: & $[[ <R> <: Top ]] $ & By \rref{S-top} \\
+        & $[[ <R> <: <R> ]] $ & By \rref{S-refl} \\
+        & $[[ <R> <: Top & <R> ]] $ & By \rref{S-and}
+      \end{longtable}
+    \item Case \[ \drule{ceq-Merge} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <(r1 || r2), R>]] = [[ (<r1>_b & <r2>_b) & <R>]] $ & By translation \\
+        & $[[ <r1, (r2, R)>]] = [[ <r1>_b & (<r2>_b & <R>)]] $ & By translation \\
+        First goal:& $[[ <r1>_b & (<r2>_b & <R>) <: <r1>_b ]]$& By \rref{S-andl} \\
+        & $[[ <r1>_b & (<r2>_b & <R>) <: <r2>_b ]]$& By first \rref{S-andr,S-andl} \\
+        & $[[ <r1>_b & (<r2>_b & <R>) <: <R> ]]$& By \rref{S-andr} twice \\
+        & $[[ <r1>_b & (<r2>_b & <R>) <: <r1>_b & (<r2>_b & <R>) ]]$& By \rref{S-and}
+                                                            twice \\
+        Second goal: & $[[ <r1>_b & (<r2>_b & <R>) <: <r1>_b & (<r2>_b & <R>) ]]$& Similarly we can derive
+      \end{longtable}
+    \item Case \[ \drule{ceq-Dupl} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <r, (r, R)>]] = [[ <r>_b & (<r>_b & <R>)]] $ & By translation \\
+        & $[[ <r, R>]] = [[ <r>_b & <R>]] $ & By translation \\
+        First goal:& $ [[ <r>_b & (<r>_b & <R>) <:  <r>_b & <R>]] $ & By \rref{S-andr} \\
+        Second goal: & $ [[ <r>_b & <R> <: <r>_b]] $ & By \rref{S-andl} \\
+        & $ [[ <r>_b & <R> <: <r>_b & <R>]] $ & By \rref{S-refl} \\
+        & $ [[  <r>_b & <R> <: <r>_b & (<r>_b & <R>) ]] $ & By \rref{S-and} \\
+      \end{longtable}
+    \item Case \[ \drule{ceq-Base} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <{l:rt}, R>]] = [[{l: Bot} & <R>]] $ & By translation \\
+        & $[[ <{l:rt'}, R>]] = [[{l: Bot} & <R>]] $ & By translation \\
+        First and second goal:& $[[ {l: Bot} & <R> <:  {l: Bot} & <R>]] $ & By \rref{S-refl}
+      \end{longtable}
+  \end{itemize}
+\item[Part 3] It is easy to verify that if one side of the equivalence relation
+  is a record, then the other side is also a record. Thus in the following
+  reasoning, we assume all $[[rt]]$ is $[[r]]$.
+  \begin{itemize}
+  \item Case \[ \drule{teq-Refl}\]
+    $[[<rt>_b <: <rt>_b ]]$ by \rref{S-refl}.
+  \item Case \[ \drule{teq-Symm} \]
+      \begin{longtable}[l]{ll|l}
+        First goal:& $[[<rt'>_b <: <rt>_b]]$& I.H. \\
+        Second goal: & $[[<rt>_b <: <rt'>_b]]$& I.H. \\
+      \end{longtable}
+  \item Case \[ \drule{teq-Trans} \]
+      \begin{longtable}[l]{ll|l}
+        First goal:& $[[<rt>_b <: <rt'>_b]]$& I.H. \\
+        & $[[<rt'>_b <: <rt''>_b]]$& I.H. \\
+        & $[[<rt>_b <: <rt''>_b]]$& By \rref{S-trans} \\
+        Second goal: & $[[<rt''>_b <: <rt'>_b]]$& I.H. \\
+        & $[[<rt'>_b <: <rt>_b]]$& I.H. \\
+        & $[[<rt''>_b <: <rt>_b]]$& By \rref{S-trans} \\
+      \end{longtable}
+  \item Case \[ \drule{teq-CongBase} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <{l:rt}> _ b]] = [[ {l:Bot}]]$ & By translation \\
+        & $[[ <{l:rt'}>_b ]] = [[ {l:Bot}]]$ & By translation \\
+        First and Second goal:& $[[ {l:Bot} <: {l:Bot} ]]$ & By \rref{S-refl} \\
+      \end{longtable}
+  \item Case \[ \drule{teq-CongMerge} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <r1 || r2>_b]] = [[ <r1>_b & <r2>_b]]$ & By translation \\
+        & $[[ <r1' || r2'>_b]] = [[ <r1'>_b & <r2'>_b]]$ & By translation \\
+        & $[[ <r1>_b <: <r1'>_b ]]$ & (1) I.H. \\
+        & $[[ <r1'>_b <: <r1>_b ]]$ & (2) I.H. \\
+        & $[[ <r2>_b <: <r2'>_b ]] $ & (3) I.H. \\
+        & $[[ <r2'>_b <: <r2>_b ]]$ & (4) I.H. \\
+        First goal:& $[[ <r1>_b & <r2>_b  <: <r1>_b  ]]$ & (5) By \rref{S-andl} \\
+        & $[[ <r1>_b & <r2>_b  <: <r1'>_b  ]]$ & (6) By (1), (5) and \rref{S-trans} \\
+        & $[[ <r1>_b & <r2>_b  <: <r2>_b  ]]$ & (7) By \rref{S-andr} \\
+        & $[[ <r1>_b & <r2>_b  <: <r2'>_b  ]]$ & (8) By (3), (7) By \rref{S-trans} \\
+        & $[[ <r1>_b & <r2>_b  <: <r1'>_b & <r2'>_b  ]]$ & By (6), (8) By \rref{S-and} \\
+        Second goal: & $[[ <r1'>_b & <r2'>_b  <: <r1'>_b  ]]$ & (9) By \rref{S-andl} \\
+        & $[[ <r1'>_b & <r2'>_b  <: <r1>_b  ]]$ & (10) By (2), (9) and \rref{S-trans} \\
+        & $[[ <r1'>_b & <r2'>_b  <: <r2'>_b  ]]$ & (11) By \rref{S-andr} \\
+        & $[[ <r1'>_b & <r2'>_b  <: <r2>_b  ]]$ & (12) By (4), (11) By \rref{S-trans} \\
+        & $[[ <r1'>_b & <r2'>_b  <: <r1>_b & <r2>_b  ]]$ & By (10), (12) By \rref{S-and} \\
+      \end{longtable}
+  \item Case \[ \drule{teq-MergeUnit} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <r || Empty>]]_b = [[ <r>_b & <Empty>]] = [[<r>_b & Top]]$ & By translation \\
+        First goal:& $[[ <r>_b & Top <: <r>_b]] $ & By \rref{S-andl} \\
+        Second goal: & $[[ <r>_b <: <r>_b]] $ & By \rref{S-refl} \\
+        & $[[ <r>_b <: Top]] $ & By \rref{S-top} \\
+        & $[[ <r>_b <: <r>_b & Top]] $ & By \rref{S-and} \\
+      \end{longtable}
+  \item Case \[ \drule{teq-MergeAssoc} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <r1 || ( r2 || r3 )>_b]] = [[ <r1>_b & (<r2>_b & <r3>_b) ]] $ & By translation \\
+        & $[[ <(r1 || r2) || r3>_b]] = [[ (<r1>_b & <r2>_b) & <r3>_b ]] $ & By translation \\
+        First goal:& $[[ <r1>_b & (<r2>_b & <r3>_b) <: <r1>_b ]] $ & By \rref{S-andl} \\
+        & $[[ <r1>_b & (<r2>_b & <r3>_b) <: <r2>_b ]] $ & By first \rref{S-andr,S-andl}  \\
+        & $[[ <r1>_b & (<r2>_b & <r3>_b) <: <r3>_b ]] $ & By \rref{S-andr} twice \\
+        & $[[ <r1>_b & (<r2>_b & <r3>_b) <: (<r1>_b & <r2>_b) & <r3>_b ]] $ & By \rref{S-and} twice \\
+        Second goal: & $[[ (<r1>_b & <r2>_b) & <r3>_b <: <r1>_b & (<r2>_b & <r3>_b) ]] $ & Similarly we
+                                                                  can derive \\
+      \end{longtable}
+  \item Case \[ \drule{teq-MergeComm} \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ <r1 || r2>_b ]] = [[ <r1>_b & <r2>_b ]] $ & By translation \\
+        & $[[ <r2 || r1>_b ]] = [[ <r2>_b & <r1>_b ]] $ & By translation \\
+        First goal:& $[[ <r1>_b & <r2>_b <: <r1>_b ]] $ & By \rref{S-andl} \\
+        & $[[ <r1>_b & <r2>_b <: <r2>_b ]] $ & By \rref{S-andr} \\
+        & $[[ <r1>_b & <r2>_b <: <r2>_b & <r1>_b ]] $ & By \rref{S-and} \\
+        Second goal: & $[[ <r2>_b & <r1>_b <: <r1>_b & <r2>_b ]] $ & Similarly we can derive
+      \end{longtable}
+  \end{itemize}
+\end{description}
+\qed
+
+\subsection{Property of Labels}
+
+\begin{definition}
+  A type $[[rt]]$ contains a label $[[l]]$,
+  written as $[[l in rt]]$, is defined as:
+  \drules[lin]{$[[l in rt]]$}{Label In}{rcd, mergel, merger}
+  We lift the relation to constraint lists, written as $[[l in R]]$:
+  \drules[linR]{$[[l in R]]$}{Label In Constraint List}{consl, consr}
+  A type $[[rt]]$ does not contain a label $[[l]]$,
+  written as $[[l notin rt]]$, is defined as:
+  \drules[lnt]{$[[l notin rt]]$}{Label Notin}{base, arrow, all, var, empty, rcd, merge}
+\end{definition}
+
+\begin{lemma} \leavevmode
+  \label{lemma:lnt-eq}
+  Given $[[ rt1 ~ rt2 ]]$,
+  \begin{itemize}
+  \item if $[[l1 notin r1]]$ then $[[l1 notin r2]]$;
+  \item if $[[l1 notin r2]]$ then $[[l1 notin r1]]$.
+  \end{itemize}
+\end{lemma}
+\proof By induction on the equivalence relation.
+\begin{itemize}
+\item Case \[\drule{teq-Refl}\]
+  Follows trivially.
+\item Case \[\drule{teq-Symm}\]
+  Follows directly by I.H..
+\item Case \[\drule{teq-Trans}\]
+  \begin{longtable}[l]{ll|l}
+    First goal:
+    & $[[l1 notin rt]]$& Given \\
+    & $[[l1 notin rt']]$& I.H. \\
+    & $[[l1 notin rt'']]$& I.H. \\
+  \end{longtable}
+  \begin{longtable}[l]{ll|l}
+    Second goal:
+    & $[[l1 notin rt'']]$& Given \\
+    & $[[l1 notin rt']]$& I.H. \\
+    & $[[l1 notin rt]]$& I.H. \\
+  \end{longtable}
+\item Case \[\drule{teq-CongArrow}\]
+  Follows directly by \rref{lnt-arrow}
+\item Case \[\drule{teq-CongAll}\]
+  Follows directly by \rref{lnt-all}
+\item Case \[\drule{teq-CongBase}\]
+  \begin{longtable}[l]{ll|l}
+    First goal:
+    & $[[l1 notin {l:rt}]]$& Given \\
+    & $[[l1 <> l]]$& By inversion \\
+    & $[[l1 notin {l:rt'}]]$& By \rref{lnt-rcd} \\
+    Second goal:
+    & can be similarly derived. & \\
+  \end{longtable}
+\item Case \[\drule{teq-CongMerge}\]
+  \begin{longtable}[l]{ll|l}
+    First goal:
+    & $[[l1 notin r1 || r2]]$& Given \\
+    & $[[l1 notin r1]] \land [[l1 notin r2]]$& By inversion \\
+    & $[[l1 notin r1']]$& By I.H. \\
+    & $[[l1 notin r2']]$& By I.H. \\
+    & $[[l1 notin r1' || r2']]$& By \rref{lnt-merge} \\
+    Second goal:
+    & can be similarly derived. & \\
+  \end{longtable}
+\item Case \[\drule{teq-MergeUnit}\]
+  \begin{longtable}[l]{ll|l}
+    First goal:
+    & $[[l1 notin r || Empty]]$& Given \\
+    & $[[l1 notin r]]$& By inversion \\
+  \end{longtable}
+  \begin{longtable}[l]{ll|l}
+    Second goal:
+    & $[[l1 notin r]]$& Given \\
+    & $[[l1 notin Empty]]$& By \rref{lnt-empty} \\
+    & $[[l1 notin r || Empty]]$& By \rref{lnt-merge} \\
+  \end{longtable}
+\item Case \[\drule{teq-MergeAssoc}\]
+  \begin{longtable}[l]{ll|l}
+    First goal:
+    & $[[l1 notin r1 || (r2 || r3)]]$& Given \\
+    & $[[l1 notin r1]]$& By inversion \\
+    & $[[l1 notin r2]]$& By inversion \\
+    & $[[l1 notin r3]]$& By inversion \\
+    & $[[l1 notin (r1 || r2) || r3]]$& By \rref{lnt-merge} twice \\
+    Second goal:
+        & can be similarly derived. & \\
+      \end{longtable}
+    \item Case \[\drule{teq-MergeComm}\]
+      \begin{longtable}[l]{ll|l}
+        First goal:
+        & $[[l1 notin r1 || r2]]$& Given \\
+        & $[[l1 notin r1]]$& By inversion \\
+        & $[[l1 notin r2]]$& By inversion \\
+        & $[[l1 notin r2 || r1]]$& By \rref{lnt-merge} \\
+        Second goal:
+        & can be similarly derived. & \\
+      \end{longtable}
+\end{itemize}
+\qed
+
+\begin{lemma} \leavevmode
+  \label{lemma:lin-eq}
+  Given $[[ rt1 ~ rt2 ]]$,
+  \begin{itemize}
+  \item if $[[l1 in r1]]$ then $[[l1 in r2]]$;
+  \item if $[[l1 in r2]]$ then $[[l1 in r1]]$.
+  \end{itemize}
+\end{lemma}
+\proof By induction on the equivalence relation.
+\begin{itemize}
+  \item Case \[\drule{teq-Refl}\]
+    Follows trivially.
+  \item Case \[\drule{teq-Symm}\]
+    Follows directly by I.H..
+  \item Case \[\drule{teq-Trans}\]
+      \begin{longtable}[l]{ll|l}
+        First goal:
+        & $[[l1 in rt]]$& Given \\
+        & $[[l1 in rt']]$& I.H. \\
+        & $[[l1 in rt'']]$& I.H. \\
+      \end{longtable}
+      \begin{longtable}[l]{ll|l}
+        Second goal:
+        & $[[l1 in rt'']]$& Given \\
+        & $[[l1 in rt']]$& I.H. \\
+        & $[[l1 in rt]]$& I.H. \\
+      \end{longtable}
+    \item Case \[\drule{teq-CongArrow}\]
+      Impossible.
+    \item Case \[\drule{teq-CongAll}\]
+      Impossible.
+    \item Case \[\drule{teq-CongBase}\]
+      \begin{longtable}[l]{ll|l}
+        First goal:
+        & $[[l1 in {l:rt}]]$& Given \\
+        & $[[l1]] = [[l]]$& By inversion \\
+        & $[[l1 in {l:rt'}]]$& By \rref{lin-rcd} \\
+        Second goal:
+        & can be similarly derived. & \\
+      \end{longtable}
+    \item Case \[\drule{teq-CongMerge}\]
+      \begin{longtable}[l]{ll|l}
+      First goal:
+        & $[[l1 in r1 || r2]]$& Given \\
+        & $[[l1 in r1]] \lor [[l1 in r2]]$& By inversion \\
+        & $[[l1 in r1]]$& Try first branch \\
+        & $[[l1 in r1']]$& By I.H. \\
+        & $[[l1 in r1' || r2']]$& By \rref{lin-mergel}\\
+        & $[[l1 in r2]]$& Try second branch \\
+        & $[[l1 in r2']]$& By I.H. \\
+        & $[[l1 in r1' || r2']]$& By \rref{lin-merger}\\
+        Second goal:
+        & can be similarly derived. & \\
+      \end{longtable}
+    \item Case \[\drule{teq-MergeUnit}\]
+      \begin{longtable}[l]{ll|l}
+        First goal:
+        & $[[l1 in r || Empty]]$& Given \\
+        & $[[l1 in r]]$& By inversion ($[[l1 in Empty]]$ is impossible) \\
+      \end{longtable}
+      \begin{longtable}[l]{ll|l}
+        Second goal:
+        & $[[l1 in r]]$& Given \\
+        & $[[l1 in r || Empty]]$& By \rref{lin-mergel} \\
+      \end{longtable}
+    \item Case \[\drule{teq-MergeAssoc}\]
+      \begin{longtable}[l]{ll|l}
+        First goal:
+        & $[[l1 in r1 || (r2 || r3)]]$& Given \\
+        & $[[l1 in r1]] \lor [[l1 in r2]] \lor [[l1 in r3]]$& By inversion \\
+        & $[[l1 in (r1 || r2) || r3]]$& In each branch, this can be derived by \\
+        & & using \rref{lin-mergel} and \rref{lin-merger} \\
+        Second goal:
+        & can be similarly derived. & \\
+      \end{longtable}
+    \item Case \[\drule{teq-MergeComm}\]
+      First goal:
+      \begin{longtable}[l]{ll|l}
+        & $[[l1 in r1 || r2]]$& Given \\
+        & $[[l1 in r1]] \lor [[l1 in r2]]$& By inversion \\
+        & $[[l1 in r2 || r1]]$& In each branch, this can be derived by \\
+        & & using \rref{lin-mergel} and \rref{lin-merger} \\
+        Second goal:
+        & can be similarly derived. & \\
+      \end{longtable}
+\end{itemize}
+\qed
+
+\begin{lemma}\leavevmode
+  \label{lemma:cmp-lnt}
+  Given $[[ Ttx |- r1 # r2 ]]$,
+  \item if $[[l1 in r1]]$, then $[[l1 notin r2]]$;
+  \item if $[[l1 in r2]]$, then $[[l1 notin r1]]$.
+\end{lemma}
+\proof By induction on the judgment.
+\begin{itemize}
+  \item Case \[\drule{cmp-Eq}\]
+    \begin{longtable}[l]{ll|l}
+      First goal:
+      & $[[l1 in r']]$& Given\\
+      & $[[l1 in r]]$& By \cref{lemma:lin-eq} \\
+      & $[[l1 notin s]]$& I.H. \\
+      & $[[l1 notin s']]$&By \cref{lemma:lnt-eq} \\
+      Second goal:
+      & can be similarly derived. & \\
+    \end{longtable}
+  \item Case \[\drule{cmp-Symm}\]
+    Follows directly by I.H.
+  \item Case \[\drule{cmp-Tvar}\]
+    First part is impossible. Second goal follows directly by \rref{lnt-var}.
+  \item Case \[\drule{cmp-Base}\]
+    \begin{longtable}[l]{ll|l}
+      First goal:
+      & $[[l1 in r]]$& Given\\
+      & $[[l1 notin {l:rt}]]$& I.H.\\
+      & $[[l1 <> l]]$& By inversion \\
+      & $[[l1 notin {l:rt'}]]$& By \rref{lnt-rcd}\\
+      Second goal:
+      & $[[l1 in {l:rt'}]]$& Given\\
+      & $[[l1]] = [[l]]$& By inversion\\
+      & $[[l1 in {l:rt}]]$& By \rref{lin-rcd} \\
+      & $[[l1 notin r]]$& By I.H.
+    \end{longtable}
+  \item Case \[\drule{cmp-MergeE}\]
+    \begin{longtable}[l]{ll|l}
+      First goal:
+      & $[[l1 in r]]$& Given\\
+      & $[[l1 notin s1 || s2]]$& I.H.\\
+      & $[[l1 notin si]]$& By inversion \\
+      Second goal:
+      & $[[l1 in s1]]$& Given\\
+      & $[[l1 in s1 || s2]]$& By \rref{lin-mergel} \\
+      & $[[l1 notin r]]$& By I.H.
+    \end{longtable}
+  \item Case \[\drule{cmp-MergeI}\]
+    \begin{longtable}[l]{ll|l}
+      First goal:
+      & $[[l1 in r]]$& Given\\
+      & $[[l1 notin s1]]$& I.H.\\
+      & $[[l1 notin s2]]$& I.H.\\
+      & $[[l1 notin s1 || s2]]$& By \rref{lnt-merge} \\
+      Second goal:
+      & $[[l1 in s1 || s2]]$& Given \\
+      & $[[l1 in s1]] \lor [[l1 in s2]]$& By inversion \\
+      & $[[l1 notin r]]$& In each branch we can derive this by I.H.
+    \end{longtable}
+  \item Case \[\drule{cmp-BaseBase}\]
+    \begin{longtable}[l]{ll|l}
+      First goal:
+      & $[[l1 in {l:rt}]]$& Given\\
+      & $[[l1]] = [[l]]$& By inversion\\
+      & $[[l <> l']]$& Given \\
+      & $[[l1 <> l']]$& By property of equality  \\
+      & $[[l1 notin {l':rt'} ]]$ & By \rref{lnt-rcd} \\
+      Second goal:
+      & $[[l1 in {l':rt'}]]$& Given\\
+      & $[[l1]] = [[l']]$& By inversion\\
+      & $[[l <> l']]$& Given \\
+      & $[[l1 <> l]]$& By property of equality  \\
+      & $[[l1 notin {l:rt} ]]$ & By \rref{lnt-rcd}
+    \end{longtable}
+  \item Case \[\drule{cmp-Empty}\]
+    First goal follows directly by \rref{lnt-empty};
+    second goal is impossible.
+\end{itemize}
+\qed
+
+\begin{lemma}
+  \label{lemma:lin-sub}
+  If $[[l in r]]$,
+  then $[[<r>_b <: {l:A}]]$ for any $[[A]]$.
+\end{lemma}
+\proof By induction on $[[l in r]]$ judgment.
+\begin{itemize}
+  \item Case \[ \drule{lin-rcd}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[<{l:rt}>_b]]$ = $[[{l:Bot}]]$& By translation \\
+      & $[[Bot <: A]]$& By \rref{S-bot} \\
+      & $[[{l:Bot} <: {l:A}]]$& By \rref{S-rcd}
+    \end{longtable}
+  \item Case \[\drule{lin-mergel}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[<r1>_b <: {l:A}]]$& I.H. \\
+      & $[[<r1 || r2>_b]] = [[<r1>_b & <r2>_b]]$& By translation \\
+      & $[[<r1>_b & <r2>_b <: <r1>_b]]$& By \rref{S-andl} \\
+      & $[[<r1>_b & <r2>_b <: {l:A}]]$& By \rref{S-trans} \\
+    \end{longtable}
+  \item Case \[\drule{lin-merger}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[<r2>_b <: {l:A}]]$& I.H. \\
+      & $[[<r1 || r2>_b]] = [[<r1>_b & <r2>_b]]$& By translation \\
+      & $[[<r1>_b & <r2>_b <: <r2>_b]]$& By \rref{S-andr} \\
+      & $[[<r1>_b & <r2>_b <: {l:A}]]$& By \rref{S-trans} \\
+    \end{longtable}
+\end{itemize}
+\qed
+
+\begin{lemma}
+  \label{lemma:lin-subr}
+  If $[[l in R]]$,
+  then $[[<R> <: {l:A}]]$ for any $[[A]]$.
+\end{lemma}
+\proof By induction on $[[l in R]]$.
+\begin{itemize}
+  \item Case \[\drule{linR-consl}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[l in r]]$& Given \\
+      & $[[<r>_b <: {l:A}]]$& By \cref{lemma:lin-sub} \\
+      & $[[<r, R>]] = [[<r>_b & <R>]]$& By translation \\
+      & $[[<r>_b & <R> <: <r>_b]]$& By \rref{S-andl} \\
+      & $[[<r>_b & <R> <: {l:A}]]$& By \rref{S-trans} \\
+    \end{longtable}
+  \item Case \[\drule{linR-consr}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[l in R]]$& Given \\
+      & $[[<R> <: {l:A}]]$& I.H. \\
+      & $[[<r, R>]] = [[<r>_b & <R>]]$& By translation \\
+      & $[[<r>_b & <R> <: <R>]]$& By \rref{S-andr} \\
+      & $[[<r>_b & <R> <: {l:A}]]$& By \rref{S-trans} \\
+    \end{longtable}
+\end{itemize}
+\qed
+
+\subsection{Property of Record Variables}
+\begin{definition}
+  A type $[[rt]]$ contain a record variable $[[a]]$,
+  written as $[[a in rt]]$, is defined as:
+  \drules[ain]{$[[a in rt]]$}{Label In}{var, mergel, merger}
+\end{definition}
+
+\begin{lemma}\leavevmode
+  \label{lemma:ain-eq}
+  Given $[[ rt1 ~ rt2 ]]$,
+  \begin{itemize}
+  \item if $[[a in r1]]$ then $[[a in r2]]$;
+  \item if $[[a in r2]]$ then $[[a in r1]]$.
+  \end{itemize}
+\end{lemma}
+\proof By induction on the equivalence relation.
+\begin{itemize}
+  \item Case \[\drule{teq-Refl}\]
+    Follows trivially.
+  \item Case \[\drule{teq-Symm}\]
+    Follows directly by I.H..
+  \item Case \[\drule{teq-Trans}\]
+      \begin{longtable}[l]{ll|l}
+        First goal:
+        & $[[a in rt]]$& Given \\
+        & $[[a in rt']]$& I.H. \\
+        & $[[a in rt'']]$& I.H. \\
+        Second goal:
+        & $[[a in rt'']]$& Given \\
+        & $[[a in rt']]$& I.H. \\
+        & $[[a in rt]]$& I.H. \\
+      \end{longtable}
+    \item Case \[\drule{teq-CongArrow}\]
+      Impossible.
+    \item Case \[\drule{teq-CongAll}\]
+      Impossible.
+    \item Case \[\drule{teq-CongBase}\]
+      Impossible.
+    \item Case \[\drule{teq-CongMerge}\]
+      \begin{longtable}[l]{ll|l}
+        First goal:
+        & $[[a in r1 || r2]]$& Given \\
+        & $[[a in r1]] \lor [[a in r2]]$& By inversion \\
+        & $[[a in r1]]$& Try first branch \\
+        & $[[a in r1']]$& By I.H. \\
+        & $[[a in r1' || r2']]$& By \rref{ain-mergel}\\
+        & $[[a in r2]]$& Try second branch \\
+        & $[[a in r2']]$& By I.H. \\
+        & $[[a in r1' || r2']]$& By \rref{ain-merger}\\
+        Second goal:
+        & can be similarly derived. & \\
+      \end{longtable}
+    \item Case \[\drule{teq-MergeUnit}\]
+      \begin{longtable}[l]{ll|l}
+        First goal:
+        & $[[a in r || Empty]]$& Given \\
+        & $[[a in r]]$& By inversion ($[[a in Empty]]$ is impossible) \\
+        Second goal:
+        & $[[a in r]]$& Given \\
+        & $[[a in r || Empty]]$& By \rref{ain-mergel} \\
+      \end{longtable}
+    \item Case \[\drule{teq-MergeAssoc}\]
+      \begin{longtable}[l]{ll|l}
+        First goal:
+        & $[[a in r1 || (r2 || r3)]]$& Given \\
+        & $[[a in r1]] \lor [[a in r2]] \lor [[a in r3]]$& By inversion \\
+        & $[[a in (r1 || r2) || r3]]$& In each branch, this can be derived by \\
+        & & using \rref{ain-mergel} and \rref{ain-merger} \\
+        Second goal:
+        & can be similarly derived. & \\
+      \end{longtable}
+    \item Case \[\drule{teq-MergeComm}\]
+      \begin{longtable}[l]{ll|l}
+        First goal:
+        & $[[a in r1 || r2]]$& Given \\
+        & $[[a in r1]] \lor [[a in r2]]$& By inversion \\
+        & $[[a in r2 || r1]]$& In each branch, this can be derived by \\
+        & & using \rref{ain-mergel} and \rref{ain-merger} \\
+        Second goal:
+        & can be similarly derived. & \\
+      \end{longtable}
+\end{itemize}
+\qed
+
+\begin{lemma} \leavevmode
+  \label{lemma:cmp-al}
+  Given $[[ Ttx |- r1 # r2 ]]$,
+  \begin{itemize}
+  \item if $[[a in r1]]$, and $[[l1 in r2]]$,
+  \item or $[[a in r2]]$, and $[[l1 in r1]]$,
+  \end{itemize}
+  then for some $[[R]]$, we have $[[(a # R) in Ttx]]$, $[[l1 in R]]$.
+\end{lemma}
+\proof By induction on the $[[ Ttx |- r1 # r2 ]]$ judgment.
+\begin{itemize}
+  \item Case \[\drule{cmp-Eq}\]
+    \begin{longtable}[l]{ll|l}
+      First goal:
+      & $[[a in r']]$ & Given \\
+      & $[[r ~ r']]$ & Given \\
+      & $[[a in r']]$ & By \cref{lemma:ain-eq} \\
+      & $[[l1 in s']]$ & Given \\
+      & $[[s in s']]$ & Given \\
+      & $[[l1 in s']]$ &  By \cref{lemma:lin-eq} \\
+      & $[[(a#R) in Ttx]]$ &  By I.H., for some $[[R]]$ \\
+      & $[[l1 in R]]$ &  As above\\
+      Second goal:
+      & can be similarly derived. & \\
+    \end{longtable}
+  \item Case \[\drule{cmp-Symm}\]
+    Follows directly by I.H..
+  \item Case \[\drule{cmp-Tvar}\]
+    \begin{longtable}[l]{ll|l}
+      First goal:
+      & $[[l1 in r]]$ & Given \\
+      & $[[r in R]]$ & Given \\
+      & $[[l1 in R]]$ & Follows directly \\
+      Second goal:
+      & is impossible & \\
+    \end{longtable}
+  \item Case \[\drule{cmp-Base}\]
+    \begin{longtable}[l]{ll|l}
+      First goal:
+      & $[[l1 in {l:rt'}]]$ & Given \\
+      & $[[l1]] = [[l]]$ & By inversion \\
+      & $[[a in r]]$ & Given \\
+      & $[[l1 in {l:rt}]]$ & By \rref{lin-rcd} \\
+      & $[[(a#R) in Ttx]]$ &  By I.H., for some $[[R]]$ \\
+      & $[[l1 in R]]$ &  As above\\
+      Second goal:
+      & is impossible & \\
+    \end{longtable}
+  \item Case \[\drule{cmp-MergeE}\]
+    \begin{longtable}[l]{ll|l}
+      First goal:
+      & $[[l1 in si]]$ & Given \\
+      & $[[l1 in s1 || s2]]$ & By \rref{lin-mergel} \\
+      & $[[a in r]]$ & Given \\
+      & $[[(a#R) in Ttx]]$ &  By I.H., for some $[[R]]$ \\
+      & $[[l1 in R]]$ &  As above \\
+      Second goal:
+      & $[[a in si]]$ & Given \\
+      & $[[a in s1 || s2]]$ & By \rref{ain-mergel} \\
+      & $[[l1 in r]]$ & Given \\
+      & $[[(a#R) in Ttx]]$ &  By I.H., for some $[[R]]$ \\
+      & $[[l1 in R]]$ &  As above
+    \end{longtable}
+  \item Case \[\drule{cmp-MergeI}\]
+    \begin{longtable}[l]{ll|l}
+      First goal:
+      & $[[a in r]]$ & Given \\
+      & $[[l1 in s1 || s2]]$ & Given \\
+      & $[[l1 in s1]] \lor [[l1 in s2]]$ & By inversion \\
+      & $[[(a#R) in Ttx]]$ &  In both branch, by I.H., for some $[[R]]$ \\
+      & $[[l1 in R]]$ &  As above \\
+      Second goal:
+      & $[[l1 in r]]$ & Given \\
+      & $[[a in s1 || s2]]$ & Given \\
+      & $[[a in s1]] \lor [[a in s2]]$ & By inversion \\
+      & $[[(a#R) in Ttx]]$ &  In both branch, by I.H., for some $[[R]]$ \\
+      & $[[l1 in R]]$ &  As above \\
+    \end{longtable}
+  \item Case \[\drule{cmp-BaseBase}\]
+    Impossible case.
+  \item Case \[\drule{cmp-Empty}\]
+    Impossible case.
+\end{itemize}
+\qed
+
+\begin{lemma}
+  \label{lemma:cmp-ar}
+  If $[[(a # R) in Ttx]]$, and $[[l in R]]$,
+  then $[[ < Ttx > |-  < a > ** {l:A}    ]] \land [[< Ttx > |-  < a >_b ** {l:A}  ]]$ for any $[[A]]$.
+\end{lemma}
+\proof We have
+\begin{longtable}[l]{ll|l}
+  & $[[(a#R) in Ttx]]$ & Given \\
+  & $[[Ttx]] = [[Ttx1, a # R, Ttx2]]$ & By inversion, we can assume \\
+  & $[[l in R]]$       & Given \\
+  & $[[<R> <: {l:A}]]$ & (1) By \cref{lemma:lin-subr} \\
+  & $[[<Ttx>]] = [[<Ttx1>, X ** <R>, Xb ** <R>, <Ttx2>]]$ & By translation \\
+  & $[[(X ** <R>) in <Ttx>]]$& (2) Follows directly \\
+  & $[[<a>]] = [[X]]$ & By translation \\
+  & $[[<Ttx> |- X ** {l:A} ]]$ & By (1), (2) and \rref{D-tvarL} \\
+  & The other case is similar
+\end{longtable}
+\qed
+
+\begin{lemma}
+  \label{lemma:cmp-ain}
+  If $[[ Ttx |- r1 # r2 ]]$ and $[[a in r1]]$ and $[[l in r2]]$,
+  then $[[<Ttx> |- <a> ** {l:A}]] \land [[< Ttx > |-  < a >_b ** {l:A}  ]]$ for any $[[A]]$.
+\end{lemma}
+\proof we have
+\begin{longtable}[l]{ll|l}
+  & $[[ Ttx |- r1 # r2 ]]$ & Given \\
+  & $[[a in r1]]$ & Given \\
+  & $[[l in r2]]$ & Given \\
+  & $[[(a # R) in Ttx]]$ & By \cref{lemma:cmp-al}, for some $[[R]]$ \\
+  & $[[l in R]]$ & As above \\
+  & $[[<Ttx> |- <a> ** {l:A}]]$ & By \cref{lemma:cmp-ar} for any $[[A]]$ \\
+  & The other case is similar
+\end{longtable}
+\qed
+
+\cmprcd*
+\proof
+\begin{longtable}[l]{ll|l}
+  & $[[l in {l:rt}]]$ & By \rref{lin-rcd} \\
+  & $[[ Ttx |- r # {l:rt} ]]$ & Given \\
+  & $[[l notin r]]$ & By \cref{lemma:cmp-lnt} \\
+\end{longtable}
+By induction on the judgment $[[l notin r]]$.
+\begin{itemize}
+  \item Case $[[r]] = [[Empty]]$
+    \begin{longtable}[l]{ll|l}
+      & $[[<Empty>]] = [[Top]]$& By translation\\
+      & $[[<Ttx> |- Top ** {l:A}]]$& By \rref{D-topL} \\
+      & The other case is similar
+    \end{longtable}
+  \item Case $[[r]] = [[{l1:rt1}]]$
+    \begin{longtable}[l]{ll|l}
+      & $[[l notin {l1:rt1}]]$& Given \\
+      & $[[l1 <> l]]$ & By inversion \\
+      & $[[<{l1:rt1}>]] = [[{l1:<rt1>}]]$& By translation \\
+      & $[[ <Ttx> |- {l1:<rt1>} ** {l:A} ]]$& By \rref{D-rcdNeq} \\
+      & The other case is similar
+    \end{longtable}
+  \item $[[r]] = [[r1 || r2]]$
+    \begin{longtable}[l]{ll|l}
+      & $[[ <r1||r2>]] = [[<r1> & <r2>]]$& By translation \\
+      & $[[l notin r1 || r2]]$ & Given \\
+      & $[[l notin r1]]$ & By inversion \\
+      & $[[l notin r2]]$ & By inversion \\
+      & $[[Ttx |- r1 || r2 # {l:rt} ]]$& Given \\
+      & $[[Ttx |- {l:rt} # r1 || r2 ]]$& By \rref{cmp-Symm} \\
+      & $[[Ttx |- {l:rt} # r1 ]]$& By \rref{cmp-MergeE} \\
+      & $[[Ttx |- {l:rt} # r2 ]]$& By \rref{cmp-MergeE} \\
+      & $[[Ttx |- r1 # {l:rt} ]]$ & By \rref{cmp-Symm} \\
+      & $[[Ttx |- r2 # {l:rt} ]]$ &  By \rref{cmp-Symm} \\
+      & $[[<Ttx> |- <r1> ** {l:A} ]]$ & I.H. \\
+      & $[[<Ttx> |- <r2> ** {l:A} ]]$ & I.H. \\
+      & $[[<Ttx> |- <r2> & <r2> ** {l:A} ]]$ & By \rref{D-andL} \\
+      & The other case is similar
+    \end{longtable}
+  \item $[[r]] = [[a]]$
+    \begin{longtable}[l]{ll|l}
+      & $[[Ttx |- a # {l:rt} ]]$& Given \\
+      & $[[a in a]]$& By \rref{ain-var} \\
+      & $[[l in {l:rt}]]$& By \rref{lin-rcd} \\
+      & $[[<Ttx> |- <a> ** {l:A}]]$ & By \cref{lemma:cmp-ain} \\
+      & The other case is similar
+    \end{longtable}
+\end{itemize}
+\qed
+
+\subsection{Translation of Records}
+
+\begin{lemma}
+  \label{lemma:sub-rb}
+  $[[<r>_b <: <r>]]$.
+\end{lemma}
+\proof By induction on $[[r]]$.
+\begin{itemize}
+\item Case $[[r]] = [[a]]$.
+  Then $[[<a>_b]] = [[Xb]]$ and $[[<a>]] = [[X]]$. By the axiom $[[Xb <: X]]$ we
+  are done.
+\item Case $[[r]] = [[Empty]]$
+  Then $[[<a>_b]] = [[Top]]$ and $[[<a>]] = [[Top]]$. By \rref{S-refl} we are done.
+\item Case $[[r]] = [[{l:t}]]$ Then $[[<{l:rt}>_b]] = [[{l:Bot}]]$ and
+  $[[<{l:rt}>]] = [[{l:<rt>}]]$. Because $[[Bot <: <rt>]]$ by \rref{S-bot} we have
+  $[[{l:Bot} <: {l:<rt>}]]$ by \rref{S-rcd} are done.
+\item Case $[[r]] = [[r1 || r2]]$
+\begin{longtable}[l]{ll|l}
+  & $[[<r1 || r2>_b]] = [[<r1>_b & <r2>_b]]$  & By translation \\
+  & $[[<r1 || r2>]] = [[<r1> & <r2>]]$  & By translation \\
+  & $[[<r1>_b <: <r1>]]$ & (1) I.H. \\
+  & $[[<r2>_b <: <r2>]]$ & (2) I.H. \\
+  & $[[<r1>_b & <r2>_b <: <r1>_b]]$ & (3) By \rref{S-andl} \\
+  & $[[<r1>_b & <r2>_b <: <r1>]]$ & (4) By \rref{S-trans} on (1), (3)\\
+  & $[[<r1>_b & <r2>_b <: <r2>_b]]$ & (5) By \rref{S-andr} \\
+  & $[[<r1>_b & <r2>_b <: <r2>]]$ & (6) By \rref{S-trans} on (2), (5)\\
+  & $[[<r1>_b & <r2>_b <: <r1> & <r2>]]$ & By \rref{S-and} on (4), (6)\\
+\end{longtable}
+\end{itemize}
+\qed
+
+\begin{lemma}
+  \label{lemma:rin-sub}
+  If $[[r in R]]$,
+  then $[[<R> <: <r>]] \land [[  < R > <: <r>_b  ]]  $.
+\end{lemma}
+\proof We have:
+\begin{longtable}[l]{ll|l}
+  & $[[r in R]]$& Given \\
+  & $[[R]] = [[R1, r, R2]]$& We can assume \\
+  & $[[<R>]] = [[<R1> & <r>_b & <R2>]]$& By translation \\
+  & $[[<R1> & <r>_b & <R2>]] <: [[<r>_b]]$& By \rref{S-andl} and \rref{S-andr} \\
+  & $[[<r>_b <: <r>]]$& By \cref{lemma:sub-rb} \\
+  & $[[<R1> & <r>_b & <R2>]] <: [[<r>]]$& By \rref{S-trans} \\
+  & The other case is similar.
+\end{longtable}
+\qed
+
+\subsection{Translation of Compatibility}
+
+\begin{lemma} \label{lemma:cmp-dis}
+  If $[[ Ttx |- r # r' ]]$ then the following all hold:
+  \begin{enumerate}
+  \item $[[ < Ttx > |-  < r > ** < r' >    ]] $
+  \item $[[ < Ttx > |-  < r > ** < r' >_b  ]]$
+  \item $[[ < Ttx > |-  < r >_b ** < r' >  ]]$
+  \item $[[ < Ttx > |-  < r >_b ** < r' > _b  ]]$
+  \end{enumerate}
+\end{lemma}
+\proof By induction on the compatibility judgment.
+\begin{itemize}
+  \item Case \[ \drule{cmp-Eq} \]
+    \begin{longtable}[l]{ll|l}
+      & $[[Ttx |- r # s]]$ & Given \\
+      & $[[<Ttx> |- <r> ** <s>]]$ & I.H. \\
+      & $[[s ~ s']]$ & Given \\
+      & $[[<s> <: <s'>]]$ & By \cref{lemma:trans-equiv}\\
+      & $[[<Ttx> |- <r> ** <s'>]]$ & By \cref{lemma:covariance:disjoint} \\
+      & $[[<Ttx> |- <s'> ** <r>]]$ & By \cref{lemma:symmetry-disjoint} \\
+      & $[[r ~ r']]$ & Given \\
+      & $[[ <r> <: <r'>]]$ & By \cref{lemma:trans-equiv} \\
+      & $[[<Ttx> |- <s'> ** <r'>]]$ & By \cref{lemma:covariance:disjoint} \\
+      & $[[<Ttx> |- <r'> ** <s'>]]$ & By \cref{lemma:symmetry-disjoint} \\
+      & The other cases are similar
+    \end{longtable}
+  \item Case \[ \drule{cmp-Symm} \]
+    \begin{longtable}[l]{ll|l}
+      & $[[<Ttx> |- <r> ** <s>]]$ & I.H. \\
+      & $[[<Ttx> |- <s> ** <r>]]$ & By \cref{lemma:symmetry-disjoint} \\
+      & The other cases are similar
+    \end{longtable}
+  \item Case \[ \drule{cmp-Tvar} \]
+    \begin{longtable}[l]{ll|l}
+      & $[[(a # R) in Ttx]]$ & Given \\
+      & $[[Ttx]] = [[Ttx1, a # R, Ttx2]]$ & By inversion, we can assume \\
+      & $[[<Ttx>]] = [[<Ttx1>, X ** <R>, Xb ** <R>, <Ttx2>]]$ & By translation \\
+      & $[[(X ** <R>) in <Ttx>]]$& (1) Follows directly \\
+      & $[[<a>]] = [[X]]$ & By translation \\
+      & $[[r in R]]$ & Given \\
+      & $[[<R> <: <r>]]$ & (2) By \cref{lemma:rin-sub} \\
+      & $[[X ** <r>]]$& By \rref{D-tvarL} and (1), (2) \\
+      & The other cases are similar
+    \end{longtable}
+  \item Case \[ \drule{cmp-Base} \]
+    \begin{longtable}[l]{ll|l}
+      & $[[Ttx |- r # {l : rt}]]$ & Given \\
+      & $[[<Ttx> |- <r> ** {l : <rt'>}]]$ & By \cref{lemma:cmp-rcd} \\
+      & The other cases are similar
+    \end{longtable}
+  \item Case \[ \drule{cmp-MergeE} \]
+    \begin{longtable}[l]{ll|l}
+      & $[[<s1||s2>]] = [[<s1> & <s2>]]$ & By translation \\
+      & $[[<Ttx> |- <r> ** <s1> &<s2>]]$ & I.H. \\
+      & $[[<Ttx> |- <r> ** <si>]]$ & By \cref{lemma:dis_and} \\
+      & The other cases are similar
+    \end{longtable}
+  \item Case \[ \drule{cmp-MergeI} \]
+    \begin{longtable}[l]{ll|l}
+      & $[[<Ttx> |- <r> ** <s1>]]$ & I.H. \\
+      & $[[<Ttx> |- <r> ** <s2>]]$ & I.H. \\
+      & $[[<Ttx> |- <r> ** <s1> & <s2>]]$ & By \rref{D-andR} \\
+      & The other cases are similar
+    \end{longtable}
+  \item Case \[ \drule{cmp-BaseBase} \]
+    \begin{longtable}[l]{ll|l}
+      & $[[l <> l']]$ & Given\\
+      & $[[<{l:rt}>]] = [[{l:<rt>}]]$ & By translation \\
+      & $[[<{l':rt'}>]] = [[{l':<rt'>}]]$ & By translation \\
+      & $[[<Ttx> |- {l: <rt>} ** {l':<rt'>}]]$ & By \rref{D-rcdNeq} \\
+      & The other cases are similar
+    \end{longtable}
+  \item Case \[ \drule{cmp-Empty} \]
+    \begin{longtable}[l]{ll|l}
+      & $[[<Empty>]] = [[Top]]$ & By translation \\
+      & $[[<Ttx> |- <r> ** Top]]$ & By \rref{D-topR} \\
+      & The other cases are similar
+    \end{longtable}
+\end{itemize}
+\qed
+
+
+\begin{lemma}
+  \label{lemma:cmp-disr}
+  If $[[ Ttx |- r # R ]]$ then $[[ < Ttx > |-  < r > ** < R >   ]] \land [[< Ttx > |-  < r > _b ** < R >]] $
+\end{lemma}
+\begin{proof}
+  By induction on the judgment $[[  Ttx |- r # R  ]]$.
+  \begin{itemize}
+  \item Case \[ \drule{cmpList-Nil} \]
+    \begin{longtable}[l]{ll|l}
+      & $[[<  <>  >]] = [[  Top    ]]$ & By translation \\
+      & $[[  < Ttx > |- < r > ** Top   ]]$ & By \rref{D-topR} \\
+      & The other case is similar
+    \end{longtable}
+  \item Case \[ \drule{cmpList-Cons} \]
+    \begin{longtable}[l]{ll|l}
+      & $[[ < r' , R  >  ]] = [[  < r' >_b & < R >   ]]$ & By translation \\
+      & $[[  Ttx |- r # R   ]]$ & Given \\
+      & $[[  < Ttx > |- < r > ** < R >  ]]$ & I.H \\
+      & $[[  Ttx |- r # r'   ]]$ & Given \\
+      & $[[  < Ttx > |- < r > **  < r' >_b  ]]$ & By \cref{lemma:cmp-dis} \\
+      & $[[  < Ttx > |- < r > **  < r' >_b & < R >  ]]$ & By \rref{D-andR}
+    \end{longtable}
+  \end{itemize}
+  \qed
+\end{proof}
+
+
+\subsection{Translation of Typing}
+
+\typesafe*
+\begin{itemize}
+  \item Case \[\drule{wtt-Eq}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[ <Ttx> ; <Gtx> |- ee => <rt> ]]$ & I.H. \\
+      & $[[rt ~ rt']]$ & Given \\
+      & $[[<rt> <: <rt'>]]$ & By \cref{lemma:trans-equiv} \\
+      & $[[ <Ttx> ; <Gtx> |- ee <= <rt'> ]]$ & By \rref{T-sub} \\
+      & $[[ <Ttx> ; <Gtx> |- ee : <rt'> => <rt'> ]]$ & By \rref{T-anno} \\
+    \end{longtable}
+  \item Case \[\drule{wtt-Var}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[Ttx ok]] $ & Given \\
+      & $[[||- <Ttx>]]$ & By \cref{lemma:trans-well-form} \\
+      & $[[Ttx |- Gtx ok]]$ & Given \\
+      & $[[<Ttx> ||- <Gtx>]]$ & By \cref{lemma:trans-well-form} \\
+      & $[[x : rt in Gtx]]$& Given \\
+      & $[[(x : <rt>) in <Gtx>]]$& By translation \\
+      & $[[ <Ttx> ; <Gtx> |- x => <rt> ]]$ & By \rref{T-var} \\
+    \end{longtable}
+  \item Case \[\drule{wtt-ArrowI}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[Ttx |- rt type]]$& Given \\
+      & $[[< Ttx > |- < rt >]]$& By \cref{lemma:trans-well-form} \\
+      & $[[<rt -> rt'>]] = [[<rt> -> <rt'>]]$& By translation \\
+      & $[[ <Ttx> ; <Gtx, x: rt> |- ee => <rt'> ]]$ & I.H. \\
+      & $[[ <Ttx> ; <Gtx>, x: <rt> |- ee => <rt'> ]]$ & By translation \\
+      & $[[<rt'> <: <rt'> ]]$ & By \rref{S-refl} \\
+      & $[[ <Ttx> ; <Gtx>, x : <rt> |- ee <= <rt'> ]]$ & By \rref{T-sub} \\
+      & $[[ <Ttx> ; <Gtx> |- (\x . ee) <= <rt> -> <rt'> ]]$ & By \rref{T-abs} \\
+      & $[[ <Ttx> ; <Gtx> |- (\x . ee) : <rt> -> <rt'> => <rt> -> <rt'> ]]$ & By
+      \rref{T-anno}\\
+    \end{longtable}
+  \item Case \[\drule{wtt-ArrowE}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[ <Ttx> ; <Gtx> |- ee1 => <rt -> rt'> ]]$& I.H. \\
+      & $[[ <Ttx> ; <Gtx> |- ee1 => <rt> -> <rt'> ]]$& By translation \\
+      & $[[ <Ttx> ; <Gtx> |- ee2 => <rt> ]]$& I.H. \\
+      & $[[<rt> <: <rt> ]]$ & By \rref{S-refl} \\
+      & $[[ <Ttx> ; <Gtx> |- ee2 <= <rt> ]]$& By \rref{T-sub} \\
+      & $[[ <Ttx> ; <Gtx> |- ee1 ee2 => <rt'> ]]$& By \rref{T-app} \\
+    \end{longtable}
+  \item Case \[\drule{wtt-Base}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[<{l:rt}> ]] = [[{l:<rt>}]]$& By translation \\
+      & $[[ <Ttx> ; <Gtx> |- ee => <rt> ]]$& I.H. \\
+      & $[[ <Ttx> ; <Gtx> |- {l= ee} => {l:<rt>} ]]$& By \rref{T-rcd} \\
+    \end{longtable}
+  \item Case \[\drule{wtt-Empty}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[Ttx ok]] $ & Given \\
+      & $[[||- <Ttx>]]$ & By \cref{lemma:trans-well-form} \\
+      & $[[Ttx |- Gtx ok]]$ & Given \\
+      & $[[<Ttx> ||- <Gtx>]]$ & By \cref{lemma:trans-well-form} \\
+      & $[[<Empty>]] = [[Top]]$& By translation \\
+      & $[[ <Ttx> ; <Gtx> |- Top => Top ]]$& By \rref{T-top}
+    \end{longtable}
+  \item Case \[\drule{wtt-Merge}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[ <Ttx> ; <Gtx> |- ee1 => <r1> ]]$& I.H. \\
+      & $[[ <Ttx> ; <Gtx> |- ee1 => <r2> ]]$& I.H. \\
+      & $[[<r1 || r2>]] = [[<r1> & <r2>]]$ & By translation \\
+      & $[[Ttx |- r1 # r2]]$& Given \\
+      & $[[<Ttx> |- <r1> ** <r2>]]$& By \cref{lemma:cmp-dis} \\
+      & $[[ <Ttx> ; <Gtx> |- ee1 ,, ee2 => <r1> & <r2> ]]$& By \rref{T-merge}
+    \end{longtable}
+  \item Case \[\drule{wtt-Restr}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[ <Ttx> ; <Gtx> |- ee => <{l:rt} || r> ]]$& I.H. \\
+      & $[[ <Ttx> ; <Gtx> |- ee => {l:<rt>} & <r> ]]$& By translation \\
+      & $[[  {l:<rt>} & <r> <: <r> ]]$& By \rref{S-andr} \\
+      & $[[ <Ttx> ; <Gtx> |- ee <= <r> ]]$& By \rref{T-sub} \\
+      & $[[ <Ttx> ; <Gtx> |- ee : <r> => <r> ]]$& By \rref{T-anno} \\
+    \end{longtable}
+  \item Case \[\drule{wtt-Select}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[ <Ttx> ; <Gtx> |- ee => <{l : rt} || r> ]]$& I.H. \\
+      & $[[ <Ttx> ; <Gtx> |- ee => {l : <rt>} &<r> ]]$& By translation \\
+      & $[[ {l:<rt>} & <r> <: {l: <rt>}  ]] $ & By \rref{S-andl} \\
+      & $[[ <Ttx> ; <Gtx> |- ee <= {l : <rt>} ]]$& By \rref{T-sub} \\
+      & $[[ <Ttx> ; <Gtx> |- (ee : {l : < rt >}) => {l : <rt>} ]]$& By \rref{T-anno} \\
+      & $[[ <Ttx> ; <Gtx> |- (ee : {l : < rt >}) . l => <rt> ]]$& By \rref{T-proj} \\
+    \end{longtable}
+  \item Case \[\drule{wtt-AllI}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[Ttx |- R ok]]$ & Given \\
+      & $[[<Ttx> |- <R>]]$ & (1) By \cref{lemma:trans-well-form} \\
+      & $[[<\/ a # R . rt >]] = [[\X ** <R>. \Xb ** <R>. <rt>]]$&By translation \\
+      & $[[<Ttx , a # R> ; <Gtx> |- ee => <rt>]]$ & I.H. \\
+      & $[[ <Ttx> ,  X ** < R > , Xb ** <R> ; <Gtx>|- ee =>  <rt> ]]$& By
+      translation \\
+      & $[[<Ttx>, X ** <R> |- <R>]]$ & By weakening on (1) \\
+      & $[[ <Ttx> ,  X ** < R > ; <Gtx>|- \ Xb ** <R>. ee => \Xb ** <R>. <rt> ]]$& By \rref{T-tabs} \\
+      & $[[ <Ttx> ; <Gtx> |- \ X ** < R > . \ Xb ** <R>. ee => \X ** <R>. \Xb **
+      <R>. <rt> ]]$& By \rref{T-tabs}
+    \end{longtable}
+  \item Case \[\drule{wtt-AllE}\]
+    \begin{longtable}[l]{ll|l}
+      & $[[<[ r / a ] rt>]] = [[ (<rt> [X ~> <r>]) [Xb ~> <r>_b] ]]$ & By
+      \cref{lemma:subst_rt} \\
+      & $[[Ttx |- r # R]]$ & Given \\
+      & $[[<Ttx> |- <r> ** <R>]]$ & (1) By \cref{lemma:cmp-disr} \\
+      & $[[<Ttx> |- <r>_b ** <R>]]$ & (2) By \cref{lemma:cmp-disr} \\
+      & $[[ <Ttx> ; <Gtx> |- ee => <\/ a # R . rt> ]]$& I.H. \\
+      & $[[ <Ttx> ; <Gtx> |- ee => \X ** <R> . \Xb ** <R> . <rt> ]]$& (3) By
+      translation \\
+      & $[[ <Ttx> ; <Gtx> |- ee <r> => (\Xb ** <R> . <rt>) [X ~> <r>] ]]$& (4) By
+      \rref{T-tapp} on (1), (3) \\
+      & $[[ <Ttx> ; <Gtx> |- ee <r> => (\Xb ** <R> . <rt> [X ~> <r>]) ]]$& By
+      substitution \\
+      & $[[ <Ttx> ; <Gtx> |- ee <r> <r>_b =>  <rt> [X ~> <r>] [Xb ~> <r>] ]]$&
+      By \rref{T-tapp} on (2), (4) \\
+    \end{longtable}
+\end{itemize}
+\qed

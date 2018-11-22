@@ -1,0 +1,1884 @@
+
+\section{Some Proofs about the Declarative System}
+
+
+\lemmaerase*
+\begin{proof}
+By straightforward induction on the typing derivation.
+\end{proof}
+
+\lemmacoherence*
+\begin{proof}
+According to Lemma~\ref{lemma:erase}, after erasure of types and casts,
+$\mathcal{C}\{[[pe1]]\}$ and $\mathcal{C}\{[[pe2]]\}$ are equivalent. So if
+$\mathcal{C}\{ [[pe1]] \} \reduce [[n]]$, it is impossible for $\mathcal{C}\{
+[[pe2]] \}$ to reduce to a different integer according to the dynamic semantics.
+\end{proof}
+
+\proptop*
+\begin{proof} \leavevmode
+  \begin{itemize}
+  \item From first to second: By induction on the derivation of consistent
+    subtyping. We have extra case \rref{CS-Top} now, where $B = \top$.
+    We can choose $C = A$, and
+    $D$ by replacing the unknown types in $C$ by $\nat$. Namely, $D$ is a static
+    type, so by \rref{S-Top} we are done.
+  \item From second to first: By induction on the derivation of second
+    subtyping. We have extra case \rref{S-Top} now, where
+    $B = \top$, so $A \tconssub B$ holds by \rref{CS-Top}.
+  \end{itemize}
+\end{proof}
+
+\propagttop*
+\begin{proof} \leavevmode
+  \begin{itemize}
+  \item From left to right: By induction on the derivation of consistent
+    subtyping. We have case \rref{CS-Top} now.
+    It follows that for
+    every static type $A_1 \in \gamma(A)$, we can derive $A_1 \tsub \top$ by
+    \rref{S-Top}.
+    We have $B_1 = B = \top$ and we are done.
+  \item From right to left: By induction on the derivation of subtyping and
+    inversion on the concretization. We have extra case \rref{S-Top} now, where
+    $B$ is $\top$. So
+    consistent subtyping directly holds.
+  \end{itemize}
+\end{proof}
+
+\propparalpha*
+\begin{proof}
+Follows directly from the definition of Translation Pre-order.
+\end{proof}
+
+\begin{definition}[Measurements of Translation]
+  There are three measurements of a translation $[[pe]]$,
+  \begin{enumerate}
+  \item $[[ ||pe||e]]$, the size of the expression 
+  \item $[[ ||pe||s ]]$, the number of distinct static type parameters in $[[pe]]$
+  \item $[[ ||pe||g ]]$, the number of distinct gradual type parameters in $[[pe]]$
+  \end{enumerate}
+  We use $[[ ||pe|| ]]$ to denote the lexicographical order of the triple
+  $([[ ||pe||e ]], -[[ ||pe||s ]], -[[ ||pe||g ]])$.
+\end{definition}
+
+\begin{definition}[Size of types]
+
+  \begin{align*}
+    [[ || int ||  ]] &= 1 \\
+    [[ || a ||  ]] &= 1 \\
+    [[ || A -> B  ||  ]] &= [[ || A || ]] + [[ || B || ]] + 1 \\
+    [[ || \/a . A ||  ]] &= [[ || A || ]] + 1 \\
+    [[ || unknown ||  ]] &= 1 \\
+    [[ || static ||  ]] &= 1 \\
+    [[ || gradual ||  ]] &= 1
+  \end{align*}
+
+\end{definition}
+
+\begin{definition}[Size of expressions]
+
+  \begin{align*}
+    [[ || x ||e  ]] &= 1 \\
+    [[ || n ||e  ]] &= 1 \\
+    [[ || \x : A . pe ||e  ]] &= [[ || A || ]] + [[ || pe ||e ]] + 1 \\
+    [[ || /\ a. pe ||e  ]] &= [[ || pe ||e ]] + 1 \\
+    [[ || pe1 pe2 ||e  ]] &= [[ || pe1 ||e ]] + [[  || pe2 ||e ]] + 1 \\
+    [[ || < A `-> B> pe ||e  ]] &= [[ || pe ||e ]] + [[  || A || ]] + [[  || B || ]] + 1 \\
+  \end{align*}
+
+\end{definition}
+
+
+\begin{lemma} \label{lemma:size_e}
+  If $[[dd |- e : A ~~> pe]]$ then $[[ || pe ||e    ]] \geq [[ || e ||e   ]]  $.
+\end{lemma}
+\begin{proof}
+  Immediate by inspecting each typing rule.
+\end{proof}
+
+\begin{corollary} \label{lemma:decrease_stop}
+  If $[[dd |- e : A ~~> pe]]$ then $[[ || pe ||   ]] > ([[ || e ||e ]], -[[ || e ||e ]], -[[ || e ||e ]] )  $.
+\end{corollary}
+\begin{proof}
+  By \cref{lemma:size_e} and note that $ [[ || pe ||e   ]] > [[  || pe ||s  ]] $ and $ [[ || pe ||e   ]] > [[  || pe ||g  ]] $
+\end{proof}
+
+\begin{lemma} \label{lemma:type_decrease}
+  $[[ || A || ]] \leq [[ || S(A) || ]]  $.
+\end{lemma}
+\begin{proof}
+  By induction on the structure of $[[A]]$. The interesting cases are $[[ A ]] = [[static]]$ and
+  $[[ A ]] = [[gradual]]$. When $[[ A ]] = [[static]]$, $[[ S(A) ]] = [[t]]$
+  for some monotype $[[t]]$ and it is immediate that $[[ || static ||  ]]  \leq [[ || t || ]] $
+  (note that $[[ || static ||  ]] < [[ || gradual ||  ]] $ by definition).
+\end{proof}
+
+\begin{lemma}[Substitution Decreases Measurement]
+  \label{lemma:subst_dec_measure}
+  If $[[pe1]] \leq [[pe2]]$, then $ {[[ ||pe1|| ]]} \leq [[ ||pe2|| ]]$; unless
+  $[[pe2]] \leq [[pe1]]$ also holds, otherwise we have $[[ ||pe1|| ]] < [[ ||pe2|| ]]$.
+\end{lemma}
+\begin{proof}
+  Since $[[ pe1  ]] \leq [[  pe2  ]]$, we know $[[ pe2  ]] = [[ S(pe1)  ]]$ for some $[[S]]$. By induction on
+  the structure of $[[pe1]]$.
+
+  \begin{itemize}
+  \item Case $[[pe1]] = [[  \x : A . pe ]]$. We have
+    $[[ pe2  ]] = [[  \x : S(A) . S(pe)  ]]$. By \cref{lemma:type_decrease} we have $[[ || A || ]] \leq [[ || S(A) || ]]$.
+    By i.h., we have $[[ || pe ||  ]] \leq [[ || S(pe) ||  ]]$. Therefore $[[ || \x : A . pe ||    ]] \leq [[ || \x : S(A) . S(pe) ||  ]]$.
+  \item Case $[[pe1]] = [[ < A `-> B > pe  ]]$. We have
+    $[[pe2]] = [[ < S(A) `-> S(B) > S(pe)  ]]$.  By \cref{lemma:type_decrease} we have $[[ || A || ]] \leq [[ || S(A) || ]]$
+    and $[[ || B || ]] \leq [[ || S(B) || ]]$. By i.h., we have $[[ || pe ||  ]] \leq [[ || S(pe) ||  ]]$.
+    Therefore $[[  || < A `-> B > pe ||  ]] \leq [[ || < S(A) `-> S(B) > S(pe)  ||   ]]$.
+
+  \item The rest of cases are immediate.
+  \end{itemize}
+\end{proof}
+
+
+\lemmareptyping*
+\begin{proof}
+We already know that at least one translation $[[pe]] = [[pe1]]$ exists
+for every typing derivation. If $[[pe1]]$ is a representative translation then we
+are done. Otherwise there exists another translation $[[pe2]]$ such that
+$[[pe2]] \leq [[pe1]]$ and $ [[pe1]] \not \leq [[pe2]]$. By
+\cref{lemma:subst_dec_measure}, we have $[[||pe2||]] < [[ ||pe1|| ]]$. We continue
+with $[[pe]] = [[pe2]]$, and get a strictly decreasing sequence $[[ || pe1 ||  ]], [[ || pe2 || ]], \dots$.
+By \cref{lemma:decrease_stop}, we know this sequence cannot be infinite long. Suppose it ends at $[[ || pej || ]]$,
+by the construction of the sequence, we know that $[[pej]]$ is a representative translation of $[[e]]$.
+\end{proof}
+
+
+\newpage
+
+
+\section{The Extended Algorithmic System}
+
+
+\subsection{Syntax}
+
+
+\begin{center}
+\begin{tabular}{lrcl} \toprule
+  Expressions & $[[ae]]$ & \syndef & $[[x]] \mid [[n]] \mid [[ \x : aA . ae ]]  \mid  [[\x . ae]] \mid [[ae1 ae2]] \mid [[ae : aA]] \mid [[ let x = ae1 in ae2  ]] $ \\
+  Types & $[[aA]], [[aB]]$ & \syndef & $ [[int]] \mid [[a]] \mid [[evar]] \mid [[aA -> aB]] \mid [[\/ a. aA]] \mid [[unknown]] \mid [[static]] \mid [[gradual]] $ \\
+  Monotypes & $[[at]], [[as]]$ & \syndef & $ [[int]] \mid [[a]] \mid [[evar]] \mid [[at -> as]] \mid [[static]] \mid [[gradual]]$ \\
+  Existential variables & $[[evar]]$ & \syndef & $[[sa]]  \mid [[ga]]  $   \\
+  Castable Types & $[[agc]]$ & \syndef & $ [[int]] \mid [[a]] \mid [[evar]] \mid [[agc1 -> agc2]] \mid [[\/ a. agc]] \mid [[unknown]] \mid [[gradual]] $ \\
+  Castable Monotypes & $[[atc]]$ & \syndef & $ [[int]] \mid [[a]] \mid [[evar]] \mid [[atc1 -> atc2]] \mid [[gradual]]$ \\
+  Algorithmic Contexts & $[[GG]], [[DD]], [[TT]]$ & \syndef & $[[empty]] \mid [[GG , x : aA]] \mid [[GG , a]] \mid [[GG , evar]]  \mid [[GG, sa = at]] \mid [[GG, ga = atc]] \mid [[ GG, mevar ]] $ \\
+  Complete Contexts & $[[OO]]$ & \syndef & $[[empty]] \mid [[OO , x : aA]] \mid [[OO , a]] \mid [[OO, sa = at]] \mid [[OO, ga = atc]] \mid [[OO, mevar]] $ \\
+  \bottomrule
+\end{tabular}
+
+\end{center}
+
+
+\subsection{Type System}
+
+
+\drules[as]{$ [[GG |- aA <~ aB -| DD ]] $}{Algorithmic Consistent Subtyping}{tvar, evar, int, arrow, forallR, forallLL, spar, gpar, unknownLL, unknownRR, instL, instR}
+
+\drules[instl]{$ [[ GG |- evar <~~ aA -| DD   ]] $}{Instantiation I}{solveS, solveG, solveUS, solveUG, reachSGOne, reachSGTwo, reachOther, arr, forallR}
+
+\drules[instr]{$ [[ GG |- aA <~~ evar -| DD   ]] $}{Instantiation II}{solveS, solveG, solveUS, solveUG, reachSGOne, reachSGTwo, reachOther, arr, forallLL}
+
+\drules[inf]{$ [[ GG |- ae => aA -| DD ]] $}{Inference}{var, int, lamannTwo, lamTwo, anno, app, letTwo}
+
+\drules[chk]{$ [[ GG |- ae <= aA -| DD ]] $}{Checking}{lam, gen, sub}
+
+\drules[am]{$ [[ GG |- aA |> aA1 -> aA2 -| DD ]] $}{Algorithmic Matching}{forallL, arr, unknown, var}
+
+\newpage
+
+\section{Decidability} \label{app:decidable}
+
+The decidability proofs mostly follow that of DK system. Whenever possible, we only show
+the new cases; otherwise we provide full detailed proofs.
+
+\subsection{Decidability of Instantiation}
+
+
+\begin{lemma}[Left Unsolvedness Preservation]
+  Let $[[GG]] = [[  GG0, evar, GG1 ]]$. If  $[[ GG |- evar <~~ aA -| DD    ]]$ or $[[  GG |- aA <~~ evar -| DD  ]]$, and $[[evarb]] \in \textsc{unsolved}([[GG0]])$,
+  then  $[[DD]] = [[(DD0, evarb, DD1)]]$ or $[[DD]] = [[(DD0, evarb', evarb = evarb', DD1)]]$ where $[[evarb']]$ is a fresh unsolved existential.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation. We show the new cases.
+
+  \begin{itemize}
+  \item Case \[     \ottaltinferrule{instl-solveUS}{}{  }{ [[  GG0, sa, GG1 |- sa <~~ unknown -| GG0 , ga, sa = ga, GG1 ]] }  \]
+    First notice that $[[evarb]]$ cannot be $[[ga]]$. Then to the left of $[[sa]]$, the contexts $[[DD]]$ and $[[GG]]$ are the same $[[GG0]]$.
+  \item Case \[  \drule{instl-solveUG}   \]
+    Immediate, since to the left of $[[ga]]$, the contexts $[[DD]]$ and $[[GG]]$ are the same.
+  \item Case \[  \drule{instl-reachSGOne}    \]
+    First notice that $[[evarb]]$ cannot be $[[ga]]$. Then to the left of $[[sa]]$, the contexts $[[DD]]$ and $[[GG]]$ are the same.
+  \item Case \[  \drule{instl-reachSGTwo}    \]
+    If $[[evarb]] \neq [[sb]] $, immediate, since to the left of $[[ga]]$ ($[[evarb]]$ cannot be $[[gb]]$), the contexts $[[DD]]$ and $[[GG]]$ are the same.
+    Otherwise, $[[sb]]$'s solution (i.e., $[[gb]]$) is a fresh unsolved existential that lies just before $[[sb]]$.
+  \item Case \rref*{instr-solveUS} is similar to case \rref*{instl-solveUS}.
+  \item Case \rref*{instr-solveUG} is similar to case \rref*{instl-solveUG}.
+  \item Case \rref*{instr-reachSG1} is similar to case \rref*{instl-reachSG1}.
+  \item Case \rref*{instr-reachSG2} is similar to case \rref*{instl-reachSG2}.
+  \end{itemize}
+
+\end{proof}
+
+
+\begin{lemma}[Left Free Variable Preservation]
+  Let $[[GG]] = [[  GG0, evar, GG1  ]]$. If $[[ GG |- evar <~~ aA -| DD    ]]$ or $[[  GG |- aA <~~ evar -| DD  ]]$, and $[[ GG |- aB ]]$
+  and $[[ evar ]] \notin \textsc{fv}([[ [GG]aB  ]])$ and $[[evarb]] \in \textsc{unsolved}([[GG0]])  $
+  and $[[evarb]]  \notin \textsc{fv}([[ [GG]aB  ]])  $,
+  then $[[evarb]] \notin \textsc{fv}([[  [DD]aB ]])$.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation. We show the new cases.
+  \begin{itemize}
+  \item Case \[  \drule{instl-solveUS}    \]
+    Since $[[DD]]$ differs from $[[GG]]$ only in solving $[[sa]]$ to $[[ga]]$, and $[[ga]]$ is fresh,
+    applying $[[DD]]$ to a type will not introduce $[[evarb]]$.  We have $[[evarb]]  \notin \textsc{fv}([[ [GG]aB  ]])  $, so
+    $[[evarb]]  \notin \textsc{fv}([[ [DD]aB  ]])  $.
+
+  \item Case \[  \drule{instl-solveUG}    \]
+    Immediate, since $[[DD]]$ and $[[GG]]$ are the same.
+
+  \item Case \[  \drule{instl-reachSGOne}    \]
+
+    Since $[[DD]]$ differs from $[[GG]]$ only in solving $[[sa]]$ and $[[gb]]$ to $[[ga]]$, and $[[ga]]$ is fresh,
+    applying $[[DD]]$ to a type will not introduce $[[evarb]]$.  We have $[[evarb]]  \notin \textsc{fv}([[ [GG]aB  ]])  $, so
+    $[[evarb]]  \notin \textsc{fv}([[ [DD]aB  ]])  $.
+
+  \item Case \[  \drule{instl-reachSGTwo}    \]
+
+    Since $[[DD]]$ differs from $[[GG]]$ only in solving $[[sb]]$ and $[[ga]]$ to $[[gb]]$, and $[[gb]]$ is fresh,
+    applying $[[DD]]$ to a type will not introduce $[[evarb]]$.  We have $[[evarb]]  \notin \textsc{fv}([[ [GG]aB  ]])  $, so
+    $[[evarb]]  \notin \textsc{fv}([[ [DD]aB  ]])  $.
+
+  \item Case \rref*{instr-solveUS} is similar to case \rref*{instl-solveUS}.
+  \item Case \rref*{instr-solveUG} is similar to case \rref*{instl-solveUG}.
+  \item Case \rref*{instr-reachSG1} is similar to case \rref*{instl-reachSG1}.
+  \item Case \rref*{instr-reachSG2} is similar to case \rref*{instl-reachSG2}.
+
+
+  \end{itemize}
+
+\end{proof}
+
+
+\begin{lemma}[Instantiation Size Preservation] \label{lemma:dec:instan}
+  If $[[GG]] = [[ GG0, evar, GG1 ]]$ and $[[  GG |- evar  <~~ aA -| DD ]]$
+  or $[[ GG |- aA <~~ evar -| DD  ]]$, and $[[GG |- aB]]$ and $[[evar notin fv( [GG]aB )]]$, then $ | [[   [GG]aB   ]] | = | [[   [DD]aB   ]] | $, where $| [[   aC  ]] | $ is the plain size of $[[aC]]$.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation. We show the new cases.
+  \begin{itemize}
+  \item Case \[ \drule{instl-solveUS} \]
+    Since $[[DD]]$ differs $[[GG]]$ only in solving $[[sa]]$, and we know $[[ sa notin fv([GG]aB)  ]]  $, we have $[[  [DD]aB  ]] = [[  [GG]aB ]]$, so
+    $ | [[   [GG]aB   ]] | = | [[   [DD]aB   ]] | $.
+
+  \item Case \[  \drule{instl-solveUG}   \]
+    Immediate, since $[[DD]]$ and $[[GG]]$ are the same.
+
+  \item Case \[   \drule{instl-reachSGOne}   \]
+    Since $[[DD]]$ differs $[[GG]]$ only in solving $[[sa]]$ and $[[gb]]$, and we know $[[ sa notin fv([GG]aB)  ]]  $,
+    even if $[[gb]]$ occurs in $[[  [GG]aB]]$, its solution is again an existential variable, so the size does not change,
+    so $ | [[   [GG]aB   ]] | = | [[   [DD]aB   ]] | $.
+
+  \item Case \[   \drule{instl-reachSGTwo}   \]
+    Since $[[DD]]$ differs $[[GG]]$ only in solving $[[ga]]$ and $[[sb]]$, and we know $[[ ga notin fv([GG]aB)  ]]  $,
+    even if $[[sb]]$ occurs in $[[  [GG]aB]]$, its solution is again an existential variable, so the size does not change,
+    so $ | [[   [GG]aB   ]] | = | [[   [DD]aB   ]] | $.
+
+  \item Case \rref*{instr-solveUS} is similar to case \rref*{instl-solveUS}.
+  \item Case \rref*{instr-solveUG} is similar to case \rref*{instl-solveUG}.
+  \item Case \rref*{instr-reachSG1} is similar to case \rref*{instl-reachSG1}.
+  \item Case \rref*{instr-reachSG2} is similar to case \rref*{instl-reachSG2}.
+
+  \end{itemize}
+\end{proof}
+
+
+\decInstan*
+\begin{proof}
+  By induction on the derivation of $[[  GG |- aA   ]]$. We show the new cases.
+  \begin{itemize}
+  \item Case \[  \drule{ad-unknown}   \]
+    By \rref{instl-solveUS} or \rref{instl-solveUG}.
+
+  \item Case \[  \drule{ad-static}   \]
+    By \rref{instl-solveS}.
+
+  \item Case \[  \drule{ad-gradual}   \]
+
+    By \rref{instl-solveS} or \rref{instl-solveG}.
+
+
+  \item Case \[    \ottaltinferrule{ad-evar}{}{  }{ [[  GG0, sa, GG1 |- ga  ]] }  \]
+    If $[[ga]] \in [[GG0]]  $, then we have a derivation by \rref{instl-reachOther}. If $[[ga]] \in [[GG1]]$, then
+    we have a derivation by \rref{instl-reachSG1}.
+
+
+  \item Case \[    \ottaltinferrule{ad-evar}{}{  }{ [[  GG0, ga, GG1 |- sa  ]] }  \]
+    If $[[sa]] \in [[GG0]]  $, then we have a derivation by \rref{instl-reachSG2}. If $[[sa]] \in [[GG1]]$, then
+    we have a derivation by \rref{instl-reachOther}.
+
+  \end{itemize}
+
+
+\end{proof}
+
+
+
+\subsection{Decidability of Algorithmic Consistent Subtyping}
+
+
+\begin{lemma}[Monotypes Solve Variables] \label{lemma:mono_solve_var}
+  If $[[ GG |- evar <~~ at -| DD ]]$ or $[[ GG |- at <~~ evar -| DD  ]]$, then if $[[  [GG]at   ]] = [[at]]$ and
+  $[[evar]] \notin \textsc{fv}([[ [GG] at  ]])$, then $| \textsc{unsolved}([[GG]])   | = |  \textsc{unsolved}([[DD]])      | + 1$.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation. Since our syntax of monotypes differ
+  from DK only in having static and gradual parameters, we show only two affected cases.
+  \begin{itemize}
+  \item Case \[  \drule{instl-solveS}  \]
+    It is immediate that $|  \textsc{unsolved}([[GG, sa, GG']])    | = |  \textsc{unsolved}([[GG, sa = at, GG']])    | + 1$.
+  \item Case \[  \drule{instl-solveG}  \]
+    It is immediate that $|  \textsc{unsolved}([[GG, ga, GG']])    | = |  \textsc{unsolved}([[GG, ga = atc, GG']])    | + 1$.
+  \end{itemize}
+\end{proof}
+
+
+\begin{lemma}[Monotype Monotonicity] \label{lemma:mono_mono}
+  If $[[GG |- at1 <~ at2 -| DD]]$  then $| \textsc{unsolved}([[DD]]) | \leq |  \textsc{unsolved}([[GG]])    |$.
+\end{lemma}
+\begin{proof}
+  By induction on the derivation. We show the new cases.
+  \begin{itemize}
+  \item Case \rref*{as-spar,as-gpar}: In these rules, $[[DD]] = [[GG]]$, so $| \textsc{unsolved}([[DD]]) | = |  \textsc{unsolved}([[GG]])    |$.
+  \end{itemize}
+
+\end{proof}
+
+
+\begin{lemma}[Substitution Decreases Size] \label{lemma:subst_decrease}
+  If $[[GG |- aA]]$, then $|[[  GG |-   [GG]aA    ]]| \leq  |  [[GG |-aA]]      |   $.
+\end{lemma}
+\begin{proof}
+  By induction on $| [[ GG |- aA  ]] |$. We show the new cases.
+  \begin{itemize}
+  \item $[[aA]] = [[unknown]]$, or $[[aA]] = [[static]]$, or $[[aA]] = [[gradual]]$ then $[[  [GG] aA ]] = [[aA]]$. Therefore
+    $|[[  GG |-   [GG]aA    ]]| =  |  [[GG |-aA]]      |   $.
+  \end{itemize}
+\end{proof}
+
+
+\begin{lemma}[Monotype Context Invariance] \label{lemma:mono_inva}
+  If $[[GG |- at <~ at' -| DD]]$ where $[[  [GG]at   ]] = [[at]]$ and $[[  [GG]at'   ]] = [[at']]$ and
+  $|   \textsc{unsolved}([[GG]])      | = |  \textsc{unsolved}([[DD]])    |$, then $[[DD]] = [[GG]]$.
+\end{lemma}
+\begin{proof}
+  By induction on the derivation. We show the new cases.
+  \begin{itemize}
+  \item Cases \rref*{as-spar,as-gpar}: In these rules, the output context is the
+    same as the input context, so the result is immediate.
+  \item Case \[  \drule{as-instL}   \]
+    By \cref{lemma:mono_solve_var}, $|\textsc{unsolved}([[ DD ]])| < | \textsc{unsolved}([[ GG[evar]  ]])   |$, which is contrary to what is given,
+    so this case is impossible.
+
+  \item Case \rref*{as-instR} is similar to \rref*{as-instL}.
+  \end{itemize}
+
+\end{proof}
+
+\decsubtype*
+\begin{proof}
+  Let the judgment $[[ GG |- aA <~ aB -| DD   ]]$ be measured lexicographically by
+ \begin{enumerate}[(M1)]
+\item the number of $\forall$-quantifiers in $[[aA]]$ and $[[aB]]$;
+\item the number of unknown types in $[[aA]]$ and $[[aB]]$;
+\item $| \textsc{unsolved}([[GG]]) |$: the number of unsolved existential
+  variables in $[[GG]]$;
+\item $| [[GG |- aA]] | + | [[GG |- aB]]   |$.
+\end{enumerate}
+
+We focus on the interesting (and new) cases.
+
+\begin{asparaitem}
+\item Cases \rref*{as-spar,as-gpar,as-unknownLL,as-unknownRR} have no premises.
+\item Case \[  \drule{as-arrow}   \]
+  We discuss each premise separately:
+  \begin{description}
+    \item[First premise:]
+      If $[[aA2]]$ or $[[aB2]]$ has a quantifier, then the first premise is smaller by (M1). Otherwise, if $[[aA2]]$ or $[[aB2]]$
+      has a unknown type, then first premise is smaller by (M2). Otherwise, the first premise shares the same input context as the conclusion, so it
+      has the same (M3), but the types $[[aB1]]$ and $[[aA1]]$ are subterms of the conclusion's types, so the first premise is smaller by (M4).
+    \item[Second premise:] If $[[aB1]]$ or $[[aA1]]$ has a quantifier, then the second premise is smaller by (M1) because
+      applying contexts will not introduce quantifiers. Otherwise,
+      if $[[aB1]]$ or $[[aA1]]$ has a unknown type, then the second premise is smaller by (M2) because
+      applying contexts will not introduce unknown types. Otherwise, at this point, we know
+      $[[aB1]]$ and $[[aA1]]$ are monotypes, so by \cref{lemma:mono_mono} on the first premise,
+      we have $| \textsc{unsolved}([[TT]])  | \leq | \textsc{unsolved}([[GG]])   |$.
+      \begin{itemize}
+      \item If $| \textsc{unsolved}([[TT]])  | < | \textsc{unsolved}([[GG]])   |$, then the second premise is smaller by (M3).
+      \item If $| \textsc{unsolved}([[TT]])  | = | \textsc{unsolved}([[GG]])   |$, then we have the same (M3). By \cref{lemma:mono_inva}
+        on the first premise, we know  $[[TT]] = [[GG]]$, so $| [[TT |- [TT]aA2]] | = | [[GG |- [GG]aA2]] |$.
+        By \cref{lemma:subst_decrease} we know $| [[GG |- [GG]aA2]] | \leq  | [[ GG |- aA2  ]] |  $. Therefore we have
+        \[
+          | [[TT |- [TT]aA2]] | \leq  | [[ GG |- aA2  ]] |
+        \]
+        Same for $[[aB2]]$:
+        \[
+          | [[TT |- [TT]aB2]] | \leq  | [[ GG |- aB2  ]] |
+        \]
+        Therefore,
+        \[
+          | [[TT |- [TT]aA2]] | + | [[TT |- [TT]aB2]] | \leq | [[ GG |- aA2  ]] | +  | [[ GG |- aB2  ]] | < | [[ GG |- aA1 -> aA2  ]] | + | [[ GG |- aB1 -> aB2  ]] |
+        \]
+        and the second premise is smaller by (M4).
+      \end{itemize}
+  \end{description}
+\end{asparaitem}
+
+\end{proof}
+
+\subsection{Decidability of Algorithmic Typing}
+
+\decmatch*
+\begin{proof}
+  \Rref{am-arr,am-unknown,am-var} do not have premises. For \rref{am-forall},
+  the size of $[[aA]]$ is decreasing in the premise.
+\end{proof}
+
+
+\dectyping*
+\begin{proof}
+
+  We consider the following measure:
+  \begin{center}
+    \begin{tabular}{lllll}
+      \multirow{2}{*}{$ \Big \langle$} & \multirow{2}{*}{$[[ae]],$} & $[[=>]]$ & \multirow{2}{*}{$| [[GG |- aA]] |$} & \multirow{2}{*}{$\Big \rangle$} \\
+                                       &                    & $[[<=]],$ &  &
+    \end{tabular}
+  \end{center}
+  and show every inference/checking premise is smaller than the conclusion.
+  \begin{itemize}
+  \item \Rref{inf-var,inf-int} do not have premises.
+  \item \Rref{inf-anno,inf-lamann,inf-lam,inf-let,chk-lam} all have strictly
+    smaller $[[ae]]$ in the premises.
+  \item \Rref{inf-app}: The first and third premises have strictly smaller
+    $[[ae]]$. The second (matching) judgment is decidable by
+    \cref{lemma:decmatch}.
+  \item \Rref{chk-gen}: Both the premise and conclusion type the same term, and
+    both are the checking judgments. However $| [[GG, a |- aA]] | < | [[GG |-  \/a. aA]] |$, so
+    the premise is smaller.
+  \item \Rref{chk-sub}: The first premise uses inference mode, so it is smaller.
+    The second premise is decidable by \cref{thm:decsubtype}.
+  \end{itemize}
+
+\end{proof}
+
+\newpage
+
+
+
+\section{Properties of Consistent Subtyping}
+
+
+\begin{clemma}[Consistent Subtyping is Reflexive] \label{lemma:sub_refl}%
+  If $[[ dd |- A  ]]$ then $[[ dd |- A <~ A  ]]$.
+\end{clemma}
+
+
+\begin{clemma}[Monotype Equality]   \label{lemma:mono_equal}
+  If  $[[ dd |- t <~ s  ]]$  then $[[t]] = [[s]]$.
+\end{clemma}
+
+\begin{lemma}[Invertibility]  \label{lemma:forall_invert}
+  If $ [[dd |- A <~ \/b . B]] $ then $[[ dd, b |- A <~ B ]]$.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation.
+  \begin{itemize}
+  \item \Rref{cs-arrow,cs-tvar,cs-int,cs-unknownRR,cs-spar,cs-gpar} are impossible since
+    the supertype is not a forall type.
+  \item Case \[  \drule{cs-forallR}   \] The premise is exactly what we need.
+  \item Case \[  \drule{cs-forallL}  \] where $B = [[  \/b . B0 ]]$. By i.h.,
+    we have $[[ dd, b |- A [a ~> t] <~ B0 ]]$. By \rref{cs-forallL} we have
+    $[[  dd , b |- \/a . A <~ B0 ]]$.
+  \item Case \[ \drule{cs-unknownLL}   \] where $[[gc]] = [[\/b . gc0 ]]$. By \rref{cs-unknownLL}
+    we have $[[ dd , b |- unknown <~ gc0 ]]$.
+  \end{itemize}
+\end{proof}
+
+
+\newpage
+
+
+\section{Properties of Context Extension}
+
+\subsection{Syntactic Properties}
+
+
+Since the definition of the context extension judgment ($[[GG --> DD]]$,
+\cref{fig:ctxt-extension}) is exactly the same as that of the DK system, we
+refer the reader to their technical report~\citep{dunfield2013complete} for the proofs of the following
+syntactic properties of context extension.
+
+
+
+\begin{lemma}[Reverse Declaration Order Preservation]   \label{lemma:reverse_preserve}
+  If $\Gamma \exto \Delta$ and $a$ and $b$ are both declared in $\Gamma$ and $a$
+  is declared to the left of $b$ in $\Delta$, then $a$ is declared to the left
+  of $b$ in $\Gamma$.
+\end{lemma}
+
+
+
+\begin{lemma}[Reflexivity]   \label{lemma:reflexivity}
+  If $[[GG]]$ is well-formed then $[[GG --> GG]]$.
+\end{lemma}
+
+
+\begin{lemma}[Transitivity]   \label{lemma:transitivity}
+  If $[[GG --> DD]] $ and $[[DD --> TT]]$ then $[[ GG --> TT  ]]$.
+\end{lemma}
+
+\begin{definition}[Softness]
+  A context $[[TT]]$ is soft iff it consists only of $[[evar]]$ and $[[evar = at]]$ declarations.
+\end{definition}
+
+
+\begin{lemma}[Substitution Extension Invariance]  \label{lemma:subst_ext_invar}
+  If $[[TT |- aA]]$ and $[[TT --> GG]]$ then $[[ [GG]aA ]] = [[ [GG] ([TT]aA)]]  $ and $ [[ [GG]aA ]] = [[ [TT] ([GG]aA)]]   $.
+\end{lemma}
+
+
+\begin{lemma}[Extension Order] \label{lemma:extension_order}%
+  We have the following:
+  \begin{enumerate}
+  \item If $[[ GL , a, GR --> DD]]$ then $[[DD]]  = [[(DL, a, DR)]]  $ where
+    $[[GL --> DL]]$. Moreover, if $[[GR]]$ is soft then $[[DR]]$ is soft.
+  \item If $[[ GL , mevar, GR --> DD]]$ then $[[DD]]  = [[(DL, mevar, DR)]]  $ where
+    $[[GL --> DL]]$. Moreover, if $[[GR]]$ is soft then $[[DR]]$ is soft.
+  \item If $[[GL, evar, GR --> DD]]$ then $[[DD]]  = [[(DL, TT, DR)]]  $ where $[[GL --> DL]]$ and $[[TT]]$ is either $[[evar]]$ or $[[evar]] = [[at]]$ for some $[[at]]$.
+  \item If $[[GL, evar = at, GR --> DD]]$ then $[[DD]]  = [[(DL, evar = at', DR)]]  $ where $[[GL --> DL]]$ and and $[[ [DL]at  ]] = [[ [DL] at' ]]$.
+  \item If $[[GL , x : aA , GR --> DD]]$ then $[[DD]]  = [[(DL, x : aA', DR)]]  $ where $[[GL --> DL]]$ and $[[ [DL]aA  ]] = [[ [DL] aA' ]]$. Moreover, $[[GR]]$ is soft if and only if $[[DR]]$ is soft.
+  \end{enumerate}
+\end{lemma}
+
+
+\begin{lemma}[Solution Admissibility for Extension] \label{lemma:solution_ext}
+  If $[[ GL |- at  ]]$ then $[[  GL, evar, GR --> GL, evar = at, GR ]]$.
+\end{lemma}
+
+
+\begin{lemma}[Unsolved Variable Addition for Extension]   \label{lemma:unsolved_ext}
+  We have that $ [[GL, GR --> GL, evar, GR]] $
+\end{lemma}
+
+
+\begin{lemma}[Parallel Admissibility]   \label{lemma:paralell_admit}
+  If $\Gamma_L \exto \Delta_L$ and $\Gamma_L, \Gamma_R \exto \Delta_L, \Delta_R$ then:
+  \begin{enumerate}
+  \item $\Gamma_L, \genA, \Gamma_R \exto \Delta_L, \genA, \Delta_R$
+  \item If $\Delta_L \vdash \tau'$ then $\Gamma_L, \genA, \Gamma_R \exto \Delta_L, \genA = \tau', \Delta_R$.
+  \item If $\Gamma_L \vdash \tau$ and $\Delta_L \vdash \tau'$ and $\ctxsubst{\Delta_L}{\tau} = \ctxsubst{\Delta_L}{\tau'}$, then $\Gamma_L, \genA = \tau, \Gamma_R \exto \Delta_L, \genA = \tau', \Delta_R$.
+  \end{enumerate}
+\end{lemma}
+
+\begin{lemma}[Parallel Extension Solution] \label{lemma:paralell_ext_solu}
+  If $\Gamma_L, \genA, \Gamma_R \exto \Delta_L, \genA = \tau', \Delta_R$ and
+  $\Gamma_L \vdash \tau$ and $\ctxsubst{\Delta_L}{\tau} =
+  \ctxsubst{\Delta_L}{\tau'}$, then $\Gamma_L, \genA = \tau, \Gamma_R \exto
+  \Delta_L, \genA = \tau', \Delta_R$.
+\end{lemma}
+
+
+
+
+\begin{lemma}[Drop Variable for Extension]   \label{lemma:drop_ext}
+  If $[[ GG, evar --> DD  ]]$ then $[[ GG --> DD]]$.
+\end{lemma}
+
+
+\begin{lemma}[Finishing Types]
+  If $\Omega \vdash A$ and $\Omega \exto \Omega'$ then $\ctxsubst{\Omega}{A} = \ctxsubst{\Omega'}{A}$.
+  \label{lemma:finish_types}
+\end{lemma}
+
+
+\begin{lemma}[Finishing completions]
+  If $\Omega \exto \Omega'$ then $\ctxsubst{\Omega}{\Omega} = \ctxsubst{\Omega'}{\Omega'}$.
+  \label{lemma:finish_complete}
+\end{lemma}
+
+
+
+\begin{lemma}[Confluence of Completeness]   \label{lemma:confluence}
+  If $[[  DD1 --> OO]]$ and $[[ DD2 --> OO]]$ then
+  $[[ [OO]DD1 ]]  =  [[ [OO] DD2  ]]$.
+\end{lemma}
+
+
+\begin{lemma}[Variable Preservation]
+  If $(x : A) \in \Delta$ or $(x : A) \in \Omega$ and $\Delta \exto \Omega$ then $(x : \ctxsubst{\Omega}{A}) \in \ctxsubst{\Omega}{\Delta}$.
+  \label{lemma:variable_preservation}
+\end{lemma}
+
+
+\begin{lemma}[Softness Goes Away]
+  If $\Delta, \Theta \exto \Omega, \Omega_Z$ where $\Delta \exto \Omega$ and $\Theta$ is soft, then $\ctxsubst{\Omega, \Omega_Z}{(\Delta, \Theta)} = \ctxsubst{\Omega}{\Delta}$.
+  \label{lemma:subst_go_away}
+\end{lemma}
+
+\begin{lemma}[Stability of Complete Contexts]
+  If $\Gamma \exto \Omega$ then $\ctxsubst{\Omega}{\Gamma} = \ctxsubst{\Omega}{\Omega}$.
+  \label{lemma:stable_complete_ctxt}
+\end{lemma}
+
+
+
+\subsection{Instantiation Extends}
+
+\begin{lemma}[Instantiation Extension]   \label{lemma:inst_extension}
+ If $[[  GG |- evar <~~ aA  -| DD   ]]$ or $[[ GG |- aA <~~ evar -| DD  ]]$ then $[[ GG --> DD ]]$.
+\end{lemma}
+\begin{proof}
+  By induction on the given instantiation derivation.
+  \begin{itemize}
+  \item \Rref{instl-solveS,instl-solveG,instl-reachOther,instr-solveS,instr-solveG,instr-reachOther}
+    are immediate from \cref{lemma:solution_ext}.
+
+  \item Case \[ \drule{instl-solveUS} \]
+    By \cref{lemma:unsolved_ext} we have $[[ GG[sa] --> GG[ga, sa]  ]]$. By \cref{lemma:solution_ext} we have
+    $[[ GG[ga, sa] --> GG[ga, sa = ga]  ]]$. By \cref{lemma:transitivity} we have $[[ GG[sa] --> GG[ga, sa=ga]   ]]$.
+
+  \item Case \[ \drule{instl-solveUG} \] Immediate by \cref{lemma:reflexivity}.
+
+
+  \item Case \[  \drule{instl-reachSGOne}  \]
+    By \cref{lemma:unsolved_ext} we have $[[  GG[sa][gb] --> GG[ga,sa][gb]  ]]$. By applying \cref{lemma:solution_ext} twice,
+    we have $[[ GG[ga,sa][gb] --> GG[ga,sa=ga][gb=ga]    ]]$. By \cref{lemma:transitivity} we have $[[ GG[sa][gb] --> GG[ga,sa=ga][gb=ga]  ]]$.
+
+  \item Case \[  \drule{instl-reachSGTwo}   \] Same as the case for \rref{instl-reachSG1}.
+
+  \item Case \[ \drule{instl-arr}\]
+    By applying \cref{lemma:unsolved_ext} twice, we have $[[  GG[evar] --> GG[evar2, evar1, evar]  ]]$.
+    By \cref{lemma:solution_ext} we have $[[ GG[evar2, evar1, evar] --> GG[evar2, evar1, evar = evar1 -> evar2]  ]]$.
+    By i.h., we have $[[ GG[evar2, evar1, evar = evar1 -> evar2] --> TT  ]]$ and $[[ TT --> DD  ]]$. By \cref{lemma:transitivity} we
+    have $[[  GG[evar] --> DD  ]]$.
+
+  \item Case \[ \drule{instl-forallR}  \]
+    By i.h., we have $[[ GG[evar], b --> DD , b , TT  ]]$. By \cref{lemma:extension_order} (1), we have $[[GG[evar] --> DD]]$.
+
+  \item Case \[ \drule{instr-solveUS}  \] Same as the case for \rref{instl-solveUS}.
+
+  \item Case \[  \drule{instr-solveUG}\] Same as the case for \rref{instl-solveUG}.
+
+  \item Case \[  \drule{instr-reachSGOne}  \]  Same as the case for \rref{instl-reachSG1}.
+
+  \item Case \[  \drule{instr-reachSGTwo}  \]  Same as the case for \rref{instl-reachSG1}.
+
+  \item Case \[ \drule{instr-arr} \] Same as the case for \rref{instl-arr}.
+
+  \item Case \[ \drule{instr-forallLL}   \]
+    By i.h., we have $[[ GG[evar] , mevarb, sb --> DD, mevarb, TT ]]$. By \cref{lemma:extension_order}(2) we have $[[ GG[evar] --> DD  ]]$.
+
+  \end{itemize}
+\end{proof}
+
+\subsection{Consistent Subtyping Extends}
+
+\begin{lemma} \label{lemma:contamination_extension}
+  If $[[GG |- aA ]]$ then $[[GG --> [aA] GG]]$.
+\end{lemma}
+\begin{proof}
+  By induction on the structure of $[[GG]]$. The only interesting case is when $[[GG]] = [[GG' , sa]] $. By \cref{def:contamination},
+  we have $[[ [aA] (GG' , sa) ]] = [[ [aA] GG' , ga, sa = ga]] $. By i.h., we have $[[ GG' --> [aA] GG'  ]]$.
+  By definition of context extension we have $[[ GG' , sa --> [aA] GG' , sa  ]]$. By \cref{lemma:unsolved_ext} we have
+  $[[ [aA] GG' , sa --> [aA] GG' , ga, sa ]]$. By \cref{lemma:solution_ext} we have $[[ [aA] GG' , ga, sa --> [aA] GG' , ga, sa = ga  ]]$.
+  By \cref{lemma:transitivity} we have $[[ GG' , sa --> [aA] GG' , ga, sa = ga ]]$.
+\end{proof}
+
+\begin{lemma}[Consistent Subtyping Extension]   \label{lemma:sub_extension}
+  If $ [[GG |- aA <~ aB -| DD]]  $ then $ [[GG --> DD]]$.
+\end{lemma}
+\begin{proof}
+  By induction on the derivation of consistent subtyping.
+
+  \begin{itemize}
+  \item \Rref{as-tvar,as-evar,as-int,as-spar,as-gpar} are immediate from \cref{lemma:reflexivity}.
+
+  \item Case \[ \drule{as-arrow} \]
+    By i.h., we have $[[GG --> TT]]$ and $[[TT --> DD]]$. By \cref{lemma:transitivity}, we have $[[GG --> DD]]$.
+
+  \item Case \[ \drule{as-forallR} \]
+    By i.h., we have $[[GG , a --> DD , a , TT]]$. By \cref{lemma:extension_order} (1), we have $[[GG --> DD]]$.
+
+
+  \item Case \[ \drule{as-forallLL} \]
+    By i.h., we have $[[GG, mevar, sa --> DD, mevar, TT]]$. By \cref{lemma:extension_order} (2), we have $[[GG --> DD]]$.
+
+
+  \item Case \[ \drule{as-unknownLL}  \] Immediate by \cref{lemma:contamination_extension}.
+
+  \item Case \[ \drule{as-unknownRR}  \] Immediate by \cref{lemma:contamination_extension}.
+
+
+  \item \Rref{as-instL,as-instR} are immediate.
+
+  \end{itemize}
+
+\end{proof}
+
+
+\newpage
+
+\section{Soundness of Consistent Subtyping}
+
+
+\begin{definition}[Filling]   \label{def:filling}
+  The filling of a context $[[ | GG | ]]$ solves all unsolved variables:
+  \begin{align*}
+    [[| empty |]] &= [[ empty ]] \\
+    [[|GG , x : aA|]] &= [[|GG| , x : aA]] \\
+    [[|GG, a|]] &= [[|GG| , a]] \\
+    [[|GG, evar = at|]] &= [[|GG| , evar = at]] \\
+    [[|GG, evar|]] &= [[|GG| , evar = int]] \\
+    [[|GG, mevar|]] &= [[|GG| , mevar]]
+  \end{align*}
+\end{definition}
+
+
+\begin{lemma}[Substitution Stability]
+  For any well-formed complete context $(\Omega, \Omega_Z)$, if $\Omega \vdash A$
+  then $\ctxsubst{\Omega}{A} = \ctxsubst{\Omega,\Omega_Z}{A}$.
+  \label{lemma:subst_stable}
+\end{lemma}
+\begin{proof}
+  By induction on $\Omega_Z$. If $\Omega_Z = [[empty]]$, the result is
+  immediate. Otherwise use the i.h. and the fact that $\Omega \vdash A$ implies
+  $\textsc{fv}(A) \cap \textsc{dom}(\Omega_Z) = \emptyset$.
+\end{proof}
+
+
+
+\begin{lemma}[Filling Completes]   \label{lemma:filling_completes}
+  If $[[GG --> OO]]$ and $[[(GG, TT)]]$ is well-formed, then $[[GG , TT --> OO, | TT |]]$.
+\end{lemma}
+\begin{proof}
+  By induction on $[[TT]]$, following \cref{def:filling} and applying the rules for context extension.
+\end{proof}
+
+\instsoundness*
+\begin{proof}
+  By induction on the given instantiation derivation.
+  \begin{itemize}
+  \item Case \[ \drule{instl-solveS} \] Immediate from \cref{lemma:sub_refl}.
+
+  \item Case \[ \drule{instl-solveG} \] Immediate from \cref{lemma:sub_refl}.
+
+  \item Case \[ \drule{instl-solveUS} \]
+    We know $[[ [OO] sa ]] = [[tc]] $ for some castable monotype $[[tc]]$, and $[[tc]] \in [[gc]]$.
+    By \rref{cs-unknownRR}, we have $[[  [OO] (GG[sa]) |- tc <~ unknown  ]]$
+
+
+  \item Case \[  \drule{instl-solveUG} \] Similar to the case for \rref{instl-solveUS}.
+
+  \item Case \[ \drule{instl-reachSGOne}  \]
+    We know $[[ [OO] sa ]] = [[ [OO]ga]] =  [[tc]] $ and $[[ [OO] gb  ]] = [[ [OO]ga]] = [[tc]]$ for some castable monotype $[[tc]]$.
+    By \cref{lemma:sub_refl} we have $[[  [OO](GG[sa][gb] ) |- tc <~ tc   ]]$.
+
+  \item Case \[  \drule{instl-reachSGTwo}   \] Similar to the case for \rref{instl-reachSG1}.
+
+  \item Case \[ \drule{instl-reachOther}  \]
+    Let $[[DD]] = [[GG[evar][evarb]  ]]$, we have $[[ [OO]evar ]] = [[t]] $ and $[[  [OO] evarb  ]]  = [[  [OO] evar ]] = [[t]] $
+    for some monotype $[[t]]$. By \cref{lemma:sub_refl} we have $[[ [OO]DD |- t <~ t  ]]$.
+
+  \item Case \[ \drule{instl-arr}   \]
+    Let $[[GG1]] = [[ GG[evar2, evar1, evar = evar1 -> evar2]  ]]    $:
+    \begin{longtable}[l]{ll|l}
+      & $[[TT |- evar2 <~~ [TT]aA2 -| DD]]$ & Premise \\
+      & $[[ TT --> DD ]]$ & By \cref{lemma:inst_extension} \\
+      & $[[ DD --> OO ]]$ & Given \\
+      & $[[TT --> OO]]$ & By \cref{lemma:transitivity} \\
+      & $[[ GG1 |- aA1 <~~ evar1 -| TT]]$ & Given \\
+      & $[[  [OO]DD |- [OO]aA1 <~ [OO]evar1 ]]$ & By i.h. and \Cref{lemma:confluence} \\
+      & $[[TT |- evar2 <~~ [TT]aA2 -| DD]]$& Premise \\
+      & $[[ [OO]DD |- [OO]evar2 <~ [OO] ([TT]aA2)  ]]$ & By i.h. \\
+      & $[[  TT --> DD ]]$ & Above \\
+      & $[[ [OO]DD |- [OO]evar2 <~ [OO] aA2  ]]$ & By \cref{lemma:subst_ext_invar} \\
+      & $[[  [OO] DD |- [OO] evar1 -> [OO] evar2 <~ [OO]aA1 -> [OO]aA2  ]]$ & By \rref{cs-arrow} \\
+      & $[[  [OO] DD |- [OO] evar <~ [OO] (aA1 -> aA2)  ]] $ & By def. of substitution
+    \end{longtable}
+
+  \item Case \[ \drule{instl-forallR}  \]
+    \begin{longtable}[l]{ll|l}
+      & $[[DD , b, TT -->  OO , b , |TT|]]  $ & By \cref{lemma:filling_completes} \\
+      & $[[GG[evar] , b |- evar <~~ aB -| DD , b , TT]]$ & Given \\
+      & $[[ [OO , b , |TT|](DD , b , TT)  |- [OO , b , |TT|] evar <~ [OO , b , |TT|] aB    ]]$ & By i.h. \\
+      & $[[ [OO , b , |TT|](DD , b , TT)  |- [OO , b ] evar <~ [OO , b ] aB    ]]$ & Free variables in $[[evar]]$ and $[[aB]]$ are declared in $[[(OO, b)]]$\\
+      & $[[ [OO , b ](DD , b )  |- [OO , b ] evar <~ [OO , b ] aB    ]]$ & By context partitioning and thinning \\
+      & $[[ [OO]DD , b   |- [OO] evar <~ [OO] aB    ]]$ & By context substitution \\
+      & $[[ [OO]DD    |- [OO] evar <~ \/b . [OO] aB    ]]$ & By \rref{cs-forallR} \\
+       & $[[ [OO]DD    |- [OO] evar <~ [OO] (\/b . aB)    ]]$ & By def. of substitution
+    \end{longtable}
+
+  \item Case \[ \drule{instr-forallLL}  \]
+
+    \begin{longtable}[l]{ll}
+      & $[[DD , mevarb, TT -->  OO , mevarb , |TT|]]  $ \qquad By \cref{lemma:filling_completes} \\
+      & $[[GG[evar] , mevarb, sb |- aB[b ~> sb] <~~ evar -| DD, mevarb, TT]]$ \qquad Premise \\
+      & $[[ [OO , mevarb , |TT|] (DD , mevarb, TT) |- [OO , mevarb , |TT|] (aB[b ~> sb]) <~ [OO , mevarb , |TT|]evar ]]$ \qquad By i.h. \\
+      & $[[ [OO] DD |- ([OO]aB) [b ~> [OO , mevarb , |TT|] sb] <~ [OO]evar ]]$ \qquad By distributivity of substitution \\
+      & $[[  [OO] DD |- [OO, mevarb, |TT|]sb  ]]$ \qquad Follows from def. of context application \\
+      & $[[  [OO] DD |- \/ b . [OO] aB  <~ [OO] evar   ]]$ \qquad By \rref{cs-forallL} and $[[ [OO, mevarb, |TT| ] sb ]]$ is a monotype  \\
+       & $[[  [OO] DD |- [OO]  (\/ b . aB)  <~ [OO] evar   ]]$ \qquad By def. of substitution
+    \end{longtable}
+
+  \item The rest of the cases are similar to the above cases.
+
+  \end{itemize}
+\end{proof}
+
+
+\subsoundness*
+\begin{proof}
+  By induction on the derivation of consistent subtyping.
+
+  \begin{itemize}
+  \item Case \[ \drule{as-tvar}  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $ [[a in GG[a] ]]  $ & Given \\
+      & $ [[ a in [OO](GG[a])  ]]   $ & Follows from def. of context application \\
+      & $ [[ [OO](GG[a]) |- a <~ a    ]]  $ & By \rref{cs-tvar} \\
+      & $ [[ [OO](GG[a]) |- [OO]a <~ [OO]a    ]]     $ & By def. of substitution
+    \end{longtable}
+
+
+  \item Case \[  \drule{as-evar}   \]
+
+    \begin{longtable}[l]{ll|l}
+      & $ [[ [OO]evar  ]]  $ defined & Follows from def. of context application \\
+      & $  [[ [OO]DD |- [OO]evar  ]]  $ & Follows from $ [[DD]] = [[ [GG]evar  ]]  $ \\
+      & $  [[ [OO]DD |- [OO]evar <~ [OO]evar    ]]  $ & By \cref{lemma:sub_refl}
+    \end{longtable}
+
+  \item Case \[  \drule{as-int}  \] Immediate.
+
+
+  \item Case \[  \drule{as-arrow}    \]
+
+    \begin{longtable}[l]{ll|l}
+      & $  [[ GG |- aB1 <~ aA1 -| TT   ]]  $ & Premise \\
+      & $   [[ DD --> OO   ]]  $ & Given \\
+      & $   [[ TT --> OO       ]]$ & By \cref{lemma:transitivity} \\
+      & $[[  [OO] TT |- [OO]aB1 <~ [OO]aA1      ]]$ & By i.h. \\
+      & $[[  [OO] DD |- [OO]aB1 <~ [OO]aA1      ]]$ & By \cref{lemma:confluence} \\
+      & $ [[ TT |- [TT] aA2 <~ [TT] aB2 -| DD]]   $ & Premise \\
+      & $ [[ [OO]DD |- [OO]([TT] aA2) <~ [OO]([TT] aB2) ]]   $ & By i.h. \\
+      & $ [[ [OO]([TT] aA2)  ]] = [[ [OO]aA2  ]]  $ & By \cref{lemma:subst_ext_invar} \\
+      & $ [[ [OO]([TT] aB2)  ]] = [[ [OO]aB2  ]]  $ & By \cref{lemma:subst_ext_invar} \\
+      & $ [[ [OO]DD |- [OO]aA2 <~ [OO]aB2 ]]    $ & By above equalities \\
+      & $  [[ [OO]DD |-[OO]aA1 -> [OO]aA2 <~[OO]aB1 -> [OO]aB2 ]]     $ & By \rref{cs-arrow} \\
+      & $  [[ [OO]DD |-[OO](aA1 -> aA2)  <~[OO](aB1 -> aB2) ]]       $ & By def. of substitution
+    \end{longtable}
+
+
+  \item Case \[ \drule{as-forallR}  \]
+
+      \begin{longtable}[l]{ll|l}
+      & $  [[GG, a --> DD, a , TT]]   $ & By \cref{lemma:sub_extension} \\
+      & $[[TT]]$ is soft & By \cref{lemma:extension_order} (1) where $[[GR]] = [[empty]]$ \\
+      & $[[ DD --> OO ]]$ & Given \\
+      & $\underbrace{[[DD , a, TT]]}_{[[DD']]} [[-->]] \underbrace{  [[OO , a, |TT| ]]   }_{[[OO']]}$ & By \cref{lemma:filling_completes} \\
+      & $  [[ GG, a |- aA <~ aB -| DD, a, TT ]]   $ & Given \\
+      & $ [[ [OO']DD' |- [OO']aA <~ [OO']aB  ]]  $ & By i.h. \\
+      & $ [[ [OO']aA  ]] = [[ [OO , a] aA  ]]   $ & By \cref{lemma:subst_stable} \\
+      & $ [[ [OO']aB  ]] = [[ [OO , a] aB  ]]   $ & By \cref{lemma:subst_stable} \\
+      & $ [[ [OO']DD'   ]]  = [[ [OO, a](DD, a)   ]] $ & By \cref{lemma:subst_go_away} \\
+      & $[[ [OO, a](DD, a) |- [OO, a]aA <~ [OO, a]aB  ]]$ & By above equalities \\
+      & $ [[ [OO]DD, a |- [OO]aA <~ [OO]aB  ]]    $ & By def. of substitution \\
+      & $ [[ [OO]DD |- [OO]aA <~ \/a. [OO]aB  ]]  $ & By \rref{cs-forallR} \\
+      & $ [[ [OO]DD |- [OO]aA <~ [OO] (\/a. aB)  ]]   $ & By def. of substitution
+      \end{longtable}
+
+
+    \item Case \[  \drule{as-forallLL}  \]
+
+      \begin{longtable}[l]{ll|l}
+        & Let $[[OO']] = [[OO, msa, |TT|]]$ \\
+        & $[[  DD --> OO  ]]$ & Given \\
+        & $[[DD, msa, TT --> OO']]$  & By \cref{lemma:filling_completes} \\
+        & $[[ GG, msa, sa |- aA [a ~> sa] <~ aB -| DD, msa, TT]]$ & Premise \\
+        & $[[ [OO'](DD, msa, TT) |- [OO'](aA [a ~> sa]) <~ [OO']aB     ]]$ & By i.h. \\
+        & $ [[ [OO']aB  ]] = [[ [OO , a] aB  ]]   $ & By \cref{lemma:subst_stable} \\
+        & $ [[ [OO](DD, msa, TT) |-  [OO'] aA [a ~> [OO']sa] <~ [OO]aB     ]]  $ & By distributivity of substitution \\
+        & $[[ [OO](DD, msa, TT) |- [OO']sa    ]]$ & Follows from def. of context application \\
+        & $ [[ [OO](DD, msa, TT) |- \/a. [OO'] aA <~ [OO]aB     ]]  $ & By \rref{cs-forallL} \\
+        & $ [[ [OO]DD |- \/a. [OO] aA <~ [OO]aB     ]]  $ & By context partitioning \\
+        & $[[ [OO]DD |- [OO] (\/a. aA) <~ [OO]aB     ]] $ & By def. of substitution
+      \end{longtable}
+
+    \item Case \[  \drule{as-spar}  \] Immediate from \rref{cs-spar}.
+
+    \item Case \[  \drule{as-gpar}  \] Immediate from \rref{cs-gpar}.
+
+
+    \item Case \[ \drule{as-unknownLL}   \] Immediate from \rref{cs-unknownLL}.
+
+    \item Case \[ \drule{as-unknownRR}   \] Immediate from \rref{cs-unknownRR}.
+
+    \item Case \[  \drule{as-instL}     \]
+      \begin{longtable}[l]{ll|l}
+        & $[[ GG[evar] |- evar <~~ aA -| DD]]$ & Premise \\
+        & $[[  [OO]DD |- [OO]evar <~ [OO]aA   ]]$ & By \cref{thm:inst_soundness}
+      \end{longtable}
+
+    \item Case \[  \drule{as-instR}     \] Similar to the case for \rref{as-instL}.
+
+  \end{itemize}
+\end{proof}
+
+
+\newpage
+
+\section{Soundness of Typing}
+
+\textbf{Note:} We use $\byhave$ to improve readability when the conclusion has several parts.
+
+
+\begin{lemma}[Matching Extension]   \label{lemma:match_extension}
+  If $[[  GG |- aA |> aA1 -> aA2 -| DD]]$ then $ [[GG --> DD]]  $.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation.
+  \begin{itemize}
+  \item Case \[ \drule{am-forallL} \]
+    By i.h., we have $[[ GG, sa --> DD  ]]$. By \cref{lemma:drop_ext}, we have $[[GG --> DD]]$.
+
+  \item Case \[  \drule{am-arr}  \] Immediate by \cref{lemma:reflexivity}.
+
+  \item Case \[ \drule{am-unknown}   \] Immediate by \cref{lemma:reflexivity}.
+
+  \item Case \[ \drule{am-var} \]
+    By applying \cref{lemma:unsolved_ext} twice, we have
+    $ [[ GG[evar] --> GG[evar1, evar2, evar]  ]]   $. By
+    \cref{lemma:solution_ext}, we have $[[ GG[evar1, evar2, evar] --> GG[evar1, evar2, evar = evar1 -> evar2]  ]]$. By
+    \cref{lemma:transitivity}, we have $[[ GG[evar] --> GG[evar1, evar2, evar = evar1 -> evar2]  ]]$.
+  \end{itemize}
+
+\end{proof}
+
+
+\begin{lemma}[Typing Extension]   \label{lemma:typing_extension}
+  If $ [[GG |- ae => aA -| DD]] $ or $ [[ GG |- ae <= aA -| DD  ]]  $ then $[[ GG --> DD]]$.
+\end{lemma}
+\begin{proof}
+  By induction on the given derivation.
+
+  \begin{itemize}
+  \item Case \[ \drule{inf-var}  \] Immediate by \cref{lemma:reflexivity}.
+
+  \item Case \[  \drule{inf-int}  \] Immediate by \cref{lemma:reflexivity}.
+
+  \item Case \[ \drule{inf-lamTwo}   \]
+    By i.h., we have $[[ GG, sa, sb, x : sa --> DD, x : sa, TT  ]]$. By \cref{lemma:extension_order}, we have
+    $[[ GG, sa, sb --> DD  ]]$. By definition, we have $[[  GG --> GG, sa, sb  ]]$. By \cref{lemma:transitivity}
+    we have $[[ GG --> DD ]]$.
+
+  \item Case \[  \drule{inf-lamannTwo}  \]
+    By i.h., we have $[[ GG, sb, x : aA --> DD, x : aA, TT  ]]   $. By \cref{lemma:extension_order},
+    we have $[[GG --> DD]]$.
+
+  \item Case \[ \drule{inf-app}   \]
+    By i.h., we have $[[  GG --> TT1  ]]$, $[[ TT2 --> DD]]$. By \cref{lemma:match_extension},
+    we have $[[ TT1 --> TT2  ]]$. By \cref{lemma:transitivity} , we have
+    $[[GG --> DD]]$.
+
+
+  \item Case \[ \drule{inf-anno}   \]
+    By i.h., we have $[[ GG --> DD ]]$.
+
+  \item Case \[ \drule{chk-gen}   \]
+    By i.h., we have $[[  GG, a --> DD, a, TT  ]]$. By
+    \cref{lemma:extension_order} we have $[[ GG --> DD]]$.
+
+  \item Case \[ \drule{chk-lam} \]
+    By i.h., we have $[[GG , x : aA --> DD, x : aA, TT]]$.
+    By \cref{lemma:extension_order} we have $[[GG --> DD]]$.
+
+  \item Case \[ \drule{chk-sub} \]
+    By i.h., we have $[[GG --> TT]]$. By
+    \cref{lemma:sub_extension} we have $[[TT --> DD]]$. By
+    \cref{lemma:transitivity} we have $[[GG --> DD]]$.
+  \end{itemize}
+
+\end{proof}
+
+\begin{theorem}[Matching Soundness]  \label{thm:match_soundness}%
+  If $[[GG |- aA |> aA1 -> aA2 -| DD]]$ where $[[ [GG]aA = aA  ]]$ and $[[ DD --> OO ]]$
+  then $[[  [OO]DD |- [OO]aA |> [OO]aA1 -> [OO]aA2 ]]$.
+\end{theorem}
+\begin{proof}
+  By induction on the given derivation.
+
+  \begin{itemize}
+  \item Case \[ \drule{am-forallL}  \]
+    \begin{longtable}[l]{ll|l}
+      & $[[ GG , sa |- aA[a ~> sa] |> aA1 -> aA2 -| DD]]$ & Premise \\
+      & $[[DD --> OO]]$ & Given \\
+      & $[[ [OO]DD |- [OO](aA[a ~> sa]) |> [OO]aA1 -> [OO]aA2   ]]$ & By i.h. \\
+      & $[[ [OO]DD |- [OO]aA [a ~> [OO]sa] |> [OO]aA1 -> [OO]aA2   ]]$ & By distributivity of substitution \\
+      & $[[ [OO]DD |- [OO]sa   ]]$ & Follows from def. of context application \\
+      & $[[ [OO]DD |- \/a. [OO]aA |> [OO]aA1 -> [OO]aA2   ]]$ & By \rref{m-forall} \\
+      & $[[ [OO]DD |- [OO] (\/a. aA) |> [OO]aA1 -> [OO]aA2   ]]$ & By def. of substitution
+    \end{longtable}
+
+
+  \item Case \[  \drule{am-arr}  \] Immediate from \rref{m-arr}.
+
+  \item Case \[  \drule{am-unknown}  \] Immediate from \rref{m-unknown}.
+
+  \item Case \[  \drule{am-var}  \]
+      \begin{longtable}[l]{ll|l}
+        &$[[DD --> OO]]$& Given \\
+        & $[[ [OO]evar  ]] = [[ [OO]evar1 -> [OO]evar2   ]]$ & By def. of context application \\
+        & $[[  [OO]DD |- [OO]evar1 -> [OO]evar2 |> [OO]evar1 -> [OO]evar2  ]]$ & By \rref{m-arr}
+      \end{longtable}
+
+  \end{itemize}
+
+\end{proof}
+
+
+\typingsoundness*
+\begin{proof}
+  By induction on the given derivation.
+
+  \begin{itemize}
+  \item Case \[ \drule{inf-var}  \]
+    \begin{longtable}[l]{ll|l}
+      &$[[(x : aA) in GG]]$ & Premise \\
+      &$[[(x : aA) in  DD]]$ & $[[DD]] = [[OO]]$ \\
+      &$[[DD --> OO]]$ & Given \\
+      &$[[ (x : [OO]aA) in [OO]GG  ]]$ & By \Cref{lemma:variable_preservation} \\
+      $\byhave$&$[[ [OO]GG |- x : [OO]aA   ]]$ & By \rref{var} \\
+      $\byhave$& $\erase{[[x]]} = \erase{[[x]]}$ & By def. of erasure
+    \end{longtable}
+
+  \item Case \[ \drule{inf-int}  \]
+    \begin{longtable}[l]{ll|l}
+      $\byhave$&$[[ [OO]GG |- n : int  ]]$ & By \rref{int} \\
+      $\byhave$& $\erase{[[n]]} = \erase{[[n]]}$ & By def. of erasure
+    \end{longtable}
+
+  \item Case \[ \drule{inf-lamannTwo}  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $[[  GG , sa, x : aA --> DD, x : aA , TT  ]]$ & By \Cref{lemma:typing_extension} \\
+      & $[[TT]]$ is soft & By \Cref{lemma:extension_order} where $[[GR]] = [[empty]]$ \\
+      & $[[ DD --> OO]]$ & Given \\
+      & $\underbrace{[[DD , x : aA , TT]]}_{[[DD']]} [[-->]] \underbrace{[[OO, x : aA, |TT|]] }_{[[OO']]}$ & By \Cref{lemma:filling_completes} \\
+      & $[[ GG, x: aA |- ae => aB -| DD, x : aA, TT ]]$ & Premise \\
+      & $[[  [OO'] DD' |- e' : [OO']sb   ]]$ & By i.h. \\
+      & $\erase{[[ae]]} = \erase{e'}$ & above \\
+      & $[[ [OO']sb   ]] = [[ [OO, x : aA]sb  ]] = [[ [OO]sb  ]]$ & By \Cref{lemma:subst_stable} and def. of substitution \\
+      & $[[ [OO']DD' ]]$ = $[[ [OO]DD , x : [OO]aA   ]]$ & By \Cref{lemma:subst_go_away} and def. of context substitution \\
+      & $[[  [OO] DD, x : [OO]aA |- e' : [OO]sb   ]] $ & By above equalities \\
+      & $[[  [OO] DD |- \ x : [OO]aA . e' : [OO]aA -> [OO]sb   ]] $ & By \rref{lamann} \\
+      & $[[ [OO]aA  ]] = [[A]]$ & Type annotations cannot contain evars \\
+      & $[[  [OO] DD |- \ x : A . e' :[OO]aA -> [OO]sb   ]]$ & By above equality \\
+      $\byhave$& $ [[  [OO] DD |- \ x : A . e' :[OO](aA -> sb)   ]] $ & By def. of substitution \\
+      $\byhave$& $\erase{[[\x : A . e']]} = \erlam{x}{\erase{e'}} = \erlam{x}{\erase{e}} = \erase{\blam{x}{A}{e}} $ & By def. of erasure
+    \end{longtable}
+
+
+
+  \item Case \[  \drule{inf-lam}  \]
+
+    \begin{longtable}[l]{ll|l}
+      &$[[ GG, sa, sb, x : sa --> DD, x : sa, TT   ]]$& By \cref{lemma:typing_extension} \\
+      &$[[ GG , sa, sb --> DD  ]]$& By \cref{lemma:extension_order} \\
+      &$[[TT]]$ is soft & Above \\ \\
+      &$[[ DD --> OO  ]]$  & Given \\
+      &$[[  DD , x : sa --> OO , x : [OO]sa  ]]$  & By def \\
+      &$\underbrace{[[DD, x : sa, TT]]}_{[[DD']]} [[-->]] \underbrace{ [[OO, x : [OO]sa, |TT|]] }_{[[OO']]}$  & By \cref{lemma:filling_completes} \\ \\
+
+      & $ [[  GG, sa, sb, x : sa |- ae <= sb -| DD, x : sa, TT ]] $ & Premise \\
+      & $[[ [OO']DD' |- e' : [OO']sb   ]]$ & By i.h. \\
+      & $\erase{[[ae]]} = \erase{[[e']]}$ & Above \\
+      & $[[ [OO']sb  ]] = [[ [OO]sb  ]]$ & By def. of context substitution \\
+      & $[[  [OO']DD'  ]] = [[ [OO]DD, x : [OO]sa  ]]  $ & By def. of context substitution \\
+      & $[[ [OO]DD, x : [OO]sa |- e' : [OO]sb   ]]$ & By above equalities \\
+      & $[[ [OO]sa ]]$ is a monotype & $\Omega$ is predicative \\
+      & $[[ [OO]DD |-\x .  e' : [OO]sa -> [OO]sb   ]] $ & By \rref{lam} \\
+      $\byhave$& $[[ [OO]DD |-\x .  e' : [OO](sa -> sb)  ]]$ & By def. of substitution \\
+      $\byhave$& $\erase{\erlam{x}{e}} = \erlam{x}{\erase{e}} = \erlam{x}{\erase{e'}} = \erase{\erlam{x}{e'}}$ & By def. of erasure
+    \end{longtable}
+
+
+
+  \item Case \[  \drule{inf-app}  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $[[ DD --> OO  ]]$ & Given \\
+      & $[[TT1 --> OO]]$ & By \cref{lemma:match_extension,lemma:typing_extension,lemma:transitivity} \\
+      & $[[ GG |- ae1 => aA -| TT1]]$ & Premise \\
+      & $[[ [OO]TT1 |- e1' : [OO]aA    ]]$ & By i.h. \\
+      & $\erase{[[e1']]} = \erase{[[ae1]]}$ & above \\
+      & $[[ [OO]TT1  ]] = [[ [OO]DD  ]]$ & By \Cref{lemma:confluence} \\
+      & $[[ [OO]DD |- e1' : [OO]aA    ]]$ & By above equality \\
+      & $[[ TT2 |- ae2 <= [TT2]aA1 -| DD ]]$ & Premise \\
+      & $[[ [OO] DD |- e2' : [OO]aA1   ]]$ & By i.h. \\
+      & $\erase{[[e2']]} = \erase{[[ae2]]}$ & Above \\
+      & $[[ TT1 |- [TT1] aA |> aA1 -> aA2 -| TT2]]$ & Premise \\
+      & $[[ [OO]TT2 |- [OO]([TT1] aA) |> [OO]aA1 -> [OO]aA2     ]]$ & By \Cref{thm:match_soundness} \\
+      & $[[ [OO]TT2  ]] =  [[ [OO]DD  ]]$ & By \Cref{lemma:confluence} \\
+      & $[[ [OO]([TT1]aA)  ]] =  [[  [OO]aA  ]]$ & By \Cref{lemma:subst_ext_invar} \\
+      & $[[ [OO]DD |- [OO]aA |> [OO]aA1 -> [OO]aA2     ]]$ & By above equalities \\
+      & $[[ [OO]DD |- [OO]aA1 <~ [OO]aA1    ]]$ & By \cref{lemma:sub_refl} \\
+      $\byhave$& $[[  [OO]DD |- e1' e2' : [OO]aA2   ]]$ & By \rref{app} \\
+      $\byhave$& $\erase{e_1' ~ e_2'} = \erase{e_1'} ~ \erase{e_2'} = \erase{e_1} ~ \erase{e_2} = \erase{e_1 ~ e_2}$ & By def. of erasure
+    \end{longtable}
+
+
+  \item Case \[  \drule{inf-anno}  \]
+    \begin{longtable}[l]{ll|l}
+      & $[[  GG |- ae <= aA -| DD ]]$ & Premise \\
+      $\byhave$ & $ [[  [OO]DD |- e' : [OO]aA  ]]  $ & By i.h., \\
+      & $\erase{[[e]]} = \erase{[[e']]}$ & Above \\
+      $\byhave$ & $\erase{e : A} = \erase{e} = \erase{e'}$ & By above equality and the def. of erasure
+    \end{longtable}
+
+
+
+  \item Case \[ \drule{chk-gen}  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $[[ DD --> OO ]]$ & Given \\
+      & $[[ DD , a --> OO , a]]$ & By def \\
+      & $[[ GG , a --> DD , a, TT  ]]$ & By \cref{lemma:typing_extension} \\
+      & $[[TT]]$ is soft & By \cref{lemma:extension_order} \\
+      & $\underbrace{[[DD, a, TT]]}_{[[DD']]} [[-->]] \underbrace{[[OO, a, |TT|]]}_{[[OO']]}$ & By \cref{lemma:filling_completes} \\
+      & $[[ GG, a |- ae <= aA -| DD , a , TT]]$  & Premise \\
+      & $[[ [OO']DD' |- e' : [OO']aA  ]]$  & By i.h., \\
+      $\byhave$& $\erase{[[ae]]} = \erase{[[e']]}$ & Above \\
+      & $[[  [OO']aA  ]] = [[ [OO]aA ]]$ & By \cref{lemma:subst_stable} \\
+      & $[[ [OO']DD'  ]]$ = $[[ [OO]DD, a  ]]$ & By \Cref{lemma:subst_go_away} and def. of context substitution \\
+      & $[[ [OO]DD, a |- e' : [OO]aA  ]]$  & By above equalities \\
+      & $[[  [OO]DD |- e' : \/a. [OO]aA  ]]$  & By \rref{gen} \\
+      $\byhave$& $[[ [OO]DD |- e' : [OO] (\/a. aA)  ]]$  & By def. of substitution
+
+    \end{longtable}
+
+
+  \item Case \[ \drule{chk-lam}  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $[[  DD --> OO  ]]$ & Given \\
+      & $[[ DD, x : aA --> OO, x : [OO]aA   ]]$ & By def \\
+      & $[[ GG , x : aA --> DD, x : aA, TT   ]]$ & By \cref{lemma:typing_extension} \\
+      & $[[TT]]$ is soft & By \cref{lemma:extension_order} \\
+      & $\underbrace{[[DD, x : aA, TT]]}_{[[DD']]} [[-->]] \underbrace{[[OO, x : [OO]aA, |TT| ]]}_{[[OO']]}$ & By \cref{lemma:filling_completes} \\
+      & $[[ GG, x : aA |- ae <= aB -| DD, x : aA, TT]]$ & Premise \\
+      & $[[ [OO']DD' |- e' : [OO']aB ]]$ & By i.h., \\
+      & $\erase{[[ae]]} = \erase{[[e']]}$ & Above \\
+      & $[[ [OO']aB  ]] = [[ [OO]aB  ]]$ & By \cref{lemma:subst_stable} \\
+      & $[[ [OO']DD'  ]] = [[ [OO]DD, x : [OO]aA  ]] $ & By \Cref{lemma:subst_go_away} and def. of context substitution \\
+      & $[[ [OO]DD, x : [OO]aA |- e' : [OO]aB ]]$ & By above equalities \\
+      & $[[ [OO]DD |- \x : [OO]aA . e' : [OO]aA -> [OO]aB ]] $ & By \rref{lamann} \\
+      $\byhave$ & $[[ [OO]DD |- \x : [OO]aA . e' : [OO](aA -> aB) ]]$ & By def. of substitution \\
+      $\byhave$ & $\erase{\erlam x e} = \erlam x {\erase{e}} = \erlam x {\erase{e'}} = \erase{[[\x : [OO]aA . e']]}$ & By the def. of erasure
+    \end{longtable}
+
+
+  \item Case \[ \drule{chk-sub}  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $[[ TT |- [TT]aA <~ [TT]aB -| DD]]$ & Premise \\
+      & $[[TT --> DD]]$ & By \cref{lemma:sub_extension} \\
+      & $[[DD -->OO ]]$ & Given \\
+      & $[[TT --> OO]]$ & By \cref{lemma:transitivity} \\
+      & $[[ GG |- ae => aA -| TT]]$ & Premise \\
+      & $[[ [OO]TT |- e' : [OO]aA   ]]$ & By i.h., \\
+      & $\erase{[[ae]]} = \erase{[[e']]}$ & Above \\
+      & $[[ [OO]TT   ]] = [[ [OO]DD  ]]$ & By \cref{lemma:confluence} \\
+      & $[[ [OO]DD |- e' : [OO]aA   ]] $ & By above equality \\
+      & $[[ [OO]DD |- [OO]([TT]aA) <~ [OO]([TT]aB) ]] $ & By \Cref{thm:sub_soundness} \\
+      & $[[ [OO]([TT]aA)  ]] = [[ [OO]aA ]]$ & By \cref{lemma:subst_ext_invar} \\
+      & $[[ [OO]([TT]aB)  ]] = [[ [OO]aB ]]$ & By \cref{lemma:subst_ext_invar} \\
+      & $[[ [OO]DD |- [OO]aA <~ [OO]aB ]]$ & By above equalities \\
+      $\byhave$& $\ctxsubst{\Omega}{\Delta} \vdash (e' : [[ [OO]aB   ]]) : [[ [OO]aB   ]]$ & By def. annotation \\
+      $\byhave$& $\erase{(e' : [[ [OO]aB  ]])} = \erase{e'} = \erase{e}$ & By def. erasure
+    \end{longtable}
+
+
+
+  \end{itemize}
+
+
+\end{proof}
+
+\newpage
+
+\section{Completeness of Consistent Subtyping}
+
+\instcomplete*
+\begin{proof}
+  By mutual induction on the given derivation.
+  \begin{enumerate}
+  \item We have $ [[  [OO]GG |- [OO]evar <~ [OO]aA  ]]   $. We case analyze the shape of $[[aA]]$.
+    \begin{itemize}
+    \item Case $[[aA]] = [[unknown]], [[evar = sa]]$:
+      \begin{longtable}[l]{ll|l}
+        & $[[  [OO]GG |- [OO]sa <~ [OO]unknown  ]]$ & Given \\
+        & $[[ [OO]unknown  ]] = [[unknown]]$ \\
+        & $[[  [OO]GG |- [OO]sa <~ unknown  ]]$ & By above equality \\
+        & $[[sa]] \notin \textsc{unsolved}([[GG]])$ & Given \\
+        & $[[ GG  ]] = [[ GL, sa, GR   ]]$ & Above \\
+        & $[[ GL, sa, GR --> OO   ]]$ & Given \\
+        & $[[ OO ]] = [[ OL, sa = atc, OR  ]]   $ & By \cref{lemma:extension_order} and $[[OO]]$ is complete and $[[ [OO]sa ]] \in [[agc]]$ \\
+        & $[[ GL --> OL   ]]$ & Above \\
+        & Let $[[DD]] = [[ GL, ga, sa = ga, GR ]]$ \\
+        & and $[[OO']] = [[OL, ga = atc, sa = atc, OR]]$ \\
+        $\byhave$& $[[ GG |- sa <~~ unknown -| DD    ]]$ & By \rref{instl-solveUS} \\
+        $\byhave$& $\Delta \exto \Omega'$ & By \cref{lemma:paralell_admit,lemma:paralell_ext_solu} \\
+        $\byhave$& $\Omega \exto \Omega'$ & By \cref{lemma:unsolved_ext,lemma:solution_ext}
+      \end{longtable}
+    \item Case $A = [[unknown]], [[evar = ga]]$:
+      \begin{longtable}[l]{ll|l}
+        & $[[  [OO]GG |- [OO]ga <~ [OO]unknown  ]]$ & Given \\
+        & $[[ [OO]unknown  ]] = [[unknown]]$ \\
+        & $[[  [OO]GG |- [OO]ga <~ unknown  ]]$ & By above equality \\
+        & $[[ga]] \notin \textsc{unsolved}([[GG]])$ & Given \\
+        & $[[ GG  ]] = [[ GG0[ga]   ]]$ & Above \\
+        & Let $[[DD]] = [[ GG0[ga] ]]$ and $[[OO']] = [[OO]]$\\
+        $\byhave$& $[[ GG |- ga <~~ unknown -| DD ]]$ & By \rref{instl-solveUG} \\
+        $\byhave$& $[[ DD --> OO' ]]$ & Given \\
+        $\byhave$& $[[ OO --> OO']]$ & By \cref{lemma:reflexivity}
+      \end{longtable}
+
+    \item Case $[[aA]] = [[gb]], [[evar]] = [[sa]]$:
+      \begin{longtable}[l]{ll|l}
+        & $[[ [OO]GG |- [OO]sa <~ [OO]gb  ]]$ & Given \\
+        & $[[ [OO]GG |- t <~ tc   ]]$ & Let $[[ [OO]sa]] = [[t]]$ and $[[ [OO]gb  ]] = [[tc]]$ and $[[OO]]$ is predicative \\
+        & $[[t]] = [[tc]]$ & By \cref{lemma:mono_equal} \\ \\
+        & $[[ [GG]gb ]] = [[gb]]$ & Given \\
+        & $[[gb]] \in \textsc{unsolved}{([[GG]])}$ & Above
+      \end{longtable}
+      Now consider whether $[[sa]]$ is declared to the left of $[[gb]]$.
+      \begin{itemize}
+      \item Case $[[GG]] = [[  GG0, sa, GG1, gb, GG2 ]]$
+        \begin{longtable}[l]{ll|l}
+          & Let $[[DD]] = [[ GG0, ga, sa = ga, GG1, gb = ga, GG2     ]]$ & \\
+          $\byhave$& $[[  GG |- sa <~~ gb -| DD ]]$ & By \rref{instl-reachSG1} \\
+          & $ [[GG --> OO]]   $ & Given \\
+          & $[[OO]] = [[ OO0, sa = atc, OO1, gb = atc, OO2     ]]$ & By \cref{lemma:extension_order}   \\
+          & Let $[[OO']] = [[ OO0, ga = atc, sa = atc, OO1, gb = atc, OO2     ]]$  \\
+          $\byhave$& $[[OO --> OO']]$ & By \cref{lemma:unsolved_ext,lemma:solution_ext} \\
+          $\byhave$& $[[DD --> OO' ]]$ & By \cref{lemma:paralell_admit,lemma:paralell_ext_solu}
+        \end{longtable}
+      \item Case $[[GG]] = [[  GG0, gb, GG1, sa, GG2 ]]$
+        \begin{longtable}[l]{ll|l}
+          & Let $[[DD]] = [[  GG0, gb, GG1, sa = gb, GG2  ]]$ & \\
+          $\byhave$& $ [[GG |- sa <~~ gb -| DD]] $ & By \rref{instl-reachOther} \\
+          $\byhave$& $[[DD --> OO]]$ & By \Cref{lemma:paralell_ext_solu} \\
+          $\byhave$& $[[OO --> OO]]$ & By \Cref{lemma:reflexivity}
+        \end{longtable}
+      \end{itemize}
+    \item Case $[[aA]] = [[sb]]$ is similar to the above case.
+    \item Case $A = a$:
+      \begin{longtable}[l]{ll|l}
+        &$[[  [OO]GG |- [OO]evar <~ [OO]a  ]]$& Given \\
+        &$[[  [OO]GG |- [OO]evar <~ a  ]]$ & From $[[  [OO]a ]] = [[a]]$ \\
+        & $[[ [OO]evar ]] = [[a]]$ & By inversion of \rref{cs-tvar} \\
+        & $[[a]]$ is declared to the left of $[[evar]]$ in $[[OO]]$ & $[[OO]]$ is well-formed \\
+        & $[[GG --> OO]]$ & Given \\
+        & $[[a]]$ is declared to the left of $[[evar]]$ in $[[GG]]$ & By \Cref{lemma:reverse_preserve} \\
+        & Let $[[GG]] = [[ GG0[a][evar]   ]]$ \\
+        & Let $[[DD]] = [[ GG0[a][evar = a] ]]$ \\
+        $\byhave$& $[[ GG |- evar <~~ a -| DD ]]$ & By \rref{instl-solveS} or \rref{instl-solveG} \\
+        $\byhave$& $\Delta \exto \Omega$ & By \Cref{lemma:paralell_ext_solu} \\
+        $\byhave$& $\Omega \exto \Omega$ & By \Cref{lemma:reflexivity}
+      \end{longtable}
+    \item Case $[[aA]] = [[aA1 -> aA2]]$:
+      \begin{longtable}[l]{ll|l}
+        & $[[  [OO]GG |- [OO]evar <~ [OO]aA1 -> [OO]aA2  ]]$ & Given \\
+        & $[[ [OO]evar  ]] = [[ t1 -> t2 ]]$ & $\Omega$ is predicative \\
+        & $[[  [OO]GG |- [OO]aA1 <~ t1  ]]$ & By inversion of \rref{cs-arrow} \\
+        & $[[  [OO]GG |- t2 <~ [OO]aA2  ]]$ & Above \\
+        & $[[GG]] = [[ GG0[evar] ]]$ & From $[[evar]] \in \textsc{unsolved}{([[GG]])}$ \\
+        & $[[GG0[evar] ]] [[-->]] \underbrace{[[  GG0[evar2, evar1, evar = evar1 -> evar2 ]   ]]}_{[[GG1]]}$ \\
+        & $[[ GG --> OO ]]$ & Given \\
+        & $[[OO]] = [[ OO0[evar = at0] ]]$ & From $\genA \in \textsc{unsolved}{(\Gamma)}$ \\
+        & $[[ OO0[evar = at0] ]] [[-->]] \underbrace{[[ OO0[evar2 = at2, evar1 = at1, evar = evar1 -> evar2]  ]]}_{[[OO1]]}$ \\ \\
+        & $[[ [OO]GG   ]] = [[ [OO1]GG1 ]]$ & By \Cref{lemma:finish_complete} \\
+        & $[[ [OO]aA1  ]] = [[ [OO1]aA1  ]]$ & By \Cref{lemma:finish_types} \\
+        & $[[t1]] = [[ [OO1]evar1 ]]$ & From def. of $[[OO1]]$ \\
+        & $[[  [OO1]GG1 |- [OO1]aA1 <~ [OO1]evar1  ]]$ & By above equalities \\
+        & $[[ GG1 |- aA1 <~~ evar1 -| DD2   ]]$ & By i.h. \\
+        & $[[ DD2 --> OO2]]$ and $[[ OO1 --> OO2 ]]$ & Above \\ \\
+        & $[[ [OO]GG   ]] = [[ [OO2]GG2 ]]$ & By \Cref{lemma:finish_complete} \\
+        & $[[ [OO]aA2  ]] = [[ [OO2]aA2  ]] = [[ [OO2]([DD2]aA2)  ]]$ & By \Cref{lemma:finish_types} \\
+        & $[[t2]] = [[ [OO2]evar2 ]]$ & By  $[[OO1 --> OO2]]$ \\
+        & $[[ [OO2]DD2 |- [OO2]evar2 <~ [OO2]([DD2]aA2)   ]]$ & By above equalities \\
+        & $[[  DD2 |-  evar2 <~~ [DD2]aA2 -| DD ]]$ & By i.h. \\
+        & $[[ OO2 --> OO' ]]$ & Above \\
+        $\byhave$& $[[ DD --> OO'   ]]$ & Above \\
+        $\byhave$& $[[ GG0[evar] |- evar <~~ aA1 -> aA2 -| DD  ]]$ & By \rref{instl-arr} \\
+        $\byhave$& $[[OO --> OO' ]]$ & By \Cref{lemma:transitivity}
+      \end{longtable}
+    \item Case $[[A]] = [[int]]$:
+      \begin{longtable}[l]{ll|l}
+        & $[[  [OO]GG |- [OO]evar <~ [OO]int   ]]$ & Given \\
+        & $[[ [OO]int  ]] = [[int]]$ \\
+        & $[[  [OO]GG |- [OO]evar <~ int   ]]$ & By above equality \\
+        & $[[ [OO]evar ]] = [[int]]$ & $\Omega$ is predicative \\
+        & $[[evar]] \in \textsc{unsolved}{(\Gamma)}$ & Given \\
+        & $[[GG]] = [[GG0[evar] ]]$ & Above \\
+        & Let $[[DD]] = [[ GG0[evar = int]  ]]$ and $[[OO']] = [[OO]]$\\
+        & $[[ GG0[evar] |- evar <~~ int -| DD  ]]$ & By \rref{instl-solveS} or \rref{instl-solveG} \\
+        & $[[GG --> OO]]$ & Given \\
+        & $[[  GG0[evar = int] --> OO  ]]$ & By \Cref{lemma:paralell_ext_solu}
+      \end{longtable}
+    \item Case $[[aA]] = [[  \/b . aB  ]]$:
+      \begin{longtable}[l]{ll|l}
+        & $[[ [OO]GG |- [OO]evar <~ \/b. [OO]aB  ]]$ & Given \\
+        & $[[ [OO]evar ]]$ cannot be a quantifier & $[[OO]]$ is predicative \\
+        & $[[ [OO]GG, b |- [OO]evar <~ [OO]aB  ]] $ & By inversion of \rref{cs-forallR} \\ \\
+        & $[[ [OO]GG, b   ]] = [[   [OO, b](GG, b)  ]]$ & By def. of context substitution \\
+        & $[[ [OO]evar  ]] = [[  [OO,b]evar ]]$ & By def. of substitution \\
+        & $[[ [OO]aB  ]] = [[  [OO, b]aB  ]]$ & By def. of substitution \\
+        & $ [[ [OO, b](GG, b) |- [OO, b]evar <~ [OO, b]aB  ]]  $ & By above equalities \\
+        & $ [[GG, b |- evar <~~ aB -| DD0 ]]  $ & By i.h. \\
+        & $[[ DD0 --> OO' ]]$ & Above \\
+        & $[[  OO, b --> OO'  ]]$ & Above \\
+        $\byhave$& $[[  OO --> OO'  ]]$ & By \cref{lemma:drop_ext}\\  \\
+        & $[[ GG, b --> DD0 ]]$ & By \Cref{lemma:inst_extension} \\
+        & $[[DD0]] = [[DD, b, DD']]$ & By \Cref{lemma:extension_order} \\
+        & $[[  GG --> DD ]]$ & Above \\
+        $\byhave$& $[[  DD --> OO'  ]]$ \\
+        $\byhave$& $ [[ GG |- evar <~~ \/b. aB -| DD  ]]  $ & By \rref{instl-forallR}
+      \end{longtable}
+    \end{itemize}
+  \item Now we have $[[ [OO]GG |- [OO]aA <~ [OO]evar ]]$. These cases are mostly symmetric. The one exception is when $[[ aA  ]] = [[  \/b. aB ]]$.
+    \begin{itemize}
+    \item Case $[[aA]] = [[\/b . aB]]$:
+      \begin{longtable}[l]{ll}
+        & $[[ [OO]GG |- \/b . [OO]aB <~ [OO]evar   ]]$ \qquad Given \\
+        & $[[ [OO]evar  ]]$ cannot be a quantifier \qquad $[[OO]]$ is predicative \\
+        & $[[  [OO]GG |- t  ]]$ \qquad By inversion of \rref{cs-forallL} \\
+        & $[[ [OO]GG |- ([OO]aB) [b ~> t] <~ [OO]evar    ]]$ \qquad Above \\ \\
+        & $[[ [OO]GG ]] = [[  [OO, msb, sb = at] (GG, msb, sb)  ]]$ \qquad By def. of context application \\
+        & $[[ ([OO]B) [b ~> t] ]] = [[  [OO, msb, sb = at] (aB [b ~> sb])  ]]$ \qquad by def. of substitution \\
+        & $[[  [OO]evar  ]] = [[ [OO, msb, sb = at]evar  ]]$ \qquad By def. of substitution \\
+        & $[[   [OO, msb, sb = at] (GG, msb, sb)   |-   [OO, msb, sb = at] (aB [b ~> sb])   <~ [OO, sb = at ]evar    ]]$ \qquad By above equalities \\
+        & $[[ GG, msb, sb |- aB [b ~> sb] <~~ evar -| DD   ]]$ \qquad By i.h. \\
+        &$[[GG, msb, sb --> DD]]$ \qquad By \cref{lemma:inst_extension} \\
+        & $[[DD]] = [[DL, msb, DR]]$ \qquad By \cref{lemma:extension_order} \\
+        & $[[ GG --> DL ]]$ \qquad Above \\
+        & $[[ OO, msb, sb = at --> OO']]$ \qquad Above \\
+        & $[[OO']] = [[OL, msb, OR]]$ \qquad By \cref{lemma:extension_order} \\
+        $\byhave$& $[[ OO --> OL ]]$ \qquad Above \\
+        $\byhave$& $[[ DL --> OL ]]$ \qquad \cref{lemma:transitivity} \\
+        $\byhave$ & $[[ GG |- \/b . aB <~~ evar -| DL  ]]$ \qquad By \rref{instr-forallLL}
+      \end{longtable}
+    \end{itemize}
+  \end{enumerate}
+\end{proof}
+
+
+\begin{landscape}
+\begin{table}
+  \centering
+  \begin{footnotesize}
+\begin{tabular}{cccccccccc} \toprule
+&                 & \multicolumn{8}{c}{ $[[ [GG]aB  ]]$  }  \\
+&                 & $\forall b. B'$  & $\int$      & $a$         & $\genB$     & $\unknown$          & $B_1 \to B_2$ & $[[static]]$ & $[[gradual]]$ \\ \cmidrule{3-10}
+   \multirow{6}{*}{$\ctxsubst{\Gamma}{A}$} & $\forall a. A'$ & \hl{1 (B poly)}  & \hl{2.Poly} & \hl{2.Poly} & \hl{2.Poly} & \hl{1 (B unknown)}         &  \hl{2.Poly} & \hl{2.Poly}  & \hl{2.Poly}  \\ \cmidrule{3-10}
+& $\int$          & \hl{1 (B poly)}  &  \hl{2.Ints}           &  \textit{Impossible} & \hl{2.BEx.Int}            & \hl{1 (B unknown)}  &  \textit{Impossible} &  \textit{Impossible} &  \textit{Impossible} \\ \cmidrule{3-10}
+& $a$             &  \hl{1 (B poly)} & \textit{Impossible} &  \hl{2.UVars}           &  \hl{2.BEx.UVar}           &  \hl{1 (B unknown)} &  \textit{Impossible}  &  \textit{Impossible} &  \textit{Impossible} \\ \cmidrule{3-10}
+& \multirow{2}{*}{$\genA$}         & \multirow{2}{*}{\hl{1 (B poly)}}   & \multirow{2}{*}{\hl{2.AEx.Int}} & \multirow{2}{*}{\hl{2.AEx.UVar}} & \hl{2.AEx.SameEx}  & \multirow{2}{*}{\hl{1 (B unknown)}}  & \multirow{2}{*}{\hl{2.AEx.Arrow}} & \multirow{2}{*}{\hl{2.AEx.S}} & \multirow{2}{*}{\hl{2.AEx.G}}  \\
+& & & & & \hl{2.AEx.OtherEx} &   &   \\ \cmidrule{3-10}
+& $\unknown$      & \hl{1 (B poly)}  & \hl{2.Unknown} &  \hl{2.Unknown}  &  \hl{2.Unknown} & \hl{1 (B unknown)}  & \hl{2.Unknown} & \textit{Impossible} & \hl{2.Unknown}  \\ \cmidrule{3-10}
+  & $A_1 \to A_2$     & \hl{1 (B poly)}  & \textit{Impossible} &  \textit{Impossible}  & \hl{2.BEx.Arrow}  & \hl{1 (B unknown)}  & \hl{2.Arrows} &  \textit{Impossible} &  \textit{Impossible} \\ \cmidrule{3-10}
+  & $[[static]]$     & \hl{1 (B poly)}  & \textit{Impossible} &  \textit{Impossible}  & \hl{2.BEx.S} & \textit{Impossible} & \textit{Impossible} & \hl{2.S} &  \textit{Impossible}  \\ \cmidrule{3-10}
+  & $[[gradual]]$     & \hl{1 (B poly)}  & \textit{Impossible} &  \textit{Impossible}  & \hl{2.BEx.G} & \hl{1 (B unknown)} & \textit{Impossible} & \textit{Impossible} & \hl{2.G} \\ \bottomrule
+\end{tabular}
+  \end{footnotesize}
+\caption{List of cases} \label{table:complete}
+\end{table}
+\end{landscape}
+
+\subcomplete*
+\begin{proof}
+
+  By induction on the given declarative derivation. We list all the possible cases in \cref{table:complete}.
+
+We first split on$\ctxsubst{\Gamma}{B}$.
+  \begin{itemize}
+  \item Case \hl{1 (B poly)}: $[[ [GG]aB  ]]$ is polymorphic: $[[  [GG]aB  ]] = [[ \/b. aB'   ]]$:
+    \begin{longtable}[l]{ll|l}
+      &$[[aB]] = [[ \/b . aB0]]   $& $[[GG]]$ is predicative \\
+      & $[[aB']] = [[ [GG]aB0  ]]$ & $[[GG]]$ is predicative \\
+      & $[[ [OO]aB   ]]  =  [[ \/b. [OO]aB0  ]]    $ & By def. of substitution \\
+      & $[[  [OO]GG |- [OO]aA <~ [OO]aB   ]]$ & Premise \\
+      & $[[  [OO]GG |- [OO]aA <~ \/b . [OO]aB0   ]]$ & By above equality \\
+      & $[[  [OO]GG, b |- [OO]aA <~ [OO]aB0   ]]$ & By \Cref{lemma:forall_invert} \\
+      & $[[ [OO]GG, b  ]] = [[ [OO, b] (GG, b)     ]]$ & By def. of substitution \\
+      & $[[  [OO]aA  ]] = [[ [OO, b]aA  ]]$ & By def. of substitution \\
+      & $[[  [OO]aB  ]] = [[ [OO, b]aB  ]]$ & By def. of substitution \\
+      & $[[  [OO,b](GG, b) |- [OO,b]aA <~ [OO,b]aB0   ]]$ & By above equalities \\
+      & $[[  GG, b |- [GG, b]aA <~ [GG, b]aB0 -| DD'  ]]$ & By i.h. \\
+      & $[[  DD' --> OO0'  ]]$ & Above \\
+      & $[[ OO, b --> OO0'   ]]$ & Above \\
+      & $[[  GG, b |- [GG]aA <~ [GG]aB0 -| DD'  ]]$ & By def. of substitution \\ \\
+      & $[[ GG, b --> DD'   ]]$ & By \Cref{lemma:inst_extension} \\
+      & $[[ DD'  ]] = [[ DD, b, TT  ]]$ & By \Cref{lemma:extension_order} \\
+      & $[[ GG --> DD   ]]$ & Above \\
+      & $[[ DD, b, TT --> OO0'    ]]$ & By $[[DD' --> OO0']]$ and above equality \\
+      & $[[ OO0'  ]] = [[ OO', b, OR  ]]$ & By \Cref{lemma:extension_order} \\
+      $\byhave$& $[[ DD --> OO'  ]]$ & Above \\
+      & $[[ OO, b --> OO', b , OR  ]]$ & By above equality \\
+      $\byhave$& $[[ OO --> OO'  ]]$ & By \Cref{lemma:extension_order} \\ \\
+      & $[[  GG, b |- [GG]aA <~ [GG]aB0 -| DD, b, TT  ]]$ & By above equality \\
+      & $[[  GG |- [GG]aA <~ \/b. [GG]aB0 -| DD  ]]$ & By \rref{as-forallR} \\
+      $\byhave$& $[[  GG |- [GG]aA <~ \/b. aB' -| DD  ]]$ & By above equality
+    \end{longtable}
+
+  \item Case \hl{1 (B unknown)}: $\ctxsubst{\Gamma}{B} = \unknown$:
+        \begin{longtable}[l]{ll|l}
+          & $[[ [OO]aB]] = [[unknown]]$ \\
+          & $[[ [OO]GG |- [OO]aA <~ unknown  ]]$ & Given \\
+          & $[[ [OO]aA ]] \in [[gc]] $ & Above \\
+          &$[[ GG --> OO  ]]$& Given \\
+          &$[[ [GG]aA  ]] \in [[agc]]  $ & Above \\
+          & $[[  GG |- [GG]aA <~ unknown -| [ [GG]aA ] GG ]]$ & By \rref{as-unknownRR} \\
+          & There exists $[[OO']]$ such that $[[ [ [GG]aA ] GG --> OO'    ]]$  and $[[  OO --> OO'  ]]$
+        \end{longtable}
+
+ \item Case 2.*: $[[ [GG]aB   ]]$ is not polymorphic. We split on the form of $[[  [OO]aA  ]]$.
+    \begin{itemize}
+    \item Case \hl{2.Poly}: $[[ [OO]aA  ]]$ is polymorphic: $[[ [GG]aA  ]] = [[ \/a . aA'  ]]$:
+      \begin{longtable}[l]{ll|l}
+        & $[[aA]] = [[\/a. aA0]]$& $[[GG]]$ is predicative \\
+        & $[[aA']] = [[ [GG]aA0  ]]$ & $[[GG]]$ is predicative \\
+        & $[[ [OO]aA  ]] = [[ \/a . [OO]aA0 ]]$ & By def. of substitution \\
+        & $[[ [OO]GG |- [OO]aA <~ [OO]aB   ]]$ & Premise \\
+        & $[[ [OO]GG |- \/a. [OO]aA0 <~ [OO]aB   ]]$ & By above equality \\
+        & $[[ [OO]GG |- ([OO]aA0) [a ~> t] <~ [OO]aB   ]]$ & By inversion on \rref{cs-forallL} \\
+        & $[[ [OO]GG |- t  ]]$ & Above \\ \\
+        & $[[ [OO]GG  ]] = [[  [OO, evar = at](GG, evar)   ]]$ & By def. of substitution \\
+        & $[[ ([OO]aA0) [a ~> t]  ]] = [[  [OO, evar = at](aA0 [ a ~> evar ])  ]]$ & By def. of substitution \\
+        & $[[ [OO]aB ]] = [[ [OO, evar = at]aB   ]]$ & By def. of substitution \\
+        & $[[ [OO, evar = at](GG, evar) |- [OO, evar = at](aA0 [ a ~> evar ]) <~ [OO, evar = at]aB   ]] $ & By above equalities \\
+        & $[[  GG, evar |- [GG, evar] (aA0 [ a ~> evar ]) <~ [GG, evar]aB -| DD   ]]$ & By i.h. \\
+        $\byhave$& $[[ DD --> OO'   ]]$ & Above \\
+        & $[[  OO, evar = at --> OO'   ]]$ & Above \\
+        $\byhave$& $[[ OO --> OO'  ]]$ & By \cref{lemma:drop_ext} \\
+        & $[[ [GG, evar] (aA0 [ a ~> evar ])  ]] = [[  ([GG]aA0) [a ~> evar]   ]]$ & By def. of substitution \\
+        & $[[ [GG, evar]aB   ]] = [[ [GG]aB   ]]$ & By def. of substitution \\
+        & $[[  GG, evar |- ([GG]aA0) [a ~> evar] <~ [GG]aB -| DD   ]]$ & By above equality \\
+        & $[[  GG |- \/a. ([GG]aA0) <~ [GG]aB -| DD   ]]$ & By \rref{as-forallLL} \\
+        $\byhave$& $[[  GG |- \/a. aA' <~ [GG]aB -| DD   ]]$ & By above equality \\
+      \end{longtable}
+
+    \item Case \hl{2.Unknown}: $[[ [GG]aA  ]] = [[unknown]]$:
+        \begin{longtable}[l]{ll|l}
+          & $[[ [OO] aA]] = [[unknown]]$ & Obviously, what else? \\
+          & $[[ [OO]GG |- unknown <~ [OO]aB  ]]$ & Given \\
+          & $[[ [OO]aB ]] \in [[gc]] $ & Above \\
+          &$[[ GG --> OO  ]]$& Given \\
+          &$[[ [GG]aB  ]] \in [[agc]]  $ & Above \\
+          & $[[  GG |- unknown <~ [GG]aB -| [ [GG]aB ] GG ]]$ & By \rref{as-unknownLL} \\
+          & There exists $[[OO']]$ such that $[[ [ [GG]aB ] GG --> OO'    ]]$ and $[[  OO --> OO'  ]]$
+        \end{longtable}
+
+    \item Case \hl{2.AEx.*}: $[[ [GG]aA ]]$ is an existential variable: $[[ [GG]aA  ]] = [[evar]]$. We split on the form of $[[ [GG]aB  ]]$.
+      \begin{itemize}
+      \item Case \hl{2.AEx.SameEx}. $[[ [GG]aB ]]$ is the same existential variable $[[ [GG]aB  ]] = [[evar]]$:
+        \begin{longtable}[l]{ll|l}
+          &$[[  GG |- evar <~ evar -| GG   ]]$& By \rref{as-evar} \\
+          $\byhave$& $[[  GG |- [GG]aA <~ [GG]aB -| GG   ]]$ & By above equality \\
+          $\byhave$& $[[ DD --> OO   ]]$ & $[[DD]] = [[GG]]$ \\
+          $\byhave$& $[[ OO --> OO'  ]]$ & By \Cref{lemma:reflexivity} and $[[OO']] = [[OO]]$
+        \end{longtable}
+      \item Case \hl{2.AEx.OtherEx}. $[[ [GG]aB  ]]$ is a different existential variable $[[ [GG]aB ]] = [[evarb]]$ where $[[evarb]] \neq [[evar]]$:
+        \begin{longtable}[l]{ll|l}
+          &$[[ [OO]aA  ]] = [[ [OO]([GG]aA)   ]] = [[ [OO]evar  ]]$& By \Cref{lemma:subst_ext_invar} \\
+          &$[[ [OO]aB  ]] = [[ [OO]([GG]aB)   ]] = [[ [OO]evarb  ]]$& By \Cref{lemma:subst_ext_invar} \\
+          & $ [[ [OO]GG |- [OO]aA <~ [OO]aB  ]]   $ & Given \\
+          & $[[ [OO]GG |- [OO]evar <~ [OO]evarb  ]] $ & By above equalities \\
+          & $[[ GG |- evar <~~ evarb -| DD   ]]$ & By \Cref{thm:inst_complete} \\
+          $\byhave$& $[[ DD --> OO'  ]]$ & Above \\
+          $\byhave$& $[[ OO --> OO'   ]]$ & Above \\
+          & $[[ GG |- evar <~ evarb -| DD     ]]$ & By \rref{as-instL} \\
+          $\byhave$& $[[ GG |- [GG]aA <~ [GG]aB -| DD     ]]$ & By above equalities
+        \end{longtable}
+      \item Case \hl{2.AEx.Int}. We have $[[ [GG]aB  ]] = [[int]]$:
+        \begin{longtable}[l]{ll|l}
+          &$[[ GG --> OO  ]]$& Given \\
+          & $ [[ [OO] aB ]] = [[int]] = [[ [OO]int  ]]$ & By def. of substitution \\
+          & $[[ [OO]aA  ]] = [[ [OO]([GG]aA)   ]] = [[ [OO]evar  ]]$ & By \Cref{lemma:subst_ext_invar} \\
+          & $  [[ [OO]GG |- [OO]aA <~ [OO]aB    ]]  $ & Given \\
+          & $[[  [OO]GG |- [OO]evar <~ [OO]int    ]]$ & By above equalities \\
+          & $[[  GG |- evar <~~ int -| DD    ]]$ & By \Cref{thm:inst_complete} \\
+          $\byhave$& $[[ DD --> OO'  ]]$ & Above \\
+          $\byhave$& $[[ OO --> OO'  ]]$ & Above \\
+          & $[[  GG |- evar <~ int -| DD    ]]$ & By \rref{as-instL} \\
+          $\byhave$& $[[ GG |- [GG]aA <~ [GG]aB -| DD     ]]$ & By above equalities
+        \end{longtable}
+      \item Case \hl{2.AEx.UVar}. We have $[[ [GG]aB  ]] = [[b]]$. Similar to Case \hl{2.AEx.Int}.
+      \item Case \hl{2.AEx.Arrow}. $[[ [GG]aB  ]] = [[ aB1 -> aB2   ]]$. We prove
+        $[[evar]] \notin \textsc{fv}([[ [GG]aB  ]])$. Suppose for a
+        contradiction, that $[[evar]] \in \textsc{fv}([[ [GG]aB ]])$, then
+        $[[evar]]$ must be a subterm of $[[ [GG]aB  ]]$, so is
+        $[[  [OO]evar  ]]$ a subterm of
+        $[[ [OO]([GG]aB)     ]]$. The latter is equal to
+        $[[ [OO]aB   ]]$, so $[[  [OO]evar  ]]$ is a subterm of
+        $[[ [OO]aB   ]]$. Since $[[ [GG]aB  ]] = [[ aB1 -> aB2   ]]$, then
+        $[[ [OO]aB   ]]$ must have the form $[[ aB1' -> aB2'  ]]$. Therefore
+        $[[  [OO]evar   ]]$ must occur in either $[[aB1']]$ or $[[aB2']]$. But we
+        have $[[ [OO]GG |- [OO]evar <~ [OO]aB       ]]$. That is , $[[  [OO]evar   ]]$
+        cannot be a subterm of $[[ [OO]aB   ]]$. This is a contradiction.
+        \begin{longtable}[l]{ll|l}
+          &$[[evar]] \notin \textsc{fv}([[ [GG]aB  ]])$ & Proved above \\
+          & $[[  GG --> OO  ]]$ & Given \\
+          & $[[ [OO]aB   ]] = [[ [OO]([GG]aB)   ]]$ & By \Cref{lemma:subst_ext_invar} \\
+          & $[[  [OO]GG |- [OO]evar <~ [OO]aB          ]]$ & Given \\
+          & $[[  [OO]GG |- [OO]evar <~ [OO]([GG]aB)         ]]$ & By above equality \\
+          & $[[ GG |- evar <~~ [GG]aB -| DD  ]]$ & By \Cref{thm:inst_complete} \\
+          $\byhave$& $[[  DD --> OO' ]]$ & Above \\
+          $\byhave$& $[[ OO --> OO' ]]$ & Above \\
+          &$[[  GG |- evar <~ [GG]aB -| DD  ]]$ & By \rref{cs-instL} \\
+          $\byhave$& $[[ GG |- [GG]aA <~ [GG]aB -| DD   ]]$ & By above equalities
+        \end{longtable}
+      \item Case \hl{2.AEx.S} and \hl{2.AEx.S}. Similar to Case \hl{2.AEx.Int}.
+      \end{itemize}
+
+    \item Case \hl{2.BEx.*}. $[[ [GG]aA  ]]$ is not polymorphic and
+      $[[ [GG]aB   ]]$ is an existential variable: $[[ [GG]aB  ]] = [[evarb]]$. We split on the form of $[[ [GG]aA  ]]$.
+      \begin{itemize}
+      \item Case \hl{2.BEx.Int}. Similar to Case \hl{2.AEx.Unit}.
+      \item Case \hl{2.BEx.UVar}. Similar to Case \hl{2.AEx.UVar}.
+      \item Case \hl{2.BEx.Arrow}. Similar to Case \hl{2.AEx.Arrow}.
+      \item Case \hl{2.BEx.S}. Similar to Case \hl{2.AEx.S}.
+      \item Case \hl{2.BEx.G}. Similar to Case \hl{2.AEx.G}.
+      \end{itemize}
+      We use the second part of \Cref{thm:inst_complete} and apply \rref{as-instR}.
+
+    \item Case \hl{2.Ints}. $[[ [GG]aA  ]] = [[ [GG]aB  ]] = [[int]] $:
+      \begin{longtable}[l]{ll|l}
+        $\byhave$&$[[  GG |- int <~ int -| GG ]]$& By \rref{as-int} \\
+                 & $[[ GG --> OO   ]]$ & Given \\
+        $\byhave$& $[[ DD --> OO'   ]]$ & $[[DD]] = [[GG]]$ \\
+        $\byhave$& $[[ OO --> OO'  ]]$ & By \Cref{lemma:reflexivity} and $[[OO']] = [[OO]]$
+      \end{longtable}
+
+    \item Case \hl{2.UVars}. $[[ [GG]aA   ]] = [[ [GG]aB  ]] = [[a]]$:
+      \begin{longtable}[l]{ll|l}
+      $\byhave$&$[[ GG |-  a <~ a -| GG ]]$& By \rref{as-tvar} \\
+                 & $[[ GG --> OO   ]]$ & Given \\
+        $\byhave$& $[[ DD --> OO'   ]]$ & $[[DD]] = [[GG]]$ \\
+        $\byhave$& $[[ OO --> OO'  ]]$ & By \Cref{lemma:reflexivity} and $[[OO']] = [[OO]]$
+      \end{longtable}
+
+    \item Case \hl{2.Arrows}. Let $[[ [GG]aA  ]] = [[ aA1 -> aA2  ]]$ and $[[ [GG]aB  ]] = [[ aB1 -> aB2   ]]$:
+      \begin{longtable}[l]{ll|l}
+        & $[[  GG --> OO  ]]$ & Given \\
+        &$[[ [OO]aA  ]] = [[ [OO]([GG]aA)   ]] = [[ [OO]aA1 -> [OO]aA2  ]]$ & By \Cref{lemma:subst_ext_invar} \\
+        &$[[ [OO]aB ]] = [[ [OO]([GG]aB)   ]] = [[ [OO]aB1 -> [OO]aB2  ]]$ & By \Cref{lemma:subst_ext_invar} \\
+        & $[[ [OO]GG |- [OO]aA <~ [OO]aB   ]]$ & Given \\
+        & $[[ [OO]GG |- [OO]aB1 <~ [OO]aA1   ]]$ & Premise \\
+        & $[[ GG |- [GG]aB1 <~ [GG]aA1 -| TT  ]]$ & By i.h. \\
+        & $[[ TT --> OO0  ]]$ & Above \\
+        & $[[ OO --> OO0  ]]$ & Above \\
+        & $[[ GG --> OO0  ]]$ & By \Cref{lemma:transitivity} \\ \\
+        & $[[ [OO]GG   ]] = [[  [OO0]TT  ]]$ & By \Cref{lemma:confluence} \\
+        & $[[ [OO]aA2   ]] = [[ [OO0]([GG]aA2)   ]]$ & By \Cref{lemma:subst_ext_invar} \\
+        & $[[ [OO]aB2   ]] = [[ [OO0]([GG]aB2)   ]]$ & By \Cref{lemma:subst_ext_invar} \\
+        & $[[ [OO]GG |- [OO]aA2 <~ [OO]aB2    ]]$ & Premise \\
+        & $[[ [OO0]TT |- [OO0]([GG]aA2) <~ [OO0]([GG]aB2)    ]] $ & By above equalities \\
+        & $[[ TT |- [TT]([GG]aA2) <~ [TT]([GG]aB2) -| DD   ]]$ & By i.h. \\
+        $\byhave$& $[[ DD --> OO'   ]]$ & Above \\
+        & $[[ OO0 --> OO'    ]]$ & Above \\ \\
+        $\byhave$& $[[  GG |- [GG](aA1 -> aA2) <~ [GG](aB1 -> aB2) -| DD    ]]$ & By \rref{as-arrow} \\
+        $\byhave$& $[[ OO --> OO'  ]]$ & By \Cref{lemma:transitivity}
+      \end{longtable}
+
+    \item Case \hl{2.S}: $[[ [GG]aA  ]] = [[ [GG]aB ]] = [[static]]$.
+      \begin{longtable}[l]{ll|l}
+        $\byhave$&$[[  GG |- static <~ static -| GG ]]$& By \rref{as-spar} \\
+                 & $[[ GG --> OO   ]]$ & Given \\
+        $\byhave$& $[[ DD --> OO'   ]]$ & $[[DD]] = [[GG]]$ \\
+        $\byhave$& $[[ OO --> OO'  ]]$ & By \Cref{lemma:reflexivity} and $[[OO']] = [[OO]]$
+      \end{longtable}
+    \item Case \hl{2.G}. Similar to Case \hl{2.S}.
+
+    \end{itemize}
+  \end{itemize}
+\end{proof}
+
+
+\newpage
+
+\section{Completeness of Typing}
+
+
+\matchcomplete*
+\begin{proof}
+ By induction on the given derivation. We split on $[[ [GG]aA ]]   $.
+
+ \begin{itemize}
+ \item $[[  [GG]aA  ]] = [[ \/a. aA'   ]]$:
+    \begin{longtable}[l]{ll|l}
+      &$[[aA]] = [[ \/a . aA0]]   $& $[[GG]]$ is predicative \\
+      & $[[aA']] = [[ [GG]aA0  ]]$ & $[[GG]]$ is predicative \\
+      & $[[ [OO]aA   ]]  =  [[ \/a. [OO]aA0  ]]    $ & By def. of substitution \\
+      & $[[  [OO]GG |- [OO]aA |> A1 -> A2  ]]$ & Given \\
+      & $[[  [OO]GG |- \/a. [OO]aA0 |> A1 -> A2  ]]$ & By above equality \\
+      & $[[  [OO]GG |- ([OO]aA0) [a ~> t]  |> A1 -> A2  ]]$ & By inversion \\
+      & $[[  [OO]GG |- t   ]]$ & Above \\
+      & $[[ GG --> OO   ]]$ & Given \\
+      & $[[ GG, sa --> OO, sa   ]]$ & By def. of context extension \\ \\
+
+      & $[[ [OO]GG  ]] = [[ [OO, sa = at](GG, sa)    ]]$ & By def. of context application \\
+      & $[[ ([OO]aA0) [a ~> t]   ]] =  [[  [OO, sa = at]( aA0 [a ~> sa] )   ]]     $ & By def. of substitution \\
+      & $[[  [OO, sa = at](GG, sa) |- [OO, sa = at]( aA0 [a ~> sa] )  |> A1 -> A2  ]]$ & By above equalities \\
+      & $[[  GG, sa |- [GG, sa](aA0 [a ~> sa]) |> aA1' -> aA2' -| DD   ]]$ & By i.h. \\
+      $\byhave$& $[[ DD --> OO'   ]]$ and $[[  OO, sa = at --> OO'    ]]$ & Above \\
+      $\byhave$ & $[[A1]] = [[ [OO']aA1'  ]]$ and $[[A2 ]] = [[  [OO']aA2'  ]]$ & Above \\
+      & $[[   [GG, sa](aA0 [a ~> sa])   ]] =  [[  ([GG]aA0) [a ~> sa]   ]]   $ & By def. of substitution \\
+      & $[[   GG, sa |-   ([GG]aA0) [a ~> sa]   |> aA1' -> aA2' -| DD   ]]$ & By above equality \\
+      & $[[ GG |- \/a . [GG]aA0 |> aA1' -> aA2' -| DD   ]]$ & By \rref{am-forallL} \\
+      & $[[ [GG]aA ]] = [[ \/a. aA'  ]] = [[ \/a. [GG]aA0   ]]    $ & By above equalities \\
+      $\byhave$ & $[[ GG |- [GG]aA |> aA1' -> aA2' -| DD  ]]$ & Above
+    \end{longtable}
+
+
+
+  \item   $[[  [GG]aA  ]] = [[ aA1' -> aA2'   ]]$:
+
+    \begin{longtable}[l]{ll|l}
+      & $[[ [OO]aA  ]] = [[ [OO]([GG]aA)  ]] = [[  [OO]aA1' -> [OO]aA2'  ]]$ & By \Cref{lemma:subst_ext_invar}   \\
+      & $[[ [OO]GG |-  [OO]aA1' -> [OO]aA2' |> A1 -> A2  ]]$ & Given \\
+      & Let $[[ DD  ]] = [[GG]]$ and $[[ OO' ]] = [[OO]]$ \\
+      $\byhave$& $[[ [OO]aA1'   ]] = [[A1]]$ and $[[ [OO]aA2' ]] = [[A2]]$ \\
+      $\byhave$ & $[[  GG |- aA1' -> aA2' |> aA1' -> aA2' -| GG  ]]$ & By \rref{am-arr} \\
+      $\byhave$ & $[[  DD --> OO' ]]$ & Given $[[  GG --> OO  ]]$ \\
+      $\byhave$ & $[[  OO --> OO' ]]$ & By \cref{lemma:reflexivity}
+
+    \end{longtable}
+
+  \item   $[[  [GG]aA  ]] = [[ unknown   ]]$:
+
+    \begin{longtable}[l]{ll|l}
+      & $[[ [OO]aA  ]] = [[ [OO]([GG]aA)  ]] = [[  unknown  ]]$ & By \Cref{lemma:subst_ext_invar}   \\
+      & $[[ [OO]GG |-  unknown |> A1 -> A2  ]]$ & Given \\
+      & Let $[[ DD  ]] = [[GG]]$ and $[[ OO' ]] = [[OO]]$ \\
+      $\byhave$& $[[ A1   ]] = [[unknown]]$ and $[[ A2 ]] = [[unknown]]$ \\
+      $\byhave$ & $[[  GG |- unknown |> unknown -> unknown -| GG  ]]$ & By \rref{am-unknown} \\
+      $\byhave$ & $[[  DD --> OO' ]]$ & Given $[[  GG --> OO  ]]$ \\
+      $\byhave$ & $[[  OO --> OO' ]]$ & By \cref{lemma:reflexivity}
+
+    \end{longtable}
+
+  \item   $[[  [GG]aA  ]] = [[ evar  ]]$:
+
+    \begin{longtable}[l]{ll|l}
+      & $[[  GG  ]] = [[ GG0[evar] ]]$ & Since $[[evar]] \in \textsc{unsolved}([[GG]]) $ \\
+      & $[[ [OO]aA  ]] = [[ [OO]([GG]aA)  ]] = [[  [OO]evar  ]]$ & By \Cref{lemma:subst_ext_invar}   \\
+      & $[[ [OO]GG |- [OO]evar |> A1 -> A2  ]]$ & Given \\
+      & $[[ [OO]evar ]] = [[ t1 -> t2  ]]$ and $[[ A1 ]] = [[t1]]$ and $[[ A2 ]] = [[t2]]$ & $[[OO]]$ is predicate \\
+      & $[[ OO ]] = [[  OO0[ evar = at' ]  ]]$ and $[[  [OO]at'   ]] = [[  t1 -> t2 ]]$ & Above \\
+      & Let $[[DD]] = [[ GG0[evar1, evar2, evar = evar1 -> evar2]  ]]$ \\
+      & Let $[[ OO'  ]] = [[ OO0[evar1 = at1, evar2 = at2, evar = evar1 -> evar2] ]] $ \\
+      $\byhave$& $[[ DD --> OO'  ]]$ & By \Cref{lemma:paralell_admit} twice \\
+      $\byhave$& $[[ OO --> OO'    ]]$ & By \Cref{lemma:paralell_ext_solu} and \Cref{lemma:paralell_admit} \\
+      $\byhave$& $[[ GG0[evar] |- evar |> evar1 -> evar2 -| DD  ]]$ & By \rref{am-var} \\
+      $\byhave$& $[[A1]] = [[t1]] = [[ [OO']evar1  ]]$ and $[[A2]] = [[t2]] = [[ [OO']evar2  ]]$ & Above
+    \end{longtable}
+
+ \end{itemize}
+
+
+\end{proof}
+
+\typingcomplete*
+\begin{proof}
+  By induction on the given derivation.
+  \begin{itemize}
+  \item Case \[     \ottaltinferrule{var}{}{ [[  (x : A) in [OO]GG ]] }{ [[ [OO]GG |- x : A]]  }  \]
+    \begin{longtable}[l]{ll|l}
+      & $ [[   (x : A) in [OO]GG  ]]  $  & Premise \\
+      & $[[ GG --> OO  ]]$ & Given \\
+      & $  [[ (x : aA') in GG  ]]  $ where $[[ [OO]aA'  ]] = [[  [OO]aA ]]$ & From def. of context application \\
+      & Let $[[DD]] = [[GG]]$ and $[[OO']] = [[OO]]$. \\
+      $\byhave$& $[[ GG --> OO ]]$ & Given \\
+      $\byhave$& $[[ OO --> OO ]]$ & By \Cref{lemma:reflexivity} \\
+      $\byhave$& $[[  GG |- x => aA' -| GG ]]$ & By \rref{inf-var} \\
+      $\byhave$& $[[ [OO]aA' ]] = [[ [OO]aA ]] = [[A]]$ & A is well-formed in $[[  [OO]GG  ]]$ \\
+      $\byhave$& $\erase{x} = \erase{x}$ & By def. of erasure
+    \end{longtable}
+
+  \item Case \[     \ottaltinferrule{int}{}{ }{ [[ [OO]GG |- n : int ]] }  \]
+
+    \begin{longtable}[l]{ll|l}
+      &Let $[[aA']] = [[int]]$ and $[[DD]] = [[GG]]$ and $[[OO']] = [[OO]]$. & \\
+      $\byhave$& $[[ GG --> OO ]]$ & Given \\
+      $\byhave$& $[[ OO --> OO ]]$ & By \Cref{lemma:reflexivity} \\
+      $\byhave$& $[[ GG |- n => int -| GG ]]$ & By \rref{inf-int} \\
+      $\byhave$& $[[ [OO]int ]] = [[int]]$ \\
+      $\byhave$& $\erase{n} = \erase{n}$ & By def. of erasure
+    \end{longtable}
+
+
+  \item Case \[     \ottaltinferrule{lamann}{}{ [[ [OO]GG, x : A |- e : B  ]] }{ [[  [OO]GG |- \x : A . e : A -> B  ]] }  \]
+
+    \begin{longtable}[l]{ll|l}
+      & Let $[[OO0]] = [[ OO, x : aA]]$. \\
+      & $[[ [OO0](GG, x : aA) ]] = [[ [OO]GG, x : aA  ]]$ & From def. of context application \\
+      & $[[ [OO0](GG, x : aA) |- e : B   ]]$ & By above equality and premise \\
+      & $[[ GG, x : aA |- ae' => aB0 -| DD0   ]]$ & By i.h. \\
+      & $[[ DD0 --> OO' ]]$ & Above \\
+      & $[[ OO0 --> OO' ]]$ & Above \\
+      & $[[B]] = [[ [OO']aB0 ]]$ & Above \\
+      & $\erase{e} = \erase{e'}$ & Above \\
+      & $[[ GG, x : aA --> DD0  ]]$ & By \cref{lemma:typing_extension} \\
+      & $[[ DD0 ]] = [[  DD1, x : aA' , DD2 ]]$ & By \cref{lemma:extension_order} \\
+      & $[[ [DD1]aA  ]] = [[  [DD1] aA'  ]]$ & Above \\
+      & $[[ GG --> DD1  ]] $ & Above \\
+      & $[[ aA  ]] = [[  [DD1] aA'  ]]$ & $[[aA]]$ has no evar \\
+      & $[[ GG, x : aA |- ae' => aB0 -| DD1, x : aA, DD2 ]]$ & By above equalities \\
+      & $[[ GG, x : aA |- ae' <= aB0 -| DD1, x : aA, DD2 ]]$ & By \rref{chk-sub} \\ \\
+      & $[[ DD1, x : aA', DD2 --> OO' ]]$ & By above equalities \\
+      & $[[ OO' ]] = [[ OO1, x : aA'' , OO2 ]]$ & By \cref{lemma:extension_order} \\
+      & $[[ [OO1]aA'  ]] = [[  [OO1] aA''  ]]$ & Above \\
+      $\byhave$ & $[[ DD1 --> OO1  ]] $ & Above \\
+      & $[[  OO, x : aA --> OO1, x : aA'', OO2 ]]$ & By above equalities \\
+      $\byhave$& $[[  OO --> OO1  ]]$ & By \cref{lemma:extension_order} \\ \\
+
+      & $[[  GG |- \x . ae' <= aA -> aB0 -| DD1  ]]$ & \rref{chk-lam} \\
+      $\byhave$& $[[  GG |- (\x . ae') : aA -> aB0 => aA -> aB0 -| DD1  ]]$ & \rref{inf-anno} \\
+      $\byhave$& $[[  [OO1](aA -> aB0)  ]] = [[ A -> [OO']aB0  ]] = [[ A -> B ]]$ & From above equality \\
+      $\byhave$& $\erase{[[ \x : A . e  ]]} = \erlam{x}{\erase{e}} = \erlam{x}{\erase{e'}} = \erase{[[(\x . ae') : aA -> aB0]]}$ & By def. of erasure
+    \end{longtable}
+
+  \item Case \[     \ottaltinferrule{app}{}{ [[ [OO]GG |- e1 : A ]] \\ [[ [OO]GG |- A |> A1 -> A2]] \\ [[  [OO]GG |- e2 : A3  ]] \\ [[  [OO]GG |- A3 <~ A1  ]]  }{ [[  [OO]GG |- e1 e2 : A2  ]]  }  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $[[  [OO]GG |- e1 : A  ]]$ & Premise \\
+      & $[[ GG --> OO  ]]$ & Given \\
+      & $[[ GG |- ae1' => aA' -| TT1  ]]$ & By i.h. \\
+      & $[[TT1 --> OO0' ]]$ & Above \\
+      & $[[ OO --> OO0'  ]]$ & Above \\
+      & $[[A]] = [[ [OO0']aA'  ]]$ & Above \\
+      & $\erase{[[e1]]} = \erase{[[ae1']]}$ & Above \\ \\
+
+      & $[[ [OO]GG |- A |> A1 -> A2  ]]$ & Premise \\
+      & $[[  [OO]GG  ]] = [[  [OO]OO  ]]$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = [[ [OO0']OO0' ]]$ & By \Cref{lemma:finish_complete} \\
+      & $ = [[ [OO0']GG   ]]$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = [[ [OO0']TT1 ]]$ & By \Cref{lemma:confluence} \\
+      & $[[ [OO0']TT1 |- [OO0']aA' |> A1 -> A2    ]]$ & By above equalities \\
+      & $[[ TT1 |- [TT1]aA' |> aA1' -> aA2' -| TT2    ]]$ & By \Cref{thm:match_complete} \\
+      & $[[ TT2 --> OO' ]]$ & Above \\
+      & $[[ OO0' --> OO' ]]$ & Above \\
+      & $[[A1]] = [[ [OO']aA1'  ]]$ & Above \\
+      & $[[A2]] = [[ [OO']aA2'  ]]$ & Above \\ \\
+
+      & $[[  [OO]GG |- e2 : A3   ]]$ & Premise \\
+      & $ [[ [OO]GG  ]]   = [[  [OO]OO  ]]$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = [[ [OO']OO'  ]]$ & By \Cref{lemma:finish_complete} \\
+      & $ = [[ [OO']GG   ]]$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = [[ [OO']TT2   ]]$ & By \Cref{lemma:confluence} \\
+      & $[[ [OO']TT2 |- e2 : A3   ]]$ & By above equality \\
+      & $[[  TT2 |- ae2' => aA3' -| TT3   ]]$ & By i.h. \\
+      & $[[  TT3 --> OO1'   ]]$ & Above \\
+      & $[[  OO' --> OO1'  ]]$ & Above \\
+      & $[[A3]] = [[  [OO1']aA3'  ]]$ & Above \\
+      & $\erase{[[e2]]} = \erase{[[ae2']]}$ & Above \\ \\
+
+      & $[[ [OO]GG |- A3 <~ A1   ]]$ & Premise \\
+      & $ [[ [OO]GG  ]]   = [[  [OO]OO  ]]$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = [[ [OO1']OO1'  ]]$ & By \Cref{lemma:finish_complete} \\
+      & $ = [[ [OO1']GG   ]]$ & By \Cref{lemma:stable_complete_ctxt} \\
+      & $ = [[ [OO1']TT3   ]]$ & By \Cref{lemma:confluence} \\
+      & $[[A3]] = [[  [OO1']aA3'  ]]$ & Above \\
+      & $[[A1]] = [[ [OO']aA1'  ]] = [[ [OO1']aA1'  ]] $ & By \Cref{lemma:finish_types} \\
+      & $[[ [OO1']TT3 |- [OO1']aA3' <~ [OO1']aA1'     ]]$ & By above equalities \\
+      & $[[  TT3 |- [TT3]aA3' <~ [TT3]aA1' -| DD   ]]$ & By \Cref{thm:sub_completeness} \\
+      & $[[ [TT3]aA1' ]] = [[ [TT3]([TT2]aA1)  ]]$ & By \cref{lemma:subst_ext_invar}\\
+      & $[[  TT2 |- ae2' <= [TT2]aA1' -| DD  ]]$ & By \rref{chk-sub} \\
+      $\byhave$& $[[  DD --> OO2'   ]]$ & Above \\
+      & $[[ OO1' --> OO2'   ]]$ & Above \\
+      $\byhave$& $[[  GG |- ae1' ae2' => aA2' -| DD  ]]$ & By \rref{inf-app} \\
+      $\byhave$& $[[A2]] = [[ [OO']aA2' ]] = [[ [OO2']aA2'  ]]$ & \Cref{lemma:finish_types} \\
+      $\byhave$& $[[  GG --> OO2' ]]$ & By \Cref{lemma:transitivity} \\
+      $\byhave$& $\erase{[[e1 e2]]} = \erase{e_1} ~ \erase{e_2} = \erase{e_1'} ~ \erase{e_2'} = \erase{[[ ae1' ae2'  ]]}$ & By def. of erasure
+    \end{longtable}
+
+
+  \item Case \[     \ottaltinferrule{lam}{}{ [[ [OO]GG, x : t |- e : B  ]]  }{ [[  [OO]GG |- \x . e : t -> B  ]]   }  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $[[ [OO]GG , x : t |- e : B   ]]$ & Given \\
+      & $[[ [OO]GG, x : t  ]] = [[ [OO, x : at](GG , x : at)    ]]$ & By def. of context substitution \\
+      & $[[ [OO, x : at](GG, x : at) |- e : B   ]]$ & By above equality \\
+      & $[[ GG , x : at |- ae' => aB' -| DD'   ]]$ & By i.h., \\
+      & $[[DD' --> OO']]$ & Above \\
+      & $[[  OO, x : at --> OO'   ]]$ & Above \\
+      & $[[B]] = [[ [OO']aB'  ]]$ & Above \\
+      & $\erase{e} = \erase{e'}$ & Above \\
+      & $[[ GG, x : at --> DD'   ]]$ & By \cref{lemma:typing_extension} \\
+      & $[[DD']] = [[ DD, x : at, TT   ]]$ & By \cref{lemma:extension_order} \\
+      & $[[ GG , x : at |- ae' => aB' -| DD, x : at, TT    ]]$ & By above equality \\
+      $\byhave$& $[[  GG |- \x : at . ae' => at -> aB' -| DD   ]]$ & By \rref{inf-lamann} \\
+      $\byhave$& $[[ DD --> OO'  ]]$ & By context extension \\
+      $\byhave$& $[[ OO --> OO'   ]]$ & By context extension \\
+      $\byhave$& $[[ t -> B  ]] = [[ at -> [OO']aB'   ]] = [[ [OO'](at -> aB')   ]]  $ & By def. of substitution \\
+      $\byhave$& $\erase{[[\x . e]]} = \erlam{x}{\erase{e}} = \erlam{x}{\erase{e'}} = \erase{ [[\x : at . ae']] }$ & By def. of erasure
+    \end{longtable}
+
+
+
+  \item Case \[     \ottaltinferrule{gen}{}{ [[ [OO]GG, a |- e : A  ]]  }{ [[  [OO]GG |- e : \/a . A  ]]   }  \]
+
+    \begin{longtable}[l]{ll|l}
+      & $[[ [OO]GG, a |- e : A  ]]$ & Given \\
+      & $[[ [OO]GG, a  ]] = [[  [OO, a](GG, a)   ]]$ & By def. of context substitution \\
+      & $[[ [OO, a](GG, a) |- e : A    ]]$ & By above equality \\
+      & $[[  GG, a |- ae' => aA' -| DD'  ]]$ & By i.h., \\
+      & $[[ DD' --> OO'    ]]$ & Above \\
+      & $[[ OO, a --> OO'   ]]$ & Above \\
+      & $[[A]] = [[  [OO']aA'  ]]$ & Above \\
+      $\byhave$& $\erase{e} = \erase{e'}$ & Above \\
+      & $[[  GG, a --> DD'   ]]$ & By \cref{lemma:typing_extension} \\
+      & $[[DD']] = [[DD, a, TT]]$ & By \cref{lemma:extension_order} \\
+      $\byhave$& $[[  DD --> OO'   ]]$ & By context extension \\
+      $\byhave$& $[[  OO --> OO'   ]]$ & By context extension \\
+      & $[[  GG, a |- ae' => aA' -| DD, a , TT  ]]$ & By above equality \\
+      & $ [[ DD, a, TT |- [DD, a, TT]aA' <~ [DD, a, TT]aA' -| DD, a, TT   ]]   $ & By reflexivity of consistent subtyping \\
+      & $[[  GG, a |- ae' <= aA' -| DD, a, TT   ]]$ & By \rref{chk-sub} \\
+      & $[[  GG |- ae' <= \/ a. aA' -| DD    ]]$ & By \rref{chk-gen} \\
+      $\byhave$& $  [[  GG |- ae' : \/ a. aA' => \/ a. aA' -| DD    ]]  $ & By \rref{inf-anno} \\
+      $\byhave$& $[[\/a. A]] = \forall a . \ctxsubst{\Omega'}{A'} = \ctxsubst{\Omega'}{([[\/a. aA']])}$ & By def. of substitution \\
+    \end{longtable}
+
+
+
+  \end{itemize}
+
+
+
+\end{proof}
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: ../paper.bib
+%%% End:

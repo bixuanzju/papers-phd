@@ -1,0 +1,480 @@
+\renewcommand{\rulehl}[2][gray!40]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+
+
+\section{Taming Row Polymorphism}
+
+In this section we show how to systematically translate
+\rname~\cite{Harper:1991:RCB:99583.99603}---a polymorphic record calculus---into
+\fnamee. The translation itself is interesting in two regards: first, it shows
+that disjoint polymorphism can simulate row polymorphism;\ningning{won't this be
+too strong an argument? there are many row polymorphism systems and we are
+only talking about one of them.} second, it also
+reveals a significant difference of expressiveness between disjoint polymorphism
+and row polymorphism---in particular, we point out that row polymorphism alone
+is impossible to encode nested composition, which is crucial for applications of
+extensible designs. We first review the syntax and semantics of
+\rname. We then discuss a seemingly correct translation that failed to
+faithfully convey the essence of row polymorphism. By a careful comparison of
+the two calculi, we present a type-directed translation,
+and prove that the translation is type safe, i.e., well-typed \rname terms map
+to well-typed \fnamee terms.
+\bruno{besides nested composition, the other advantage of disjoint
+  polymorphism is subtyping. Row polymorphism usually does not support
+subtyping, so you cannnot write a function f : \{x : Int\} $\to$ Int and
+type-check the following application: f \{x=2,y=3\}. With row
+polymorphism you must generalize the type of f, and make the interface
+of the function more complicated.}
+\jeremy{I don't think this is entirely true for row polymorphism in general. Some row systems do have subtyping (see Harper's paper).
+  As argued by Harper, it was their design choice to not have subsumption (or subtyping) in the first place,
+  in order to have a simpler system. Also with row type inference, you don't actually need to write complicated types for this example.}
+
+% In the process, we identified one broken lemma of \rname due to the design of type equivalence, which is remedied in our presentation.
+
+
+\subsection{Syntax of \rname}
+
+\begin{figure}[t]
+  \centering
+\begin{tabular}{llll@{\hskip 0.6cm}llll} \toprule
+  Types & $[[rt]]$ & $\Coloneqq$ & $[[base]] \mid [[rt1 -> rt2]] \mid [[\/ a # R .  rt]] \mid [[ r  ]]$ & Constraint lists & $[[R]]$&  $\Coloneqq$ &$[[ <>  ]] \mid [[ r , R ]] $ \\ 
+  Records & $[[r]]$ & $\Coloneqq$ & $[[a]] \mid [[Empty]] \mid [[ {l : rt}  ]]  \mid [[  r1 || r2 ]] $  & Term contexts & $[[Gtx]]$ &  $\Coloneqq$ &  $[[ <> ]] \mid [[Gtx , x : rt ]] $ \\
+  Terms & $[[re]]$ & $\Coloneqq$ & $[[x]] \mid [[\x : rt . re]] \mid [[re1 re2]] \mid [[rempty]] $ & Type contexts & $[[Ttx]]$ & $\Coloneqq$ & $[[ <> ]] \mid [[Ttx , a # R ]] $ \\
+        &          & $\mid $ & $[[{ l = re }]] \mid [[re1 || re2]] \mid [[ re \ l  ]]  \mid [[ re . l  ]] $ \\
+        &          & $ \mid$ & $ [[ /\ a # R . re  ]] \mid [[  re [ r ]  ]]$ \\
+    \bottomrule
+\end{tabular}
+  \caption{Syntax of \rname}
+  \label{fig:syntax:record}
+\end{figure}
+
+We start by briefly reviewing the syntax of \rname, shown in \cref{fig:syntax:record}.
+
+\paragraph{Types.}
+
+Metavariable $[[rt]]$ ranges over types, which include integer types
+$[[base]]$, function types $[[rt1 -> rt2]]$, constrained quantification $[[ \/ a # R . rt ]]$
+and record types $[[r]]$. The record types are built from record type
+variables $[[a]]$, empty record $[[Empty]]$, single-field record types $[[ { l : rt}]]$
+and record merges $[[ r1 || r2 ]]$.\footnote{The original \rname also include record
+  type restrictions $[[r \ l]]$, which, as they later proved, can be systematically
+  erased using type equivalence, thus we omit type-level restrictions but keep term-level restrictions.}
+A constraint list $[[R]]$ is a list of record types, used to constrain instantiations of record type variables.
+% , and plays
+% an important role in the calculus, as we will explain shortly.
+
+\paragraph{Terms.}
+
+Metavariable $[[re]]$ ranges over terms, which include term
+variables $[[x]]$, lambda abstractions $[[ \x : rt . re ]]$, function applications $[[re1 re2]]$, empty records $[[rempty]]$,
+single-filed records $[[{l = re}]]$, record merges $[[re1 || re2]]$, record restrictions $[[ re \ l ]]$, record projections $[[ re . l  ]]$,
+type abstractions $[[  /\ a # R . re ]]$ and type applications $[[ re [ r ]   ]]$.
+As a side note, from the syntax of type applications $[[re [ r ] ]]$, it already can be seen that \rname only supports
+quantification over \emph{record types}.
+% ---though a separate form of quantifier that quantifies over \emph{all types}.
+% can be added, Harper and Pierce decided to have only one form of quantifier for the sake of simplicity.
+
+% \paragraph{An example.}
+
+% Before proceeding to the formal semantics, let us first see some examples that
+% can be written in \rname, which may be of help in understanding the overall
+% system better.
+\paragraph{An example.}
+
+When it comes to extension, every record calculus must decide what to do with
+duplicate labels. According to Leijen~\cite{leijen2005extensible}, record calculi can
+be divided into those that support \emph{free} extension, and those that support
+\emph{strict} extension. The former allows duplicate labels to coexist, whereas
+the latter does not. In that sense, \rname belongs to the strict camp. What sets
+\rname apart from other strict record calculi is its ability to merge records
+with statically unknown fields, and a mechanism to ensure the resulting record
+is conflict-free (i.e., no duplicate labels). For example, the following
+function merges two records:
+\[
+  \mathsf{mergeRcd} = [[  /\ a1 # Empty . /\ a2 # a1  . \ x1 : a1 . \ x2 : a2 . x1 || x2  ]]
+\]
+which takes two type variables: the first one has no constraint
+($[[Empty]]$) at all and the second one has only one constraint ($[[ a1 ]]$). It
+may come as no surprise that $\mathsf{mergeRcd}$ can take any record type as its
+first argument, but the second type must be \emph{compatible} with the first. In
+other words, the second record cannot have any labels that already exist in the
+first. These constraints are enough to ensure that the resulting record $[[x1 ||
+x2]]$ has no duplicate labels. If later we want to say that the first record
+$[[x1]]$ has \emph{at least} a field $[[l1]]$ of type $[[nat]]$, we can refine
+the constraint list of $[[a1]]$ and the type of $[[x1]]$ accordingly:
+\[
+  [[  /\ a1 # {l1 : nat} . /\ a2 # a1  . \ x1 : a1 || {l1 : nat} . \ x2 : a2 . x1 || x2  ]]
+\]
+The above examples suggest an important point: the form of constraint used in
+\rname can only express \emph{negative} information about record type variables.
+Nonetheless, with the help of the merge operator, positive information can be
+encoded as merges of record type variables, e.g., the assigned type of $[[x1]]$
+illustrates that the missing field $[[ {l1 : nat} ]]$ is merged back into
+$[[a1]]$.
+
+The acute reader may have noticed some correspondences between \rname and
+\fnamee: for instance, $[[ /\ a # R . re ]]$ vs. $[[ \ X ** A . ee ]]$,
+and $[[x1 || x2]]$ vs.  $[[ x1 ,, x2 ]]$. Indeed, the very
+function can be written in \fnamee almost verbatim:
+\[
+  \mathsf{mergeAny} = [[\ a1 ** Top . \ a2 ** a1 . \x1 : a1 . \x2 : a2 . x1 ,, x2 ]]
+\]
+However, as the name suggests, $\mathsf{mergeAny}$ works for \emph{any} two types,
+not just record types.
+
+\subsection{Typing Rules of \rname}
+\label{sec:typing_rname}
+
+% \jeremy{We may only want to show selected rules. }
+
+The type system of \rname consists of several conventional judgments. The
+complete set of rules appear in \cref{appendix:rname}.
+\Cref{fig:rname_well_formed} presents the well-formedness rules for record
+types. % Most cases are quite standard.
+A merge $[[r1 || r2]]$ is well-formed in
+$[[Ttx]]$ if $[[r1]]$ and $[[r2]]$ are well-formed, and moreover,
+$[[r1]]$ and $[[r2]]$ are compatible in $[[Ttx]]$ (\rref{wfr-Merge})---the most
+important judgment in \rname, as we will explain next.
+
+\begin{figure}[t]
+  \centering
+% \drules[wftc]{$[[  Ttx ok ]]$}{Well-formed type contexts}{Empty, Tvar}
+
+% \drules[wfc]{$[[  Ttx |- Gtx ok ]]$}{Well-formed term contexts}{Empty, Var}
+
+% \drules[wfrt]{$[[  Ttx |- rt type ]]$}{Well-formed types}{Prim, Arrow, All, Rec}
+
+\drules[wfr]{$[[  Ttx |- r record ]]$}{Well-formed record types}{Var, Merge}
+
+% \drules[wfcl]{$[[  Ttx |- R ok ]]$}{Well-formed constraint lists}{Nil, Cons}
+  \caption{Selected rules for well-formedness of record types}
+  \label{fig:rname_well_formed}
+\end{figure}
+
+
+
+\paragraph{Compatibility.}
+
+The compatibility relation in \cref{fig:compatible} plays a central role in \rname. It is the underlying
+mechanism of deciding when merging two records is ``sensible''. Informally,
+$[[Ttx |- r1 # r2]]$ holds if $[[r1]]$ and $[[r2]]$ are mergeable, that is,
+$[[r1]]$ lacks every field contained in $[[r2]]$ and vice versa.
+Compatibility is
+symmetric (\rref{cmp-Symm}) and respects type equivalence (\rref{cmp-Eq}).
+\Rref{cmp-Base} says that if a record is compatible with a single-field record
+$[[{l : t}]]$, it is also compatible with every record $[[{l : t'}]]$. A type variable is compatible
+with the records in its constraint list (\rref{cmp-Tvar}). Two single-field
+records are compatible if they have different labels (\rref{cmp-BaseBase}). The
+rest are self-explanatory.
+
+% and we refer the reader to their paper for further explanations.
+
+% The judgment of constraint list satisfaction $[[Ttx |- r # R]]$
+% ensures that $[[r]]$ must be compatible with every record in the constraint list $[[R]]$.
+% With the compatibility rules, let us go back to the definition of $\mathsf{mergeRcd}$
+% and see why it can type check, i.e.,  why $[[a1]]$ and $[[a2]]$ are compatible---because
+% $[[a1]]$ is in the constraint list of $[[a2]]$, and by \rref{cmp-Tvar}, they are compatible.
+
+
+\begin{figure}[t]
+  \centering
+\drules[cmp]{$[[  Ttx |- r1 # r2 ]]$}{Compatibility}{Eq, Symm, Base, Tvar, MergeE,Empty,MergeI,BaseBase}
+% \drules[cmpList]{$[[  Ttx |- r # R ]]$}{Constraint list satisfaction}{Nil, Cons}
+\caption{Compatibility}
+\label{fig:compatible}
+
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+\drules[teq]{$[[  rt1 ~ rt2 ]]$}{Type equivalence}{MergeUnit,MergeAssoc,MergeComm,CongAll}
+\drules[ceq]{$[[  R1 ~ R2 ]]$}{Constraint list equivalence}{Swap,Empty,Merge,Dupl,Base}
+\caption{Selected type equivalence rules}
+\label{fig:type_equivalence}
+\end{figure}
+
+\paragraph{Type equivalence.}
+
+Unlike \fnamee, \rname does not have subtyping. Instead, \rname uses type
+equivalence to convert terms of one type to another. A selection of the rules
+defining equivalence of types and constraint lists appears in
+\cref{fig:type_equivalence}. The relation $[[rt1 ~ rt2]]$ is an
+equivalence relation, and is a congruence with respect to the type constructors.
+Finally merge is associative (\rref{teq-MergeAssoc}), commutative
+(\rref{teq-MergeComm}), and has $[[Empty]]$ as its unit (\rref{teq-MergeUnit}).
+As a consequence, records are identified up to permutations. Since the
+quantifier in \rname is constrained, the equivalence of constrained
+quantification (\rref{teq-CongAll}) relies on the equivalence of constraint
+lists $[[R1 ~ R2]]$. Again, it is an equivalence relation, and respects
+type equivalence. Constraint lists are essentially finite sets, so order and
+multiplicity of constraints are irrelevant (\rref{ceq-Swap,ceq-Dupl}). Merges of
+constraints can be ``flattened'' (\rref{ceq-Merge}), and occurences of
+$[[Empty]]$ may be eliminated (\rref{ceq-Empty}). The last rule \rref*{ceq-Base}
+is quite interesting: it says that the types of single-field records are
+ignored. The reason is that as far as compatibility is concerned, only labels
+matter, thus changing the types of records will not affect their compatibility
+relation. We will have more to say about this in \cref{sec:trouble}, in
+particular, this is the rule that forbids a simple translation.
+
+% \begin{remark}
+% \jeremy{If we have space trouble, we can delete this}
+%   The original rules of type equivalence~\cite{Harper:1991:RCB:99583.99603} do
+%   not have contexts (i.e.,  judgment of the form $[[rt1 ~ rt2]]$). However this is incorrect, as it invalidates one of the key
+%   lemmas (Lemma 2.3.1.7) in their type system, which says that
+%     if $[[Ttx |- r1 # r2]]$, then $[[Ttx |- r1 record]]$ and $[[Ttx |- r2 record]]$.
+%   Consider two types $[[  {l1 : nat}  ]]$ and $[[ {l2 : \/ a # {l : nat} || {l : bool} . nat  }   ]]$.
+%   According to the original rules, they are compatible because
+%   \begin{inparaenum}[(1)]
+%   \item $[[  {l1 : nat} ]]  $ is compatible with $ [[ {l2 : \/ a # {l : nat} , {l : bool} . nat }  ]]$ by \rref{cmp-BaseBase};
+%   \item $ [[ {l2 : \/ a # {l : nat} , {l : bool} . nat }  ~ {l2 : \/ a # {l : nat} || {l : bool} . nat } ]]$.
+%   \end{inparaenum}
+%   Then it follows that $[[ {l2 : \/ a # {l : nat} || {l : bool} . nat } ]]$ is well-formed.
+%   However, this record type is not well-formed in any context because $[[{l : nat} || {l : bool}]]$
+%   is not well-formed in any context. To fix this, we add context throughout type equivalence.
+%   % The culprit is \rref{ceq-Merge}---the well-formedness of $[[ r1 , (r2, R) ]]$
+%   % does not necessarily entail the well-formedness of $[[ (r1 || r2) ,R]]$, as
+%   % the latter also requires the compatibility of $[[r1]]$ and $[[r2]]$.
+%   % That is why we need to explicitly add contexts to type equivalence
+%   % so that $ [[ {l2 : \/ a # {l : nat} , {l : bool} . nat } ]] $ and $[[ {l2 : \/ a # {l : nat} || {l : bool} . nat } ]]$
+%   % are not considered equivalent in the first place.
+% \end{remark}
+
+
+\paragraph{Typing rules.}
+
+A selection of typing rules are shown in \cref{fig:typing_rname}. At
+first reading, the gray parts can be ignored, which will be covered in
+\cref{sec:row_trans}. % Most of the typing rules are quite standard.
+% Typing is
+% invariant under type equivalence (\rref{wtt-Eq}).
+Two terms can be merged if their types are compatible (\rref{wtt-Merge}). Type
+application $[[ re [ r ] ]]$ is well-typed if the type argument $[[r]]$
+satisfies the constraints $[[R]]$ (\rref{wtt-AllE}).
+
+
+\begin{remark}
+  A few simplifications have been placed compared to the original \rname,
+  notably the typing of record selection (\rref{wtt-Select}) and restriction
+  (\rref{wtt-Restr}). In the original formulation, both typing rules need a
+  partial function $ r \_ l $ which means the type associated with label $[[l]]$
+  in $[[r]]$. Instead of using partial functions, here we explicitly expose the
+  expected label in a record. It can be shown that if label $[[l]]$ is present
+  in record type $[[r]]$, then the fields in $[[r]]$ can be rearranged so that
+  $[[l]]$ comes first by type equivalence. This formulation was also adopted by
+  Leijen~\cite{leijen2005extensible}.
+\end{remark}
+
+
+\begin{figure}[t]
+  \centering
+\drules[wtt]{$[[  Ttx ; Gtx |- re : rt ~~> ee  ]]$}{Type-directed translation}{Base,Restr,Select,Empty,Merge,AllE,AllI}
+\caption{Selected typing rules with translations}
+\label{fig:typing_rname}
+\end{figure}
+
+
+
+\renewcommand{\rulehl}[1]{#1}
+
+\subsection{A Failed Attempt}
+\label{sec:trouble}
+
+In this section, we sketch out an intuitive translation scheme.
+On the syntactic level, it is pretty straightforward to see a one-to-one
+correspondence between \rname terms and \fnamee expressions. % For example,
+% constrained type abstractions $[[/\ a # R . re ]]$ correspond to \fnamee type
+% abstractions $[[ \ a ** A . ee]]$; record merges can be simulated by the more
+% general merge operator of \fnamee; record restriction can be modeled as annotate terms, and so on.
+On the semantic level, all well-formedness judgments of \rname have corresponding well-formedness judgments
+of \fnamee, given a ``suitable'' translation function $[[< rt >]]$ from \rname types to \fnamee types
+Compatibility relation corresponds to disjointness relation. What might not be
+so obvious is that type equivalence can be expressed via subtyping. More
+specifically, $[[ rt1 ~ rt2 ]]$ induces mutual subtyping relations
+$[[ < rt1 > <: < rt2 > ]]$ and $[[ < rt2 > <: < rt1 > ]]$.
+Informally, type-safety of translation is something along the lines of
+``if a term has type $[[rt]]$, then its translation has type $[[< rt > ]]$''.
+With all these in mind, let us consider two examples:
+
+\begin{example} \label{eg:1} %
+  Consider term $[[ /\ a # {l : nat} . \x : a . x ]]$. It could be
+  assigned type (among others) $[[ \/ a # {l : nat} . a -> a ]]$, and its ``obvious'' translation
+  $[[  \ X ** {l : nat} . \ x : X . x  ]]$ has type $[[ \ X ** { l : nat} . X -> X   ]]$, which corresponds very well to
+  $[[ \/ a # {l : nat} . a -> a  ]]$. The same term could also be assigned type $[[  \/ a # {l : bool} . a -> a   ]]$, since
+  $[[  \/ a # {l : bool} . a -> a   ]]$ is equivalent to $[[  \/ a # {l : nat} . a -> a   ]]$ by \rref{teq-CongAll,ceq-Base}. However,
+  as far as \fnamee is concerned, these two types  have no relationship at all---$[[  \ X ** {l : nat} . \ x : X . x  ]]$
+  cannot have type $[[  \ X ** {l : bool} . X -> X   ]]$, and indeed it should not, as these two types have completely different meanings!
+\end{example}
+
+\begin{remark}
+  Interestingly, the algorithmic system of \rname can only infer
+  type $[[ \/ a # {l : nat} . a -> a ]]$ for the aforementioned term.
+  To relate to the declarative system (in particular, to prove completeness of the algorithm),
+  they show that the type inferred by the algorithm is equivalent
+  (in the sense of type equivalence) to the assignable type in the declarative system.
+  Proving type-safety of translation is, in a sense, like proving completeness. So
+  maybe we should change the type-safety statement to
+  ``if a term has type $[[rt]]$, then there exists type $[[rt']]$ such that $[[ rt ~ rt' ]]$ and the
+  translation has type $[[ < rt' > ]]$''. As we shall see, this is still incorrect.
+\end{remark}
+
+\begin{example} \label{eg:2} %
+  Consider term $[[re]] = [[  /\ a # {l : bool} . \ x : a . \ y : {l : nat} . x || y  ]]$.
+  It has type $[[ \/ a # {l : bool} . a -> {l : nat} -> a || {l : nat}    ]]$, and
+  its ``obvious'' translation is $[[ee]] = [[ \ X ** {l : bool} . \x  : X . \ y : {l : nat} . x ,, y  ]]$.
+  However, expression $[[ee]]$ is ill-typed in \fnamee
+  for the reasons of coherence: think about
+  the result of evaluating $[[ (ee {l : nat} {l = 1} {l = 2}).l ]]$---it could evaluate to $1$ or $2$!
+\end{example}
+
+\begin{remark}
+  Let us think about why \rname allows type-checking $[[re]]$. Unlike \fnamee,
+  the existence of $[[re]]$ in \rname will not cause incoherence because \rname
+  would reject type application $[[re [{l : nat}] ]]$ in the first place---more
+  generally, $[[re]]$ can only be applied to records that do not contain label
+  $[[l]]$ due to the stringency of the compatibility relation. This example
+  underlines a crucial difference between the compatibility relation and the
+  disjointness relation. The former can only relate records with different
+  labels, whereas the latter is more fine-grained in the sense that it can also
+  relate records with the same label (\rref{D-rcdEq}). Note that \rref{D-rcdEq}
+  is very important for the applications of extensible designs, as we need to
+  combine records with the same label, which is impossible to do in \rname.
+\end{remark}
+
+
+\paragraph{Taming \rname.}
+
+It seems to imply that \rname and \fnamee are incompatible in that there are
+some \rname programs that are not typable in \fnamee, and vice versa. A careful
+comparison between the two calculi reveals that \rref{cmp-Base,ceq-Base} are
+``to blame''. For \rname in general, these two rules are reasonable, as ``the
+relevant properties of a record, for the purposes of consistency checking, are
+its atomic components''~\cite{Harper:1991:RCB:99583.99603}. As far as
+compatibility is concerned, a constraint list is just a list of labels and type
+variables, whereas in \fnamee, disjointness constraints also care about record
+types. This subtle discrepancy tells that we should have a different treatment
+for those records that appear in a constraint list from those that appear
+elsewhere: we translate a single-field record $[[ {l : rt}
+]]$ in a constraint list to $[[ { l : Bot} ]]$. For \cref{eg:1}, both $[[ \/ a #
+{l : nat} . a -> a ]]$ and $[[ \/ a # {l : bool} . a -> a ]]$ translate to $[[ \
+X ** { l : Bot} . X -> X ]]$. For \cref{eg:2}, $[[re]]$ is translated to
+$[[ee']] = [[ \ X ** {l : Bot} . \x : X . \ y : {l : nat} . x ,, y ]]$, which
+type checks in \fnamee. Moreover, $[[ee' {l : nat} ]]$ gets rejected because
+$[[Bot]]$ is not disjoint with $[[nat]]$.
+
+
+
+\subsection{Type-Directed Translation}
+\label{sec:row_trans}
+
+\begin{figure}[t]
+  \centering
+\begin{tabular}{rrlllrlll} \toprule
+  $[[< rt >]] \defeq \,$ & $[[ <base> ]]$ & $=$ &  $[[nat]]$ & $,$ & $[[< rt1 -> rt2 >]]$ & $=$ & $[[<rt1> -> <rt2>]]$ & $,$  \\
+                       &$[[< \/ a # R . rt>]]$ & $=$ &  $[[\ X ** <R>. \ Xb ** <R>. <rt>]]$ & $,$ & & & & \\
+                       &$[[ <a> ]]$ & $=$ &  $[[X]]$ & $,$ & $[[< Empty > ]]$ & $=$ & $[[Top]] $ & $,$ \\
+                       &$[[ <{l:rt}> ]]$ & $=$ &  $[[ {l:<rt>} ]]$ & $,$ & $[[<r1 ||  r2> ]]$ & $=$ & $[[<r1> & <r2>]] $ \\
+  $[[ <r>_b  ]] \defeq\,$ & $[[ <a>_b ]]$ & $=$ &  $[[Xb]]$ & $,$ & $[[< Empty >_b ]]$ & $=$ & $[[Top]] $ & $,$  \\
+                       &$[[ <{l:rt}>_b ]]$ & $=$ &  $[[ {l:Bot} ]]$ & $,$ & $[[<r1 ||  r2>_b ]]$ & $=$ & $[[<r1>_b & <r2>_b]] $ \\
+  $[[< R >]] \defeq \,$  &$[[ < <> >  ]]$ & $=$ &  $[[ Top  ]]$ & $,$ & $[[  <r , R>    ]]$ & $=$ & $[[<r>_b & <R>]] $ \\
+  $[[< Ttx >]] \defeq \,$ & $[[ < <> > ]]$ & $=$ &  $[[empty]]$ & $,$ & $[[ <Ttx, a # R>  ]]$ & $=$ & $[[ <Ttx>, X ** <R>, Xb ** <R>]] $  \\
+  $[[ < Gtx> ]] \defeq \,$ & $[[ < <> > ]]$ & $=$ &  $[[empty]]$ & $,$ & $[[ <Gtx, x : rt>  ]]$ & $=$ & $[[  <Gtx>, x : <rt>   ]] $ \\   \bottomrule
+\end{tabular}
+\caption{Translation functions}
+\label{fig:trans_func}
+\end{figure}
+
+
+
+
+Now we can give a formal account of the translation. But there is still a twist.
+Having two ways of translating records does not work out of the box. To see
+this, consider $[[ \/ a # b . b ]]$, and note that a reasonably defined translation function
+should commute with substitution, i.e., $[[ < [r / a] rt > ]] = [[ <rt> [X ~> <r>] ]] $.
+We have LHS:
+$$[[ < [ {l : nat} / b  ] (\/ a # b . b ) >  ]] =  [[  < \/ a # {l : nat} . { l : nat} > ]] = [[  \ X ** { l : Bot} . { l : nat}   ]]  $$
+which is not the same as RHS:
+$$[[ <\/ a # b . b>  [Y ~> < {l : nat} > ]       ]] = [[ ( \ X ** Y . Y) [Y ~> < {l : nat} > ]   ]] = [[   \ X ** {l : nat} . {l : nat}    ]]  $$
+The tricky part is that we should also distinguish those record type variables
+that appear in a constraint list from those that appear elsewhere. To do so, we
+map record type variable $[[a]]$ to a pair of type variables $[[ X ]]$ and
+$[[Xb]]$, where $[[Xb]]$ is supposed to be substituted by records with bottom
+types. More specifically, we define the translation functions as in
+\cref{fig:trans_func}. There are two ways of translating records: $[[<r>]]$ for
+regular translation and $[[ < r >_b ]]$ for bottom translation; the latter is
+used by $[[< R >]]$ for translating constraint lists. The most interesting one
+is translating quantifiers: each quantifier $[[\/ a # R . rt]]$ in \rname is
+split into two quantifiers $[[ \ X ** <R>. \ Xb ** <R>. <rt> ]]$ in \fnamee.
+Correspondingly, each record type variable $[[a]]$ is translated to either
+$[[X]]$ or $[[Xb]]$, depending on whether it appears in a constraint list or
+not. The relative order of $[[X]]$ and $[[Xb]]$ is not so much relevant, as long
+as we respect the order when translating type applications. Now let us go back
+to the gray parts in \cref{fig:typing_rname}. In the type application $[[ re [ r
+] ]]$ (\rref{wtt-AllE}), we first translate $[[e]]$ to $[[ee]]$. The translation
+$[[ee]]$ is then applied to two types $[[ <r> ]]$ and $[[ <r >_b ]]$, because as
+we mentioned earlier, $[[ee]]$ has two quantifiers resulting from the
+translation. It is of great importance that the relative order of $[[<r>]]$ and
+$[[< r >_b]]$ should match the order of $[[ X ]]$ and $[[Xb]]$ in translating
+quantifiers. There is a ``protocol'' that we must keep during translation: if
+$[[X]]$ is substituted by $[[ <r> ]]$, then $[[ Xb ]]$ is substitute by $[[ < r
+>_b ]]$. In other words, we can safely assume $[[ Xb <: X ]]$ because $[[ < r>_b <: <r> ]]$ always holds.
+Similarly, in \rref{wtt-AllI} we translate constrained type abstractions to disjointness type abstractions
+with two quantifiers, matching the translation of constrained quantification.
+The other rules are mostly straightforward translations. Finally we show that our translation function does commute with
+substitution, but in a slightly involved form:
+
+\begin{restatable}{lemma}{substrt} \label{lemma:subst_rt}
+  $[[ <[r / a] rt> ]]$ = $ [[ <rt> [X ~> <r>] [Xb ~> <r>_b] ]] $.
+\end{restatable}
+
+% With the modified \rname, we are now ready to explain the gray parts in \cref{fig:typing_rname}. First we
+% show how to translate \rname types to \fnamee types in
+% \cref{fig:type_trans_rname}. Most of them are straightforward. Record merges are
+% translated into intersection types, so are the constraint lists. Next we look at the
+% translations of terms. Most of the them are quite intuitive. In \rref{wtt-eq},
+% we put annotation $[[ | rt' | ]]$ around the translation of $[[re]]$. Record
+% restrictions are translated to annotated terms (\rref{wtt-Restr}) since we
+% already know the type without label $[[l]]$. Record merges are translated to
+% general merges (\rref{wtt-Merge}). The translation of record selections (\rref{wtt-Select}) is  a bit
+% complicated. Note that we cannot simply translate to $[[ ee . l ]]$ because our
+% typing rule for record selections (\rref{T-proj}) only applies when $[[ee]]$ is a
+% single-field record. Instead, we need to first transform $[[ee]]$ to a
+% single-field record by annotation, and then project.
+
+% \begin{remark}
+%   The acute reader may have noticed that in \rref{wtt-AllE}, the translation type
+%   $| [[r]] |$ could be a quantifier, but our rule of type applications
+%   (\rref{T-tapp}) only applies to monotypes. The reason is that, for the
+%   purposes of translation, we lift the monotype restrictions, which does not
+%   compromise type-safety of \fnamee.
+% \end{remark}
+
+\paragraph{Type-safety of translation.}
+
+With everything in place, we prove that our translation in
+\cref{fig:typing_rname} is type-safe. The main idea is to map each judgment in
+\rname to a corresponding judgment in \fnamee: well-formedness to
+well-formedness, compatibility to disjointness, type-equivalence to subtyping.
+The reader can refer to \cref{appendix:proofs} for detailed proofs. We
+show a key lemma that bridges the ``gap'' (i.e., \rref{cmp-Base}) between row and disjoint polymorphism.
+
+\begin{restatable}{lemma}{cmprcd} \label{lemma:cmp-rcd}
+  If $[[ Ttx |- r # {l:rt} ]]$ then $[[ < Ttx > |-  < r > ** {l:A}    ]] $ and $[[ < Ttx > |-  < r >_b ** {l:A}    ]]$
+  for all $A$.
+\end{restatable}
+
+Finally here is the central type-safety theorem:
+
+\begin{restatable}{theorem}{typesafe}
+  If $[[ Ttx ; Gtx |- re : rt ~~> ee ]]$ then $[[ < Ttx > ; < Gtx > |-  ee => < rt >  ]]$.
+\end{restatable}
+% \begin{proof}
+%   By induction on the typing derivation.
+% \end{proof}
+
+
+
+
+% Local Variables:
+% TeX-master: "../paper"
+% org-ref-default-bibliography: "../paper.bib"
+% End:

@@ -1,0 +1,267 @@
+
+% \section{Overview}
+
+
+% - Shallow embedding in Haskell (2 interpretations);
+% 
+% - How to compose? possible but lots of boilerplate;
+% 
+% - Finally tagless solves some problems, but how about dependencies?
+% Still some boilerplate needed. 
+% 
+% - Introduce the solution in our calculus. Show that we can do
+% everything finally tagless can + more because we have 
+% distributivity in the type system.
+
+%-------------------------------------------------------------------------------
+\section{Compositional Programming}
+\label{sec:overview}
+
+% \bruno{Do we need something about easily adding new cases? Although
+% this is a solved problem, people may wonder about this? Perhaps
+% we need some text (1 or 2 sentences) at least. }
+
+
+To demonstrate the compositional properties of \fnamee we use Gibbons and Wu's shallow embeddings of
+parallel prefix circuits~\cite{DBLP:conf/icfp/GibbonsW14}. By means of several different shallow
+embeddings, we first illustrate the short-comings of a state-of-the-art
+compositional approach, namely a \emph{finally tagless}
+encoding~\cite{CARETTE_2009} in Haskell.
+Next we show how parametric polymorphism and distributive intersection types provide
+a more elegant and compact solution in \sedel~\cite{bi_et_al:LIPIcs:2018:9214}, a source language built on top of
+our \fnamee calculus.
+
+
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+\subsection{A Finally Tagless Encoding in Haskell}
+
+The circuit DSL represents networks that map a number of inputs (known as the width) of some type $A$ onto
+the same number of outputs of the same type. The outputs combine (with repetitions) one or more
+inputs using a binary associative operator $\oplus : A \times A \to A$.
+A particularly interesting class of circuits that can be expressed in the DSL are
+\emph{parallel prefix circuits}. These represent computations that take $n > 0$
+inputs $x_1, \ldots, x_n$ and produce $n$ outputs $y_1, \ldots, y_n$, where
+$y_i = x_1 \oplus x_2 \oplus \ldots \oplus x_i$.
+
+The DSL features 5 language primitives: two basic circuit constructors and
+three circuit combinators. These are captured in the Haskell type class \lstinline[language=haskell]{Circuit}:
+\lstinputlisting[language=haskell,linerange=5-10]{./examples/Scan.hs}% APPLY:linerange=DSL_DEF
+An \lstinline[language=haskell]{identity} circuit with $n$ inputs $x_i$,  has
+$n$ outputs $y_i = x_i$. A \lstinline[language=haskell]{fan} circuit has $n$ inputs $x_i$ and $n$
+outputs $y_i$, where $y_1 = x_1$ and $y_j = x_1 \oplus x_j$ ($j > 1)$.
+The binary \lstinline[language=haskell]{beside} combinator puts two circuits in parallel; the combined circuit
+takes the inputs of both circuits to the outputs of both circuits.
+The binary \lstinline[language=haskell]{above} combinator connects the outputs of the first circuit to
+the inputs of the second; the width of both circuits has to be same.
+Finally,
+\lstinline[language=haskell]{stretch ws c} interleaves the wires of circuit \lstinline[language=haskell]{c} with
+bundles of additional wires that map their input straight on their output.
+The \lstinline[language=haskell]{ws} parameter specifies the width of the consecutive bundles;
+the $i$th wire of \lstinline[language=haskell]{c} is preceded by a bundle of width $\textit{ws}_i - 1$.
+
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\begin{figure}[t]
+  \begin{subfigure}[b]{0.44\textwidth}
+    \lstinputlisting[language=haskell,linerange=15-22]{./examples/Scan.hs}% APPLY:linerange=DSL_WIDTH
+    \subcaption{Width embedding}
+  \end{subfigure} ~
+  \begin{subfigure}[b]{0.57\textwidth}
+    \lstinputlisting[language=haskell,linerange=27-34]{./examples/Scan.hs}% APPLY:linerange=DSL_DEPTH
+    \subcaption{Depth embedding}
+  \end{subfigure}
+  \caption{Two finally tagless embeddings of circuits.}\label{fig:finally-tagless}
+\end{figure}
+
+
+\paragraph{Basic width and depth embeddings.}
+
+\Cref{fig:finally-tagless} shows two simple shallow embeddings, which represent a circuit
+respectively in terms of its width and its depth. The former denotes the number
+of inputs/outputs of a circuit, while the latter is the maximal number of
+$\oplus$ operators between any input and output.
+Both definitions follow the same setup: a new Haskell datatype
+(\lstinline[language=haskell]{Width}/\lstinline[language=haskell]{Depth}) wraps the primitive result value and provides an
+instance of the \lstinline[language=haskell]{Circuit} type class that interprets the 5 DSL primitives
+accordingly.
+The following code creates a so-called Brent-Kung parallel prefix circuit~\cite{brent1980chip}:
+\lstinputlisting[language=haskell,linerange=39-42]{./examples/Scan.hs}% APPLY:linerange=DSL_E1
+Here \lstinline[language=haskell]{e1} evaluates to \lstinline[language=haskell]$W {width = 4}$. If we want to know the
+depth of the circuit, we have to change type signature to \lstinline[language=haskell]{Depth}.
+
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+\paragraph{Interpreting multiple ways.}
+
+Fortunately, with the help of polymorphism we can define a type
+of circuits that support multiple interpretations at once.
+\lstinputlisting[language=haskell,linerange=47-47]{./examples/Scan.hs}% APPLY:linerange=DSL_FORALL
+This way we can provide a single Brent-Kung parallel prefix circuit definition that can be reused
+for different interpretations.
+\lstinputlisting[language=haskell,linerange=51-54]{./examples/Scan.hs}% APPLY:linerange=DSL_BRENT
+A type annotation then selects the desired interpretation.
+For instance, \lstinline[language=haskell]{brentKung :: Width} yields the width and
+\lstinline[language=haskell]{brentKung :: Depth} the depth.
+
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+\paragraph{Composition of embeddings.}
+
+What is not ideal in the above code is that the same \lstinline[language=haskell]{brentKung}
+circuit is processed twice, if we want to execute both interpretations. We can do 
+better by processing the circuit only once, computing both interpretations simultaneously.
+The finally tagless encoding achieves this with a boilerplate instance
+for tuples of interpretations.
+\lstinputlisting[language=haskell,linerange=59-64]{./examples/Scan.hs}% APPLY:linerange=DSL_TUPLE
+Now we can get both embeddings simultaneously as follows:
+\lstinputlisting[language=haskell,linerange=68-69]{./examples/Scan.hs}% APPLY:linerange=DSL_E12
+This evaluates to \lstinline[language=haskell]$(W {width = 4}, D {depth = 2})$.
+
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+\paragraph{Composition of dependent interpretations.}
+
+The composition above is easy because the two embeddings are
+orthogonal. In contrast, the composition of dependent interpretations is
+rather cumbersome in the standard finally tagless setup. An example of the
+latter is the interpretation of circuits as their well-sizedness, which
+captures whether circuits are well-formed. This interpretation depends on the
+interpretation of circuits as their width.\footnote{Dependent recursion schemes
+are also known as \emph{zygomorphism}~\cite{fokkinga1989tupling} after the ancient Greek word \emph{\textzeta\textupsilon\textgamma\textomikron\textnu}
+for yoke. We have labeled the \lstinline{Width} field with \lstinline{ox} because it is pulling the yoke.}
+\lstinputlisting[language=haskell,linerange=74-82]{./examples/Scan.hs}% APPLY:linerange=DSL_WS
+The \lstinline[language=haskell]{WellSized} datatype represents the well-sizedness of a circuit with
+a Boolean, and also keeps track of the circuit's width. The 5 primitives
+compute the well-sizedness in terms of both the width and well-sizedness of the subcomponents.
+What makes the code cumbersome is that it has to explicitly delegate to the \lstinline[language=haskell]{Width}
+interpretation to collect this additional information.
+
+With the help of a substantially more complicated setup that features a dozen
+Haskell language extensions, and advanced programming techniques, we can make
+the explicit delegation implicit (see \cref{appendix:circuit}). Nevertheless,
+that approach still requires a lot of boilerplate that needs to be repeated for
+each DSL, as well as explicit projections that need to be written in each
+interpretation. A final remark is that adding new primitives (e.g.,
+a ``right stretch'' \lstinline{rstretch}
+combinator~\cite{hinze2004algebra}) can also be easily 
+achieved in the finally tagless approach~\cite{kiselyov2012typed}.
+
+ 
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+\subsection{The \sedel Encoding}
+
+\sedel is a source language that elaborates to \fnamee, adding
+a few convenient source level constructs.
+The \sedel setup of the circuit DSL is similar to the finally tagless
+approach. Instead of a \lstinline[language=haskell]{Circuit c} type class, there is a \lstinline{Circuit[C]}
+type that gathers the 5 circuit primitives in a record. Like in Haskell, the type
+parameter \lstinline{C} expresses that the interpretation of circuits
+is a parameter.
+\lstinputlisting[linerange=42-45]{./examples/scan.sl}% APPLY:linerange=SEDEL_DEF
+As a side note if a new constructor (e.g., \lstinline{rstretch}) is
+needed, then this is done by means of
+intersection types (\lstinline{&} creates an intersection type) in \sedel:
+\lstinputlisting[linerange=50-50]{./examples/scan.sl}% APPLY:linerange=SEDEL_DEF2
+
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+\paragraph{Basic width and depth embeddings.}
+
+\begin{figure}[t]
+\lstinputlisting[linerange=60-67]{./examples/scan.sl}% APPLY:linerange=SEDEL_WIDTH
+\hrule
+\lstinputlisting[linerange=76-83]{./examples/scan.sl}% APPLY:linerange=SEDEL_DEPTH
+\caption{Two \sedel embeddings of circuits.}
+\label{fig:sedel}
+\end{figure}
+
+\Cref{fig:sedel} shows the two basic shallow embeddings for width and
+depth. In both cases, a named \sedel definition
+replaces the corresponding unnamed
+Haskell type class instance in providing the implementations of the 5 language
+primitives for a particular interpretation.
+
+
+The use of the \sedel embeddings is different from that of their Haskell
+counterparts. Where Haskell implicitly selects the appropriate type class
+instance based on the available type information, in \sedel the programmer
+explicitly selects the implementation following the style used by
+object algebras.
+The following code does this by
+% creating an object \lstinline{l1} out of the \lstinline{language1}
+% trait and then
+building a circuit with \lstinline{l1} (short for \lstinline{language1}).
+\lstinputlisting[linerange=88-91]{./examples/scan.sl}% APPLY:linerange=SEDEL_E1
+Here \lstinline{e1} evaluates to \lstinline${width = 4}$. If we want to know the
+depth of the circuit, we have to replicate the code with \lstinline{language2}.
+
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+\paragraph{Dynamically reusable circuits.}
+
+Just like in Haskell, we can use polymorphism to define a type
+of circuits that can be interpreted with different languages.
+\lstinputlisting[linerange=96-96]{./examples/scan.sl}% APPLY:linerange=SEDEL_FORALL
+In contrast to the Haskell solution, this implementation explicitly accepts
+the implementation.
+\lstinputlisting[linerange=102-109]{./examples/scan.sl}% APPLY:linerange=SEDEL_BRENT
+
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+\paragraph{Automatic composition of languages.}
+
+Of course, like in Haskell we can also compute both results simultaneously.
+However, unlike in Haskell, the composition of the two interpretation requires
+no boilerplate whatsoever---in particular, there is no \sedel counterpart of the
+\lstinline[language=haskell]{Circuit (c1, c2)} instance. Instead, we can just compose the two interpretations
+with the term-level merge operator (\lstinline{,,}) and specify the desired type \lstinline{Circuit[Width & Depth]}.
+\lstinputlisting[linerange=114-115]{./examples/scan.sl}% APPLY:linerange=SEDEL_E3
+Here the use of the merge operator creates a term with the intersection type
+\lstinline{Circuit[Width] & Circuit[Depth]}. Implicitly, the \sedel type system
+takes care of the details, turning this intersection type into
+\lstinline{Circuit[Width & Depth]}. This is possible because intersection (\lstinline{&}) distributes over function and record types.
+
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+\paragraph{Composition of dependent interpretations.}
+
+In \sedel the composition scales nicely to dependent interpretations.
+For instance, the well-sizedness interpretation can be expressed without
+explicit projections.
+\lstinputlisting[linerange=124-133]{./examples/scan.sl}% APPLY:linerange=SEDEL_WS
+Here the \lstinline{WellSized & Width} type in the \lstinline{above} and \lstinline{stretch} cases
+expresses that both the well-sizedness and width of subcircuits must be given,
+and that the width implementation is left as a dependency---when \lstinline{language3} is used,
+then the width implementation must be provided.
+Again, the distributive properties of \lstinline{&} in the type system take care of
+merging the two interpretations.
+\lstinputlisting[linerange=148-150]{./examples/scan.sl}% APPLY:linerange=SEDEL_E4
+
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+\paragraph{Disjoint polymorphism and dynamic merges.}
+
+While it may seem from the above examples that definitions have to be merged
+statically, \sedel in fact supports dynamic merges. For instance, we can
+encapsulate the merge operator in the \lstinline{combine} function while
+abstracting over the two components \lstinline{x} and \lstinline{y} that are merged
+as well as over their types \lstinline{A} and \lstinline{B}.
+\lstinputlisting[linerange=138-138]{./examples/scan.sl}% APPLY:linerange=SEDEL_COMBINE
+This way the components \lstinline{x} and \lstinline{y} are only known at runtime and
+thus the merge can only happen at that time.
+The types \lstinline{A} and \lstinline{B} cannot be chosen entirely freely. For
+instance, if both components would contribute an implementation for the same
+method, which implementation is provided by the combination would be ambiguous.
+To avoid this problem the two types \lstinline{A} and \lstinline{B} have to be
+\emph{disjoint}. This is expressed in the disjointness constraint \lstinline{* A}
+on the quantifier of the type variable \lstinline{B}. If a quantifier mentions
+no disjointness constraint, like that of \lstinline{A}, it defaults to the
+trivial \lstinline{* Top} constraint which implies no restriction. With \lstinline{combine},
+we can rewrite \lstinline{l3} as follows (note that \lstinline{Width} and \lstinline{Depth} are disjoint):
+\lstinputlisting[linerange=143-143]{./examples/scan.sl}% APPLY:linerange=SEDEL_L3
+
+
+% We can extend our circuit DSL with additional features.
+% Suppose we 
+% \begin{Verbatim}[fontsize=\small]
+%   addBelow[C,S,R * {below: C -> C -> C, above : C -> C -> C}](lang: Trait[S,{above : C -> C -> C} & R])
+%     = trait inherits lang { below(c1 : C, c2 : C) = super.above(c2,c2) }
+% \end{Verbatim}
+
+
+% Local Variables:
+% org-ref-default-bibliography: "../paper.bib"
+% TeX-master: "../paper"
+% End:

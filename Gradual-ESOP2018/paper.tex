@@ -1,0 +1,191 @@
+\documentclass[oribibl,dvipsnames]{llncs}
+\usepackage{llncsdoc}
+
+%% Some recommended packages.
+\usepackage{booktabs}   %% For formal tables:
+                        %% http://ctan.org/pkg/booktabs
+\usepackage{subcaption} %% For complex figures with subfigures/subcaptions
+                        %% http://ctan.org/pkg/subcaption
+
+
+% AMS packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\usepackage{mathtools}
+\usepackage{mdwlist}
+\usepackage{pifont}
+
+
+% Miscellaneous
+\usepackage{paralist}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{multirow}
+
+
+% Revision tools
+\usepackage{xspace}
+\usepackage{comment}
+\newcommand\mynote[3]{\textcolor{#2}{#1: #3}}
+\newcommand\bruno[1]{\mynote{Bruno}{red}{#1}}
+% \newcommand\ningning[1]{\mynote{Ningning}{orange}{#1}}
+% \newcommand\jeremy[1]{\mynote{Jeremy}{pink}{#1}}
+
+\newcommand{\hl}[2][gray!40]{\colorbox{#1}{#2}}
+\newcommand{\hlmath}[2][gray!40]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+
+% Graphs
+\usepackage{tikz}
+\usetikzlibrary{matrix}
+\usetikzlibrary{arrows,automata}
+\usetikzlibrary{positioning}
+
+
+% Hyper links
+\usepackage{url}
+\usepackage{
+  nameref,%\nameref
+  hyperref,%\autoref
+}
+\usepackage[capitalise]{cleveref}
+\hypersetup{
+   colorlinks,
+   citecolor=black,
+   filecolor=black,
+   linkcolor=black,
+   urlcolor=black
+}
+
+\usepackage{thmtools, thm-restate}
+
+\usepackage[misc]{ifsym}
+
+\declaretheorem[name=Lemma,
+  refname={Lemma,Lemmas},
+  Refname={Lemma,Lemmas}]{mlemma}
+
+\declaretheorem[name=$\mathcal{L}$emma,
+  % numberwithin=section,
+  refname={$\mathcal{L}$emma,$\mathcal{L}$emmas},
+  Refname={$\mathcal{L}$emma,$\mathcal{L}$emmas}]{clemma}
+
+\declaretheorem[name=Theorem,
+  refname={Theorem,Theorems},
+  Refname={Theorem,Theorems}]{mtheorem}
+
+\declaretheorem[name=$\mathcal{T}$heorem,
+  % numberwithin=section,
+  refname={$\mathcal{T}$heorem,$\mathcal{T}$heorems},
+  Refname={$\mathcal{T}$heorem,$\mathcal{T}$heorems}]{ctheorem}
+
+
+\declaretheorem[name=Observation]{observation}
+
+
+
+
+\input{paper_utility.tex}
+
+\input{sections/formal.tex}
+
+
+%% Bibliography style
+\usepackage[numbers]{natbib}
+\bibliographystyle{plainnat}
+\setcitestyle{aysep={}}
+
+\begin{document}
+
+%% Title information
+\title{Consistent Subtyping for All}
+\ifdefined\submitoption
+\subtitle{Long version of paper, including supplementary meterial}         %% [Short Title] is optional;
+\fi
+
+\author{Ningning Xie$^{\textrm{\Letter}}$ \and Xuan Bi \and Bruno C. d. S. Oliveira}
+
+\institute{
+  The University of Hong Kong \\ \email{\{nnxie,xbi,bruno\}@cs.hku.hk}
+}
+
+
+\maketitle
+
+
+\begin{abstract}
+Consistent subtyping is employed in some gradual type systems to
+validate type conversions. The original
+definition by \citeauthor{siek2007gradual} serves as a guideline for
+designing gradual type systems with subtyping. Polymorphic types \`a la
+System F also induce a subtyping relation that relates polymorphic types
+to their instantiations. However \citeauthor{siek2007gradual}'s definition
+is not adequate for polymorphic subtyping.
+% , including the subtyping
+% relation arising from implicit polymorphism.
+The first goal of this paper is to propose a generalization of consistent
+subtyping that is adequate for polymorphic subtyping, and subsumes the original
+definition by \citeauthor{siek2007gradual}. The new definition of consistent
+subtyping provides novel insights with respect to previous polymorphic gradual
+type systems, which did not employ consistent subtyping.
+% For instance both
+% \citeauthor{ahmed2011blame} (in the Polymorphic Blame Calculus) and
+% \citeauthor{yuu2017poly} use, respectively,
+% notions of \emph{compatibility} and \emph{type consistency} instead
+% of consistent subtyping to validate casts.
+% We argue that, for implicit
+% polymorphism, \citeauthor{ahmed2011blame}'s notion of
+% compatibility is too permissive (i.e. too many programs are allowed to
+% type-check), and that \citeauthor{yuu2017poly}'s notion of type consistency is too
+% conservative (i.e. programs that should type check are rejected).
+% To further validate our
+% generalized notion of consistent subtyping we also study the addition
+% of top types to gradual type systems. Like polymorphism, the notion of
+% consistent subtyping proposed by \citeauthor{siek2007gradual} does not work for top
+% types, but our revised definition can account for top types.
+The second goal of this paper is to present a gradually typed calculus for
+implicit (higher-rank) polymorphism that uses our new notion of consistent
+subtyping. We develop both declarative and (bidirectional) algorithmic versions
+for the type system.
+% The algorithmic version employs techniques developed by
+% \citeauthor{dunfield2013complete} to deal with instantiation.
+We prove that the
+new calculus satisfies all static aspects of the refined criteria for gradual
+typing, which are mechanically formalized using the Coq proof assistant.
+% All of
+% the metatheory of this paper, except some manual proofs for the algorithmic type
+% system, has been mechanically formalized using the Coq proof assistant.
+\end{abstract}
+
+
+
+
+%% -- Starting Point --
+
+\input{sections/introduction.tex}
+\input{sections/background.tex}
+\input{sections/exploration.tex}
+\input{sections/typesystem.tex}
+\input{sections/algorithm.tex}
+\input{sections/discussion.tex}
+\input{sections/related.tex}
+\input{sections/conclusion.tex}
+\input{sections/acknowledge.tex}
+
+
+%% Acknowledgments
+
+%% Bibliography
+\bibliography{paper}
+
+% \ifdefined\submitoption
+% \newpage
+% \appendix
+% \input{sections/appendixB.tex}
+% \input{sections/appendix.tex}
+% \fi
+
+\end{document}

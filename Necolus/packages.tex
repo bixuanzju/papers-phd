@@ -1,0 +1,99 @@
+% Basics
+\usepackage{fixltx2e}
+\usepackage{url}
+\usepackage{fancyvrb}
+\usepackage{mdwlist}  % Miscellaneous list-related commands
+\usepackage{xspace}   % Smart spacing
+\usepackage{supertabular}
+
+% https://www.nesono.com/?q=book/export/html/347
+% Package for inserting TODO statements in nice colorful boxes - so that you
+% won’t forget to ﬁx/remove them. To add a todo statement, use something like
+% \todo{Find better wording here}.
+\usepackage{todonotes}
+
+%% Math
+\usepackage{bm}       % Bold symbols in maths mode
+
+% http://tex.stackexchange.com/questions/114151/how-do-i-reference-in-appendix-a-theorem-given-in-the-body
+\usepackage{thmtools, thm-restate}
+
+%% Theoretical computer science
+\usepackage{stmaryrd}
+\usepackage{mathtools}  % For "::=" ( \Coloneqq )
+
+%% Font
+% \usepackage[euler-digits,euler-hat-accent]{eulervm}
+
+
+%% Some recommended packages.
+\usepackage{booktabs}   %% For formal tables:
+                        %% http://ctan.org/pkg/booktabs
+\usepackage{subcaption} %% For complex figures with subfigures/subcaptions
+                        %% http://ctan.org/pkg/subcaption
+
+
+\usepackage{ottalt}
+
+\usepackage{comment}
+
+% Hyper links
+\usepackage{url}
+\usepackage{
+  nameref,%\nameref
+  hyperref,%\autoref
+}
+\usepackage[capitalise]{cleveref}
+% \hypersetup{
+%    colorlinks,
+%    citecolor=black,
+%    filecolor=black,
+%    linkcolor=blue,
+%    urlcolor=black
+% }
+
+
+% Code highlighting
+\usepackage{listings}
+
+\lstset{%
+  backgroundcolor=\color{white},
+  basicstyle=\small\ttfamily,
+  keywordstyle=\sffamily\bfseries,
+  captionpos=none,
+  columns=flexible,
+  lineskip=-1pt,
+  keepspaces=true,
+  showspaces=false,               % show spaces adding particular underscores
+  showstringspaces=false,         % underline spaces within strings
+  showtabs=false,                 % show tabs within strings adding particular underscores
+  breaklines=true,                % sets automatic line breaking
+  breakatwhitespace=true,         % sets if automatic breaks should only happen at whitespace
+  escapeinside={(*}{*)},
+  literate={->}{{$\rightarrow$}}1 {Top}{{$\top$}}1 {=>}{{$\Rightarrow$}}1 {/\\}{{$\Lambda$}}1,
+  tabsize=2,
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  sensitive=false
+}
+
+\lstdefinelanguage{sedel}{
+  keywords={Int, String, this, trait, inherits, super, type, Trait, override, self, new, if, then, else, let, in},
+  identifierstyle=\color{black},
+  morecomment=[l]{--},
+  morecomment=[l]{//},
+  morestring=[b]",
+  xleftmargin  = 3mm,
+  morestring=[b]'
+}
+
+\lstdefinelanguage{gbeta}{%
+  language     = java,
+  morekeywords = {virtual,refine},
+  xleftmargin  = 3mm
+}
+
+\lstset{language=sedel}
+
+\theoremstyle{remark}
+\newtheorem{observation}{Observation}

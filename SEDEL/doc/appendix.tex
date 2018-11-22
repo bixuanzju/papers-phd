@@ -1,0 +1,264 @@
+
+
+\section{Full Type System of \name}
+
+
+\begin{small}
+\drules[WF]{$[[ G |- A ]]$}{Well formedness}{top, int, arrow, record, var, and, forall, trait}
+
+\drules[Sub]{$[[ A <: B ]]$}{Subtyping}{top, andR, int, andLOne, andLTwo, rec, var, arr, forall, trait}
+
+\drules[D]{$[[ G |- A ** B ]]$}{Disjointness}{top, topSym, var, varSym, forall, rec, recn, arrow, andL, andR, trait, traitArrOne, traitArrTwo, ax}
+
+\drules[Dax]{$[[ A **a B ]]$}{Disjointness axiom}{sym, intArr, intRec, intForall, intTrait, arrForall, arrRec, traitForall, traitRec, forallRec}
+
+\drules[Inf]{$[[ G  |- E => A ~~> e]]$}{Infer}{top, int, var, anno, app, tapp, merge,rec, proj, blam, lete, trait, traitSuper,new,forward}
+
+\drules[Chk]{$[[ G  |- E <= A ~~> e]]$}{Check}{abs, sub}
+\end{small}
+
+
+
+\begin{definition}[Type translation]
+  \begin{align*}
+    | [[a]] | &= [[a]] \\
+    | [[Int]] | &= [[Int]] \\
+    | [[top]] | &= [[top]] \\
+    | [[A -> B]] | &= [[ | A | -> | B | ]] \\
+    | [[A & B]] | &= [[ | A | & | B | ]] \\
+    | [[{l : A}]] | &= [[ {l : | A | } ]] \\
+    | [[ forall (a ** A) . B  ]] | &= [[ forall (a ** |A|) . |B| ]] \\
+    | [[ Trait[A,B] ]] | &= [[|A| -> |B|]]
+  \end{align*}
+\end{definition}
+
+
+\section{Metatheory}
+
+\begin{lemma} \label{lemma:wf}
+  If $[[G |- A]]$ then $[[|G| |- |A|]]$.
+\end{lemma}
+\begin{proof}
+ By simple induction on the derivation of the judgement.
+\end{proof}
+
+\begin{lemma} \label{lemma:disa}
+  If $[[A **a B]]$ then $|A| *_{ax} |B|$.
+\end{lemma}
+\begin{proof}
+  Note that $|[[ Trait[A,B] ]]| = [[|A| -> |B|]]$, the rest are immediate.
+\end{proof}
+
+
+
+\begin{lemma} \label{lemma:sub}
+  If $[[A <: B]]$ then $[[|A| <: |B|]]$.
+\end{lemma}
+\begin{proof}
+Most of them are just \bname subtyping. We only show \rref{Sub-trait}.
+\begin{itemize}
+\item \[    \drule{Sub-trait} \]
+  \begin{longtable}[l]{ll}
+    $|B_1| <: |A_1|$ & By i.h. \\
+    $|A_2| <: |B_2|$ & By i.h. \\
+    $|A_1| \rightarrow |A_2| <: |B_1| \rightarrow |B_2|$ & By \textsc{S$\rightarrow$}
+  \end{longtable}
+\end{itemize}
+\end{proof}
+
+
+
+\begin{lemma} \label{lemma:dis}
+  If $[[G |- A ** B]]$ then $[[ |G| |- |A| ** |B| ]]$.
+\end{lemma}
+\begin{proof}
+  By induction on the derivation of the judgement.
+  \begin{itemize}
+  \item \Rref{D-top,D-topSym, D-recn} are immediate.
+  \item \[ \drule{D-var} \]
+    \begin{longtable}[l]{ll}
+      $|A| <: |B|$ & By Lemma~\ref{lemma:sub} \\
+      $[[a ** A in G]]$ & Given \\
+      $[[a ** |A| in |G|]]$ & Above \\
+      $|\Gamma| \vdash \alpha * |B|$ & By \textsc{D$\alpha$}
+    \end{longtable}
+  \item \[ \drule{D-varSym} \]
+    \begin{longtable}[l]{ll}
+      $|A| <: |B|$ & By Lemma~\ref{lemma:sub} \\
+      $[[a ** A in G]]$ & Given \\
+      $[[a ** |A| in |G|]]$ & Above \\
+      $|\Gamma| \vdash |B| * \alpha$ & By \textsc{D$\alpha$Sym}
+    \end{longtable}
+  \item \[ \drule{D-forall}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma|, \alpha * \inter{|A_1|}{|A_2|} \vdash |B| * |C|$ & By i.h. \\
+      $|\Gamma| \vdash \for{(\alpha * |A_1|)}{B} * \for{(\alpha * |A_2|)}{C}$ & By \textsc{D$\forall$}
+    \end{longtable}
+  \item \[ \drule{D-rec}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A| * |B| $ & By i.h. \\
+      $|\Gamma| \vdash \recordType{l}{|A|} * \recordType{l}{|B|}$ & By \textsc{DRec$_=$}
+    \end{longtable}
+  \item \[ \drule{D-arrow}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A_2| * |B_2| $ & By i.h. \\
+      $|\Gamma| \vdash |A_1| \rightarrow |A_2| * |B_1| \rightarrow |B_2|$ & By \textsc{D$\rightarrow$}
+    \end{longtable}
+  \item \[  \drule{D-andL}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A_1| * |B|$ & By i.h. \\
+      $|\Gamma| \vdash |A_2| * |B|$ & By i.h. \\
+      $|\Gamma| \vdash \inter{|A_1|}{|A_2|} * |B|$ & By \textsc{D\&L}
+    \end{longtable}
+  \item \[ \drule{D-andR}   \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A| * |B_1|$ & By i.h. \\
+      $|\Gamma| \vdash |A| * |B_2|$ & By i.h. \\
+      $|\Gamma| \vdash |A| * \inter{|B_1|}{|B_2|}$ & By \textsc{D\&R}
+    \end{longtable}
+  \item \[ \drule{D-trait}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A_2| * |B_2|$ & By i.h. \\
+      $|\Gamma| \vdash |A_1| \rightarrow |A_2| * |B_1| \rightarrow |B_2|$ & By \textsc{D$\rightarrow$}
+    \end{longtable}
+  \item \[ \drule{D-traitArrOne}   \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A_2| * |B_2|$ & By i.h. \\
+      $|\Gamma| \vdash |A_1| \rightarrow |A_2| * |B_1| \rightarrow |B_2|$ & By \textsc{D$\rightarrow$}
+    \end{longtable}
+  \item \[ \drule{D-traitArrTwo}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A_2| * |B_2|$ & By i.h. \\
+      $|\Gamma| \vdash |A_1| \rightarrow |A_2| * |B_1| \rightarrow |B_2|$ & By \textsc{D$\rightarrow$}
+    \end{longtable}
+  \item \[  \drule{D-ax}  \]
+    \begin{longtable}[l]{ll}
+      $|A| *_{ax} |B|$ & By Lemma~\ref{lemma:disa} \\
+      $|\Gamma| \vdash |A| * |B|$ & By \textsc{DAx}
+    \end{longtable}
+  \end{itemize}
+\end{proof}
+
+
+
+\begin{theorem}[Type-safe translation] We have that:
+  \begin{itemize}
+  \item If $[[G  |- E => A ~~> e]]$ then $ [[ |G|  |- e => |A| ]] $.
+  \item If $[[G  |- E <= A ~~> e]]$ then $ [[ |G|  |- e <= |A| ]] $.
+  \end{itemize}
+\end{theorem}
+\begin{proof}
+  By induction on the typing judgement.
+  \begin{itemize}
+  \item \Rref{Inf-top,Inf-int,Inf-var} are immediate.
+  \item \[ \drule{Inf-anno} \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e \Leftarrow |A|$ & By i.h. \\
+      $|\Gamma| \vdash e : |A| \Rightarrow |A|$ & By \rref*{TI-anno}
+    \end{longtable}
+  \item \[  \drule{Inf-app}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e_1 \Rightarrow |A_1| \rightarrow |A_2|$ & By i.h. \\
+      $|\Gamma| \vdash e_2 \Leftarrow |A_2| $ & By i.h. \\
+      $|\Gamma| \vdash \app{e_1}{e_2} \Rightarrow |A_2|$  & By \rref*{TI-app}
+    \end{longtable}
+  \item \[  \drule{Inf-tapp}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e \Rightarrow \for{(\alpha * |B|)}{|C|}$ & By i.h. \\
+      $|\Gamma| \vdash |A|$ & By Lemma~\ref{lemma:wf} \\
+      $|\Gamma| \vdash |A| * |B|$ & By Lemma~\ref{lemma:dis} \\
+      $|\Gamma| \vdash \tapp{e}{|A|} \Rightarrow [\alpha \mapsto |A|]|C|$ & By \rref*{TI-tapp}
+    \end{longtable}
+  \item \[  \drule{Inf-merge}   \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e_1 \Rightarrow |A|$ & By i.h. \\
+      $|\Gamma| \vdash e_2 \Rightarrow |B|$ & By i.h. \\
+      $|\Gamma| \vdash |A| * |B|$ & By Lemma~\ref{lemma:dis} \\
+      $|\Gamma| \vdash e_1 ,, e_2 \Rightarrow \inter{|A|}{|B|}$ & By \rref*{TI-merge}
+    \end{longtable}
+  \item \[   \drule{Inf-rec}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e \Rightarrow |A| $ & By i.h. \\
+      $|\Gamma| \vdash \recordCon{l}{e} \Rightarrow \recordType{l}{|A|}$ & By \rref*{TI-rec}
+    \end{longtable}
+  \item \[  \drule{Inf-proj}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e \Rightarrow \recordType{l}{|A|}$ & By i.h. \\
+      $|\Gamma| \vdash e.l \Rightarrow |A|$ & By \rref*{TI-proj}
+    \end{longtable}
+  \item \[  \drule{Inf-blam}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A|$ & By Lemma~\ref{lemma:wf} \\
+      $|\Gamma|, \alpha * |A| \vdash e \Rightarrow |B|$ & By i.h. \\
+      $|\Gamma| \vdash \blam{(\alpha * |A|)}{e} \Rightarrow \for{(\alpha * |A|)}{|B|}$ & By \rref*{TI-blam}
+    \end{longtable}
+  \item \[  \drule{Inf-lete}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma|, x : |A| \vdash e_1 \Leftarrow |A| $ & By i.h. \\
+      $|\Gamma|, x : |A| \vdash e_2 \Rightarrow |B| $ & By i.h. \\
+      $|\Gamma| \vdash [[letrec x : |A| = e1 in e2]] \Rightarrow |B|$ & By \rref*{TI-lete}
+    \end{longtable}
+  \item \[  \drule{Inf-new}  \]
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e_i \Rightarrow |A_i| \rightarrow |B_i|$ & By i.h. \\
+      $|A| <: |A_i|$ & By Lemma~\ref{lemma:sub} \\
+      $|\Gamma| \vdash [[|B_1| & .. & |B_n|]]$ & By Lemma~\ref{lemma:dis} \\
+      $[[|B_1| & .. & |B_n|]] <: |A|$ & By Lemma~\ref{lemma:sub} \\
+      $|\Gamma|, [[self]] : |A| \vdash [[self]] \Rightarrow |A|$ & By \rref*{TI-var} \\
+      $|\Gamma|, [[self]] : |A| \vdash [[self]] \Leftarrow |A_i|$ & By \rref*{TC-sub} \\
+      $|\Gamma|, [[self]] : |A| \vdash [[ei self]] \Rightarrow |B_i|$ & By \rref*{TI-app} \\
+      $|\Gamma|, [[self]] : |A| \vdash [[(e1 self) ,, .. ,, (en self)]] \Rightarrow [[|B_1| & .. & |B_n|]] $ & By \rref*{TI-merge} and above \\
+      $|\Gamma|, [[self]] : |A| \vdash [[(e1 self) ,, .. ,, (en self)]] \Leftarrow |A| $ & By \rref*{TC-sub} \\
+      $|\Gamma| \vdash [[letrec self : |A| = (e1 self) ,, .. ,, (en self)  in self]] \Rightarrow |A| $ & By \rref*{TI-lete}
+    \end{longtable}
+  \item \[  \drule{Inf-trait}   \]
+    \begin{longtable}[l]{ll}
+      $[[|G| , self : |B| ]] \vdash e_i \Rightarrow |B_i| \rightarrow |C_i|$ & By i.h. \\
+      $[[|G| , self : |B| |- e => |C| ]]$ & By i.h. \\
+      $|B| <: |B_i|$ & By Lemma~\ref{lemma:sub} \\
+      $|\Gamma| \vdash [[|C1| & .. & |Cn| & |C|]]$ & By Lemma~\ref{lemma:wf} \\
+      $[[|C1| & .. & |Cn| & |C|]] <: |A|$ & By Lemma~\ref{lemma:sub} \\
+      $[[|G| ,  self : |B| ]] \vdash [[self]] \Rightarrow |B|$ & By \rref*{TI-var} \\
+      $[[|G| ,  self : |B| ]] \vdash [[self]] \Leftarrow |B_i|$ & By \rref*{TC-sub} \\
+      $[[|G| ,  self : |B| ]] \vdash [[ei self]] \Rightarrow |C_i|$ & By \rref*{TI-app} \\
+      $[[|G| ,  self : |B| ]] \vdash [[(e1 self) ,, .. ,, (en self) ,, e]] \Rightarrow [[|C1| & .. & |Cn| & |C|]] $ & By \rref*{TI-merge} \\
+      $[[|G| ,  self : |B| ]] \vdash [[(e1 self) ,, .. ,, (en self) ,, e]] \Leftarrow |A| $ & By \rref*{TC-sub} \\
+      $|\Gamma| \vdash [[\ (self : |B|) . (e1 self) ,, .. ,, (en self) ,, e]] \Rightarrow [[|B| -> |A|]]$ & By \rref*{TI-abs} (annotated lambda typing)
+    \end{longtable}
+  \item \[  \drule{Inf-traitSuper}   \]
+    \begin{longtable}[l]{ll}
+      $[[|G| , self : |B| ]] \vdash e_i \Rightarrow |B_i| \rightarrow |C_i|$ & By i.h. \\
+      $[[|G| , self : |B|, super : |C1| & .. & |Cn| |- e => |C| ]]$ & By i.h. \\
+      $|B| <: |B_i|$ & By Lemma~\ref{lemma:sub} \\
+      $|\Gamma| \vdash [[|C1| & .. & |Cn| & |C|]]$ & By Lemma~\ref{lemma:wf} \\
+      $[[|C1| & .. & |Cn| & |C|]] <: |A|$ & By Lemma~\ref{lemma:sub} \\
+      $[[|G| ,  self : |B| ]] \vdash [[self]] \Rightarrow |B|$ & By \rref*{TI-var} \\
+      $[[|G| ,  self : |B| ]] \vdash [[self]] \Leftarrow |B_i|$ & By \rref*{TC-sub} \\
+      $[[|G| ,  self : |B| ]] \vdash [[ei self]] \Rightarrow |C_i|$ & By \rref*{TI-app} \\
+      $[[|G| ,  self : |B| ]] \vdash [[(e1 self) ,, .. ,, (en self)]] \Rightarrow [[|C1| & .. & |Cn|]] $ & By \rref*{TI-merge} \\
+      $[[|G| ,  self : |B|, super : |C1| & .. & |Cn| ]] \vdash [[super ,, e]] \Rightarrow [[|C1| & .. & |Cn| & |C|]] $ & By \rref*{TI-merge} \\
+      $[[|G| ,  self : |B| ]] \vdash [[let super = </ (ei self) // i IN 1..n /> in super ,, e]] \Rightarrow [[|C1| & .. & |Cn| & |C|]] $ & By \rref*{TI-let} (non-recursive let) \\
+      $[[|G| ,  self : |B| ]] \vdash [[let super = </ (ei self) // i IN 1..n /> in super ,, e]] \Leftarrow [[ |A|  ]] $ & By \rref*{TC-sub} \\
+      $|\Gamma| \vdash [[\ (self : |B|) . let super = </ (ei self) // i IN 1..n /> in super ,, e ]] \Rightarrow [[|B| -> |A|]]$ & By \rref*{TI-abs} (annotated lambda typing)
+    \end{longtable}
+  \item \[ \drule{Inf-forward}    \]
+    \begin{longtable}[l]{ll}
+      $[[ |G| |- e1 => |A| -> |B|  ]]$ & By i.h. \\
+      $[[ |G| |- e2 <= |A|  ]]$ & By i.h. \\
+      $[[ |G| |- e1 e2 => |B|  ]]$ & By \rref*{TI-app}
+    \end{longtable}
+  \item \drule{Chk-abs}
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash |A|$ & By Lemma~\ref{lemma:wf} \\
+      $|\Gamma|, x : |A| \vdash e \Leftarrow |B|$ & By i.h. \\
+      $|\Gamma| \vdash [[\x. e]] \Leftarrow |A| \rightarrow |B|$ & By \rref*{TC-abs}
+    \end{longtable}
+  \item \drule{Chk-sub}
+    \begin{longtable}[l]{ll}
+      $|\Gamma| \vdash e \Rightarrow |A|$ & By i.h. \\
+      $|A| <: |B|$ & By Lemma~\ref{lemma:sub} \\
+      $|\Gamma| \vdash |B|$ & By Lemma~\ref{lemma:wf} \\
+      $|\Gamma| \vdash e \Leftarrow |B|$ & By \rref*{TC-sub}
+    \end{longtable}
+  \end{itemize}
+\end{proof}

@@ -1,0 +1,345 @@
+
+\section{Simple Extensions and Variants}
+\label{sec:discussion}
+
+This section considers two simple variations on the presented system.
+The first variation extends the system with a top type, while the
+second variation considers a more declarative formulation using a
+subsumption rule.
+
+% In this section we consider top types to further
+% demonstrate the applicability of our definition of consistent subtyping. We also
+% discuss the design decisions involved in the declarative/algorithmic system.
+% and show how it
+% helps address the issue arising from the ambiguity of the type-directed
+% translation.
+
+\subsection{Top Types}
+\label{subsec:extension-top}
+
+%To demonstrate that our definition of consistent subtyping (\cref{def:decl-conssub}) is
+%applicable to other features,
+We argued that our definition of consistent subtyping (\cref{def:decl-conssub})
+generalizes the original definition by \citet{siek2007gradual}.
+We have shown its applicability to polymorphic types, for which 
+\citet{siek2007gradual} approach cannot
+be extended naturally. To strengthen our argument,
+we show how to extend our approach to $\tope$ types, which 
+is also not supported by \citet{siek2007gradual} approach. 
+
+%To aid comparison, we also
+%show how to adapt the AGT approach to support $\tope$ and verify that these two
+%approaches, though rooted in different foundations, coincide again on
+%\emph{simple types}. However, \cref{def:old-decl-conssub} of
+
+
+
+\paragraph{Consistent Subtyping with $\top$}
+In order to preserve the orthogonality between subtyping and consistency, we
+require $\top$ to be a common supertype of all static types, as shown in 
+\rref{S-Top}. This rule might seem strange at first glance, since even
+if we remove
+the requirement $A~\mathsf{static}$, the rule still seems reasonable.
+However, an important point is that, because of the orthogonality between
+subtyping and consistency, subtyping itself should not contain a potential
+information loss!
+Therefore, subtyping instances such as $\unknown \tsub \top$ are not allowed.
+For consistency, we add the rule that $\top$ is consistent with $\top$, which is
+actually included in the original reflexive rule $A \sim A$. For consistent
+subtyping, every type is a consistent subtype of $\top$, for example, $\nat \to
+\unknown \tconssub \top$.
+\begin{mathpar}
+  \SubTop \and \CTop \and \CSTop
+\end{mathpar}
+It is easy to verify that \cref{def:decl-conssub} is still equivalent to that in
+\cref{fig:decl:conssub} extended with \rref{CS-Top}. That is,
+\cref{lemma:properties-conssub} holds:
+\begin{restatable}[Extension with $\top$]{proposition}{proptop}
+  \label{prop:top}
+  $\tpreconssub A \tconssub B \Leftrightarrow \tpresub A \tsub C$, $C \sim D$, $\tpresub D \tsub B$, for some $C, D$.
+\end{restatable}
+% \begin{proof}\leavevmode
+%   \begin{itemize}
+%   \item From first to second: By induction on the derivation of consistent
+%     subtyping. We have extra case \rref{CS-Top} now, where $B = \top$.
+%     We can choose $C = A$, and
+%     $D$ by replacing the unknown types in $C$ by $\nat$. Namely, $D$ is a static
+%     type, so by \rref{S-Top} we are done.
+%   \item From second to first: By induction on the derivation of second
+%     subtyping. We have extra case \rref{S-Top} now, where
+%     $B = \top$, so $A \tconssub B$ holds by \rref{CS-Top}.
+%   \end{itemize}
+% \end{proof}
+
+% \paragraph{Extending AGT}
+
+We extend the definition of concretization (\cref{def:concret}) with $\top$
+by adding another equation $\gamma(\top) = \{\top\}$. Note that
+\citet{castagna2017gradual} also have this equation in their calculus.
+It is easy to verify that \cref{lemma:coincide-agt} still holds:
+\begin{restatable}[Equivalent to AGT on $\top$]{proposition}{propagttop}
+  \label{prop:agt-top}
+  $A \tconssub B$ if only if $A \agtconssub B$.
+\end{restatable}
+
+% \begin{proof}\leavevmode
+%   \begin{itemize}
+%   \item From left to right: By induction on the derivation of consistent
+%     subtyping. We have case \rref{CS-Top} now.
+%     It follows that for
+%     every static type $A_1 \in \gamma(A)$, we can derive $A_1 \tsub \top$ by
+%     \rref{S-Top}.
+%     We have $B_1 = B = \top$ and we are done.
+%   \item From right to left: By induction on the derivation of subtyping and
+%     inversion on the concretization. We have extra case \rref{S-Top} now, where
+%     $B$ is $\top$. So
+%     consistent subtyping directly holds.
+%   \end{itemize}
+% \end{proof}
+
+\paragraph{\citeauthor{siek2007gradual}'s Definition of Consistent Subtyping Does Not Work for $\top$.}
+
+As with the analysis in \cref{subsec:towards-conssub}, $\nat \to \unknown
+\tconssub \top$ only holds when we first apply consistency, then subtyping.
+However we cannot find a type $A$ such that
+$\nat \to \unknown \tsub A$ and $A \sim \top$. The
+following diagram depicts the situation:
+\begin{center}
+  \begin{tikzpicture}
+   \matrix (m) [matrix of math nodes,row sep=3em,column sep=4em,minimum width=2em]
+   {
+     \emptyset & \top \\
+     \nat \to \unknown &
+     \nat \to \nat \\};
+
+   \path[-stealth]
+   (m-2-1) edge node [left] {$\tsub$} (m-1-1)
+   (m-2-2) edge node [left] {$\tsub$} (m-1-2);
+
+   \draw
+   (m-1-1) edge node [above] {$\sim$} (m-1-2)
+   (m-2-1) edge node [below] {$\sim$} (m-2-2);
+ \end{tikzpicture}
+\end{center}
+
+\noindent Additionally we have a similar problem in
+extending the restriction operator: \emph{non-structural} masking between
+$\nat \to \unknown$ and $\top$ cannot be easily achieved.
+
+Note that both the top and universally quantified types can be seen as special
+cases of intersection types. Indeed, top is the intersection of the empty set,
+while a universally quantified type is the intersection of the infinite set of
+its instantiations \citep{Davies:2000:ITC:351240.351259}. Recall from
+\cref{subsec:agt} that \citet{castagna2017gradual} shows that consistent
+subtyping from AGT works well for intersection types, and our definition
+coincides with AGT (\cref{lemma:coincide-agt} and \cref{prop:agt-top}). We thus
+believe that our definition is compatible with conventional binary intersection
+types as well. Yet, a rigorous formalization would be needed to substantiate
+this belief.
+
+
+\subsection{A More Declarative Type System}
+\label{subsec:variant}
+
+In \cref{sec:type-system} we present our declarative system in terms of the
+matching and consistent subtyping judgments. The rationale behind this design
+choice is that the resulting declarative system combines subtyping and type
+consistency in the application rule, thus making it easier to design an
+algorithmic system accordingly. Still, one may wonder if it is possible to
+design a more declarative specification. For example, even though we mentioned
+that the subsumption rule is incompatible with consistent subtyping, it might be
+possible to accommodate a subsumption rule for normal subtyping (instead of
+consistent subtyping). In this section, we discuss an alternative for the
+design of the declarative system.
+
+\paragraph{Wrong Design}
+A naive design that does not work is to replace \rref{App} in
+\cref{fig:decl-typing} with the following two rules:
+\begin{mathpar}
+  \inferrule{
+          \dctx \byinf e : A 
+       \\ A \tsub B
+          }{
+          \dctx \byinf e : B
+          }\rname{V-Sub}
+
+  \inferrule{
+          \dctx \byinf e_1 : A 
+       \\ \dctx \byinf e_2 : A_1
+       \\ A \sim A_1 \to A_2
+          }{
+          \dctx \byinf e_1 ~ e_2 : A_2
+          }\rname{V-App1}
+\end{mathpar}
+\Rref{V-Sub} is the standard subsumption rule: if an expression $e$ has type
+$A$, then it can be assigned some type $B$ that is a supertype of $A$. \Rref{V-App1}
+first infers that $e_1$ has type $A$, and $e_2$ has type $A_1$, then
+it finds some $A_2$ so that $A$ is consistent with $A_1 \to A_2$.
+
+There would be two obvious benefits of this variant if it did work:
+firstly this approach closely resembles
+the traditional declarative type systems for calculi with subtyping; secondly it
+saves us from discussing various forms of $A$ in \rref{V-App1}, leaving the job
+to the consistency judgment.
+
+The design is wrong because of the information loss caused by the choice of
+$A_2$ in \rref{V-App1}. Suppose we have $\dpreinf \mathsf{plus} : \nat \to \nat
+\to \nat$, then we can apply it to $1$ to get
+\[
+  \inferrule{\dpreinf \mathsf{plus} : \nat \to \nat \to \nat
+    \\ \dpreinf 1 : \nat
+    \\ \nat \to \nat \to \nat \sim \nat \to \unknown \to \nat}
+    {\dpreinf \mathsf{plus}~1 : \unknown \to \nat}\rname{V-App1}
+\]
+Further applying it to $\truee$ we get
+\[
+  \inferrule
+  {\dpreinf \mathsf{plus}~1 \infto \unknown \to \nat
+    \\ \dpreinf \truee : \bool
+  \\ \unknown \to \nat \sim \bool \to \nat}
+    {\dpreinf \mathsf{plus}~1~\truee : \nat}\rname{V-App1}
+\]
+which is obviously wrong! The type consistency
+in \rref{V-App1} causes information loss for both the argument type $A_1$ and
+the return type $A_2$. The problem is that information of $A_2$ can get lost again if it
+appears in further applications.
+The moral of the story is that we should be very
+careful when using type consistency. We hypothesize that it is inevitable to do
+case analysis for the type of the function in an application (i.e., $A$ in
+\rref{V-App1}).
+
+
+\paragraph{Proper Declarative Design}
+
+The proper design refines the first variant by using a matching judgment to
+carefully distinguish two cases for the typing result of $e_1$ in \rref{V-App1}:
+(1) when it is an arrow type, and (2) when it is an unknown type. This
+variant replaces \rref{App} in \cref{fig:decl-typing} with the following
+rules:
+\begin{mathpar}
+  \inferrule{
+          \tctx \byinf e : A 
+       \\ A \tsub B
+          }{
+          \tctx \byinf e : B
+          }\rname{V-Sub}
+\and
+  \inferrule{
+          \Psi  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{A}
+       \\ \Psi  \vdash  \ottnt{A}  \triangleright  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}
+       \\ \Psi  \vdash  \ottnt{e_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{A_{{\mathrm{3}}}}
+       \\ \ottnt{A_{{\mathrm{1}}}}  \sim  \ottnt{A_{{\mathrm{3}}}}
+          }{
+          \Psi  \vdash  \ottnt{e_{{\mathrm{1}}}} \, \ottnt{e_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{A_{{\mathrm{2}}}}
+          }\rname{V-App2}
+\and
+\inferrule{
+          }{
+          \Psi  \vdash  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}  \triangleright  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}
+          }
+\and
+\inferrule{
+          }{
+          \Psi  \vdash  \star  \triangleright  \star  \rightarrow  \star
+          }
+\end{mathpar}
+\Rref{V-Sub} is the same as in the first variant. In \rref{V-App2}, we infer
+that $e_1$ has type $A$, and use the matching judgment to get an arrow type $\ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}$. Then we need to ensure that the argument type $A_3$ is \emph{consistent
+  with} (rather than a consistent subtype of) $A_1$, and use $A_2$ as the
+result type of the application. The matching judgment only deals with two cases,
+as polymorphic types are handled by \rref{V-Sub}. These rules are closely related
+to the ones in \citet{siek2006gradual} and \citet{siek2007gradual}.
+
+The more declarative nature of this system also implies that it is highly non-syntax-directed, 
+and it does not offer any insight into combining subtyping and
+consistency. We have proved in Coq the following lemmas to establish soundness
+and completeness of this system with respect to our original system (to avoid
+ambiguity, we use the notation $\byminf$ to indicate the more declarative
+version):
+
+\begin{clemma}[Completeness of $\byminf$]
+  If $\tctx \byinf e : A$, then $\tctx \byminf e : A$.
+\end{clemma}
+
+\begin{clemma}[Soundness of $\byminf$]
+  If $\tctx \byminf e : A$, then there exists some $B$, such that $\tctx \byinf e : B$ and $\tctx \bysub B \tsub A$.
+\end{clemma}
+
+% In the
+% following we discuss the relation between this new type system and the one we
+% presented in \cref{sec:type-system}.
+
+
+
+
+\begin{comment}
+\paragraph{Do soundness and completeness still hold?}
+
+The reader may ask if the declarative system produces types such as $\unknown
+\to \nat$ and $\unknown \to \bool$, but the algorithmic system computes the type
+$\unknown \to \unknown$, does it imply that the algorithmic system is no longer
+sound and complete with respect to the declarative system? The answer is no.
+First of all, note that \cref{thm:type_complete} reads ``$\dots$ there exist
+$\Delta$, $\Omega'$ and $A'$ such that $\dots$ $A = \ctxsubst{\Omega'}{A'}$''.
+Now if $A'$ (which is produced by the algorithmic system) contains some unsolved
+existential variables, it is up to us to pick solutions in $\Omega'$ to match up
+with $A$ (which is produced by the declarative system). More concretely, let us
+assume that the declarative system produces type $\unknown \to \nat$, and let
+$\Omega = f : \forall a. a \to a$ and $\Delta = f : \forall a. a \to a, \genA$,
+the completeness theorem asks if we can find a complete context $\Omega'$ that
+extends both $\Delta$ and $\Omega$ such that $\ctxsubst{\Omega'}{(\unknown \to
+  \genA)} = \unknown \to \nat$. It is obvious that $\Omega' = f : \forall a. a
+\to a, \genA = \nat$ is one such complete context, and we have
+$\ctxsubst{\Omega'}{(\unknown \to \genA)} = \unknown \to \nat$. So the
+algorithmic system is still complete. Similar arguments apply to the soundness
+theorem. 
+Secondly, an observation (which follows from the soundness and
+completeness theorems) is: if an
+expression is typeable with many types in the declarative system, the same expression must be
+typeable with a single type that contains some unsolved existential variables in the algorithmic
+algorithmic system.
+In that case, replacing them with $\unknown$ is the best
+strategy for the sake of execution.
+
+\paragraph{Existential variables do not indicate parametricity}
+
+Another reading of the above example may suggest that the result type $\unknown
+\to \genA$ implies parametricity, with the implication that $\genA$ can be
+changed arbitrarily without affecting the runtime behaviour of the
+program. A similar phenomenon is discussed by \citet{siek2008gradual}, where they
+argue that we cannot simply ``ignore dynamic types during unification''. In
+their view, a type signature with a type variable indicates parametricity, but
+this type does not. We agree that type variables do indicate parametricity, but
+\emph{existential variables} do not! An \emph{unsolved} existential variable
+indicates that a value's only constraint is that it may be cast to and from
+$\unknown$, thus may introduce runtime casts. A similar observation is also
+found in \citet{garcia2015principal}, where they have to distinguish between
+\emph{static polymorphism} and \emph{gradual polymorphism}, and in addition
+to gradual type parameters, they have to introduce the so-called \emph{static
+  type parameters}. We argue that our language design is much simpler, and our
+algorithmic system naturally embraces this distinction.
+
+Now the question is can we really do that? The syntax in \cref{fig:algo-syntax}
+specifies that the solution of a existential variable can only be a monotype.
+This is true if the existential variable has a solution. Reading of the output
+context reveals that $\genA$ does not have any solution at all. What is more,
+our target language (i.e., \pbc) has a nice property, the so-called
+``Jack-of-All-Trade Principle''~\cite{ahmed2011blame} that says if instantiating
+a type parameter to any given type yields an answer then instantiating that type
+parameter to $\unknown$ yields the same answer. In light of these, no type is
+more suitable than $\unknown$.
+
+We need to note that this does not mean we should always instantiate a type
+parameter to $\unknown$, as is the case in \pbc. One of our design principles is
+that we should extract as much information as possible from the static aspects of
+the type system, until there is nothing more we can know, then leave the job to
+the runtime checks.
+\end{comment}
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: ../paper.bib
+%%% End:

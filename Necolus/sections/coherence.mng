@@ -1,0 +1,422 @@
+%%% !!! WARNING: AUTO GENERATED. DO NOT MODIFY !!! %%%
+
+\section{Coherence}
+\label{sec:cohe}
+
+This section constructs logical relations to
+establish the coherence of \name. Finding a
+suitable definition of coherence for \name is already challenging in its own
+right. In what follows we reproduce the steps of finding a definition for coherence
+that is both intuitive and applicable. Then we present the
+construction of logical (equivalence) relations tailored to this 
+definition, and the connection between logical equivalence and coherence.
+
+
+
+\subsection{In Search of Coherence}
+
+In \oname the definition of coherence is based on
+$\alpha$-equivalence. More specifically, their coherence property states that
+any two target terms that a source expression elaborates into must be exactly the same (up to
+$\alpha$-equivalence). Unfortunately this syntactic notion of coherence is
+very fragile with respect to extensions.
+For example, it is not obvious how to retain this notion of coherence when adding more subtyping
+rules such as those in \cref{fig:subtype_decl}.
+
+If we permit ourselves to consider only the syntactic aspects of expressions,
+then very few expressions can be considered equal. The syntactic view also conflicts
+with the intuition that the significance of an expression lies in its
+contribution to the \textit{outcome} of a computation~\cite{Harper_2016}.
+Drawing inspiration from a wide range of literature on contextual
+equivalence~\cite{morris1969lambda}, we want a context-based notion of
+coherence. It is helpful to consider several examples before presenting the
+formal definition of our new semantically founded notion of coherence.
+
+\begin{example} \label{eg:1}
+The same \name expression $3$ can be typed $ \mathsf{Nat} $ in many ways: for instance, by \rref{T-lit}; by
+\rref{T-sub,S-refl}; or by \rref{T-sub,S-trans,S-refl}, resulting in \tname
+terms $3$, $\app{ \mathsf{id} }{3}$ and $\app{( \mathsf{id}  \circ  \mathsf{id} )}{3}$, respectively. It is apparent
+that these three \tname terms are ``equal'' in the sense that all reduce to the
+same numeral $3$.
+\end{example}
+
+\subparagraph{Expression Contexts and Contextual Equivalence.} To formalize the intuition,
+we introduce the notion of \textit{expression contexts}. An expression context $\mathcal{D}$
+is a term with a single hole $ [\cdot] $ (possibly under some binders) in it. The
+syntax of \tname expression contexts can be found in \cref{fig:contexts}. The typing
+judgement for expression contexts has the form $\mathcal{D}  \ottsym{:}  \ottsym{(}  \Delta  \vdash  \tau  \ottsym{)}  \rightsquigarrow  \ottsym{(}  \Delta'  \vdash  \tau'  \ottsym{)}$ where $(\Delta  \vdash  \tau)$ indicates
+the type of the hole. This judgement essentially says that plugging a well-typed
+term $\Delta  \vdash  \ottnt{e}  \ottsym{:}  \tau$ into the context $\mathcal{D}$ gives another well-typed term
+$\Delta'  \vdash  \mathcal{D}  \ottsym{\{}  \ottnt{e}  \ottsym{\}}  \ottsym{:}  \tau'$. We define a \textit{complete program} to mean any closed
+term of type $ \mathsf{Nat} $. The following two definitions capture the notion of
+\textit{contextual equivalence}.
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+\begin{tabular}{llll}\toprule
+  \tname contexts & $\mathcal{D}$ & $\Coloneqq$ & $ [\cdot]  \mid  \lambda \ottmv{x} .\, \mathcal{D}  \mid \mathcal{D} \, \ottnt{e_{{\mathrm{2}}}} \mid \ottnt{e_{{\mathrm{1}}}} \, \mathcal{D} \mid \langle  \mathcal{D}  \ottsym{,}  \ottnt{e_{{\mathrm{2}}}}  \rangle \mid \langle  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,}  \mathcal{D}  \rangle \mid \ottnt{c} \, \mathcal{D} \mid \ottsym{\{}  \ottmv{l}  \ottsym{=}  \mathcal{D}  \ottsym{\}} \mid \mathcal{D}  \ottsym{.}  \ottmv{l}$ \\
+  \name contexts & $\mathcal{C}$ & $\Coloneqq$ & $ [\cdot]  \mid  \lambda \ottmv{x} .\, \mathcal{C}  \mid \mathcal{C} \, E_{{\mathrm{2}}} \mid E_{{\mathrm{1}}} \, \mathcal{C} \mid E_{{\mathrm{1}}}  \,,,\,  \mathcal{C} \mid \mathcal{C}  \,,,\,  E_{{\mathrm{2}}} \mid \mathcal{C}  \ottsym{:}  \ottnt{A} \mid \ottsym{\{}  \ottmv{l}  \ottsym{=}  \mathcal{C}  \ottsym{\}} \mid \mathcal{C}  \ottsym{.}  \ottmv{l}$ \\ \bottomrule
+\end{tabular}
+  \end{small}
+  \caption{Expression contexts of \name and \tname}
+  \label{fig:contexts}
+\end{figure}
+
+\begin{definition}[Kleene Equality]
+  Two complete programs, $\ottnt{e}$ and $\ottnt{e'}$, are Kleene equal, written
+  $\kleq{\ottnt{e}}{\ottnt{e'}}$, iff there exists $i$ such that $\ottnt{e}  \longrightarrow^{*}  \ottmv{i}$ and $\ottnt{e'}  \longrightarrow^{*}  \ottmv{i}$.
+\end{definition}
+
+\begin{definition}[\tname Contextual Equivalence] \label{def:cxtx} \leavevmode
+  \begin{center}
+  \begin{tabular}{lll}
+    $ \Delta   \vdash  \ctxeq{ \ottnt{e_{{\mathrm{1}}}} }{ \ottnt{e_{{\mathrm{2}}}} }{ \tau }  $ & $\defeq $ & $\Delta  \vdash  \ottnt{e_{{\mathrm{1}}}}  \ottsym{:}  \tau \land \Delta  \vdash  \ottnt{e_{{\mathrm{2}}}}  \ottsym{:}  \tau \ \land $ \\
+                                 & & $\forall \mathcal{D}.\ \mathcal{D}  \ottsym{:}  \ottsym{(}  \Delta  \vdash  \tau  \ottsym{)}  \rightsquigarrow  \ottsym{(}   \bullet   \vdash  \mathsf{Nat}  \ottsym{)}  \Longrightarrow \kleq{\mathcal{D}  \ottsym{\{}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{\}}}{\mathcal{D}  \ottsym{\{}  \ottnt{e_{{\mathrm{2}}}}  \ottsym{\}}}  $
+  \end{tabular}
+  \end{center}
+\end{definition}
+
+\noindent Regarding Example~\ref{eg:1}, it seems adequate to say that $3$ and $\app{ \mathsf{id} }{3}$
+are contextually equivalent. Does this imply that coherence
+can be based on Definition~\ref{def:cxtx}? Unfortunately it cannot, as demonstrated by the
+following example.
+
+
+\begin{example} \label{eg:2} It may be counter-intuitive that two \tname terms
+  $ \lambda \ottmv{x} .\, \pi_1 \, \ottmv{x} $ and $ \lambda \ottmv{x} .\, \pi_2 \, \ottmv{x} $ should also be considered equal. To see
+  why, first note that they are both translations of the same \name expression:
+  $\ottsym{(}   \lambda \ottmv{x} .\, \ottmv{x}   \ottsym{)}  \ottsym{:}  \mathsf{Nat}  \, \& \,  \mathsf{Nat}  \rightarrow  \mathsf{Nat}$. What can we do with this lambda
+  abstraction? We can apply it to $1 : \mathsf{Nat}  \, \& \,  \mathsf{Nat}$ for example. In that case,
+  we get two translations $\app{\ottsym{(}   \lambda \ottmv{x} .\, \pi_1 \, \ottmv{x}   \ottsym{)}}{\pair{1}{1}}$ and $\app{\ottsym{(}   \lambda \ottmv{x} .\, \pi_2 \, \ottmv{x}   \ottsym{)}}{\pair{1}{1}}$,
+  which both reduce to the same numeral $1$. However, $ \lambda \ottmv{x} .\, \pi_1 \, \ottmv{x} $ and $ \lambda \ottmv{x} .\, \pi_2 \, \ottmv{x} $
+  are definitely not equal according to Definition~\ref{def:cxtx}, as one can find a
+  context $\app{ [\cdot] }{\pair{1}{2}}$ where the two terms reduce to two
+  different numerals. The problem is that not every well-typed \tname term
+  can be obtained from a well-typed \name expression through the
+  elaboration semantics. For
+  example, $\app{ [\cdot] }{\pair{1}{2}}$ should not be considered because the
+  (non-disjoint) source expression $\mer{1}{2}$ is rejected by the type system
+  of the source calculus \name and thus never gets elaborated into $\pair{1}{2}$.
+\end{example}
+
+\subparagraph{\name Contexts and Refined Contextual Equivalence.}
+Example~\ref{eg:2} hints at a shift from \tname contexts to \name contexts $\mathcal{C}$,
+whose syntax is shown in \cref{fig:contexts}. Due to the bidirectional
+nature of the type system, the typing judgement of $\mathcal{C}$ features 4
+different forms:
+\begin{mathpar}
+  \mathcal{C}  \ottsym{:}  \ottsym{(}  \Gamma \, \Rightarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Gamma' \, \Rightarrow \, \ottnt{A'}  \ottsym{)}  \rightsquigarrow  \mathcal{D} \and
+  \mathcal{C}  \ottsym{:}  \ottsym{(}  \Gamma \, \Leftarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Gamma' \, \Rightarrow \, \ottnt{A'}  \ottsym{)}  \rightsquigarrow  \mathcal{D} \and
+  \mathcal{C}  \ottsym{:}  \ottsym{(}  \Gamma \, \Rightarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Gamma' \, \Leftarrow \, \ottnt{A'}  \ottsym{)}  \rightsquigarrow  \mathcal{D} \and
+  \mathcal{C}  \ottsym{:}  \ottsym{(}  \Gamma \, \Leftarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Gamma' \, \Leftarrow \, \ottnt{A'}  \ottsym{)}  \rightsquigarrow  \mathcal{D}
+\end{mathpar}
+We write $\mathcal{C}  \ottsym{:}  \ottsym{(}  \Gamma  \Leftrightarrow  \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Gamma'  \Leftrightarrow'  \ottnt{A'}  \ottsym{)}  \rightsquigarrow  \mathcal{D}$ to abbreviate the above 4 different forms.
+Take $\mathcal{C}  \ottsym{:}  \ottsym{(}  \Gamma \, \Rightarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Gamma' \, \Rightarrow \, \ottnt{A'}  \ottsym{)}  \rightsquigarrow  \mathcal{D}$ for example, it reads given a
+well-typed \name expression $\Gamma  \vdash  E \, \Rightarrow \, \ottnt{A}$, we have $\Gamma'  \vdash  \mathcal{C}  \ottsym{\{}  E  \ottsym{\}} \, \Rightarrow \, \ottnt{A'}$. The judgement also generates a \tname context $\mathcal{D}$ such that $\mathcal{D}  \ottsym{:}  \ottsym{(}  \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \vdash  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \ottsym{)}  \rightsquigarrow  \ottsym{(}  \ottsym{\mbox{$\mid$}}  \Gamma'  \ottsym{\mbox{$\mid$}}  \vdash  \ottsym{\mbox{$\mid$}}  \ottnt{A'}  \ottsym{\mbox{$\mid$}}  \ottsym{)}$ holds by
+construction. The typing rules appear in the appendix. Now we are ready to
+refine Definition~\ref{def:cxtx}'s contextual equivalence to take into
+consideration both \name and \tname contexts.
+
+
+\begin{definition}[\name Contextual Equivalence] \label{def:cxtx2} \leavevmode
+  \begin{center}
+  \begin{tabular}{lll}
+    $\Gamma  \vdash  E_{{\mathrm{1}}}  \backsimeq_{ctx}  E_{{\mathrm{2}}}  \ottsym{:}  \ottnt{A} $ & $\defeq $ & $\forall \ottnt{e_{{\mathrm{1}}}}, \ottnt{e_{{\mathrm{2}}}}, \mathcal{C}, \mathcal{D}.\   \Gamma   \vdash   E_{{\mathrm{1}}}   \Rightarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e_{{\mathrm{1}}}} }  \land  \Gamma   \vdash   E_{{\mathrm{2}}}   \Rightarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e_{{\mathrm{2}}}} }  \ \land $ \\
+                                 & & $\mathcal{C}  \ottsym{:}  \ottsym{(}  \Gamma \, \Rightarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}   \bullet  \, \Rightarrow \, \mathsf{Nat}  \ottsym{)}  \rightsquigarrow  \mathcal{D}  \Longrightarrow \kleq{\mathcal{D}  \ottsym{\{}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{\}}}{\mathcal{D}  \ottsym{\{}  \ottnt{e_{{\mathrm{2}}}}  \ottsym{\}}}  $
+  \end{tabular}
+  \end{center}
+\end{definition}
+\begin{remark}
+  For brevity we only consider expressions in the inference mode. Our Coq formalization is complete with two modes.
+\end{remark}
+\noindent Regarding Example~\ref{eg:2}, a possible \name context is $[\cdot] \,  1   \ottsym{:}  \ottsym{(}   \bullet  \, \Rightarrow \, \mathsf{Nat}  \, \& \,  \mathsf{Nat}  \rightarrow  \mathsf{Nat}  \ottsym{)}  \mapsto  \ottsym{(}   \bullet  \, \Rightarrow \, \mathsf{Nat}  \ottsym{)}  \rightsquigarrow  [\cdot] \, \langle   1   \ottsym{,}   1   \rangle$.
+We can verify that both $ \lambda \ottmv{x} .\, \pi_1 \, \ottmv{x} $ and $ \lambda \ottmv{x} .\, \pi_2 \, \ottmv{x} $ produce $1$ in the context $[\cdot] \, \langle   1   \ottsym{,}   1   \rangle$.
+Of course we should consider all possible contexts to be certain they are truly equal. From now on, we
+use the symbol $\backsimeq_{ctx}$ to refer to contextual equivalence in
+Definition~\ref{def:cxtx2}. With Definition~\ref{def:cxtx2} we can formally state that \name is coherent
+in the following theorem:
+
+\begin{restatable}[Coherence]{theorem}{coherence} \label{thm:coherence}
+  If $\Gamma  \vdash  E \, \Rightarrow \, \ottnt{A}$ then $\Gamma  \vdash  E  \backsimeq_{ctx}  E  \ottsym{:}  \ottnt{A}$.
+\end{restatable}
+\noindent For the same reason as in Definition~\ref{def:cxtx2}, we only consider
+expressions in the inference mode. The rest of the section is devoted to proving
+that Theorem~\ref{thm:coherence} holds.
+
+\subsection{Logical Relations}
+
+Intuitive as Definition~\ref{def:cxtx2} may seem, it is generally very hard to prove
+contextual equivalence directly, since it involves quantification over
+\textit{all} possible contexts. Worse still, two kinds of contexts are involved
+in Theorem~\ref{thm:coherence}, which makes reasoning even more tedious. The key to
+simplifying the reasoning is to exploit types by using logical
+relations~\cite{tait, statman1985logical, plotkin1973lambda}.
+
+
+\subparagraph{In Search of a Logical Relation.}
+It is worth pausing to ponder what kind of relation we are looking for. % From
+% Example~\ref{eg:2}, it is clear that pairs have a special status in \tname. Indeed they
+% ought to be, since pairs originate from merges or subtyping. Also disjointness
+% on intersection types should correspond to some sort of constraints over pairs.
+The high-level intuition behind the relation is to capture the
+notion of ``coherent'' values. These values are unambiguous in every context. A
+moment of thought leads us to the following important observations:
+
+\begin{observation}[Disjoint values are unambiguous] \label{ob:1} The relation should relate values originating
+  from disjoint intersection types. Those values are essentially translated from
+  merges, and since \rref{T-merge} ensures disjointness, they are unambiguous.
+  For example, $\pair{1}{\recordCon{l}{1}}$ corresponds to the type $\mathsf{Nat}  \, \& \,  \ottsym{\{}  \ottmv{l}  \ottsym{:}  \mathsf{Nat}  \ottsym{\}}$. It is always clear which one to choose ($1$ or
+  $\recordCon{l}{1}$) no matter how this pair is used in certain contexts.
+\end{observation}
+
+\begin{observation}[Duplication is unambiguous] \label{ob:2} The relation should
+  relate values originating from non-disjoint intersection types, only if the values are duplicates.
+  This may sound baffling since the whole point of disjointness is to rule out
+  (ambiguous) expressions such as $\mer{1}{2}$. However, $\mer{1}{2}$ never gets
+  elaborated, and the only values corresponding to $\mathsf{Nat}  \, \& \,  \mathsf{Nat}$ are those
+  pairs such as $\pair{1}{1}$, $\pair{2}{2}$, etc. Those values are essentially
+  generated from \rref{T-sub} and are also unambiguous.
+\end{observation}
+
+To formalize values being ``coherent'' based on the above observations,
+\Cref{fig:logical} defines two (binary) logical relations for \tname, one for
+values ($\valR{\tau_{{\mathrm{1}}}}{\tau_{{\mathrm{2}}}}$) and one for terms ($\eeR{\tau_{{\mathrm{1}}}}{\tau_{{\mathrm{2}}}}$). We
+require that any two values $(\ottnt{v_{{\mathrm{1}}}}, \ottnt{v_{{\mathrm{2}}}}) \in \valR{\tau_{{\mathrm{1}}}}{\tau_{{\mathrm{2}}}}$ are
+closed and well-typed. For succinctness, we write $\valRR{\tau}$ to mean
+$\valR{\tau}{\tau}$, and similarly for $\eeRR{\tau}$.
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+\begin{align*}
+   (  \ottnt{v_{{\mathrm{1}}}}  ,  \ottnt{v_{{\mathrm{2}}}}  ) \in \valR{ \mathsf{Nat} }{ \mathsf{Nat} }  &\defeq \exists i, v_1 = v_2 = i \\
+   (  \ottnt{v_{{\mathrm{1}}}}  ,  \ottnt{v_{{\mathrm{2}}}}  ) \in \valR{ \tau_{{\mathrm{1}}}  \rightarrow  \tau_{{\mathrm{2}}} }{ \tau'_{{\mathrm{1}}}  \rightarrow  \tau'_{{\mathrm{2}}} }  &\defeq \forall  (  \ottnt{v}  ,  \ottnt{v'}  ) \in \valR{ \tau_{{\mathrm{1}}} }{ \tau'_{{\mathrm{1}}} } ,  (  \ottnt{v_{{\mathrm{1}}}} \, \ottnt{v}  ,  \ottnt{v_{{\mathrm{2}}}} \, \ottnt{v'}  ) \in \eeR{ \tau_{{\mathrm{2}}} }{ \tau'_{{\mathrm{2}}} }  \\
+   (  \ottsym{\{}  \ottmv{l}  \ottsym{=}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{\}}  ,  \ottsym{\{}  \ottmv{l}  \ottsym{=}  \ottnt{v_{{\mathrm{2}}}}  \ottsym{\}}  ) \in \valR{ \ottsym{\{}  \ottmv{l}  \ottsym{:}  \tau_{{\mathrm{1}}}  \ottsym{\}} }{ \ottsym{\{}  \ottmv{l}  \ottsym{:}  \tau_{{\mathrm{2}}}  \ottsym{\}} }  &\defeq  (  \ottnt{v_{{\mathrm{1}}}}  ,  \ottnt{v_{{\mathrm{2}}}}  ) \in \valR{ \tau_{{\mathrm{1}}} }{ \tau_{{\mathrm{2}}} }  \\
+   (  \langle  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \rangle  ,  \ottnt{v_{{\mathrm{3}}}}  ) \in \valR{ \tau_{{\mathrm{1}}}  \times  \tau_{{\mathrm{2}}} }{ \tau_{{\mathrm{3}}} }  &\defeq  (  \ottnt{v_{{\mathrm{1}}}}  ,  \ottnt{v_{{\mathrm{3}}}}  ) \in \valR{ \tau_{{\mathrm{1}}} }{ \tau_{{\mathrm{3}}} }  \land  (  \ottnt{v_{{\mathrm{2}}}}  ,  \ottnt{v_{{\mathrm{3}}}}  ) \in \valR{ \tau_{{\mathrm{2}}} }{ \tau_{{\mathrm{3}}} }  \\
+   (  \ottnt{v_{{\mathrm{3}}}}  ,  \langle  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \rangle  ) \in \valR{ \tau_{{\mathrm{3}}} }{ \tau_{{\mathrm{1}}}  \times  \tau_{{\mathrm{2}}} }  &\defeq  (  \ottnt{v_{{\mathrm{3}}}}  ,  \ottnt{v_{{\mathrm{1}}}}  ) \in \valR{ \tau_{{\mathrm{3}}} }{ \tau_{{\mathrm{1}}} }  \land  (  \ottnt{v_{{\mathrm{3}}}}  ,  \ottnt{v_{{\mathrm{2}}}}  ) \in \valR{ \tau_{{\mathrm{3}}} }{ \tau_{{\mathrm{2}}} }  \\
+   (  \ottnt{v_{{\mathrm{1}}}}  ,  \ottnt{v_{{\mathrm{2}}}}  ) \in \valR{ \tau_{{\mathrm{1}}} }{ \tau_{{\mathrm{2}}} }   &\defeq \mathsf{true} \quad \text{otherwise} \\
+   (  \ottnt{e_{{\mathrm{1}}}}  ,  \ottnt{e_{{\mathrm{2}}}}  ) \in \eeR{ \tau_{{\mathrm{1}}} }{ \tau_{{\mathrm{2}}} }  &\defeq \exists \ottnt{v_{{\mathrm{1}}}} \ottnt{v_{{\mathrm{2}}}}, \ottnt{e_{{\mathrm{1}}}}  \longrightarrow^{*}  \ottnt{v_{{\mathrm{1}}}} \land \ottnt{e_{{\mathrm{2}}}}  \longrightarrow^{*}  \ottnt{v_{{\mathrm{2}}}} \land  (  \ottnt{v_{{\mathrm{1}}}}  ,  \ottnt{v_{{\mathrm{2}}}}  ) \in \valR{ \tau_{{\mathrm{1}}} }{ \tau_{{\mathrm{2}}} } 
+\end{align*}
+  \end{small}
+  \caption{Logical relations for \tname}
+  \label{fig:logical}
+\end{figure}
+
+
+\begin{remark}
+  The logical relations are heterogeneous, parameterized by two types, one for
+  each argument. This is intended to relate values of different types.
+\end{remark}
+
+
+\begin{remark}
+  The logical relations resemble those given by Biernacki and Polesiuk~\cite{biernacki2015logical}, as
+  both are heterogeneous. However, two important differences are worth pointing
+  out. Firstly, our value relation for product types ($\valR{\tau_{{\mathrm{1}}}  \times  \tau_{{\mathrm{2}}}}{\tau_{{\mathrm{3}}}}$ and $\valR{\tau_{{\mathrm{3}}}}{\tau_{{\mathrm{1}}}  \times  \tau_{{\mathrm{2}}}}$) is unusual.
+  Secondly, their value relation disallows relating functions with natural numbers, while
+  ours does not. As we explain shortly, both points are related to disjointness.
+\end{remark}
+
+
+First let us consider $\valR{\tau_{{\mathrm{1}}}}{\tau_{{\mathrm{2}}}}$. The first three cases are
+standard: Two natural numbers are related iff they are the same numeral. Two
+functions are related iff they map related arguments to related results. Two
+singleton records are related iff they have the same label and their fields are
+related. These cases reflect Observation~\ref{ob:2}: the same type
+corresponds to the same value.
+
+In the next two cases one of the parameterized types is a product type. In those
+cases, the relation distributes over the product constructor $ \times $. This may
+look strange at first, since the traditional way of relating pairs is by
+relating their components pairwise. That is, $\langle  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \rangle$ and $\langle  \ottnt{v'_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v'_{{\mathrm{2}}}}  \rangle$
+are related iff (1) $\ottnt{v_{{\mathrm{1}}}}$ and $\ottnt{v'_{{\mathrm{1}}}}$ are related and (2) $\ottnt{v_{{\mathrm{2}}}}$ and
+$\ottnt{v'_{{\mathrm{2}}}}$ are related. According to our definition, we also require that (3)
+$\ottnt{v_{{\mathrm{1}}}}$ and $\ottnt{v'_{{\mathrm{2}}}}$ are related and (4) $\ottnt{v_{{\mathrm{2}}}}$ and $\ottnt{v'_{{\mathrm{1}}}}$ are related.
+The design of these two cases is influenced by the disjointness of intersection
+types. Below are two rules dealing with intersection types:
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.5,right=#1,#2]
+    {#3}
+    {#4}
+}
+\begin{mathpar}
+ \drule{D-andL} \and \drule{D-andR}
+\end{mathpar}
+Notice the structural similarity between these two rules and the two cases. Now
+it is clear that the cases for products manifests disjointness of intersection
+types, reflecting Observation~\ref{ob:1}. Together with the last case, we can
+show that disjointness and the value relation are connected by the following
+lemma:
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.5,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
+\begin{lemma}[Disjoint values are in a value relation]\label{lemma:disjoint}
+  If $\ottnt{A_{{\mathrm{1}}}}  *  \ottnt{A_{{\mathrm{2}}}}$ and $v_1 : |A_1|$ and $v_2 : |A_2|$, then $ (  \ottnt{v_{{\mathrm{1}}}}  ,  \ottnt{v_{{\mathrm{2}}}}  ) \in \valR{ \ottsym{\mbox{$\mid$}}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}} }{ \ottsym{\mbox{$\mid$}}  \ottnt{A_{{\mathrm{2}}}}  \ottsym{\mbox{$\mid$}} } $.
+\end{lemma}
+\begin{proof}
+  By induction on the derivation of disjointness.
+\end{proof}
+
+Next we consider $\eeR{\tau_{{\mathrm{1}}}}{\tau_{{\mathrm{2}}}}$, which is standard. Informally it expresses
+that two closed terms $\ottnt{e_{{\mathrm{1}}}}$ and $\ottnt{e_{{\mathrm{2}}}}$ are related iff
+they evaluate to two values $\ottnt{v_{{\mathrm{1}}}}$ and $\ottnt{v_{{\mathrm{2}}}}$ that are related.
+
+
+
+\subparagraph{Logical Equivalence.}
+The logical relations can be lifted to open terms in the usual way. First we give the
+semantic interpretation of typing contexts:
+\begin{definition}[Interpretation of Typing Contexts]
+  $(\gamma_1, \gamma_2) \in \ggR{\Delta_{{\mathrm{1}}}}{\Delta_{{\mathrm{2}}}}$ is defined as follows:
+  \begin{mathpar}
+    \ottaltinferrule{}{}{ }{(\emptyset, \emptyset) \in  \ggR{ \bullet }{ \bullet }} \and
+    \ottaltinferrule{}{}{  (  \ottnt{v_{{\mathrm{1}}}}  ,  \ottnt{v_{{\mathrm{2}}}}  ) \in \valR{ \tau_{{\mathrm{1}}} }{ \tau_{{\mathrm{2}}} }   \\ (\gamma_1,\gamma_2) \in \ggR{\Delta_{{\mathrm{1}}}}{\Delta_{{\mathrm{2}}}} \\ \mathsf{fresh}\, x }{(\gamma_1[x \mapsto v_1], \gamma_2[x \mapsto v_2]) \in \ggR{\Delta_{{\mathrm{1}}}  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau_{{\mathrm{1}}}}{\Delta_{{\mathrm{2}}}  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau_{{\mathrm{2}}}}}
+  \end{mathpar}
+\end{definition}
+Two open terms are related if every pair of related closing substitutions
+makes them related:
+\begin{definition}[Logical equivalence]
+  Let $\Delta_{{\mathrm{1}}}  \vdash  \ottnt{e_{{\mathrm{1}}}}  \ottsym{:}  \tau_{{\mathrm{1}}}$ and $\Delta_{{\mathrm{2}}}  \vdash  \ottnt{e_{{\mathrm{2}}}}  \ottsym{:}  \tau_{{\mathrm{2}}}$.
+  \[
+     \Delta_{{\mathrm{1}}}  ;  \Delta_{{\mathrm{2}}}   \vdash  \logeq{ \ottnt{e_{{\mathrm{1}}}} }{ \ottnt{e_{{\mathrm{2}}}} } :  \tau_{{\mathrm{1}}}  ;  \tau_{{\mathrm{2}}}  \defeq \forall \gamma_1, \gamma_2 . \  (\gamma_1, \gamma_2) \in \ggR{\Delta_{{\mathrm{1}}}}{\Delta_{{\mathrm{2}}}} \Longrightarrow (\app{\gamma_1}{\ottnt{e_{{\mathrm{1}}}}}, \app{\gamma_2}{\ottnt{e_{{\mathrm{2}}}}}) \in \eeR{\tau_{{\mathrm{1}}}}{\tau_{{\mathrm{2}}}}
+  \]
+\end{definition}
+For succinctness, we write $ \Delta   \vdash  \logeq{ \ottnt{e_{{\mathrm{1}}}} }{ \ottnt{e_{{\mathrm{2}}}} } :  \tau $ to mean $ \Delta  ;  \Delta   \vdash  \logeq{ \ottnt{e_{{\mathrm{1}}}} }{ \ottnt{e_{{\mathrm{2}}}} } :  \tau  ;  \tau $.
+
+
+\subsection{Establishing Coherence}
+
+With all the machinery in place, we are now ready to prove Theorem~\ref{thm:coherence}. But we need
+several lemmas to set the stage.
+
+First we show compatibility lemmas, which state that logical equivalence
+is preserved by every language construct. Most are standard and thus are
+omitted. We show only one compatibility lemma that is specific to our relations:
+
+\begin{lemma}[Coercion Compatibility]   \label{lemma:co-compa}
+  Suppose that $\ottnt{c}  \vdash  \tau_{{\mathrm{1}}} \, \triangleright \, \tau_{{\mathrm{2}}}$,
+  % The logical relation is preserved by coercion application.
+  \begin{itemize}
+  \item If $ \Delta_{{\mathrm{1}}}  ;  \Delta_{{\mathrm{2}}}   \vdash  \logeq{ \ottnt{e_{{\mathrm{1}}}} }{ \ottnt{e_{{\mathrm{2}}}} } :  \tau_{{\mathrm{1}}}  ;  \tau_{{\mathrm{0}}} $ then $ \Delta_{{\mathrm{1}}}  ;  \Delta_{{\mathrm{2}}}   \vdash  \logeq{ \ottnt{c} \, \ottnt{e_{{\mathrm{1}}}} }{ \ottnt{e_{{\mathrm{2}}}} } :  \tau_{{\mathrm{2}}}  ;  \tau_{{\mathrm{0}}} $.
+  \item If $ \Delta_{{\mathrm{1}}}  ;  \Delta_{{\mathrm{2}}}   \vdash  \logeq{ \ottnt{e_{{\mathrm{1}}}} }{ \ottnt{e_{{\mathrm{2}}}} } :  \tau_{{\mathrm{0}}}  ;  \tau_{{\mathrm{1}}} $ then $ \Delta_{{\mathrm{1}}}  ;  \Delta_{{\mathrm{2}}}   \vdash  \logeq{ \ottnt{e_{{\mathrm{1}}}} }{ \ottnt{c} \, \ottnt{e_{{\mathrm{2}}}} } :  \tau_{{\mathrm{0}}}  ;  \tau_{{\mathrm{2}}} $.
+  \end{itemize}
+\end{lemma}
+\begin{proof}
+  By induction on the typing derivation of the coercion $\ottnt{c}$.
+\end{proof}
+
+
+The ``Fundamental Property'' states that any well-typed expression is related to
+itself by the logical relation. In our elaboration setting, we rephrase it so
+that any two \tname terms elaborated from the \textit{same} \name expression are related
+by the logical relation. To prove it, we require Theorem~\ref{thm:uniq}.
+
+\begin{theorem}[Inference Uniqueness] \label{thm:uniq}
+  If $\Gamma  \vdash  E \, \Rightarrow \, \ottnt{A_{{\mathrm{1}}}}$ and $\Gamma  \vdash  E \, \Rightarrow \, \ottnt{A_{{\mathrm{2}}}}$, then $\ottnt{A_{{\mathrm{1}}}} \equiv \ottnt{A_{{\mathrm{2}}}}$.
+\end{theorem}
+
+\begin{theorem}[Fundamental Property]  \label{thm:co-log} We have that:
+  \begin{itemize}
+  \item If $ \Gamma   \vdash   E   \Rightarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e} } $ and $ \Gamma   \vdash   E   \Rightarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e'} } $, then $ \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}   \vdash  \logeq{ \ottnt{e} }{ \ottnt{e'} } :  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}} $.
+  \item If $ \Gamma   \vdash   E   \Leftarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e} } $ and $ \Gamma   \vdash   E   \Leftarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e'} } $, then $ \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}   \vdash  \logeq{ \ottnt{e} }{ \ottnt{e'} } :  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}} $.
+  \end{itemize}
+\end{theorem}
+\begin{proof}
+  The proof follows by induction on the first derivation. The most interesting case is \rref{T-sub}
+  % \begin{mathpar}
+  %   \drule{T-sub}
+  % \end{mathpar}
+  where we need Theorem~\ref{thm:uniq} to be able to
+  apply the induction hypothesis. Then we apply Lemma~\ref{lemma:co-compa} to say
+  that the coercion generated preserves the relation between terms. For the other cases
+  we use the appropriate compatibility lemmas.
+\end{proof}
+\begin{remark}
+  It is interesting to ask whether the Fundamental Property holds in the target language. That is,
+  if $\Delta  \vdash  \ottnt{e}  \ottsym{:}  \tau$ then $ \Delta   \vdash  \logeq{ \ottnt{e} }{ \ottnt{e} } :  \tau $. Clearly this does not
+  hold for every well-typed \tname term. However, as we have emphasized, we do
+  not need to consider every \tname term. Our logical relation is carefully formulated
+  so that the Fundamental Property holds in the source language.
+\end{remark}
+
+
+We show that logical equivalence is preserved by \name contexts:
+
+\begin{lemma}[Congruence] \label{lemma:cong}
+ If $\mathcal{C}  \ottsym{:}  \ottsym{(}  \Gamma  \Leftrightarrow  \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Gamma'  \Leftrightarrow'  \ottnt{A'}  \ottsym{)}  \rightsquigarrow  \mathcal{D}$, $\Gamma  \vdash  E_{{\mathrm{1}}}  \Leftrightarrow  \ottnt{A}  \rightsquigarrow  \ottnt{e_{{\mathrm{1}}}}$, $\Gamma  \vdash  E_{{\mathrm{2}}}  \Leftrightarrow  \ottnt{A}  \rightsquigarrow  \ottnt{e_{{\mathrm{2}}}}$
+ and $ \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}   \vdash  \logeq{ \ottnt{e_{{\mathrm{1}}}} }{ \ottnt{e_{{\mathrm{2}}}} } :  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}} $, then $ \ottsym{\mbox{$\mid$}}  \Gamma'  \ottsym{\mbox{$\mid$}}   \vdash  \logeq{ \mathcal{D}  \ottsym{\{}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{\}} }{ \mathcal{D}  \ottsym{\{}  \ottnt{e_{{\mathrm{2}}}}  \ottsym{\}} } :  \ottsym{\mbox{$\mid$}}  \ottnt{A'}  \ottsym{\mbox{$\mid$}} $.
+\end{lemma}
+\begin{proof}
+  By induction on the typing derivation of the context $\mathcal{C}$, and applying
+  the compatibility lemmas where appropriate.
+\end{proof}
+
+
+\begin{lemma}[Adequacy] \label{lemma:ade}
+  If $  \bullet    \vdash  \logeq{ \ottnt{e_{{\mathrm{1}}}} }{ \ottnt{e_{{\mathrm{2}}}} } :  \mathsf{Nat} $ then $\kleq{\ottnt{e_{{\mathrm{1}}}}}{\ottnt{e_{{\mathrm{2}}}}}$.
+\end{lemma}
+\begin{proof}
+  Adequacy follows easily from the definition of the logical relation.
+\end{proof}
+
+
+Next up is the proof that logical relation is sound with respect to contextual equivalence:
+\begin{theorem}[Soundness w.r.t. Contextual Equivalence] \label{thm:log-sound}
+  If $ \Gamma   \vdash   E_{{\mathrm{1}}}   \Rightarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e_{{\mathrm{1}}}} } $ and $ \Gamma   \vdash   E_{{\mathrm{2}}}   \Rightarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e_{{\mathrm{2}}}} } $ and $   \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}   \vdash  \logeq{ \ottnt{e_{{\mathrm{1}}}} }{ \ottnt{e_{{\mathrm{2}}}} } :  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}   $ then
+  $\Gamma  \vdash  E_{{\mathrm{1}}}  \backsimeq_{ctx}  E_{{\mathrm{2}}}  \ottsym{:}  \ottnt{A}$.
+\end{theorem}
+\begin{proof}
+  From Definition~\ref{def:cxtx2}, we are given a context $\mathcal{C}  \ottsym{:}  \ottsym{(}  \Gamma \, \Rightarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}   \bullet  \, \Rightarrow \, \mathsf{Nat}  \ottsym{)}  \rightsquigarrow  \mathcal{D}$. By Lemma~\ref{lemma:cong}
+  we have $  \bullet    \vdash  \logeq{ \mathcal{D}  \ottsym{\{}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{\}} }{ \mathcal{D}  \ottsym{\{}  \ottnt{e_{{\mathrm{2}}}}  \ottsym{\}} } :  \mathsf{Nat} $, thus $  \kleq{\mathcal{D}  \ottsym{\{}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{\}}}{ \mathcal{D}  \ottsym{\{}  \ottnt{e_{{\mathrm{2}}}}  \ottsym{\}}}    $ by Lemma~\ref{lemma:ade}.
+\end{proof}
+
+
+Armed with Theorem~\ref{thm:co-log} and Theorem~\ref{thm:log-sound}, coherence follows directly.
+\coherence*
+\begin{proof}
+  Immediate from Theorem~\ref{thm:co-log} and Theorem~\ref{thm:log-sound}.
+\end{proof}
+
+\subsection{Some Interesting Corollaries}
+
+To showcase the strength of the new proof method, we can derive some
+interesting corollaries. For the most part, they are direct consequences of
+logical equivalence which carry over to contextual equivalence.
+
+
+Corollary~\ref{lemma:neutral} says that merging a term of some type with something else
+does not affect its semantics. Corollary~\ref{lemma:commu} and Corollary~\ref{lemma:assoc} express that
+merges are commutative and associative, respectively. Corollary~\ref{lemma:coercion_same}
+states that coercions from the same types are ``coherent''.
+
+\begin{corollary}[Merge is Neutral] \label{lemma:neutral}
+  If $\Gamma  \vdash  E_{{\mathrm{1}}} \, \Rightarrow \, \ottnt{A}$ and $\Gamma  \vdash  E_{{\mathrm{1}}}  \,,,\,  E_{{\mathrm{2}}} \, \Rightarrow \, \ottnt{A}$, then
+  $\Gamma  \vdash  E_{{\mathrm{1}}}  \backsimeq_{ctx}  E_{{\mathrm{1}}}  \,,,\,  E_{{\mathrm{2}}}  \ottsym{:}  \ottnt{A}$
+\end{corollary}
+
+\begin{corollary}[Merge is Commutative] \label{lemma:commu}
+  If $\Gamma  \vdash  E_{{\mathrm{1}}}  \,,,\,  E_{{\mathrm{2}}} \, \Rightarrow \, \ottnt{A}$ and $\Gamma  \vdash  E_{{\mathrm{2}}}  \,,,\,  E_{{\mathrm{1}}} \, \Rightarrow \, \ottnt{A}$, then
+  $\Gamma  \vdash  E_{{\mathrm{1}}}  \,,,\,  E_{{\mathrm{2}}}  \backsimeq_{ctx}  E_{{\mathrm{2}}}  \,,,\,  E_{{\mathrm{1}}}  \ottsym{:}  \ottnt{A}$.
+\end{corollary}
+
+
+\begin{corollary}[Merge is Associative] \label{lemma:assoc}
+  If $\Gamma  \vdash  \ottsym{(}  E_{{\mathrm{1}}}  \,,,\,  E_{{\mathrm{2}}}  \ottsym{)}  \,,,\,  E_{{\mathrm{3}}} \, \Rightarrow \, \ottnt{A}$ and $\Gamma  \vdash  E_{{\mathrm{1}}}  \,,,\,  \ottsym{(}  E_{{\mathrm{2}}}  \,,,\,  E_{{\mathrm{3}}}  \ottsym{)} \, \Rightarrow \, \ottnt{A}$, then
+  $\Gamma  \vdash  \ottsym{(}  E_{{\mathrm{1}}}  \,,,\,  E_{{\mathrm{2}}}  \ottsym{)}  \,,,\,  E_{{\mathrm{3}}}  \backsimeq_{ctx}  E_{{\mathrm{1}}}  \,,,\,  \ottsym{(}  E_{{\mathrm{2}}}  \,,,\,  E_{{\mathrm{3}}}  \ottsym{)}  \ottsym{:}  \ottnt{A}$.
+\end{corollary}
+
+
+
+\begin{corollary}[Coercions Preserve Semantics]
+  \label{lemma:coercion_same}
+  If $ \ottnt{A}   \ottsym{<:}   \ottnt{B}  \rulehl{ \rightsquigarrow   \ottnt{c_{{\mathrm{1}}}} } $ and $ \ottnt{A}   \ottsym{<:}   \ottnt{B}  \rulehl{ \rightsquigarrow   \ottnt{c_{{\mathrm{2}}}} } $, then $ \Delta   \vdash  \logeq{  \lambda \ottmv{x} .\, \ottnt{c_{{\mathrm{1}}}} \, \ottmv{x}  }{  \lambda \ottmv{x} .\, \ottnt{c_{{\mathrm{2}}}} \, \ottmv{x}  } :  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \rightarrow  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} $.
+\end{corollary}
+
+
+% Local Variables:
+% org-ref-default-bibliography: ../paper.bib
+% End:

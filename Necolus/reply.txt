@@ -1,0 +1,139 @@
+We'd like to thank the reviewers for their constructive and helpful feedback.
+Please find our answers to the main questions below.
+
+#Review 36A
+===========
+
+* Main Questions:
+
+a) "I notice that you only support covariant distribution, see S-DistArr. How
+about the contravariant?"
+
+Contravariance does not require its own rule: it can be derived using the given
+rules. Here is the derivation:
+
+```
+                                              ------------- S-AndL -------- S-Refl
+                                               A1 & A3 <: A1        A2 <: A2
+----------------------------------- S-AndL  ------------------------------------------- S-Arr
+(A1 -> A2) & (A3 -> A2) <: A1 -> A2                 A1 -> A2 <: A1 & A3 -> A2
+----------------------------------------------------------------------------------------- S-Trans
+                (A1 -> A2) & (A3 -> A2) <: A1 & A3 -> A2
+```
+
+We will point this out in the paper.
+
+b) Why doesn't distribution go both ways?
+
+It does. Perhaps our comment in the text was not clear enough. What we mean is
+that, like in a), the other side is derivable from the existing subtyping rules
+and thus also supported by our algorithm. Here is the derivation:
+
+```
+ -------- S-Refl ------------- S-AndL  -------- S-Refl ------------- S-AndR
+ A1 <: A1        A2 & A3 <: A2         A1 <: A1        A2 & A3 <: A3
+------------------------------ S-Arr  ------------------------------ S-Arr
+  A1 -> A2 & A3 <: A1 -> A2            A1 -> A2 & A3 <: A1 -> A3
+-------------------------------------------------------------------- S-And
+         A1 -> A2 & A3 <: (A1 -> A2) & (A1 -> A3)
+```
+
+We will clarify this in the paper.
+
+c) Mutation
+
+We agree that mutation is important for mainstream OO. However we would like to
+make 2 points:
+
+   1. Our paper shows that, without the complication of mutation, the highly
+      expressive distributivity properties of subtyping in our pure setting
+      already poses significant challenges. Our full Coq mechanisation of the
+      calculus and its meta-theoretical proofs comprises more than 6000 lines, a
+      third of which is devoted to the *novel* logical relations method for
+      establishing coherence.
+
+   2. Adding mutable references to our language definition requires
+      considering not only type-safety, but also coherence!
+
+      For type-safety we expect that lessons learned from previous work on
+      family polymorphism and mutability on OO to apply to our work. For
+      example, it is well-known that subtyping in the presence of mutable state
+      often needs restrictions. Given such suitable restrictions we expect that
+      type-safety in the presence of mutability still works.
+
+      However, while adding mutable references to our language definition and
+      our Coq mechanisation of type safety might only require standard
+      techniques/restrictions, it would be a major technical challenge to adjust
+      our coherence proof and its Coq mechanisation. *We would have to adapt our
+      logical relations to allow reasoning about mutable state*. Logical
+      relations that account for mutable state introduce significant complexity.
+      Not only would this be a next-level effort from our side (one that might
+      well be considered a contribution on its own), it would also greatly
+      obscure the current contributions of our paper.
+
+
+d) Figure 2 is too complex.
+
+We want to emphasize that our calculus features a structural type system (as
+often more foundational calculi do), whereas mainstream OO languages have
+nominal type systems. This is part of the reason why we have so many subtyping
+relations in Figure 2. In the future, we plan to study a nominal variant which
+may help transporting our ideas to mainstream OO languages more directly.
+
+
+* Presentation:
+
+-) "an achievement if prior work was developed by others"
+
+A minor comment regarding the above is that 2 of the 3 authors (including the
+first author) *are not* authors of any previous work on disjoint intersection
+types.
+
+-) "A suggestion is, would it be possible to just present the current work in the
+   most ideal form you believe, and then come back to a more technical comparison
+   with \lambda_i?"
+
+We agree that the narrative can be improved by isolating the comparison to
+\lambda_i, and will do so in the revision.
+
+
+
+-) Definition 3 and Theorem 3 are odd to read.
+
+What the review proposes is similar to our Definition 2, which---as the paper
+discusses in detail---does not work (see Example 2). In short, the logical
+relation does not hold for target programs in general, but only for those that
+are the images of the corresponding source programs, thus E instead of e.
+
+
+-) "Quantification over arrows is awkward."
+
+We agree, and will inline the definition in the revision.
+
+#Review 36B
+===========
+
+We did not receive this review.
+
+#Review 36C
+===========
+
+
+*) Since the calculus is pure, coherence allows one to merge identical records.
+
+We want to clarify that there is a misunderstanding here: our calculus actually
+disallows merging identical records (see " Duplication is Harmless" in the
+paper). Duplicated values are generated only by subtyping.
+
+*) Zhang and Myers (OOPSLA 17) and Qi and Myers (PLDI 09).
+
+Thank you for pointing out the future work on family polymorphism. We will
+discuss them in the revision.
+
+The above works mostly focus on relatively complex Java-like languages (e.g.,
+Jx, J&, J&_s, Familia, ...) with family polymorphism; and they usually require
+advanced features such as dependent types. In contrast, our focus is to identify
+a minimal and simple calculus that supports nested composition; supporting full
+family polymorphism is not the goal of our paper.
+
+*) Mutability is non-trivial. Please see the related reply to Review 36A.

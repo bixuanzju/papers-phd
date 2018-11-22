@@ -1,0 +1,159 @@
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Coherence.}
+In calculi that feature coercive subtyping, a semantics that interprets the
+subtyping judgement by introducing explicit coercions is typically defined on
+typing derivations rather than on typing judgements. A natural
+question that arises
+for such systems is whether the semantics is \textit{coherent}, i.e.,
+distinct typing derivations of the same typing judgement possess the same
+meaning. Since \citet{Reynolds_1991} proved the coherence of a calculus with
+intersection types, based on the denotational semantics for intersection types,
+many researchers have studied the problem of coherence in a variety of typed
+calculi. Below we summarize two commonly-found approaches in the literature.
+
+%\paragraph{Normalization-based Approach}
+The first approach is based on normalization. \citet{Breazu_Tannen_1991} proved
+the coherence of the language Fun~\citep{cardelli1985understanding} extended
+with recursive types, by translating Fun into System F and showing that any two
+typing derivations of the same typing judgement are normalizable to a unique
+normal derivation. % where the correctness of the normalization steps is justified
+% by an equational theory in the target calculus, i.e., System F.
+\citet{Curien_1992} presented a translation of System F$_\leq$ into a calculus
+with explicit coercions and showed that any derivations of the same judgement are
+translated to terms that are normalizable to a unique normal form. Following the
+same approach, \citet{SCHWINGHAMMER_2008} proved the coherence of coercion
+translation from the computational lambda calculus of \citet{Moggi_1991} with
+subtyping.
+
+
+%\paragraph{Logical-relations-based Approach}
+
+Central to the first approach is to find a normal form for a representation of
+the derivation and show that normal forms are unique for a given typing
+judgement. However, this approach cannot be directly applied to Curry-style
+calculi, i.e, where the lambda abstractions are not type annotated. Also this
+line of reasoning cannot be used when the source language has general recursion.
+Instead, \citet{biernacki2015logical} considered the coherence problem based on
+contextual equivalence, where they presented a construction of logical relations
+for establishing coherence. They showed that this approach is applicable in a
+variety of calculi, including delimited continuations and control-effect
+subtyping.
+
+
+\paragraph{Intersection Types and the Merge Operator.}
+Forsythe has intersection types and a merge operator, and was proven to be
+coherent~\citep{Reynolds_1991}. However to ensure coherence, various
+restrictions were added to limit the use of merges. For example, in Forsythe
+merges cannot contain more than one function. \citet{Castagna_1992} proposed a
+coherent calculus with a special merge operator that works on functions only.
+More recently, \citet{dunfield2014elaborating} shows significant expressiveness
+of type systems with intersection types and a merge construct. However his
+calculus lacks coherence. The limitation was addressed by
+\citet{oliveira2016disjoint}, where they introduced disjointness to ensure
+coherence. The combination of intersection types, a merge construct and
+parametric polymorphism, while achieving coherence was first studied in the
+\fname calculus~\citep{alpuimdisjoint}, where they proposed the notion of
+disjoint polymorphism. Compared to prior work, \name simplifies type systems
+with disjoint intersection types by removing several restrictions. 
+Furthermore, \name adopts a much more powerful subtyping relation based 
+on BCD subtyping, which in turn requires the use of a more powerful
+logical relations based method for proving coherence.
+
+
+% \bruno{This is an example of a typical mistake when writting related
+%   work: you describe existing work, but do not say how it
+%   relates/differs from the work presented in the paper.}
+
+
+\paragraph{BCD Type System and Decidability.}
+The BCD type system was first introduced by \citet{Barendregt_1983}. It is
+derived from a filter lambda model in order to characterize exactly the strongly
+normalizing terms. The BCD type system features a powerful subtyping relation,
+which serves as a base for our subtyping relation. The decidability of BCD
+subtyping has been shown in several works~\citep{pierce1989decision,
+  Kurata_1995, Rehof_2011, Statman_2015}. \citet{laurent2012intersection} has
+formalized the relation in Coq in order to eliminate transitivity cuts from it,
+but his formalization does not deliver an algorithm. Based on
+\citet{Statman_2015}, \citet{bessaiextracting} show a formally verified
+subtyping algorithm in Coq. Our Coq formalization follows a different idea from
+\citet{pierce1989decision}, which is shown to be easily extensible to coercions
+and records. In the course of our mechanization we identified
+several mistakes in Pierce's proofs, as well as some important missing lemmas.
+
+\paragraph{Family Polymorphism.}
+There has been much work on family polymorphism since \citeauthor{Ernst_2001}'s
+original proposal~\citep{Ernst_2001}. Family polymorphism provides an elegant
+solution to the Expression Problem. Although a simple Scala solution does exist without
+requiring family polymorphism (e.g., see \citet{wang2016expression}), Scala
+does not support nested composition: programmers need to manually compose
+all the classes from multiple extensions. Broadly speaking, systems that support
+family polymorphism can be divided into two categories: those that support
+\textit{object families} and those that support \textit{class families}. In
+object families, classes are nested in objects, whereas in class families,
+classes are nested in other classes. The former choice is considered more
+expressive~\citep{ErnstVirtual}, but requires a complex type system usually
+involving dependent types.
+
+%\paragraph{Object Families}
+Virtual classes~\citep{Madsen_1989} are one means for achieving family
+polymorphism. Virtual classes are attributes of an object, and virtual classes
+from different instances are not compatible. The original design of virtual
+classes in BETA is not statically safe.
+To ensure type safety, virtual classes were formalized using path-dependent
+types in the calculus \textit{vc}~\citep{ErnstVirtual}. Due to the introduction
+of dependent types, their system is rather complex. Subtyping in \textit{vc} is
+more restrictive, compared to \name, in that there is no subtyping relationship
+between classes in the base family and classes in the derived family, nor is there between
+the base family and the derived family. As for conflicts, \textit{vc} follows the
+mixin-style by allowing the rightmost class to take precedence. This is in
+contrast to \name where conflicts are detected statically and resolved
+explicitly. Tribe~\citep{pubsdoc:tribe-virtual-calculus} is another language
+that provides a variant of virtual classes, with support for both class and
+object families. % This
+% flexibility allows a further bound class to be a subtype of the class it
+% overrides.
+
+
+%\paragraph{Class Families}
+Jx~\citep{Nystrom_2004} supports a notion of \textit{nested inheritance}, which
+is a limited form of family polymorphism. Nested inheritance works much like
+class families with support for nesting of arbitrary depth. Unlike virtual
+classes, subclass and subtype relationships are preserved by inheritance: the
+overriding class is also a subtype of the class it overrides.
+%Nested inheritance
+%does not support generic types. As we discussed in \cref{sec:diss}, \name can be
+%easily extended to incorporate parametric polymorphism.
+J\&~\citep{Nystrom:2006:JNI:1167473.1167476} is a language that supports
+\textit{nested intersection}, building on top of Jx. Similar to \name,
+intersection types play an important role in J\&, which are used to compose
+packages/classes. Unlike \name, J\& does not have a merge-like operator, and
+requires special treatment (e.g., prefix types) to deal with conflicts.
+% Interestingly, conflicts are distinguished in J\&. If a name was introduced in a
+% common ancestor of the intersected namespaces, it is not considered a conflict.
+% This is somewhat similar to \name where a value such as $1 :
+% \inter{\mathsf{Nat}}{\mathsf{Nat}}$ is allowed. Otherwise, the name is assumed
+% to refer to distinct members that coincidentally have the same name, then
+% ambiguity occurs, and resolution is required by exploiting prefix type notation.
+\citet{SAITO_2007} identified a minimal, lightweight set of language features
+to enable family polymorphism, though inheritance relations between nested
+classes are not preserved by extension. \citet{Corradi_2012} present a language
+design that integrates modular composition and nesting of Java-like classes. It
+features a set of composition operators that allow to manipulate nested classes
+at any depth level. Compared with those systems, which usually focus on getting
+a relatively complex Java-like language with family polymorphism,
+\name focuses on a minimal calculus that supports
+nested composition. \name still lacks important practical features, such as
+recursive types and mutable state. Supporting these features is not the
+focus of this paper, but we expect to investigate those features in the future.
+
+
+% \bruno{Probably comparison, in this last paragraph, can be improved a
+%   bit. Also perhaps the discussion does not need to be so detailed. }
+
+
+%%% Local Variables:
+%%% org-ref-default-bibliography: ../paper.bib
+%%% End:

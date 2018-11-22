@@ -1,0 +1,109 @@
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.5,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
+\section{Some Definitions}
+
+\begin{definition}[Type translation]
+  \begin{align*}
+    | \mathsf{Nat} | &= \mathsf{Nat} \\
+    | \top | &= \langle \rangle \\
+    | A \rightarrow B | &= | A | \rightarrow | B | \\
+    | \inter{A}{B} | &= | A | \times | B | \\
+    | \recordType{l}{A} | &= \recordType{l}{| A |}
+  \end{align*}
+\end{definition}
+
+\begin{example}[Derivation of other direction of distribution]
+  \begin{small}
+\begin{mathpar}
+  \inferrule*[right=\rref*{S-and}]
+  {  \inferrule*[right=\rref*{S-arr}]{ [[ A1 <: A1  ]] \\ [[ A2 & A3 <: A2  ]]  }{[[   A1 -> A2 & A3 <: A1 -> A2  ]]} \\
+    \inferrule*[right=\rref*{S-arr}]{ [[ A1 <: A1  ]] \\ [[ A2 & A3 <: A3  ]] }{[[ A1 -> A2 & A3 -> A1 -> A3      ]]}  }
+  {  [[ A1 -> A2 & A3 <: (A1 -> A2) & (A1 -> A3)  ]]  }
+\end{mathpar}
+  \end{small}
+\end{example}
+
+
+\begin{example}[Derivation of contravariant distribution]
+  \begin{small}
+\begin{mathpar}
+  \inferrule*[right=\rref*{S-trans}]
+  {  \inferrule*[right=\rref*{S-andl}]{ }{[[ (A1 -> A2) & (A3 -> A2) <: A1 -> A2   ]]} \\
+    \inferrule*[right=\rref*{S-arr}]{ [[ A1 & A3 <: A1  ]] \\ [[ A2 <: A2  ]] }{[[ A1 -> A2 <: A1 & A3 -> A2  ]]}  }
+  {  [[  (A1 -> A2) & (A3 -> A2) <: A1 & A3 -> A2  ]]   }
+\end{mathpar}
+  \end{small}
+\end{example}
+
+
+
+\section{Full Type System of \name}
+% \label{sec:appendix}
+
+% \begin{definition}[Meta-functions $\llbracket \cdot \rrbracket_{\top} $ and $\llbracket \cdot \rrbracket_{\&}$]
+%   \begin{align*}
+%     [[ < [] >1 ]] &=  [[top]] \\
+%     [[ < { l } , fs >1 ]] &= [[ {l : < fs >1} o < l >  ]] \\
+%     [[ < A , fs >1 ]] &= [[(id -> < fs >1) o ((top -> top) o (topArr o top))]] \\ \\
+%     % [[ < A , fs >1 ]] &= [[(top -> < fs >1) o (topArr o top)]] \\ \\
+%     [[ < [] >2 ]] &=  [[id]] \\
+%     [[ < { l } , fs >2 ]] &= [[ {l : < fs >2} o distRcd l  ]] \\
+%     [[ < A , fs >2 ]] &= [[(id -> < fs >2) o distArr]]
+%   \end{align*}
+
+% \end{definition}
+
+
+
+\drules[S]{$[[A <: B ~~> c]]$}{Declarative subtyping}{refl, trans, top, rcd, arr, andl, andr, and, distArr, distRcd, topArr, topRcd}
+
+\drules[T]{$[[GG  |- ee => A ~~> e]]$}{Inference}{top, lit, var, app, anno, merge, rcd, proj}
+
+\drules[T]{$[[GG  |- ee <= A ~~> e]]$}{Checking}{abs, sub}
+
+\drules[D]{$[[A ** B]]$}{Disjointness}{topL, topR, arr, andL, andR, rcdEq, rcdNeq, axNatArr, axArrNat, axNatRcd, axRcdNat, axArrRcd, axRcdArr}
+
+\drules[CTyp]{$[[C : ( GG => A ) ~> ( GG' => B ) ~~> cc]]$}{Context typing I}{emptyOne, appLOne, appROne, mergeLOne, mergeROne, rcdOne, projOne, annoOne}
+
+\drules[CTyp]{$[[C : ( GG <= A ) ~> ( GG' <= B ) ~~> cc]]$}{Context typing II}{emptyTwo, absTwo}
+
+\drules[CTyp]{$[[C : ( GG <= A ) ~> ( GG' => B ) ~~> cc]]$}{Context typing III}{appLTwo, appRTwo, mergeLTwo, mergeRTwo, rcdTwo, projTwo, annoTwo}
+
+\drules[CTyp]{$[[C : ( GG => A ) ~> ( GG' <= B ) ~~> cc]]$}{Context typing IV}{absOne}
+
+\drules[A]{$[[fs |- A <: B ~~> c]]$}{Algorithmic subtyping}{and, arr, rcd, top, arrNat, rcdNat, nat, andNOne, andNTwo}
+
+\section{Full Type System of \tname}
+
+\drules[typ]{$[[G |- e : T]]$}{Target typing}{unit, lit, var, abs, app, pair, capp, rcd, proj}
+
+\drules[cotyp]{$[[c |- T1 tri T2]]$}{Coercion typing}{refl, trans, top, topArr, topRcd, arr, pair, projl, projr, rcd, distRcd, distArr}
+
+\drules[step]{$[[e --> e']]$}{Small-step reduction}{id, trans, top, topArr,
+  topRcd, arr, pair, distArr, distRcd, projl, projr, crcd, beta, projRcd, appOne, appTwo, pairOne, pairTwo, capp, rcdOne, rcdTwo}
+
+
+% \begin{lemma}[Converse evaluation]
+%   Suppose that $(e, e') \in \eeR{\tau}{\tau'}$. If $d \step e$, then $(d, e')
+%   \in \eeR{\tau}{\tau'}$, and if $d' \step e'$, then $(e, d') \in
+%   \eeR{\tau}{\tau'}$.
+%   \label{lemma:converse}
+% \end{lemma}
+
+
+
+% \begin{lemma}[Compatibility lemma] The logical relation is preserved by language constructs.
+%   \begin{itemize}
+%   \item If $x : \tau_1 \in \Gamma_1$ and $x : \tau_2 \in \Gamma_2$ then
+%     $\Gamma_1;\Gamma_2 \vdash \logeq{x}{x} : \tau_1;\tau_2 $.
+%   \item $\Gamma \vdash \logeq{[[unit]]}{[[unit]]} : [[Unit]]$
+%   \item $\Gamma \vdash \logeq{[[i]]}{[[i]]} : [[nat]]$
+%   \item If $\Gamma_1;\Gamma_2 \vdash \logeq{e_1}{e_2} : ([[T1 -> T1']]) ; ([[T2 -> T2']])$ and $\Gamma_1;\Gamma_1 \vdash \logeq{e_3}{e_4} : \tau_1;\tau_2$ then $\Gamma_1;\Gamma_2 \vdash \logeq{[[e1 e3]]}{[[e2 e4]]} : \tau_1' ; \tau_2'$.
+%   \item If $\Gamma_1, x : \tau_1 ; \Gamma_2, x : \tau_2 \vdash \logeq{e_1}{e_2} : \tau_1' ; \tau_2'$ then $\Gamma_1;\Gamma_2 \vdash \logeq{[[\x . e_1]]}{[[\x . e_2]]} : ([[T1 -> T1']]) ; ([[T2 -> T2']])$.
+%   \end{itemize}
+% \end{lemma}

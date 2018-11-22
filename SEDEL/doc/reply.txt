@@ -1,0 +1,139 @@
+We'd like to thank the reviewers for their constructive and helpful feedback.
+Please find our answers to the main questions below.
+
+
+#Review 37A
+===========
+
+* Flattening property
+
+We agree that flattening is an important property and we believe SEDEL has a
+related property, though we haven't formalized nor proved the property for
+SEDEL. One problem in formulating such a property is that flattening (as defined
+by Sch\"arli et al.) is a property that talks about the equivalence between a
+flattened class (i.e. a class where all trait methods have been inlined) and a
+class that reuse code from traits. Since we do not have classes, we cannot state
+exactly the same property. Another problem is that the formalisms are quite
+different, so we need to consider how to express the property in our setting.
+
+We believe that one way to talk about a similar property for our calculus is by
+having a *suitable generalization* of the following:
+
+```
+new (trait { m() = e1 } & trait { n() = e2 }).m
+=
+new (trait { m() = e1; n() = e2 }).m
+```
+
+This equality expresses that the meaning of method "m" is the same
+for objects created in two different ways:
+
+1) the object results from the composition of two
+(conflict free) traits;
+
+2) the object results from a single *flattened* trait that defines all
+methods.
+
+Since SEDEL is elaborated to Fi and "&" maps to the merge operator in Fi the
+above equality seems to be true, since merges in Fi are associative and
+commutative and the result of translating the above expressions essentially
+gives semantically equivalent expressions. We believe that forwarding would not
+be problematic, since here e2 and e1 are arbitrary and could include forwarding.
+
+Moreover, intuitively, the elaboration semantics (similar to the flattening
+function [[ · ]] in [x] that translates FTJ to FJ) of SEDEL compiles away traits
+to obtain pure Fi programs.
+
+However, for now, all of this discussion is informal.
+We will carefully discuss it in the revision of the paper. 
+
+
+* Different roles of traits/classes
+
+We agree that a better discussion and comparison with different roles of
+traits/classes is due. Briefly, the two roles conflict in class-based languages
+because a class must adopt a fixed position in the class hierarchy and therefore
+it can be difficult to reuse and resolve conflicts, whereas in SEDEL, a trait is
+a standalone entity and is not tied to any particular hierarchy. Therefore we
+can view our traits either as generators of instances, or units of reuse.
+
+We should also note that an important reason why our model can do just with
+traits is because we have a pure language. Mutable state can often only appear
+in classes in imperative models of traits, which is a good reason for having
+both classes and traits.
+
+* The supplementary material
+
+We did submit a pdf with the link to supplementary material! We are told by the
+chair that the supplementary material is only visible after the review have been
+submitted. So the reviewer may want to check it now. For convenience here's the
+link to the implementation, case study and the paper with appendix:
+
+https://github.com/bixuanzju/first-class-trait
+
+* Operational semantics of SEDEL
+
+The problem is really: can we define a direct operational semantics for Fi (the
+trait-composition-free fragment of SEDEL). We believe that this is possible, but
+probably could obscure the current contribution, and is a good research problem
+in its own right.
+
+* Case study
+
+Why Haskell: because we were looking for a case study which had code written by
+others, and had several variants that could share code. An alternative could be
+other PL textbooks, such as TAPL.
+
+Admittedly, SEDEL is still a prototype and creating larger case studies is
+harder than in mainstream languages/compilers. Nevertheless we believe that the
+case study is already non-trivial in that we need to solve the expression
+problem for the case study. Note that Scala traits alone are not sufficient on
+their own to solve the Expression Problem. While there are solutions to the
+Expression Problem in both Haskell and Scala, they introduce significant
+complexity.
+
+
+#Review 37B
+===========
+
+* Mutation
+
+We agree that most OO languages are not pure. One immediate issue of supporting
+mutation is how it affects the coherence property of Fi, and we foresee it would
+be a major technical challenge to adjust previous coherence proof, which could
+also obscure the current contribution of this paper. We will discuss this in the
+revision.
+
+
+* Case study
+
+We will better acknowledge the limitations of the case study and emphasize that
+SLOC are just one metric and we haven't measured any other metrics.
+
+See also reply to #Review 37A.
+
+
+#Review 37C
+===========
+
+
+* Work on module systems
+
+Thanks for pointing out the work on module systems, we will discuss them in the
+revision. (ML) Module systems put more emphasis on supporting type abstraction,
+which SEDEL lacks. Support for type abstraction adds considerable complexity,
+which is not needed in SEDEL. SEDEL is focused on Object-Oriented Programming
+and supports, among others, method overriding, self references and dynamic
+dispatching, which are all missing features in the 2 given references (and
+generally in module systems). One similarity between MixML and SEDEL is that
+both use an elaboration approach into a System F-like calculus.
+
+
+* Improvement wrt row polymorphism
+
+We want to emphasize that disjoint polymorphism is more powerful than Racket's
+approach using row polymorphism. Racket's row polymorphism is unable to express
+the disjointness of two polymorphic types, which is essential to define the
+merge function in Section 3.6. This feature plays a fundamental role in the case
+study (see "Dynamic Object Algebra Composition Support"). Other, more technical
+differences, are discussed in related work.

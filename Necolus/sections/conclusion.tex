@@ -1,0 +1,71 @@
+
+\section{Conclusions and Future Work}
+\label{sec:conclusion}
+
+We have proposed \name, a type-safe and coherent calculus with disjoint
+intersection types, and support for nested composition/subtyping. It
+improves upon earlier work with a more
+flexible notion of disjoint intersection types, which leads to
+a clean and elegant formulation of the type system. Due to the added
+flexibility we have had to employ a more powerful proof method based on logical
+relations to rigorously prove coherence.
+We also show how \name supports essential features of family
+polymorphism, such as nested composition. We believe \name provides insights into family polymorphism, and
+has potential for practical applications for extensible software designs.
+
+A natural direction for future work is to enrich \name with parametric
+polymorphism. There is abundant literature on logical relations for parametric
+polymorphism~\cite{reynolds1983types}. % and we foresee no fundamental difficulties
+% in extending our proof method .
+The main challenge in the definition of the
+logical relation is the clause that relates type variables with arbitrary types. Careful
+measures are to be taken to avoid potential circularity due to
+impredicativity.\footnote{ Our prototype implementation already
+  supports polymorphism, but we are still in the process of extending our Coq
+  development with polymorphism.} With the combination of parametric polymorphism and nested
+composition, an interesting application that we intend to investigate is native
+support for a highly modular form of \textit{Object Algebras}~\cite{oliveira2012extensibility, xuan_traits} and \textsc{Visitor}s
+(or the finally tagless approach~\cite{CARETTE_2009}).
+
+Another direction for future work is to add mutable references, which would
+affect two aspects of our metatheory: type safety and coherence. For type safety,
+we expect that lessons learned from previous work on family polymorphism and
+mutability on OO apply to our work. For example, it is well-known that
+subtyping in the presence of mutable state often needs restrictions. Given such
+suitable restrictions we expect that type-safety in the presence of mutability
+still holds. For coherence, it would be a major technical challenge to adjust
+our coherence proof and its Coq mechanization: logical relations that account
+for mutable state (e.g., see Ahmed's thesis~\cite{ahmed2004semantics}) introduce significant complexity.
+
+
+
+
+
+% For example, we can
+% define the object algebra interfaces for the Expression Problem example in
+% \cref{sec:overview} as follows:
+% \lstinputlisting[linerange=77-78]{./examples/overview.sl}% APPLY:linerange=LANG_EXT_INTER
+% By instantiating \lstinline{E} with \lstinline{IPrint}, i.e.,
+% \lstinline{ExpAlg[IPrint]}, we get the interface of the \lstinline{Lang} family.
+% In that sense, object algebra interfaces can be viewed as family interfaces.
+% Moreover, combining algebras implementing \lstinline{ExpAlg[IPrint]} and
+% \lstinline{ExpAlg[IEval]} to form \lstinline{ExpAlg[IPrint & IEval]} is trivial
+% with nested composition. Polymorphism also improves code reuse across expressions in the
+% base and extended languages. For example, the following creates two expressions,
+% one in the base language, the other in the extended language:
+% \lstinputlisting[linerange=83-84]{./examples/overview.sl}% APPLY:linerange=LANG_EXT
+% Notice how we can  reuse \lstinline{e1} of the base language in the definition
+% of \lstinline{e2}.
+
+
+
+% \jeremy{creating expressions using base and extended expressions, and show more reuse}
+
+% \jeremy{future work} \jeremy{mention in passing this rule is unsound with
+%   effects, see ``Intersection types and computational effects''}
+
+% Local Variables:
+% mode: latex
+% TeX-master: "../paper"
+% org-ref-default-bibliography: ../paper.bib
+% End:

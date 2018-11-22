@@ -1,0 +1,117 @@
+
+\section{Discussion}
+\label{sec:diss}
+
+\subsection{An Alternative Target Language}
+
+Our target language is essentially STLC with explicit coercions. The syntactic
+category of coercions plays an important role in the establishment of coherence,
+especially for proving \cref{lemma:co-compa}. However in \oname, coercive
+subtyping directly produces plain $\lambda$-terms. Another issue is that the
+elaboration semantics of \fname eliminates records while in \name records are
+preserved in the target language. So an interesting question is: can our results
+be extended to a target language without coercions and records? The answer is
+positive: our results can be easily transferred to such target language. As
+discussed by \citet{biernacki2015logical}, the idea is to replace all coercions
+by the corresponding $\lambda$-terms and eliminate all records, then show that
+the resulting terms preserve the semantics.
+
+
+% For ease of reference, we name such target language
+% $\lambda_\rightarrow$. Below we give a sketch~\citep{biernacki2015logical} of
+% the transformation. Let $\parallel e \parallel$ be a term with all the coercions
+% replaced by the corresponding $\lambda$-terms, and all the records eliminated.
+% We need to show that for any contextually equivalent terms $e_1$ and $e_2$ in
+% \tname, terms $\parallel e_1 \parallel$ and $\parallel e_2 \parallel$ are also
+% contextually equivalent in $\lambda_\rightarrow$. This can be accomplished by
+% the following three facts: \jeremy{should I give precise definition of
+%   $\parallel \cdot \parallel$?}
+
+% \begin{enumerate}
+% \item Every well-typed $\lambda_\rightarrow$ terms is also well-typed in \tname.
+% \item Term $e$ terminates iff $\parallel e \parallel$ terminates.
+% \item If context $C$ does not contain coercions and records, then $C\{\parallel
+%   e \parallel\} \equiv \parallel C\{ e \} \parallel$.
+% \end{enumerate}
+
+
+
+\subsection{Parametric Polymorphism and Object Algebras}
+\bruno{Maybe we can move this text to future work and drop the rest of
+this section.}
+Enriching \name with parametric polymorphism is the most natural direction of
+our future work. There is abundant literature on logical relations for
+parametric polymorphism~\citep{reynolds1983types} and we foresee no fundamental
+difficulties in extending our proof method with parametric
+polymorphism\footnote{At the time of writing, we are in the process of extending
+  our Coq development.}. The resulting calculus will be more expressive than
+\fname. An interesting application we intend to investigate is type-safe,
+coherent and boilerplate-free composition of \textit{object
+  algebras}~\citep{oliveira2012extensibility, oliveira2013feature}. For example,
+equipped with parametric polymorphism, we can define the so-called Object
+Algebra interface that captures the common interface of the Expression Problem in
+\cref{sec:overview}:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=ALGEBRA_DEF
+A concrete Object Algebra will implement such an interface by instantiating the
+type parameter with a type that constructs objects for a particular purpose. For
+example, instantiating \lstinline{E} with \lstinline{IPrint} will give us the
+interface of the \lstinline{Lang} family. In that sense, Object Algebra
+interfaces can be viewed as family interfaces.
+
+
+% \paragraph{Recursive Types}
+% Adding (iso-)recursive types is also an interesting line of future
+% work. We hope that iso-recursive types will enable us to model
+% more complex forms of family polymorphism. In particular, once
+% recursive types are available it is possible to model methods whose
+% arguments have the self type~\cite{thistype}. The key challange in
+% adding recusive types is defining subtyping and disjointness, and
+% proving coherence. \bruno{Do we have some temptative rules for
+%   recursive types?} To adapt our coherence proof we could use step-indexed
+% %logical relations~\citep{}.
+
+
+%It would allow us to emulate Haskell-like type-classes through intersection
+%types, and give insight in the foundation of the type-class
+%resolution mechanism. \jeremy{is that right?}
+%The main difficulty is to figure out how disjointness works for recursive
+%types\jeremy{say more?}. To adapt our coherence proof we could use step-indexed
+%logical relations~\citep{}. 
+
+
+% \begin{itemize}
+
+% \item The declarative system is inherently incoherent. Consider the following example yielding different values:
+%   \[
+%     \inferrule*[right=Sub]{
+%       \inferrule*[right=Merge]{
+%         (\mer{3}{\code{true}}) : \inter{\code{Int}}{\code{Bool}} \\
+%         (\mer{4}{'c'}) : \code{Char}
+%       }{\mer{(\mer{3}{\code{true}})}{(\mer{4}{'c'})} : \inter{(\inter{\code{Int}}{\code{Bool}})}{\code{Char}}} \\
+%       \inter{(\inter{\code{Int}}{\code{Bool}})}{\code{Char}} <: \code{Int}
+%     }{\mer{(\mer{3}{\code{true}})}{(\mer{4}{'c'})} : \code{Int} \rightsquigarrow 3}
+%   \]
+%   \[
+%     \inferrule*[right=Sub]{
+%       \inferrule*[right=Merge]{
+%         (\mer{3}{\code{true}}) : \code{Bool} \\
+%         (\mer{4}{'c'}) : \inter{\code{Int}}{\code{Char}}
+%       }
+%       { \mer{(\mer{3}{\code{true}})}{(\mer{4}{'c'})} : \inter{\code{Bool}}{(\inter{\code{Int}}{\code{Char}})}} \\
+%       \inter{\code{Bool}}{(\inter{\code{Int}}{\code{Char}})} <: \code{Int}
+%     }{\mer{(\mer{3}{\code{true}})}{(\mer{4}{'c'})} : \code{Int} \rightsquigarrow 4}
+%   \]
+
+%   The bi-directional system ensures that sub-terms in a merge can only be inferred.
+
+
+% \item mention the current proof strategy cannot deal with the situation where records
+%   in the source are erased during elaboration.
+
+
+% \end{itemize}
+
+
+% Local Variables:
+% org-ref-default-bibliography: ../paper.bib
+% End:

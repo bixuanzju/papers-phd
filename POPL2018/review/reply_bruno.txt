@@ -1,0 +1,116 @@
+- lack of of intriduction form for universal types
+
+We apoligise, we should have been clearer as to how forall types
+can be introduced in our system.
+We do not have generalization (as mentioned in the paper), but we do have
+a mechanism to introduce forall types. That means:
+
+let id = \x . x
+in id 3
+
+is rejected. But
+
+let id : forall a . a -> a = \x . x
+in id 3
+
+is encodable by using type annotations ...
+
+Dunfield and Krishnawarmi do not have generalization either
+
+Essentially, type annotations are supported via syntactic sugar
+(presented in Figure ??) (this idea was borrowed from ..., but it's
+a fairly common idea)
+
+
+let id : forall a . a -> a = \x . x
+in id 3
+
+let id = (\x . x : forall a . a -> a)
+in id 3
+
+let id = (\f :  forall a . a -> a. f) (\x . x)
+in id 3
+
+(\id . id 3) ((\f :  forall a . a -> a. f) (\x . x))
+
+A minor remark is that
+
+let id = \x . x
+in id 3
+
+type-checks in the gradual type system.
+
+- ForallR
+
+The reviewer is right, the intention is to be capture-avoiding.
+We were assuming this in the paper, but we will had an explicit
+side-condition. Our Coq formalization already has such an explicit
+condition, since generated variables are always fresh.
+
+b |- b -> b <: b -> b
+------------------------
+b |- forall a . a -> a <: b -> b 
+---------------------------
+forall a . a -> a <: forall b . b -> b
+
+- What new programs can we write in this type system? Motivation.
+
+One of the motivations (briefly mentioned in last paragraph of Intro, before
+contributions) is to have Haskell-like languages with gradual typing.
+Haskell uses an higher-ranked type system.
+
+One program that we could write in our system but not in Haskell is
+
+\f . (f 1, f 'c')
+
+This is a typical example of a program that would be rejected in a
+higher-ranked system (because f needs to be polymorphic). However
+in our system, by having gradual typing, the program is accepted instead
+with type:
+
+(* -> *) -> *
+
+One could argue that gradual typing enables us to try out programs with
+less precise types first, and later figure out the more precise higher-ranked
+annotations.
+
+Ack that we should have motivated this better with examples.
+
+* (if we have space) point out that order does not matter for rules
+(as DK system for example).
+
+* (with space: correct example for Fig 5)
+
+Reviewer 2
+
+We agree that some of our claims are too strong. The reviewers pointed
+out a few of those, and we will revise the paper to weaken our claims.
+
+* should we reply to "justifying why a cast should always fail"
+
+* dynamic gradual guarantee
+
+We agree we should have been clearer here. Our system has an elaboration
+semantics to PBC (and no direct operational semantics). Because of that
+we cannot directly have a dynamic gradual guarantee, but our target language
+(PBC) does have it? 
+
+Reviewer 3:
+
+- Small improvement over PBC
+
+The reviewer seems to think our work is an improvement over PBC, but this
+is not the case. Perhaps the easiest way to explain our work is with an analogy:
+
+Source Language                                                                                Core Language
+Haskell  (implicit polymorphism)                               elaborates to     System F (explicit polymorphism)
+Our work (implicit polymorphism and casts)              elaborates to     PBC (explicit polymorphism and casts)
+
+\f . (f 1, f 'c')        -- in our lang
+????                      -- in PBC
+
+- Motivation
+
+See also response to reviewer 1
+
+- We do have a recipe: essentially take a subtyping relation and add two rules ...

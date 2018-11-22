@@ -1,0 +1,215 @@
+
+\section{Introduction}
+\label{sec:intro}
+
+Intersection types~\citep{pottinger1980type,coppo1981functional} have a long
+history in programming languages. They were originally introduced to
+characterize exactly all strongly normalizing lambda terms. Since then,
+starting with \citeauthor{reynolds1988preliminary}'s work on
+Forsythe~\citep{reynolds1988preliminary}, they have also been employed
+to express useful programming language constructs, such as key
+aspects of \emph{multiple inheritance}~\citep{compagnoni1996higher} in 
+Object-Oriented Programming (OOP). One notable
+example is the Scala
+language~\citep{odersky2004overview} and its DOT
+calculus~\citep{amin2012dependent}, which make fundamental use of intersection
+types to express a class/trait that extends multiple other classes/traits. Other
+modern languages, such as TypeScript~\citep{typescript}, Flow~\citep{flow} and
+Ceylon~\citep{ceylon}, also adopt some form of intersection types.
+
+Intersection types come in different varieties in the literature. Some calculi
+provide an \emph{explicit} introduction form for intersections, called the
+\emph{merge operator}. This operator was introduced by
+\citeauthor{reynolds1988preliminary} in Forsythe~\citep{reynolds1988preliminary} and
+adopted by a few other calculi~\citep{Castagna_1992,
+  dunfield2014elaborating, oliveira2016disjoint, alpuimdisjoint}. Unfortunately,
+while the merge operator is powerful, it also makes it hard to get a \emph{coherent}
+(or unambiguous) semantics. 
+%A semantics is said to be coherent if all valid programs have the
+%same meaning.\tom{The previous sentence is easily misunderstood.} 
+Unrestricted uses of the merge operator can be ambiguous, leading to an incoherent semantics
+where the same program can evaluate to different values. 
+%Perhaps because of this
+%issue the merge operator has not been adopted by many language designs. 
+A far more common form of intersection types are the so-called \emph{refinement
+  types}~\citep{Freeman_1991, Davies_2000, dunfield2003type}. Refinement types
+restrict the formation of intersection types so that the two types in an
+intersection are refinements of the same simple (unrefined) type. Refinement
+intersection increases only the expressiveness of types and not of terms. 
+For this reason, \citet{dunfield2014elaborating} argues that refinement
+intersection is unsuited for encoding various useful language features
+that require the merge operator (or an equivalent term-level operator).
+
+\paragraph{Disjoint Intersection Types.}
+\oname is a recently proposed calculus with a variant of intersection types 
+called \emph{disjoint intersection types}~\citep{oliveira2016disjoint}.
+Calculi with disjoint intersection types feature the merge 
+operator, with restrictions that all expressions in a merge 
+operator must have disjoint types and all well-formed intersections 
+are also disjoint. A bidirectional type system and the disjointness restrictions are
+sufficient to ensure that the semantics of the resulting calculi remains 
+coherent. 
+
+\begin{comment}
+The merge operator was introduced by Reynolds 
+and Forsythe and adopted by a few other calculi as well~\citep{}.
+Unfortunately, while the merge operator is powerful, it makes 
+it hard to get a \emph{coherent} semantics. \bruno{what is coherence}
+Perhaps because 
+of this issue the merge operator has not been adopted by 
+many language designs. Disjoint intersection types provide 
+a remedy for the coherence problem, by imposing restrictions 
+on the uses of merges and on the formation of intersection types. 
+\bruno{merge operator ==> models inheritance; intersection types ==> 
+model subtyping}
+
+In essence disjoint intersection types retain most of the 
+expressive power of the merge operator.
+For example, they can 
+be used to model powerful forms of extensible records~\citep{}.
+\end{comment}
+
+Disjoint intersection types have great potential to serve as a foundation for
+powerful, flexible and yet type-safe OO languages that are easy to reason
+about. As shown by \citet{alpuimdisjoint}, calculi with disjoint intersection
+types are very
+expressive and can be used to statically type-check JavaScript-style programs
+using mixins. Yet they retain both type safety and coherence. While
+coherence may seem at first of mostly theoretical relevance, it
+turns out to be very relevant for OOP. Multiple
+inheritance is renowned for being tricky to get right, largely because of the
+possible \emph{ambiguity} issues caused by the same field/method names
+inherited from different parents~\citep{bracha1990mixin, scharli2003traits}. Disjoint intersection types
+enforce that the types of parents are disjoint and thus that no conflicts exist.
+Any violations are statically detected and can be manually resolved by the
+programmer.
+%(for example by dropping one
+%of the conflicting field/methods from one of the parents). 
+This is very similar
+to existing trait models~\citep{fisher2004typed,
+  ducasse2006traits}. Therefore in an OO language
+modelled on top of disjoint intersection types, coherence implies
+that no ambiguity arises from multiple inheritance. This makes
+reasoning a lot simpler.
+
+\paragraph{Family Polymorphism.}
+One powerful and long-standing idea in OOP is \emph{family
+  polymorphism}~\citep{Ernst_2001}. In family polymorphism inheritance is
+extended to work on a \emph{whole family of classes}, rather than just a single
+class. This enables high degrees of modularity and
+reuse, including simple solutions to hard programming language problems, like
+the Expression Problem~\citep{wadler1998expression}. An essential feature of
+family polymorphism is \emph{nested composition}~\citep{Corradi_2012,
+  ErnstVirtual, Nystrom_2004}, which allows the automatic
+inheritance/composition of nested (or inner) classes when the top-level classes
+containing them are composed. Designing a sound type system that fully supports family
+polymorphism and nested composition is notoriously hard; there are only
+a few, quite sophisticated, languages that manage this~\citep{ErnstVirtual, Nystrom_2004, pubsdoc:tribe-virtual-calculus, SAITO_2007}. 
+%To make matters worse, combining
+%multiple inheritance with family polymorphism requires dealing with the various
+%issues of both ideas.
+
+\paragraph{The \name Calculus.}
+This paper presents the \name calculus: a simply-typed calculus with records and
+disjoint intersection types that supports \emph{nested composition}. Nested composition enables
+encoding simple forms of family polymorphism. More complex forms of
+family polymorphism, involving binary methods~\citep{bruce1995binary} and mutable state are
+not yet supported, but are interesting avenues for future work.
+Nevertheless, in \name, it is
+possible, for example, to encode \citeauthor{Ernst_2001}'s elegant family-polymorphism solution~\citep{Ernst_2001} to
+the Expression Problem. 
+Compared to \oname the essential novelty of \name are
+distributivity rules between function/record types and intersection
+types. These rules are the delta that enable extending the simple
+forms of multiple inheritance/composition supported by \oname into a
+more powerful form supporting nested composition. The distributivity
+rule between function types and intersections is
+well-known in the intersection types literature and was first proposed by
+\citet{Barendregt_1983} (BCD). The distributivity rules for records are
+new. Moreover, as far as we know, no previous work
+establishes the relation between BCD-style subtyping and nested composition.
+
+\name differs from the previous calculi that support BCD-style
+subtyping in that it has the merge
+  operator. Because of the merge operator, the
+addition of the distributivity rule cannot be done naively, if
+coherence is to be preserved. Previous work on disjoint intersection types
+proposes a solution to coherence, but the solution imposes several restrictions
+to guarantee the uniqueness of the elaboration and thus allow for a simple
+syntactic proof of coherence. While this proof method is simple, it is also
+unnecessarily restrictive and imposes somewhat ad-hoc restrictions. Most
+importantly, it makes it hard or impossible to adapt the proof to extensions of
+the calculus, such as the new subtyping rules required by the BCD system.
+
+In this work we remove the brittleness of the previous syntactic method to prove
+coherence, by employing a more semantic proof method based on \emph{logical
+  relations}~\citep{tait, plotkin1973lambda, statman1985logical}. This new proof method has several
+advantages. Firstly, with the new proof method, several restrictions that were
+enforced by \oname to enable the syntactic proof method are removed. For example
+the work on \oname has to carefully distinguish between so-called \emph{top-like
+  types} and other types. 
+%This is necessary because top-like types can be
+%non-disjoint (unlike other types), and yet they need to be allowed in a calculus
+%with top types. 
+In \name this distinction is not necessary; top-like types are handled like all
+other types. Secondly, the method based on logical relations is more powerful
+because it is based on semantic rather than syntactic equality. Finally, the
+removal of the ad-hoc side-conditions makes adding new extensions, such as
+support for BCD-style subtyping, easier. In order to deal with the complexity of
+the elaboration semantics of \name, we employ binary logical relations that are
+heterogeneous, parameterized by two types; the fundamental property is also
+reformulated to account for bidirectional type-checking.
+
+\begin{comment}
+\tom{We need to be careful about how to formulate the above. The proof
+     method itself is not novel. What is novel is that we use it for
+     this purpose.}
+\jeremy{adding to tom's comment, the novelty lines in the
+     design of the logical relations that are tightly related to the disjointness
+     judgment, esp the relation of products. Also, compared with traditional logical
+     relations, there are two differences: 1) traditional logical
+     relations are usually indexed by one type, ours are heterogeneous,
+     parameterized by two types; 2) fundamental property doesn't hold in our
+     target language  }
+\end{comment}
+
+In summary the contributions of this paper are:
+
+\begin{itemize}
+
+\item The \name calculus: a type-safe and coherent calculus with
+  disjoint intersection types, and
+  support for \emph{nested composition} and \emph{subtyping}. 
+
+\item A more flexible notion of disjoint intersection types where 
+only merges need to be checked for disjointness. This removes the need 
+for enforcing disjointness for all well-formed types, making the
+calculus more easily extensible.
+
+\item An extension of BCD subtyping with both records and elaboration into coercions, 
+  and
+  algorithmic subtyping rules with coercions, inspired by
+  \citeauthor{pierce1989decision}'s decision
+  procedure~\citep{pierce1989decision}.
+
+\item A more powerful proof strategy for coherence of disjoint
+  intersection types based on logical
+  relations. 
+
+\item Illustrations of how the calculus can encode essential features 
+of \emph{family polymorphism} through nested composition.
+
+\item A full-blown implementation\footnote{The implementation, Coq formalization and
+  appendix are available at \url{https://github.com/bixuanzju/nested-composition}} of a language built
+on top of \name; it runs and type-checks the 
+examples shown in the paper.
+
+\item A comprehensive Coq mechanization of all meta-theory in this paper. As a by-product, we obtain the first mechanically
+  verified BCD-style subtyping algorithm with coercions.
+
+\end{itemize}
+
+% Local Variables:
+% TeX-master: "../paper"
+% org-ref-default-bibliography: ../paper.bib
+% End:

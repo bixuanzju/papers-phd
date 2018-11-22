@@ -1,0 +1,225 @@
+
+\section{Full Typing Rules of \fnamee}
+\label{appendix:fnamee}
+
+\drules[swfte]{$[[||- DD]]$}{Well-formedness}{empty, var}
+
+\drules[swfe]{$[[DD ||- GG]]$}{Well-formedness}{empty, var}
+
+\drules[swft]{$[[DD |- A]]$}{Well-formedness of type}{top, bot, nat, var, rcd, arrow, all, and}
+
+\drules[S]{$ [[A <: B ~~> c]]  $}{Declarative subtyping}{refl,trans,top,rcd,andl,andr,arr,and,distArr,topArr,distRcd,topRcd,bot,forall,topAll,distAll}
+
+\drules[TL]{$[[ A top  ]]$}{Top-like types}{top,and,arr,rcd,all}
+
+\drules[D]{$[[DD |- A ** B]]$}{Disjointness}{topL, topR, arr, andL, andR, rcdEq, rcdNeq, tvarL, tvarR, forall,ax}
+
+\drules[Dax]{$[[A **a B]]$}{Disjointness Axiom}{intArr, intRcd, intAll, arrAll, arrRcd, allRcd}
+
+\textbf{Note:}   For each form $[[A **a B]]$, we also have a symmetric one $[[B **a A]]$.
+
+
+\drules[T]{$[[DD; GG |- ee => A ~~> e]]$}{Inference}{top, nat, var, app, merge, anno, tabs, tapp, rcd, proj}
+
+\drules[T]{$[[DD ; GG |- ee <= A ~~> e]]$}{Checking}{abs, sub}
+
+\begin{definition}
+  \begin{align*}
+    [[ < [] >1 ]] &=  [[top]] \\
+    [[ < l , fs >1 ]] &= [[ < fs >1 o id  ]] \\
+    [[ < A , fs >1 ]] &= [[(top -> < fs >1) o topArr]] \\
+    [[ < X ** A , fs >1 ]] &= [[ \ < fs >1 o topAll ]] \\ \\
+    [[ < [] >2 ]] &=  [[id]] \\
+    [[ < l , fs >2 ]] &= [[ < fs >2 o id  ]] \\
+    [[ < A , fs >2 ]] &= [[(id -> < fs >2) o distArr]] \\
+    [[ < X ** A , fs >2 ]] &= [[ \ < fs >2 o distPoly]]
+  \end{align*}
+\end{definition}
+
+\drules[A]{$[[fs |- A <: B ~~> c]]$}{Algorithmic subtyping}{const, top, bot,and,arr,rcd,forall,arrConst,rcdConst,andConst,allConst}
+
+
+\drules[CTyp]{$[[CC : (DD ;  GG => A ) ~> (DD' ; GG' => B ) ~~> cc]]$}{Context typing I}{emptyOne, appLOne, appROne, mergeLOne, mergeROne, rcdOne, projOne, annoOne, tabsOne,tappOne}
+
+\drules[CTyp]{$[[CC : ( DD ; GG <= A ) ~> (DD' ; GG' <= B ) ~~> cc]]$}{Context typing II}{emptyTwo, absTwo}
+
+\drules[CTyp]{$[[CC : ( DD ; GG <= A ) ~> (DD' ; GG' => B ) ~~> cc]]$}{Context typing III}{appLTwo, appRTwo, mergeLTwo, mergeRTwo, rcdTwo, projTwo, annoTwo, tabsTwo, tappTwo}
+
+\drules[CTyp]{$[[CC : ( DD ; GG => A ) ~> ( DD' ; GG' <= B ) ~~> cc]]$}{Context typing IV}{absOne}
+
+
+
+\section{Full Typing Rules of \tnamee}
+
+\drules[wfe]{$[[ dd |- gg   ]]$}{Well-formedness of value context}{empty, var}
+
+\drules[wft]{$[[ dd |- T   ]]$}{Well-formedness of types}{unit, nat, var, arrow,prod, all}
+
+\drules[ct]{$[[ c |- T1 tri T2  ]]$}{Coercion typing}{refl,trans,top,bot,topArr,arr,pair,distArr,distAll,projl,projr,forall,topAll}
+
+\drules[t]{$[[ dd ; gg |- e : T ]]$}{Static semantics}{unit, nat, var, abs, app, tabs, tapp, pair, capp}
+
+\drules[r]{$[[e --> e']]$}{Single-step reduction}{topArr,topAll,distArr,distAll,id,trans,top,arr,pair,projl,projr,forall,app,tapp,ctxt}
+
+% \section{Well-Foundedness}
+
+% \wellfounded*
+
+
+\section{Decidability}
+\label{appendix:decidable}
+
+\begin{definition}[Size of $[[fs]]$]
+  \begin{align*}
+    size([[ [] ]]) &=  0 \\
+    size([[ fs, l ]]) &= size([[ fs ]]) \\
+    size([[ fs, A ]]) &= size([[ fs ]]) + size ([[ A ]]) \\
+    size([[ fs, X ** A ]]) &= size([[ fs ]]) + size([[ A ]]) \\
+  \end{align*}
+\end{definition}
+
+\begin{definition}[Size of types]
+  \begin{align*}
+    size([[ rho ]]) &= 1 \\
+    size([[ A -> B ]]) &= size([[A]]) + size([[B]]) + 1 \\
+    size([[ A & B ]]) &= size([[A]]) + size([[B]]) + 1 \\
+    size([[ {l:A} ]]) &= size([[A]]) + 1 \\
+    size([[ \X ** A. B ]]) &= size([[A]]) + size([[B]]) + 1
+  \end{align*}
+\end{definition}
+
+% \begin{theorem}[Decidability of Algorithmic Subtyping]
+%   \label{lemma:decide-sub}
+%   Given $[[fs]]$, $[[A]]$ and $[[B]]$, it is decidable whether there exists
+%   $[[c]]$, such that $[[fs |- A <: B ~~> c]]$.
+% \end{theorem}
+\decidesub*
+\proof
+Let the judgment $[[fs |- A <: B ~~> c]]$ be measured by $size([[fs]]) +
+size([[A]]) + size([[B]])$. For each subtyping rule, we show that every
+inductive premise
+is smaller than the conclusion.
+
+\begin{itemize}
+  \item Rules \rref*{A-const,A-top, A-bot} have no premise.
+    \item Case \[ \drule{A-and} \]
+      In both premises, they have the same $[[fs]]$ and $[[A]]$, but $[[B1]]$
+      and $[[B2]]$ are smaller than $[[B1 & B2]]$.
+    \item Case \[\drule{A-arr} \]
+      The size of premise is smaller than the conclusion as $size([[B1 -> B2]])
+      = size([[B1]]) + size([[B2]]) + 1$.
+    \item Case \[ \drule{A-rcd} \]
+      In premise, the size is $size([[fs,l]]) + size ([[A]]) + size([[B]]) =
+      size([[fs]]) + size([[A]]) + size([[B]])$, which is smaller than
+      $size([[fs]]) + size([[A]]) + size([[{l:B}]]) = size([[fs]]) + size([[A]])
+      + size([[B]]) + 1$.
+    \item Case \[\drule{A-forall} \]
+      The size of premise is smaller than the conclusion as $size([[fs]]) +
+      size([[A]]) + size([[\X ** B1.B2]])
+      = size([[fs]]) + size([[A]]) + size([[B1]]) + size([[B2]]) + 1
+      > size([[fs, X ** B1]]) + size([[A]]) + size([[B2]])
+      = size([[fs]]) + size([[B1]]) + size([[A]]) + size([[B2]])$.
+    \item Case \[\drule{A-arrConst} \]
+      In the first premise, the size is smaller than the conclusion because of
+      the size of $[[fs]]$ and $[[A2]]$. In the second premise, the size is
+      smaller than the conclusion because $size([[A1 -> A2]]) > size([[A2]])$.
+    \item Case \[\drule{A-rcdConst} \]
+      The size of premise is smaller as $size([[ l, fs ]]) + size([[{l:A}]]) +
+      size([[rho]])
+      = size([[fs]]) + size([[A]]) + size([[rho]]) + 1
+      > size([[fs]]) + size([[A]]) + size([[rho]])$.
+    \item Case \[\drule{A-andConst} \]
+      The size of premise is smaller as $size([[A1 & A2]]) = size([[A1]]) +
+      size([[A2]]) + 1 > size([[Ai]])$.
+    \item Case \[\drule{A-allConst} \]
+      In the first premise, the size is smaller than the conclusion because of
+      the size of $[[fs]]$ and $[[A2]]$. In the second premise, the size is
+      smaller than the conclusion because $size([[\Y**A1. A2]]) > size([[A2]])$.
+\end{itemize}
+\qed
+
+\begin{lemma}[Decidability of Top-like types]
+  \label{lemma:decide-top}
+  Given a type $[[A]]$, it is decidable whether $[[ A top ]]$.
+\end{lemma}
+\proof Induction on the judgment $[[A top]]$. For each subtyping rule, we show
+that every inductive premise is smaller than the conclusion.
+\begin{itemize}
+  \item \rref{TL-top} has no premise.
+  \item Case \[\drule{TL-and}\]
+    $size([[A & B]]) = size([[A]]) + size([[B]]) + 1$, which is greater than
+    $size([[A]])$ and $size([[B]])$.
+  \item Case \[\drule{TL-arr}\]
+    $size([[A -> B]]) = size([[A]]) + size([[B]]) + 1$, which is greater than
+    $size([[B]])$.
+  \item Case \[\drule{TL-rcd}\]
+    $size([[{l:A}]]) = size([[A]]) + 1$, which is greater than
+    $size([[A]])$.
+  \item Case \[\drule{TL-all}\]
+    $size([[\X ** A. B]]) = size([[A]]) + size([[B]]) + 1$, which is greater than
+    $size([[B]])$.
+\end{itemize}
+\qed
+
+\begin{lemma}[Decidability of disjointness axioms checking]
+  \label{lemma:decide-disa}
+  Given $[[A]]$ and $[[B]]$, it is decidable whether $[[ A **a B ]]$.
+\end{lemma}
+\proof $[[ A **a B ]]$ is decided by the shape of types, and thus it's
+decidable. 
+\qed
+
+% \begin{theorem}[Decidability of disjointness checking]
+%   \label{lemma:decide-dis}
+%   Given $[[DD]]$, $[[A]]$ and $[[B]]$, it is decidable whether $[[ DD |- A ** B ]]$.
+% \end{theorem}
+\decidedis*
+\proof
+Let the judgment $[[ DD |- A ** B ]]$ be measured by $ size([[A]]) +
+size([[B]])$. For each subtyping rule, we show that every inductive premise
+is smaller than the conclusion.
+\begin{itemize}
+\item Case \[\drule{D-topL}\]
+  By \cref{lemma:decide-top}, we know $[[A top]]$ is decidable.
+\item Case \[\drule{D-topR}\]
+  By \cref{lemma:decide-top}, we know $[[B top]]$ is decidable.
+\item Case \[\drule{D-arr}\]
+  $size([[A1 -> A2]]) + size ([[B1 -> B2]]) > size([[A2]]) + size([[B2]])$.
+\item Case \[\drule{D-andL}\]
+  $size([[A1 & A2]]) + size ([[B]])$ is greater than $size([[A1]]) +
+  size([[B]])$ and $size([[A2]]) + size([[B]])$.
+\item Case \[\drule{D-andR}\]
+  $size([[B1 & B2]]) + size ([[A]])$ is greater than $size([[B1]]) +
+  size([[A]])$ and $size([[B2]]) + size([[A]])$.
+\item Case \[\drule{D-rcdEq}\]
+  $size([[{l:A}]]) + size ([[{l:B}]])$ is greater than $size([[A]]) +
+  size([[B]])$.
+\item Case \[\drule{D-rcdNeq}\]
+  It's decidable whether $[[l1]]$ is equal to $[[l2]]$.
+\item Case \[\drule{D-tvarL}\]
+  By \cref{lemma:decide-sub}, it's decidable whether $[[A<:B]]$.
+\item Case \[\drule{D-tvarR}\]
+  By \cref{lemma:decide-sub}, it's decidable whether $[[A<:B]]$.
+\item Case \[\drule{D-forall}\]
+  $size([[\X**A1.B1]]) + size ([[\X**A2.B2]])$ is greater than $size([[B1]]) +
+  size([[B2]])$.
+\item Case \[\drule{D-ax}\]
+  By \cref{lemma:decide-disa} it's decidable whether $[[A **a B]]$.
+\end{itemize}
+\qed
+
+% \begin{theorem}[Decidability of typing]
+%   \label{lemma:decide-typing}
+%   Given $[[DD]]$, $[[GG]]$, $[[ee]]$ and $[[A]]$, it is decidable whether $[[DD ; GG  |- ee dirflag A]]$.
+% \end{theorem}
+% \decidetyp*
+% \proof
+% The typing judgment $[[DD ; GG  |- ee dirflag A]]$ is syntax-directed.
+% And by \cref{lemma:decide-sub} and \cref{lemma:decide-dis}, we know that typing
+% is decidable.
+% \qed
+
+\section{Circuit Embeddings}
+\label{appendix:circuit}
+
+\lstinputlisting[language=haskell,linerange=2-140]{./examples/Scan2.hs}% APPLY:linerange=DSL_FULL

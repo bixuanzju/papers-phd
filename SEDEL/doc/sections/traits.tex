@@ -1,0 +1,374 @@
+\section{Typed First-Class Traits}
+\label{sec:traits}
+
+In \cref{sec:overview} we have seen some examples of first-class traits at work
+in \name. In this section we give a detailed account of \name's support for
+typed first-class traits, to complement what has been presented so far. In doing so,
+we simplify the examples in \cref{sec:overview} to make better use of traits.
+\Cref{sec:typesystem} presents the formal type system of first-class traits.
+
+\subsection{Traits in \name}
+
+\name supports a simple, yet expressive form of traits~\cite{scharli2003traits}.
+Traits provide a simple mechanism for find-grained code reuse, which
+can be regarded as a disciplined form of multiple inheritance. A trait is
+similar to a mixin in that it encapsulates a collection of related methods to be
+added to a class. The
+practical difference between traits and mixins is the way conflicting features
+that typically arise in multiple inheritance are dealt with. Instead of
+automatically resolved by scoping rules, conflicts are, in \name,
+detected by the type system, and explicitly resolved by the programmer. Compared
+with traditional trait models, there are three interesting points about
+\name's traits: (1) they are \emph{statically typed}; (2) they are
+\emph{first-class} values; and (3) they support \emph{dynamic inheritance}. The
+support for such combination of features is one of the key novelties of \name.
+Another minor difference from traditional traits (e.g., in Scala) is that,
+due to the use of structural types, a trait name is not a type.
+%We have seen some examples of trait declarations in
+%\cref{sec:overview}. The following discussions illustrate some
+%fundamental features of \name's traits.
+
+\subsection{Two Roles of Traits in \name}
+
+\subparagraph{Traits as Templates for Creating Objects.} An obvious difference between
+traits in \name and many other models of
+traits~\cite{scharli2003traits,fisher2004typed,odersky2005scalable} is that they
+directly serve as templates for objects. In many other trait models, traits are
+complemented by classes, which take the responsibility for object creation. In
+particular, most models of traits do not allow constructors for traits. However,
+a trait in \name has a single constructor of the same name. Take our last trait
+\lstinline{ide_editor} in \cref{sec:overview} for example:
+\lstinputlisting[linerange=64-64]{../../examples/overview2.sl}% APPLY:linerange=EDITOR_INST
+As with conventional OO languages, the keyword \lstinline{new} is used to create
+an object. A difference to other OO languages is that the keyword
+\lstinline{new} also specifies the intended type of the object. We
+instantiate the \lstinline{ide_editor} trait and create an object
+\lstinline{a_editor1} of type \lstinline{IDEEditor}. As we will see in
+\cref{subsec:cons}, constructors with parameters can also be expressed.
+
+It is tempting to try to instantiate the \lstinline{editor} trait such as
+\lstinline{new[Editor] editor}. However this results in a type error, because as
+we discussed, \lstinline{editor} has no definition of \lstinline{version}, and
+blindly instantiating it would cause runtime error. This behaviour is on a par
+with Java's abstract classes -- traits with undefined methods cannot be
+instantiated on their own.
+
+\subparagraph{Traits as Units of Code Reuse.}
+The traditional role of traits is to serve as units of code reuse. \name's traits
+can have this role as well.
+Our \lstinline{spell_mixin} function in \cref{sec:overview} is more complicated than it should be.
+This is because we were mimicking classes as traits, and
+mixins as functions over traits. Instead, traits already provide a mechanism of
+code reuse. To illustrate this, we simplify \lstinline{spell_mixin} as follows:
+\lstinputlisting[linerange=87-90]{../../examples/overview2.sl}% APPLY:linerange=HELP
+This is much cleaner. The trait \lstinline{spell} adds a method
+\lstinline{check}. It also defines a method \lstinline{on_key}.
+A key difference with \lstinline{spell_mixin} is that \lstinline{on_key} is invoked on the \lstinline{self}
+parameter instead of \lstinline{super}. Note that this does not necessarily mean \lstinline{check} will call \lstinline{on_key}
+defined in the same trait. As we will see, the actual behaviour entirely depends on how we compose \lstinline{spell}
+with other traits. One minor difference is that we do not need to tag \lstinline{on_key}
+with the \lstinline{override} keyword, because \lstinline{spell} stands as a standalone entity.
+Another interesting point is that the self-type \lstinline{OnKey}
+is not the same as that of the trait body, which also contains the \lstinline{check} method.
+In \name, self-types of traits are known as trait \emph{requirements}.
+
+
+\subparagraph{Classes and/or Traits}
+
+In the literature on traits~\cite{Ducasse_2006, scharli2003traits}, the
+aforementioned two roles are considered as competing. One reason of the two
+roles conflicting in class-based languages is because a class must adopt a fixed
+position in the class hierarchy and therefore it can be difficult to reuse and
+resolve conflicts, whereas in \name, a trait is a standalone entity and is not
+tied to any particular hierarchy. Therefore we can view our traits either as
+generators of instances, or units of reuse. Another important reason why our
+model can do just with traits is because we have a pure language. Mutable state
+can often only appear in classes in imperative models of traits, which is a good
+reason for having both classes and traits.
+
+
+
+% \lstinline{version} method is not defined. Like mixins, \lstinline{help} can be
+% combined with other traits to produce several combinations of functionality. For
+% instance, we create another editor that inherits two traits \lstinline{editor}
+% and \lstinline{help}.
+% \lstinputlisting[linerange=75-76]{../../examples/overview2.sl}% APPLY:linerange=HELP2
+% Due to the lack of multiple inheritance in JavaScript, we were forced to use
+% mixins. In \name, this can be easily achieved because traits support multiple
+% inheritance. In general, \lstinline{inherits ...} can take one or more trait
+% expressions (delimited by \lstinline{&}).
+
+
+\subsection{Trait Types and Trait Requirements}
+
+\subparagraph{Object Types and Trait Types.}
+\name adopts a relatively standard foundational model of object-oriented
+constructs~\cite{DBLP:conf/ecoop/LeeASP15} where objects are encoded as records
+with a structural type. This is why the type of the object \lstinline{a_editor1}
+is the record type \lstinline{IDEEditor}. In \name, an object type is
+different from a trait type. A trait type is specified with the keyword
+\lstinline{Trait}. For example, the type of the \lstinline{spell} trait is
+\lstinline{Trait[OnKey, OnKey & Spelling]}. 
+
+\subparagraph{Trait Requirements and Functionality.}
+In general, a trait type
+\lstinline{Trait[T1, T2]} specifies both the \emph{requirements} \lstinline{T1}
+and the \emph{functionality} \lstinline{T2} of a trait. The requirements of a trait denote the types/methods that the
+trait needs to support for defining the functionality it provides. Both are
+reflected in the trait type. For example, \lstinline{spell} has type
+\lstinline{Trait[OnKey, OnKey & Spelling]}, which means that \lstinline{spell}
+requires some implementation of the \lstinline{on_key} method, and it provides
+implementations for the \lstinline{on_key} and \lstinline{check} methods.
+When a trait
+has no requirements, the absence of a requirement is denoted by using
+the top type (\lstinline{Top}). A simplified sugar \lstinline{Trait[T]} is
+used to denote a trait without requirements, but providing functionality \lstinline{T}.
+
+\subparagraph{Trait Requirements as Abstract Methods.}
+Let us go back to our very first trait \lstinline{editor}. Note how in
+\lstinline{editor} the type of the \lstinline{self} parameter is
+\lstinline{Editor & Version}, where \lstinline{Version} contains a declaration of the
+\lstinline{version} method that is needed for the definition of
+\lstinline{show_help}. Note also that the trait itself does not actually contain
+a \lstinline{version} definition. In many other OO models a similar program
+could be achieved by having an \emph{abstract} definition of
+\lstinline{version}. In \name there are no abstract definitions (methods or
+fields), but a similar result can be achieved via trait requirements.
+Requirements of a trait are met at the object creation point. For example, as we
+mentioned before, the \lstinline{editor} trait alone cannot be instantiated
+since it lacks \lstinline{version}. However, when it is composed with a trait that
+provides \lstinline{version}, the composition can be instantiated, as shown below:
+\lstinputlisting[linerange=75-76]{../../examples/overview2.sl}% APPLY:linerange=HELP2
+\name uses a syntax where the self parameter
+can be explicitly named (not necessarily named \lstinline{self}) with a
+type annotation. When the self parameter is omitted (for example in the
+\lstinline{foo} trait above), its type defaults to \lstinline{Top}. This
+is different from typical OO languages, where the default type of the self
+parameter is the same as the class being defined.
+
+
+
+\subparagraph{Intersection Types Model Subtyping.}
+\lstinline{IDEEditor} is defined as an intersection type (\lstinline{Editor & Version & Spelling & ModalEdit}).
+Intersection types~\cite{coppo1981functional,pottinger1980type} have been woven
+into many modern languages these days. A notable example is Scala, which makes
+fundamental use of intersection types to express a class/trait that extends
+multiple other traits. An intersection type such as \lstinline{T1 & T2} contains
+exactly those values which can be used as values of type \lstinline{T1} and of
+type \lstinline{T2}, and as such, \lstinline{T1 & T2} immediately introduces a
+subtyping relation between itself and its two constituent types \lstinline{T1}
+and \lstinline{T2}. Unsurprisingly, \lstinline{IDEEditor} is a subtype of
+\lstinline{Editor}.
+
+
+% \subparagraph{Composition of traits}
+
+
+% The definition of the object \lstinline{my_editor2} also shows the second way to
+% introduce inheritance, namely by \emph{composition} of traits. Composition of
+% traits is denoted by the operator \lstinline{&}. Thus \name offers two options
+% when it comes to inheritance: we can either compose beforehand when declaring
+% traits (using \lstinline{inherits}), or compose at the object creation point
+% (using \lstinline{new} and the \lstinline{&} operator).
+
+%Under the hood, inheritance is accomplished by using the \emph{merge operator}
+%(denoted by \lstinline{,,}). The merge operator~\cite{dunfield2014elaborating}
+%allows two arbitrary values to be merged, with the resulting type being an
+%intersection type.
+%For example the type of \lstinline{2 ,, true} is
+%\lstinline{Int & Bool}.
+\begin{comment}
+\subparagraph{Mutually dependent traits} When two traits are composed, any two
+methods in those two traits can refer to each other via the self-reference. We
+say these two traits are \emph{mutually dependent}. The next example, though a
+bit contrived, illustrates this point.
+\lstinputlisting[linerange=-]{}% APPLY:linerange=EVEN_ODD
+
+\noindent By utilizing trait requirements, the \lstinline{isEven} and
+\lstinline{isOdd} methods can refer to each other in two different traits.
+\end{comment}
+
+
+\subsection{Traits with Parameters and First-Class Traits}\label{subsec:cons}
+
+So far our uses of traits involve no parameters. Instead of inventing another trait
+syntax with parameters, a trait with parameters is just a function that produces
+a trait expression, since functions already have parameters of their own. This
+is one benefit of having first-class traits in terms of language economy. To
+illustrate, let us simplify \lstinline{modal_mixin} in a similar way as in \lstinline{spell_mixin}:
+\lstinputlisting[linerange=94-98]{../../examples/overview2.sl}% APPLY:linerange=MODAL2
+The first thing to notice is that \lstinline{modal} is a function with one
+argument, and returns a trait expression, which essentially makes
+\lstinline{modal} a trait with one parameter.
+Now it is easy to see that a trait declaration
+\lstinline$trait name [self : ...] => {...}$ is just syntactic sugar for
+function definition \lstinline$name = trait [self : ...] => {...}$. The body of
+the \lstinline{modal} trait is straightforward. We initialize the
+\lstinline{mode} field to \lstinline{init_mode}.
+The \lstinline{modal} trait also comes with a constructor with one parameter,
+so we can do \lstinline{new[ModalEdit] (modal "insert")} for example.
+
+\subsection{Detecting and Resolving Conflicts in Trait Composition}
+
+A common problem in multiple inheritance is how to detect and/or resolve conflicts. For example, when
+inheriting from two traits that have the same field, then it is unclear which
+implementation to choose. There are various approaches to dealing with
+conflicts. The trait-based approach requires conflicts to be resolved at the
+level of the composition, otherwise the program is rejected by
+the type system. \name provides a means to help resolve conflicts.
+
+We start by assembling all the traits defined in this section
+to create the final editor with the same functionality as
+\lstinline{ide_editor} in \cref{sec:overview}. Our first try is as follows:
+\lstinputlisting[linerange=108-110]{../../examples/overview2.sl}% APPLY:linerange=MODAL_CONFLICT
+Unfortunately the above trait gets rejected by \name because
+\lstinline{editor}, \lstinline{spell} and \lstinline{modal} all define an \lstinline{on_key} method.
+Recall that in \cref{sec:overview}, when we use a mixin-style composition,
+the conflict resolution code has been hardwired in the definition.
+However, in a trait-style composition, this is not the case: conflicts must be resolved \emph{explicitly}.
+The
+above definition is ill-typed precisely because there is a conflicting
+method \lstinline{on_key}, thus violating the disjointness conditions
+of disjoint intersection types.
+
+\subparagraph{Resolving Conflicts.}
+To resolve the conflict, we need to explicitly state which
+\lstinline{on_key} gets to stay. \name provides such a means, the so-called
+\emph{exclusion} operator (denoted by \lstinline$\$), which allows one to
+exclude a field/method from a given trait. The following matches the behaviour
+in \cref{sec:overview} where \lstinline{on_key} in the \lstinline{modal} trait
+is selected:
+\lstinputlisting[linerange=117-120]{../../examples/overview2.sl}% APPLY:linerange=MODAL_OK
+Now the above code type checks. We can also select \lstinline{on_key} in the \lstinline{spell} trait as easily:
+\lstinputlisting[linerange=125-128]{../../examples/overview2.sl}% APPLY:linerange=MODAL_OK2
+In \cref{sec:overview} we mentioned that in the mixin style, it is impossible
+to select \lstinline{on_key} in the \lstinline{editor} trait, but this is not a problem here:
+\lstinputlisting[linerange=132-135]{../../examples/overview2.sl}% APPLY:linerange=MODAL_OK3
+
+
+% Moreover, we can reason that the version number
+% in \lstinline{modal_editor} is \lstinline{0.2}.
+
+
+% On a side note, leaving out the keyword \lstinline{override}
+% also results in a conflict because \lstinline{editor} also contains
+% \lstinline{on_key}. Whenever the type system sees \lstinline{override}, it will
+% first try to check if the inherit clause contains the method to be overridden,
+% and if so, insert the exclusion operator, otherwise a type error would
+% occur.
+
+% \subparagraph{The Keyword Override}
+
+% Since it is very common that we want to exclude some methods from the
+% inherited traits, and redefine them in the body, \name provides the keyword
+% \lstinline{override} to achieve this. For example, suppose in
+% \lstinline{editor3} we want to define a new
+% \lstinline{version_num} in the body instead of the one from
+% \lstinline{modal_edit}, we can of course exclude
+% \lstinline{version_num} from \lstinline{modal_edit} and define a new
+% \lstinline{version_num} in the body. We can also use the keyword
+% \lstinline{override} to achieve the same:
+% \lstinputlisting[linerange=125-128]{../../examples/overview2.sl}% APPLY:linerange=MODAL_OK2
+% That is, by labeling a method as a overriding method, the type system will
+% automatically exclude this method from the inherited traits. Note that if the
+% overriding method is not present in the inherited traits, a type error would
+% occur.
+
+% \subparagraph{The Keyword Super}
+
+% What if we want to invoke the overridden method in the overriding method. As
+% with convectional OO languages, \name also provides the keyword
+% \lstinline{super} to achieve this. In the following, we access the overridden
+% field \lstinline{version_num} from \lstinline{modal_edit} through the use of
+% the keyword \lstinline{super}:
+% \lstinputlisting[linerange=132-135]{../../examples/overview2.sl}% APPLY:linerange=MODAL_OK3
+
+\subparagraph{The Forwarding Operator.}
+Another operator that \name provides is the so-called \emph{forwarding}
+operator, which can be useful when we want to access some method that has been
+explicitly excluded in the \lstinline{inherits} clause. This is a common scenario in
+diamond inheritance, where \lstinline{super} is not enough. Below we show a
+variant of \lstinline{ide_editor}:
+\lstinputlisting[linerange=140-147]{../../examples/overview2.sl}% APPLY:linerange=MODAL_WIRE
+Notice that \lstinline{on_key} in \lstinline{spell} has been
+excluded. However, we can
+still access it by using the forwarding operator as in \lstinline{spell ^ self},
+which gives full access to all the methods in \lstinline{spell}. Also note that
+using \lstinline{super} only gives us access to \lstinline{on_key} in the
+\lstinline{modal} trait. To see \lstinline{ide_editor4} in action, we create a
+small test:
+\lstinputlisting[linerange=151-153]{../../examples/overview2.sl}% APPLY:linerange=MODAL_USE
+% \jeremy{Compare this to trait alias operator?}
+% \jeremy{would it be better to use forwarding operator in mix-style \lstinline{ide_editor} in
+%   \cref{sec:overview}, where we show how to access \lstinline{on_key} from editor, which is impossible in JavaScript?}
+
+% Since the result editor trait has such an exciting feature, we increment the version number to \lstinline{0.2}!
+
+
+
+\subsection{Disjoint Polymorphism and Dynamic Composition}
+\label{sec:merge}
+
+\begin{comment}
+One important difference to traditional traits or classes is that traits in
+\name are quite dynamic: we are able to compose traits \emph{dynamically} and
+then instantiate them later. We have seen an example of dynamic inheritance in
+\cref{sec:overview} to mimic mixins, where disjoint polymorphism plays an
+important role. This is impossible in traditional OO languages, such as Scala,
+since classes being inherited/instantiated must be known statically.
+
+In Scala, given two concrete traits, it is possible to use \emph{mixin composition} to
+create an object that implements both traits.
+\begin{lstlisting}[language=scala]
+trait A
+trait B
+val newAB : A with B = new A with B
+\end{lstlisting}
+Here the type \lstinline[language=scala]{A with B} is an intersection type,
+and the expression \lstinline[language=scala]{new A with B} allows creating a new
+object from the combination of the traits \lstinline{A} and
+\lstinline{B}.
+However, in Scala it is not possible to dynamically compose two
+(statically unknown) \emph{objects}. For example, the following code: \jeremy{how is this useful to have?}
+\begin{lstlisting}[language=scala]
+// Invalid Scala code:
+def merge[A,B] (x: A) (y: B) : A with B = new x with y
+\end{lstlisting}
+is rejected by the Scala compiler. The problem is that the
+\lstinline[language=scala]{with} construct in Scala can only be used to mixin
+(statically known) traits or classes, not arbitrary objects. This limitation essentially puts
+intersection types in Scala in a second-class status.
+\end{comment}
+
+\name supports disjoint polymorphism. The combination of disjoint
+polymorphism and first-class traits enables the highly modular code
+where traits with \emph{statically unknown} types can be instantiated
+and composed in a type-safe way! The following is illustrative of this:
+%However, this is not a problem in \name. Thanks to disjoint polymorphism and
+%disjoint intersection types, we can define the same \lstinline{merge} that is able to take two
+%traits (where the full set of the members may not be known statically), combine and instantiate them.
+\lstinputlisting[linerange=76-76]{../../examples/overview.sl}% APPLY:linerange=MERGE
+The \lstinline{merge} function takes two traits \lstinline{x} and \lstinline{y} of
+some arbitrary types \lstinline{A} and \lstinline{B}, composes them,
+and instantiates an object with the resulting composed trait. Clearly
+such composition cannot always work if \lstinline{A} and
+\lstinline{B} can have conflicts. However, \lstinline{merge} has a
+constraint \lstinline{B * A} that ensures that whatever types are used
+to instantiate \lstinline{A} and \lstinline{B} they must be disjoint.
+Thus, under the assumption that \lstinline{A} and \lstinline{B} are
+disjoint the code type-checks. We want to emphasize that row polymorphism is unable to express
+this kind of disjointness of two polymorphic types, thus systems using row polymorphism is unable to define
+the \lstinline{merge} function, which plays an essential role in \cref{sec:application}.
+
+\begin{comment}
+Notice the disjoint constraint on the type variable \lstinline{B} (\lstinline{B * A}), which is crucial
+to ensure the composition of two traits \lstinline{x} and \lstinline{y} is conflict-free.
+As far as we are aware, no mainstream statically typed OO languages can do this.
+\end{comment}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: ../paper.bib
+%%% End:

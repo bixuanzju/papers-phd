@@ -1,0 +1,384 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Gradual typing~\cite{siek2006gradual} is an increasingly popular topic in both
+programming language practice and theory. On the practical side there is growing
+number of programming languages adopting gradual typing. Those languages include
+Clojure~\cite{Bonnaire_Sergeant_2016}, Python~\cite{Vitousek_2014},
+TypeScript~\cite{typescript}, Hack~\cite{verlaguet2013facebook}, and the
+addition of Dynamic to C\#~\cite{Bierman_2010}, to cite a few. On the
+theoretical side, recent years have seen a large body of research that defines
+the foundations of gradual typing~\cite{garcia2016abstracting,
+  cimini2016gradualizer, CiminiPOPL}, explores their use for both functional and
+object-oriented programming~\cite{siek2006gradual, siek2007gradual}, as well as its applications
+to many other areas~\cite{siek2016key, Ba_ados_Schwerter_2014}.
+
+A key concept in gradual type systems is
+\emph{consistency}~\cite{siek2006gradual}. Consistency weakens type equality to allow
+for the presence of \emph{unknown} types. In some gradual type systems
+with subtyping, consistency is combined with subtyping to give rise to
+the notion of \emph{consistent subtyping}~\cite{siek2007gradual}. Consistent
+subtyping is employed by gradual type systems to validate type
+conversions arising from conventional subtyping. One nice feature of consistent
+subtyping is that it is derivable from the more primitive
+notions of \emph{consistency} (arising from gradual typing) and
+\emph{subtyping}. As \citet{siek2007gradual}
+put it this is a good feature to have since it shows that
+``\emph{gradual typing and subtyping are orthogonal and can be combined in a principled fashion}''.
+Thus consistent subtyping is often used as a guideline for
+designing gradual type systems with subtyping. 
+
+Unfortunately, as noted by \citet{garcia2016abstracting}, notions of
+consistency and/or consistent subtyping ``\emph{become more difficult to adapt
+  as type systems get more complex}''. In particular, for the case of type
+systems with subtyping, certain kinds of subtyping do not fit well with the
+original definition of consistent subtyping by \citet{siek2007gradual}. One
+important case where such mismatch happens is in type systems supporting
+implicit (higher-rank) polymorphism~\cite{jones2007practical,dunfield2013complete}. 
+It is well-known that polymorphic types
+\`a la System F induce a subtyping relation that relates polymorphic types to
+their instantiations~\cite{odersky1996putting, mitchell1990polymorphic}. However
+\citeauthor{siek2007gradual}'s definition is not adequate for this kind of
+subtyping. Moreover the current framework for \emph{Abstracting Gradual
+Typing} (AGT)~\cite{garcia2016abstracting} also does not account for polymorphism, with the authors
+acknowledging that this is one of the interesting avenues for future work. 
+
+Existing work on gradual type systems with polymorphism does not use
+consistent subtyping. The Polymorphic Blame Calculus (\pbc)~\cite{ahmed2011blame} is
+an \emph{explicitly} polymorphic calculus with explicit casts, which is
+often used as a target language for gradual type systems with
+polymorphism. In \pbc a notion of \emph{compatibility} is employed
+to validate conversions allowed by casts. Interestingly \emph{\pbc
+  allows conversions from polymorphic types to their instantiations}.
+For example, it is possible to cast a value with type
+$\forall a. a \to a$ into $\nat \to \nat$. Thus an
+important remark here is that while \pbc is explicitly polymorphic,
+casting and conversions are closer to \emph{implicit}
+polymorphism. That is, in a conventional explicitly polymorphic calculus
+(such as System F), the primary notion is type equality, where
+instantiation is not taken into account. Thus the types
+$\forall a. a \to a$ and $\nat \to \nat$ are deemed
+\emph{incompatible}. However in \emph{implicitly} polymorphic
+calculi~\cite{jones2007practical,dunfield2013complete}
+$\forall a. a \to a$ and $\nat \to \nat$ are deemed
+\emph{compatible}, since the latter type is an instantiation of the
+former.  Therefore \pbc is in a sense a hybrid between implicit and
+explicit polymorphism, utilizing type equality (\`a la System F) for
+validating applications, and \emph{compatibility} for validating
+casts. 
+
+An alternative approach to polymorphism has recently been proposed by
+\citet{yuu2017poly}. Like \pbc their calculus is explicitly
+polymorphic. However, in that work they employ type consistency to validate
+cast conversions, and forbid conversions from
+$\forall a. a \to a$ to $\nat \to \nat$. This makes their
+casts closer to explicit polymorphism, in contrast to \pbc.
+Nonetheless, there is still same flavour of implicit polymorphism in
+their calculus when it comes to interactions between dynamically typed
+and polymorphically typed code. In their calculus type consistency
+allows types such as $(\forall a. a) \to \nat$ to be related to $\unknown \to
+\nat$, which can be viewed as a form of subtyping.
+
+
+\begin{comment}
+Instead several works use alternative notions such as
+\emph{compatibility} of types~\cite{} or adapted versions of type
+consistency~\cite{}. 
+For instance both \citet{ahmed2011blame} (in the
+Polymorphic Blame calculus) and \citet{yuu2017poly} define
+notions of \emph{compatibility}. \jeremy{inaccurate} These two notions of compatibility
+are different from each other, and they are not derived from
+consistency and subtyping.
+\ningning{Mention however they are trying to mixing subtyping and consistency to some degree?}
+\ningning{one advantage of their systems is that they do no guessing}
+Thus one first criticism to compatibility is 
+that it lacks the orthogonality of notions (subtyping and consistency)
+afforded by consistent subtyping~\cite{siek2007gradual}  \bruno{Ningning, has this criticism
+  been pointed out by someone else before? If so, who? Citing them
+  would strenghten our point}.
+\ningning{I think no except Siek}
+Moreover, the 
+proposals for compatibility are different, which makes it unclear 
+of which one is more appropriate.
+\end{comment}
+
+The first goal of this paper is to study the gradually typed subtyping
+and consistent subtyping relations for \emph{implicit polymorphism}. 
+To accomplish this, we first show how
+to reconcile consistent subtyping with polymorphism by generalizing
+the original consistent subtyping definition by
+\citeauthor{siek2007gradual}. The new definition of consistent
+subtyping can deal with polymorphism, and preserves the orthogonality
+between consistency and subtyping. To slightly rephrase \citeauthor{siek2007gradual},
+the motto of our paper is that:
+
+\begin{quote}\emph{gradual typing and {\bf polymorphism} are orthogonal and can be combined 
+in a principled fashion.}\footnote{Note here that we borrow \citeauthor{siek2007gradual}'s motto
+  mostly to talk about the static semantics. As \citet{ahmed2011blame}
+work shows there are several non-trivial interactions between
+polymorphism and casts at the level of the dynamic semantics.}
+\end{quote}
+%\footnote{Note that here orthogonality refers to the static
+%semantics aspects. As \cite{ahmed} shows there are clearly non-trivial
+%interactions between gradual typing and polymorphism in the dynamic semantics?}
+
+\noindent With the insights gained from our work, we argue that
+\citeauthor{ahmed2011blame}'s notion of compatibility is too permissive (i.e.
+too many programs are allowed to type-check), and that
+\citeauthor{yuu2017poly}'s notion of type consistency, while fine for explicit
+polymorphism, is too conservative for implicit polymorphism.
+
+\tikzset{
+  state/.style={
+    rectangle,
+    rounded corners,
+    minimum height=2em,
+    inner sep=2pt,
+    text centered,
+    align=center
+  },
+}
+
+\begin{figure}[t]
+\begin{tikzpicture}[->,>=stealth']
+  \footnotesize
+
+  \node[state,
+  draw=black, very thick,
+  % text width=2.3cm
+  ](cons-and-sub)
+ {\begin{tabular}{ll}
+    \parbox{2.3cm}{\begin{itemize}
+      \item Subtyping
+      \item Consistency
+      \end{itemize}
+    }
+    & (Fig.~\ref{fig:decl:subtyping})\\
+  \end{tabular}
+  };
+
+ \node[state,    	% layout (defined above)
+  % text width=3cm, 	% max text width
+  below of=cons-and-sub, 	% Position is to the right of
+  node distance=2cm, 	% distance
+  anchor=center] (conssub) 	% posistion relative to the center of the 'box'
+ {
+   \parbox{2.2cm}{Consistent\\
+     Subtyping (Def.~\ref{def:decl-conssub})}
+ };
+
+ \node[state,
+  right of=conssub,
+  anchor=center,
+  node distance=3.8cm,
+  ] (syntax-conssub)
+ {
+   \parbox{1.5cm}{\centering
+     $\dctx \bysub A \tconssub B$\\
+     (Fig.~\ref{fig:decl:conssub})}
+ };
+
+ \node[state,
+  right of=syntax-conssub,
+  anchor=center,
+  node distance=3.2cm,
+  ] (decl)
+ {
+   \parbox{1.2cm}{\centering
+     $\dctx \byinf e : A$\\
+     (Fig.~\ref{fig:decl-typing})}
+ };
+
+ \node[state,
+  right of=decl,
+  anchor=center,
+  node distance=3.5cm,
+  ] (algo)
+ {
+   \parbox{1.7cm}{\centering
+     $\tctx \byinf e \infto A \toctxr$\\
+     (Fig.~\ref{fig:algo:typing})}
+ };
+
+ \node[state,
+  below of=conssub,
+  anchor=center,
+  node distance=2.5cm,
+  ] (siek)
+ {
+   \parbox{3cm}{\citeauthor{siek2007gradual}
+     (Def.~\ref{def:old-decl-conssub})}
+ };
+
+ \node[state,
+  below of=syntax-conssub,
+  anchor=center,
+  node distance=2.5cm,
+ ] (agt)
+ {
+   \parbox{0.6cm}{AGT}
+ };
+
+ \node[state,
+  above of=decl,
+  anchor=center,
+  node distance=2cm,
+  ] (ol)
+ {
+   \parbox{2.5cm}{\centering
+     $\dctx \byhinf e : A$\\
+     (Fig.~\ref{fig:original-typing})}
+ };
+
+ \node[state,
+  below of=decl,
+  anchor=center,
+  node distance=2.5cm,
+  ] (pbc)
+ {
+   \parbox{1.2cm}{$\dctx \bypinf s : A$}
+ };
+
+ % draw the paths and and print some Text below/above the graph
+ \path
+ (cons-and-sub)   edge   node[right]{superimposed}                                      (conssub)
+ (conssub)        edge
+     node[above]{Thm.~\ref{lemma:properties-conssub}}                                 (syntax-conssub)
+ (syntax-conssub) edge                                                                  (conssub)
+ (decl)           edge   node[above]{based on}                                          (syntax-conssub)
+ ([yshift=0.2cm]decl.east) edge
+     node[above]{Thm.~\ref{thm:type_complete}}                               ([yshift=0.2cm]algo.west)
+ (algo)           edge   node[below]{Thm.~\ref{thm:type_sound}}                 (decl)
+ (conssub)        edge
+     node[right, text width=1.5cm]{generalizes (Prop.~\ref{prop:subsumes})}              (siek)
+ (agt)            edge
+     node[left, text width=1.5cm]{verified on simple types (Prop.~\ref{lemma:coincide-agt})}         (syntax-conssub)
+ (agt)            edge[bend right]
+     node[right, text width=2.5cm]{verified on $\tope$ (Prop.~\ref{prop:agt-top})}   (syntax-conssub)
+ (decl)           edge   node[right]{gradualizes}                                        (ol)
+ (decl)           edge
+     node[right, text width=2cm]{type-directed translation (Thm.~\ref{lemma:type-safety})} (pbc)
+     ;
+ % (QUERY) 	edge[bend left=20]  node[anchor=south,above]{$SC_n=0$}
+ %                                    node[anchor=north,below]{$RN_{16}$} (ACK)
+ % (QUERY)     	edge[bend right=20] node[anchor=south,above]{$SC_n\neq 0$} (QUERYREP)
+ % (ACK)       	edge                                                     (EPC)
+ % (EPC)       	edge[bend left]                                          (QUERYREP)
+ % (QUERYREP)  	edge[loop below]    node[anchor=north,below]{$SC_n\neq 0$} (QUERYREP)
+ % (QUERYREP)  	edge                node[anchor=left,right]{$SC_n = 0$} (ACK);
+
+\end{tikzpicture}
+\caption{Some key results in the paper.}
+\label{fig:key-results}
+\end{figure}
+
+As a step towards an algorithmic version of subtyping, we present a
+syntax-directed version of consistent subtyping that is sound and
+complete with respect to our formal definition of consistent
+subtyping. The syntax-directed version of consistent subtyping is
+remarkably simple and well-behaved, and is able to get rid of the
+ad-hoc \textit{restriction} operator~\cite{siek2007gradual}. 
+Moreover, to further illustrate the generality of our consistent
+subtyping definition, we show that it can also account for top types,
+which cannot be dealt with by \citeauthor{siek2007gradual}'s
+definition either.
+
+%From the technical point of
+%view the main innovation is a novel definition of consistent subtyping
+%that generalizes Siek and Taha's, and preserves the orthogonality
+%between subtyping and consistency. 
+
+\begin{comment}
+The new definition of consistent subtyping provides novel insights
+with respect to previous polymorphic gradual type systems, which did
+not not employ consistent subtyping. For instance both Ahmed et
+al. (in the Polymorphic Blame calculus) (2011) and Igarashi et
+al. (2017) define notions of \emph{compatibility} that are used
+instead of consistent subtyping. We argue that Ahmed et al.'s notion
+of compatibility is too permissive (i.e. too many programs are allowed
+to type-check), and that Igarashi et al.'s notion of compatibility is
+too conservative (i.e. programs that should type check are rejected).
+\end{comment}
+
+\begin{comment}
+To further validate our revised notion of consistent subtyping, we
+show that it coincides with the notion of consistent subtyping for an
+extension of Garcia et al.'s \emph{Abstracting Gradual Typing} (AGT)
+(2016) with polymorphism.
+\end{comment}
+
+The second goal of this paper is to present a gradually typed calculus for
+implicit (higher-rank) polymorphism that uses our new notion of consistent
+subtyping. Implicit polymorphism is a hallmark of functional programming, and
+modern functional languages (such as Haskell) employ sophisticated
+type-inference algorithms that, aided by type annotations, can deal with
+higher-rank polymorphism. Therefore as a step towards gradualizing such type
+systems, this paper develops both declarative and algorithmic versions for a
+type system with implicit higher-rank polymorphism. The algorithmic version
+employs techniques developed by \citet{dunfield2013complete} to deal with
+instantiation. We prove that the new calculus satisfies all of the refined
+criteria for gradual typing proposed by \citet{siek2015refined}.
+
+In summary, the contributions of this paper are:
+
+\begin{itemize}
+\item We define a framework for consistent subtyping in gradual type systems
+  with:
+  \begin{itemize}
+  \item a new definition of consistent subtyping that subsumes and generalizes that
+    of \citet{siek2007gradual}. This new definition can deal with
+    polymorphism and top types.
+  %Unlike previous definitions of
+  %\textit{compatibility} in \textit{Polymorphic Blame Calculus}
+  %\citep{ahmed2011blame}, we show that the orthogonality between
+  %subtyping and consistency can be preserved.
+  %  \ningning{there are differences between Definiton~\ref{def:decl-conssub},
+  %    \Cref{fig:decl:conssub} and \Cref{fig:algo:subtype}. Here I
+  %  try to distinguish the first two. I am not sure the correct terminology for
+  %  it.}
+  \item a syntax-directed version of consistent subtyping that is
+    sound and complete with respect to our definition of consistent
+    subtyping, but still guesses polymorphic instantiations.
+  \end{itemize}
+\item Based on consistent subtyping, we present a declarative gradual type
+  system with implicit higher-rank polymorphism. We prove that our calculus
+  satisfies the static aspects of the refined criteria for gradual
+  typing~\cite{siek2015refined}, and is type-safe by a type-directed
+  translation to the Polymorphic Blame Calculus~\cite{ahmed2011blame}, and thus
+  hereditarily preserves parametricity~\cite{amal2017blame}.
+\item We show that gradual typing is compatible with type inference involving
+  higher-rank polymorphism, by presenting an algorithm for implementing the
+  declarative system based on the approach developed by
+  \citet{dunfield2013complete}. The algorithm is also illustrative of a
+  situation where the simple approach of \textit{ignoring dynamic types during
+    unification}~\cite{siek2008gradual} actually works.
+\item All of the metatheory of this paper, except some manual proofs for the
+  algorithmic type system, has been mechanically formalized using the Coq proof
+  assistant.
+\end{itemize}
+
+\Cref{fig:key-results} depicts some key results in the paper. The reader is
+advised to keep this figure in mind when reading the rest of the paper.
+
+% The rest of the paper is organized as follows. In \Cref{sec:background}
+% we review a simple gradually typed language with objects, to introduce the
+% concept of consistent subtyping. We also briefly review our original language:
+% the Odersky-L{\"a}ufer type system for higher-rank types. We motivate and
+% justify our new definition of consistent subtyping in
+% \Cref{sec:exploration}. In \Cref{sec:type-system} we present the
+% declarative type system for our gradually typed calculus with implicit
+% higher-rank polymorphism. In \Cref{sec:algorithm} we give a simple
+% algorithm to implement the declarative system, and show it is sound and complete
+% with respect to the declarative system in \Cref{sec:sound:complete}. We
+% then show a simple extension and discuss some issues in
+% \Cref{sec:discussion}. After discussing related work in
+% \Cref{sec:related}, we conclude in \Cref{sec:conclusion}.
+
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: "../paper.bib"
+%%% End:

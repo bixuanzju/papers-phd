@@ -1,0 +1,707 @@
+%%% !!! WARNING: AUTO GENERATED. DO NOT MODIFY !!! %%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Semantics of the \fnamee Calculus}
+\label{sec:typesystem}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \bruno{Regarding text about differences to \fname. I think that maybe
+%   we can make a comparision in Related Work, rather than the technical
+% section. That will not disrupt the flow of the technical section, and
+% will be useful to add weight to the related work section.}
+
+This section gives a formal account of \fnamee, the first typed calculus combining
+disjoint polymorphism~\cite{alpuimdisjoint} (and disjoint intersection
+types) with BCD
+subtyping~\cite{Barendregt_1983}. The main differences to \fname are in the
+subtyping, well-formedness and disjointness relations. \fnamee adds
+BCD subtyping and unrestricted intersections, and also closes an open problem of
+\fname by including the bottom type.
+% through appropriate adjustments to the disjointness relation.
+% \fnamee is a variant of Levant's
+% predicative System F~\cite{leivant1991finitely}. \jeremy{Do we really need to
+%   cite this? Leivant's System F has finitely stratified levels} The choice of
+% predicativity is due to the coherence proof, which is
+% discussed in \cref{sec:coherence:poly}.
+The dynamic semantics
+of \fnamee is given by elaboration to the target calculus \tnamee---a variant of
+System F extended with products and explicit coercions.
+% \jeremy{Should we summaries the differences from \fname here? }
+
+% \subsection{Motivation}
+% \label{sec:poly:motivation}
+
+% Parametric polymorphism~\cite{reynolds1983types} is a well-beloved (and
+% well-studied) programming feature. It enables a single piece of code to be
+% reused on data of different types. So it is quite natural and theoretically
+% interesting to study combining parametric polymorphism with disjoint
+% intersection types, especially how it affects disjointness and coherence. On a
+% more pragmatic note, the combination of parametric polymorphism and disjoint
+% intersection types also reveals new insights into practical applications.
+% Dynamically typed languages (such as JavaScript) usually embrace quite flexible
+% mechanisms for class/object composition, e.g., mixin composition where objects
+% can be composed at run time, and their structures are not necessarily statically
+% known. The use of intersection types in TypeScript is inspired by such flexible
+% programming patterns. For example, an important use of intersection types in
+% TypeScript is the following function for mixin composition:
+% \begin{lstlisting}[language=JavaScript]
+% function extend<T, U>(first: T, second : U) : T & U {...}
+% \end{lstlisting}
+% which is analogous to our merge operator in that it takes two objects and
+% produces an object with the intersection of the types of the argument objects.
+% However, the types of the two objects are not known, i.e., they are generic. An
+% important point is that, while it is possible to define such function in
+% TypeScript (albeit using some low-level (and type-unsafe) features of
+% JavaScript), it can also cause, as pointed out by \cite{alpuimdisjoint},
+% run-time type errors! Clearly a well-defined meaning for intersection types with
+% type variables is needed.
+
+
+% \paragraph{Disjoint polymorphism.}
+
+% Motivated by the above two points, \cite{alpuimdisjoint} proposed disjoint
+% polymorphism, a variant of parametric polymorphism. The main novelty is
+% \emph{disjoint (universal) quantification} of the form $ \forall (  \alpha   *   \ottnt{A}  ) .\, \ottnt{B} $.
+% Inspired by bounded quantification~\cite{cardelli1994extension} where a type
+% variable is constrained by a type bound, disjoint quantification allows type
+% variables to be associated with \emph{disjointness constraints}.
+% Correspondingly, a term construct of the form $ \Lambda (  \alpha   *   \ottnt{A}  ) .\, \mathit{E} $ is used to
+% create values of disjoint quantification. We have seen some examples of disjoint
+% polymorphism at work in \cref{bg:sec:disjoint_poly}. With disjointness constraints
+% and a built-in merge operator, a type-safe and conflict-free \lstinline{extend}
+% function can be naturally defined as follows:
+% \begin{lstlisting}
+% extend T [U * T] (first : T) (second : U) : T & U = first ,, second;
+% \end{lstlisting}
+% The disjointness constraint on the type variable \lstinline{U} ensures that no
+% conflicts can occur when composing two objects, which is quite similar to
+% the trait model~\cite{scharli2003traits} in object-orientated programming.
+% We shall devote a whole chapter (\cref{chap:traits}) to further this point.
+
+
+% \paragraph{Adding BCD subtyping.}
+
+% While \cite{alpuimdisjoint} studied the combination of disjoint intersection
+% types and parametric polymorphism, they follow the then-standard approach
+% of \cite{oliveira2016disjoint} to ensure coherence, thus excluding the
+% possibility of adding BCD subtyping. The combination of BCD subtyping and
+% disjoint polymorphism opens doors for more expressiveness. For example, we can
+% define the following function
+% \begin{lstlisting}
+% combine A [B * A] (f : {foo : Int -> A})
+%                   (g : {foo : Int -> B}) : {foo : Int -> A & B} = f ,, g;
+% \end{lstlisting}
+% which ``combines'' two singleton records with parts of types unknown and returns
+% another singleton record containing an intersection type. A variant of this
+% function plays a fundamental role in defining Object Algebra combinators (cf.
+% \cref{chap:case_study}).
+
+
+
+\subsection{Syntax and Semantics}
+
+\begin{figure}[t]
+  \centering
+\begin{tabular}{llll} \toprule
+  Types & $\ottnt{A}, \ottnt{B}, \ottnt{C}$ & $\Coloneqq$ & $ \mathsf{Int}  \mid  \top  \mid  \bot  \mid \ottnt{A}  \rightarrow  \ottnt{B}  \mid \ottnt{A}  \, \& \,  \ottnt{B} \mid \ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{A}  \ottsym{\}} \mid \alpha \mid  \forall (  \alpha   *   \ottnt{A}  ) .\, \ottnt{B}  $\\
+  % Monotypes & $\ottnt{t}$ & $\Coloneqq$ & $ \mathsf{Int}  \mid  \top  \mid  \bot  \mid \ottnt{t_{{\mathrm{1}}}}  \rightarrow  \ottnt{t_{{\mathrm{2}}}}  \mid \ottnt{t_{{\mathrm{1}}}}  \, \& \,  \ottnt{t_{{\mathrm{2}}}} \mid \alpha \mid \ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{t}  \ottsym{\}}$\\
+  Expressions & $\mathit{E}$ & $\Coloneqq$ & $\ottmv{x} \mid i \mid  \top  \mid  \lambda \ottmv{x} .\, \mathit{E}  \mid \mathit{E}_{{\mathrm{1}}} \, \mathit{E}_{{\mathrm{2}}} \mid  \mathit{E}_{{\mathrm{1}}}  \, ,, \,  \mathit{E}_{{\mathrm{2}}}  \mid \mathit{E}  \ottsym{:}  \ottnt{A} \mid \ottsym{\{}  \ottmv{l}  \ottsym{=}  \mathit{E}  \ottsym{\}} \mid \mathit{E}  \ottsym{.}  \ottmv{l} $ \\
+        & & $\mid$ & $   \Lambda (  \alpha   *   \ottnt{A}  ) .\, \mathit{E}  \mid \mathit{E} \, \ottnt{A} $ \\
+  Term contexts & $\Gamma$ & $\Coloneqq$ &  $ \bullet  \mid \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottnt{A} $ \\
+  Type contexts & $\Delta $ & $\Coloneqq $ & $ \bullet  \mid \Delta  \ottsym{,}  \alpha  *  \ottnt{A} $  \\ \bottomrule
+\end{tabular}
+  \caption{Syntax of \fnamee}
+  \label{fig:syntax:fi}
+\end{figure}
+
+
+\Cref{fig:syntax:fi} shows the syntax of \fnamee.
+% For brevity of the
+% meta-theoretic study, we do not consider primitive operations on primitive
+% types. They can be easily added to the language, and our prototype
+% implementation is indeed equipped with common primitive types and their
+% operations.
+Metavariables $\ottnt{A}, \ottnt{B}, \ottnt{C}$ range over types. Types include
+standard constructs from prior work~\cite{oliveira2016disjoint, alpuimdisjoint}:
+integers $ \mathsf{Int} $, the top type $ \top $, arrows $\ottnt{A}  \rightarrow  \ottnt{B}$, intersections $\ottnt{A}  \, \& \,  \ottnt{B}$, single-field record types
+$\ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{A}  \ottsym{\}}$ and disjoint quantification $ \forall (  \alpha   *   \ottnt{A}  ) .\, \ottnt{B} $. One
+novelty in \fnamee is the addition of the uninhabited bottom type $ \bot $.
+% Monotypes $\ottnt{t}$ are the same, minus the disjoint quantification.
+Metavariable $\mathit{E}$ ranges over expressions. Expressions are
+integer literals $i$, the top value $ \top $,
+lambda abstractions $ \lambda \ottmv{x} .\, \mathit{E} $, applications $\mathit{E}_{{\mathrm{1}}} \, \mathit{E}_{{\mathrm{2}}}$, merges
+$ \mathit{E}_{{\mathrm{1}}}  \, ,, \,  \mathit{E}_{{\mathrm{2}}} $, annotated terms $\mathit{E}  \ottsym{:}  \ottnt{A}$, single-field records
+$\ottsym{\{}  \ottmv{l}  \ottsym{=}  \mathit{E}  \ottsym{\}}$, record projections $\mathit{E}  \ottsym{.}  \ottmv{l}$, type abstractions
+$ \Lambda (  \alpha   *   \ottnt{A}  ) .\, \mathit{E} $ and type applications $\mathit{E} \, \ottnt{A}$.
+% We sometimes (ab)use $ \forall   \alpha   .\, \ottnt{A} $ to abbreviate $ \forall (  \alpha   *   \top  ) .\, \ottnt{A} $, similarly for $ \Lambda   \alpha   .\, \mathit{E} $.
+
+%To support
+%polymorphism, we inherit from \fname two constructs: type abstractions $ \Lambda (  \alpha   *   \ottnt{A}  ) .\, \mathit{E} $
+%of type $ \forall (  \alpha   *   \ottnt{A}  ) .\, \ottnt{B} $, and type applications $\mathit{E} \, \ottnt{A}$.
+
+% We use $ [  \ottnt{B}  /  \alpha  ]  \ottnt{A} $ to denote capture-avoiding substitution.
+
+% \paragraph{Contexts.}
+
+% In the traditional formulation of System F, there is a single context for
+% tracking both type and term variables. Here we use another style of
+% presentation~\cite[chap.~16]{Harper_2016} where contexts are split into
+% \emph{term contexts} $\Gamma$ and \emph{type contexts} $\Delta$. The former
+% track term variables $\ottmv{x}$ with their types $\ottnt{A}$; and the latter track type
+% variables $\alpha$ with their disjointness constraints $\ottnt{A}$. This formulation
+% also turns out to be convenient for the presentation of logical relations in
+% \cref{sec:coherence:poly}.
+
+% \begin{figure}[t]
+%   \begin{small}
+%   \drules[swfte]{$ \vdash  \Delta $}{Well-formedness of type context}{empty, var}
+%   \drules[swfe]{$ \Delta  \vdash  \Gamma $}{Well-formedness of value context}{empty, var}
+%   \drules[swft]{$\Delta  \vdash  \ottnt{A}$}{Well-formedness of type}{top, bot, nat, var, arrow, all, and, rcd}
+%   \end{small}
+%   \centering
+%   \caption{Well-formedness of types}
+%   \label{fig:well-formedness:fi}
+% \end{figure}
+
+
+% \paragraph{Disjoint polymorphism.}
+% \bruno{Will this be redundant with the text about disjoint
+%   polymorphism in Section 2? Try to unify the the 2 texts perhaps and
+%   write everything in Section 2?}
+% Disjoint polymorphism~\cite{alpuimdisjoint} was recently proposed to combine
+% (disjoint) intersection types with parametric polymorphism. The main novelty is
+% \emph{disjoint quantification} $ \forall (  \alpha   *   \ottnt{A}  ) .\, \ottnt{B} $.
+% Inspired by bounded quantification~\cite{cardelli1994extension} where a type
+% variable is constrained by a type bound, disjoint quantification associates type
+% variables with \emph{disjointness constraints}.
+% A term construct $ \Lambda (  \alpha   *   \ottnt{A}  ) .\, \mathit{E} $ is used to
+% create values. With disjointness quantification,
+% it is possible to write a generic and conflict-free \lstinline{merge} function
+% as follows:
+% \begin{lstlisting}
+% merge T [U * T] (first : T) (second : U) : T & U = first ,, second;
+% \end{lstlisting}
+% which allows calling \lstinline{merge Int Char 1 'a'} for example, but rejects
+% \lstinline{merge Int Int 1 2} due to ambiguity. The type system ensures that no
+% conflicts can occur when composing two objects. This is quite similar to the
+% trait model~\cite{scharli2003traits} in object-oriented programming.
+
+
+\paragraph{Well-formedness and unrestricted intersections.}
+
+\fnamee's well-formedness judgment of types $\Delta  \vdash  \ottnt{A}$ is
+standard, and only enforces well-scoping. This
+is one of the key differences from \fname, which uses
+well-formedness to also ensure that all intersection types are disjoint. 
+In other words, while in \fname all valid intersection types must be
+disjoint, in \fnamee unrestricted intersection types such as
+$\mathsf{Int}  \, \& \,  \mathsf{Int}$ are allowed.
+More specifically,
+the well-formedness of intersection types in \fnamee and \fname is:
+{\small
+\begin{mathpar}
+  \ottaltinferrule{wf-\fnamee}{}{ \Delta  \vdash  \ottnt{A} \\ \Delta  \vdash  \ottnt{B}  }{ \Delta  \vdash  \ottnt{A}  \, \& \,  \ottnt{B} } \and
+  \ottaltinferrule{wf-\fname}{}{ \Delta  \vdash  \ottnt{A} \\ \Delta  \vdash  \ottnt{B} \\ \hlmath{\Delta  \vdash  \ottnt{A}  *  \ottnt{B}}  }{ \Delta  \vdash  \ottnt{A}  \, \& \,  \ottnt{B} }
+\end{mathpar}
+}%
+Notice that \fname has an extra disjointness condition $\Delta  \vdash  \ottnt{A}  *  \ottnt{B}$ in the premise.
+This is crucial for \fname's syntactic method for proving coherence,
+but also burdens the calculus with various syntactic restrictions and
+complicates its metatheory. For example, it requires extra effort to
+show that \fname only produces disjoint intersection types. As a consequence,
+\fname features a \emph{weaker} substitution lemma (note the gray
+part in \cref{lemma:weaker_lemma}) than \fnamee (\cref{lemma:general_lemma}).
+
+\begin{proposition}[Types are stable under substitution in \fname] \label{lemma:weaker_lemma}
+  If $\Delta  \vdash  \ottnt{A}$, $\Delta  \vdash  \ottnt{B}$, $ ( \alpha   *   \ottnt{C} ) \in  \Delta $, $\hlmath{\Delta  \vdash  \ottnt{B}  *  \ottnt{C}}$
+  and well-formed context $ [  \ottnt{B}  /  \alpha  ]  \Delta $, then $ [  \ottnt{B}  /  \alpha  ]  \Delta   \vdash   [  \ottnt{B}  /  \alpha  ]  \ottnt{A} $.
+\end{proposition}
+
+\begin{figure}[t]
+  \centering
+    \drules[S]{$  \ottnt{A}  <:  \ottnt{B}  \rulehl{ \rightsquigarrow   co }   $}{Declarative subtyping}{refl,trans,top,rcd,andl,andr,arr,and,distArr,topArr,distRcd,topRcd,bot,forall,topAll,distAll}
+  \caption{Declarative subtyping}
+  \label{fig:subtype_decl:fi}
+\end{figure}
+
+
+\begin{lemma}[Types are stable under substitution in \fnamee] \label{lemma:general_lemma}
+  If $\Delta  \vdash  \ottnt{A}$, $\Delta  \vdash  \ottnt{B}$, $ ( \alpha   *   \ottnt{C} ) \in  \Delta $
+  and well-formed context $ [  \ottnt{B}  /  \alpha  ]  \Delta $, then $ [  \ottnt{B}  /  \alpha  ]  \Delta   \vdash   [  \ottnt{B}  /  \alpha  ]  \ottnt{A} $.
+\end{lemma}
+% \begin{proof}
+%   By induction on the derivation of $\Delta  \vdash  \ottnt{A}$.
+% \end{proof}
+
+
+\paragraph{Declarative subtyping.}
+
+\fnamee's subtyping judgment is another major difference to \fname, because it
+features BCD-style subtyping and a rule for the bottom type.
+The full set of subtyping rules are shown in
+\cref{fig:subtype_decl:fi}. The reader is advised to ignore the gray parts for
+now. Our subtyping rules extend the BCD-style subtyping rules from
+\namee~\cite{bi_et_al:LIPIcs:2018:9227} with a rule for parametric
+(disjoint) polymorphism (\rref{S-forall}). Moreover, we have three new rules:
+\rref{S-bot} for the bottom type, and \rref{S-distAll,S-topAll} for distributivity of
+disjoint quantification. The subtyping relation is a partial order
+(\rref{S-refl,S-trans}). Most of the rules are quite standard. $ \bot $ is a subtype of all types (\rref{S-bot}).
+Subtyping of disjoint quantification is covariant in its body, and
+contravariant in its disjointness constraints (\rref{S-forall}). Of particular interest are those
+so-called ``distributivity'' rules: \rref{S-distArr} says intersections
+distribute over arrows; \rref{S-distRcd} says intersections distribute over
+records. Similarly, \rref{S-distAll} dictates that
+intersections may distribute over disjoint quantifiers.
+%It should be noted that \fnamee features explicit polymorphism, so type
+%variables are neutral to subtyping, i.e., $\alpha  <:  \alpha$, which is already
+%contained in \rref{S-refl}.
+
+% \begin{remark}
+%   In our Coq formalization, we require that the two types $\ottnt{A}$ and $\ottnt{B}$ are
+%   well-formed relative to some type context, resulting in the subtyping
+%   judgment $\Delta  \vdash  \ottnt{A}  <:  \ottnt{B}$. But this is not very important
+%   for the purpose of presentation, thus we omit contexts.
+% \end{remark}
+
+\paragraph{Typing rules.}
+
+\begin{figure}[t]
+  \centering
+    \drules[T]{$ \Delta  ;  \Gamma    \vdash    \mathit{E}    \Rightarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e} } $}{Inference}{top, nat, var, app, merge, anno, rcd, proj, tabs, tapp}
+    \drules[T]{$ \Delta  ;  \Gamma    \vdash    \mathit{E}    \Leftarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e} } $}{Checking}{abs, sub}
+  \caption{Bidirectional type system}
+  \label{fig:typing:fi}
+\end{figure}
+
+
+\fnamee features a bidirectional type system inherited from \fname.
+% \bruno{We can just focus on the
+%   T-TApp, T-TAbs and T-Merge. Maybe you can drop subsumption and lambdas,
+%   since those are standard.
+% Refer to the full rules in the appendix.}
+The full set of typing rules are shown in \cref{fig:typing:fi}. Again we ignore
+the gray parts and explain them in \cref{sec:elaboration:fi}.
+The inference judgment $\Delta  \ottsym{;}  \Gamma  \vdash  \mathit{E} \, \Rightarrow \, \ottnt{A}$ says
+that we can synthesize the type $\ottnt{A}$ under the contexts $\Delta$ and
+$\Gamma$. The checking judgment $\Delta  \ottsym{;}  \Gamma  \vdash  \mathit{E} \, \Leftarrow \, \ottnt{A}$ asserts that $\mathit{E}$
+checks against the type $\ottnt{A}$ under the contexts $\Delta$ and $\Gamma$.
+Most of the rules are quite standard in the literature.
+The merge expression $ \mathit{E}_{{\mathrm{1}}}  \, ,, \,  \mathit{E}_{{\mathrm{2}}} $ is well-typed if both sub-expressions are
+well-typed, and their types are \textit{disjoint} (\rref{T-merge}).
+The disjointness relation will be explained in \cref{sec:disjoint:fi}.
+To infer a type abstraction (\rref{T-tabs}), we add disjointness constraints to the type
+context. For a type
+application (\rref{T-tapp}), we check that the type argument
+satisfies the disjointness constraints.
+\Rref{T-merge,T-tapp} are the only rules checking disjointness.
+
+
+\subsection{Disjointness}
+\label{sec:disjoint:fi}
+
+\renewcommand{\rulehl}[1]{#1}
+
+\begin{figure}[t]
+  \centering
+  \drules[TL]{$ \rceil  \ottnt{A}  \lceil $}{Top-like types}{top,and,arr,rcd,all}
+  \drules[D]{$\Delta  \vdash  \ottnt{A}  *  \ottnt{B}$}{Disjointness}{topL, topR, arr, andL, andR, rcdEq, rcdNeq, tvarL, tvarR, forall,ax}
+  % \drules[Dax]{$ \ottnt{A}  *_{ax}  \ottnt{B} $}{Disjointness axioms}{sym, intArr, intRcd,intAll,arrAll,arrRcd,allRcd}
+  \caption{Selected rules for disjointness}
+  \label{fig:disjoint:fi}
+\end{figure}
+
+We now turn to another core judgment of \fnamee---the disjointness relation,
+shown in \cref{fig:disjoint:fi}. The disjointness rules are mostly inherited
+from \fname~\cite{alpuimdisjoint}, but the new bottom type requires
+a notable change regarding disjointness with \emph{top-like types}.
+
+\paragraph{Top-like types.}
+
+Top-like types are all types that are isomorphic to $ \top $ (i.e.,
+simultaneously sub- and supertypes of $ \top $). Hence, they are inhabited by a
+single value, isomorphic to the $ \top $ value. \cref{fig:disjoint:fi} captures
+this notion in a syntax-directed fashion in the $ \rceil  \ottnt{A}  \lceil $ predicate. As a
+historical note, top-like types were first introduced in
+\oname~\cite{oliveira2016disjoint}, and then adopted by \fname~\cite{alpuimdisjoint}. Their motivation
+is solely for enabling a syntactic method of proving coherence, and due to the
+lack of BCD subtyping, they do not have a type-theoretic interpretation of
+top-like types.
+
+
+
+
+
+% \jeremy{mention previous work do not have good explanations of top-like types?}
+% \ningning{that's a good idea. I think ``all types that are isomorphic to
+%   $ \top $'' is a more accurate definition of Top-like. A comparison with
+%   previous work would be great (i.e. why \oname and \fname include top-like,
+%   and \namee doesn't, while \fnamee does again?)}
+
+\paragraph{Disjointness rules.}
+
+%The disjointness judgment $\Delta  \vdash  \ottnt{A}  *  \ottnt{B}$ plays a central role in \fnamee,
+%and is used to ensure that the merge operator can only form intersections of
+%disjoint types.
+
+The disjointness judgment $\Delta  \vdash  \ottnt{A}  *  \ottnt{B}$ is helpful to check whether the merge of two
+expressions of type $\ottnt{A}$ and $\ottnt{B}$ preserves coherence. Incoherence
+arises when both expressions produce distinct values for the same type, either
+directly when they are both of that same type, or through implicit upcasting to
+a common supertype. Of course we can safely disregard top-like types in this matter
+because they do not have two distinct values. In short, it suffices to check that the
+two types have only top-like supertypes in common.
+
+% (As a precondition, $\ottnt{A}$ and $\ottnt{B}$ are
+% required to be both well-formed under the context $\Delta$.)
+% A guiding principle
+% of checking whether $\ottnt{A}$ and $\ottnt{B}$ are disjoint is to ask if their
+% supertypes are top-like types. Let us apply this principle to design
+% disjointness rules for bottom types. Given $ \bot $ and $\ottnt{A}$, we know that
+Because $ \bot $ and any another type $\ottnt{A}$ always have $\ottnt{A}$ as
+a common supertype,
+it follows that $ \bot $ is only disjoint to $\ottnt{A}$ when
+$\ottnt{A}$ is top-like.
+More generally, if $\ottnt{A}$ is a top-like type, then $\ottnt{A}$ is disjoint to any
+type. This is the rationale behind the two rules \rref*{D-topL,D-topR}, which
+generalize and subsume $\Delta  \vdash  \top  *  \ottnt{A}$ and $\Delta  \vdash  \ottnt{A}  *  \top$ from \fname, and
+also cater to the bottom type.
+Two other interesting rules are
+\rref*{D-tvarL,D-tvarR}, which dictate that a type variable $\alpha$ is disjoint
+with some type $\ottnt{B}$ if its disjointness constraints $\ottnt{A}$ is a subtype of
+$\ottnt{B}$.
+Disjointness axioms $ \ottnt{A}  *_{ax}  \ottnt{B} $ (appearing in \rref{D-ax}) take
+care of two types with different type constructors (e.g., $ \mathsf{Int} $ and records). Axiom rules can be found in \cref{appendix:fnamee}.
+Finally we note that the disjointness relation is symmetric.
+
+% \begin{lemma}[Symmetry of disjointness]
+%   \label{lemma:symmetry-disjoint}
+%   If $\Delta  \vdash  \ottnt{A}  *  \ottnt{B}$, then $\Delta  \vdash  \ottnt{B}  *  \ottnt{A}$.
+% \end{lemma}
+% \begin{proof}
+%   By induction on the disjointness derivation. In the case for \rref{FD-forall},
+%   apply \cref{lemma:narrow:disjoint}.
+% \end{proof}
+
+
+\subsection{Elaboration and Type Safety}
+\label{sec:elaboration:fi}
+
+\begin{figure}[t]
+  \centering
+\begin{tabular}{llll} \toprule
+  Types & $\tau$ & $\Coloneqq$ & $ \mathsf{Int}  \mid  \langle \rangle  \mid \tau_{{\mathrm{1}}}  \rightarrow  \tau_{{\mathrm{2}}}  \mid \tau_{{\mathrm{1}}}  \times  \tau_{{\mathrm{2}}} \mid \alpha \mid  \forall  \alpha .\, \tau $\\
+  Terms & $\ottnt{e}$ & $\Coloneqq$ & $\ottmv{x} \mid i \mid  \langle \rangle  \mid  \lambda \ottmv{x} .\, \ottnt{e}  \mid \ottnt{e_{{\mathrm{1}}}} \, \ottnt{e_{{\mathrm{2}}}} \mid \langle  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{e_{{\mathrm{2}}}}  \rangle \mid  \Lambda  \alpha .\, \ottnt{e}  \mid \ottnt{e} \, \tau \mid co \, \ottnt{e}$ \\
+  Coercions & $co$ & $\Coloneqq$ & $ \mathsf{id}  \mid  co_{{\mathrm{1}}}  \circ  co_{{\mathrm{2}}}  \mid  \mathsf{top}  \mid  \mathsf{bot}  \mid co_{{\mathrm{1}}}  \rightarrow  co_{{\mathrm{2}}} \mid \langle  co_{{\mathrm{1}}}  \ottsym{,}  co_{{\mathrm{2}}}  \rangle \mid  \pi_1  \mid  \pi_2  $ \\
+  & & $\mid$ & $  co _{\forall}  \mid  \mathsf{dist}_{\rightarrow}  \mid  \mathsf{top}_{\rightarrow}  \mid  \mathsf{top}_{\forall}  \mid  \mathsf{dist}_{\forall}  $ \\
+  Values & $\ottnt{v}$ & $\Coloneqq$ & $i \mid  \langle \rangle  \mid  \lambda \ottmv{x} .\, \ottnt{e}  \mid \langle  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \rangle \mid  \Lambda  \alpha .\, \ottnt{e}  \mid \ottsym{(}  co_{{\mathrm{1}}}  \rightarrow  co_{{\mathrm{2}}}  \ottsym{)} \, \ottnt{v} \mid  co _{\forall}  \, \ottnt{v}  $ \\
+  & & $\mid$ & $ \mathsf{dist}_{\rightarrow} \, \ottnt{v} \mid \mathsf{top}_{\rightarrow} \, \ottnt{v} \mid \mathsf{top}_{\forall} \, \ottnt{v} \mid \mathsf{dist}_{\forall} \, \ottnt{v}  $ \\
+  Term contexts & $\Psi$ & $\Coloneqq$ &  $ \bullet  \mid \Psi  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau $ \\
+  Type contexts & $\Phi $ & $\Coloneqq $ & $ \bullet  \mid \Phi  \ottsym{,}  \alpha $  \\
+  Evaluation contexts & $\mathcal{E}$ & $\Coloneqq$ &  $   [\cdot]  \mid \mathcal{E} \, \ottnt{e} \mid \ottnt{v} \, \mathcal{E} \mid \langle  \mathcal{E}  \ottsym{,}  \ottnt{e}  \rangle \mid \langle  \ottnt{v}  \ottsym{,}  \mathcal{E}  \rangle \mid co \, \mathcal{E} \mid \mathcal{E} \, \tau  $ \\ \bottomrule
+\end{tabular}
+\caption{Syntax of \tnamee}
+\label{fig:syntax:fco}
+\end{figure}
+
+
+The dynamic semantics of \fnamee is given by elaboration into
+a target calculus. The target calculus \tnamee is the standard call-by-value
+System F extended with products and coercions. The syntax of \tnamee is shown in
+\cref{fig:syntax:fco}.
+
+\paragraph{Type translation.}
+
+\cref{def:type:translate:fi} defines the type translation function $| \cdot |$
+from \fnamee types $\ottnt{A}$ to \tnamee types $\tau$. Most cases are
+straightforward. For example, $ \bot $ is mapped to an uninhabited
+type $ \forall  \alpha .\, \alpha $; disjoint quantification is mapped to universal
+quantification, dropping the disjointness constraints. $| \cdot |$ is
+naturally extended to work on contexts as well.
+
+\begin{definition} Type translation $| \cdot |$ is defined as follows:
+  \label{def:type:translate:fi}
+  \begin{center}
+\begin{tabular}{rlllrlllrll} \toprule
+  $|  \mathsf{Int}  |$ &$=$ & $  \mathsf{Int} $ & $\qquad$ &   $|  \top  |$ & $ = $ & $  \langle \rangle  $ & $\qquad$ &   $| \ottnt{A}  \rightarrow  \ottnt{B} |$ & $ = $ & $ \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \rightarrow  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}$ \\
+  $| \ottnt{A}  \, \& \,  \ottnt{B} |$ &$=$ & $ \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}  \times  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} $ & $\qquad$ &   $| \ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{A}  \ottsym{\}} |$ & $ = $ & $ \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}} $ & $\qquad$ &   $| \alpha |$ & $ = $ & $ \alpha$ \\
+  $|  \bot  |$ &$=$& $ \forall  \alpha .\, \alpha $ & $\qquad$   & $|  \forall (  \alpha   *   \ottnt{A}  ) .\, \ottnt{B}  |$ & $ = $ & $ \forall  \alpha .\, \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} $ \\ \bottomrule
+\end{tabular}
+  \end{center}
+\end{definition}
+
+
+\paragraph{Coercions and coercive subtyping.}
+
+We follow prior work~\cite{bi_et_al:LIPIcs:2018:9227, biernacki2015logical} by having a syntactic category
+for coercions~\cite{Henglein_1994}. In \cref{fig:syntax:fco}, we have several new coercions:
+$ \mathsf{bot} $, $ co _{\forall} $, $ \mathsf{dist}_{\forall} $ and $ \mathsf{top}_{\forall} $ due to the addition of polymorphism and bottom type. As
+seen in
+\cref{fig:subtype_decl:fi} the coercive subtyping judgment has the form $ \ottnt{A}  <:  \ottnt{B}  \rulehl{ \rightsquigarrow   co } $, which
+says that the subtyping derivation for $\ottnt{A}  <:  \ottnt{B}$ produces a coercion $co$ that converts terms of type $\ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}$
+to $\ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}}$.
+% Each subtyping rule has its own specific form of coercion.
+
+
+% Now we go back
+% to the coercion part in \rref{S-forall}. Since the disjointness constraints are
+% erased during elaboration, they do not contribute to the overall coercion; we
+% only need the coercion generated by the subtyping of the bodies $\ottnt{B_{{\mathrm{1}}}}$ and
+% $\ottnt{B_{{\mathrm{2}}}}$.
+
+% As a cognitive aid, it is
+% instructive to mentally ``desugar'' the coercion $ co _{\forall} $ to the regular term
+% $ \lambda \ottmv{f} .\,  \Lambda  \alpha .\, co \, \ottsym{(}  \ottmv{f} \, \alpha  \ottsym{)}  $, as shown in \cref{tab:coercion2}, then the expression
+% $  co _{\forall}  \, \ottnt{v} $ is ``equal'' to $ \Lambda  \alpha .\, co \, \ottsym{(}  \ottnt{v} \, \alpha  \ottsym{)} $, which is why we can treat $ co _{\forall}  \, \ottnt{v}$ as a value.
+
+% \begin{figure}[t]
+%   \centering
+
+% \begin{tabular}{lllll} \toprule
+%   \textbf{Coercion} & \textbf{Term} & & \textbf{Coercion} & \textbf{Term} \\ \midrule
+%   $ \mathsf{id} $         & $ \lambda \ottmv{x} .\, \ottmv{x} $  & & $ co_{{\mathrm{1}}}  \circ  co_{{\mathrm{2}}} $    &  $ \lambda \ottmv{x} .\, co_{{\mathrm{1}}} \, \ottsym{(}  co_{{\mathrm{2}}} \, \ottmv{x}  \ottsym{)} $ \\
+%   $ \mathsf{top} $         & $ \lambda \ottmv{x} .\, \langle \rangle $  & & $co_{{\mathrm{1}}}  \rightarrow  co_{{\mathrm{2}}}$    &  $ \lambda \ottmv{f} .\,  \lambda \ottmv{x} .\, co_{{\mathrm{2}}} \, \ottsym{(}  \ottmv{f} \, \ottsym{(}  co_{{\mathrm{1}}} \, \ottmv{x}  \ottsym{)}  \ottsym{)}  $ \\
+%   $ \pi_1 $         & $ \lambda \ottmv{x} .\, \pi_1 \, \ottmv{x} $  & & $ \pi_2 $    &  $ \lambda \ottmv{x} .\, \pi_2 \, \ottmv{x} $ \\
+%   $\langle  co_{{\mathrm{1}}}  \ottsym{,}  co_{{\mathrm{2}}}  \rangle$         & $ \lambda \ottmv{x} .\, \langle  co_{{\mathrm{1}}} \, \ottmv{x}  \ottsym{,}  co_{{\mathrm{2}}} \, \ottmv{x}  \rangle $  & & $ \mathsf{dist}_{\rightarrow} $    &  $ \lambda \ottmv{x} .\,  \lambda \ottmv{y} .\, \langle  \ottsym{(}  \pi_1 \, \ottmv{x}  \ottsym{)} \, \ottmv{y}  \ottsym{,}  \ottsym{(}  \pi_2 \, \ottmv{x}  \ottsym{)} \, \ottmv{y}  \rangle  $ \\
+%   $ \mathsf{top}_{\rightarrow} $         & $ \lambda \ottmv{x} .\,  \lambda \ottmv{y} .\, \langle \rangle  $  & & $ co _{\forall} $ &  $ \lambda \ottmv{f} .\,  \Lambda  \alpha .\, co \, \ottsym{(}  \ottmv{f} \, \alpha  \ottsym{)}  $   \\
+%   $ \mathsf{top}_{\forall} $         & $ \lambda \ottmv{x} .\,  \Lambda  \alpha .\, \langle \rangle  $  & & $ \mathsf{dist}_{\forall} $ &  $ \lambda \ottmv{f} .\,  \Lambda  \alpha .\, \langle  \ottsym{(}  \pi_1 \, \ottmv{f}  \ottsym{)} \, \alpha  \ottsym{,}  \ottsym{(}  \pi_2 \, \ottmv{f}  \ottsym{)} \, \alpha  \rangle  $   \\ \bottomrule
+% \end{tabular}
+%   \caption{Correspondence between coercions and terms}
+%   \label{tab:coercion2}
+% \end{figure}
+
+
+
+
+\paragraph{\tnamee static semantics.}
+
+The typing rules of \tnamee are quite standard. We have one rule \rref*{t-capp} regarding
+coercion application, which uses the judgment $ co  ::  \tau   \triangleright   \tau' $ to
+type coercions. We show two representative rules \rref*{ct-forall,ct-bot}.
+{\small
+  \begin{mathpar}
+  \drule{t-capp} \and
+  \drule{ct-forall}  \and \drule{ct-bot}
+  \end{mathpar}
+}%
+
+
+\begin{figure}[t]
+  \centering
+  \drules[r]{$\ottnt{e}  \longrightarrow  \ottnt{e'}$}{Single-step reduction}{forall,topAll, distAll,tapp,app,ctxt}
+  \caption{Selected reduction rules}
+  \label{fig:red:fi}
+\end{figure}
+
+\paragraph{\tnamee dynamic semantics.}
+
+The dynamic semantics of \tnamee is mostly unremarkable. We write $\ottnt{e}  \longrightarrow  \ottnt{e'}$
+to mean one-step reduction. \Cref{fig:red:fi} shows selected reduction
+rules. The first line shows three representative rules regarding coercion reductions.
+They do not contribute to computation but merely rearrange coercions.
+Our coercion reduction rules are quite standard but not efficient in terms of
+space. Nevertheless, there is existing work on space-efficient
+coercions~\citep{Siek_2015, herman2010space}, which should be applicable to our
+work as well. \Rref{r-app} is the usual $\beta$-rule that performs actual
+computation, and \rref{r-ctxt} handles reduction under an evaluation context.
+As usual, $ \longrightarrow^{*} $ is the reflexive, transitive closure of $ \longrightarrow $.
+Now we can show that \tnamee is type safe:
+
+\begin{theorem}[Preservation]
+  If $\bullet  \ottsym{;}  \bullet  \vdash  \ottnt{e}  \ottsym{:}  \tau$ and $\ottnt{e}  \longrightarrow  \ottnt{e'}$, then $\bullet  \ottsym{;}  \bullet  \vdash  \ottnt{e'}  \ottsym{:}  \tau$.
+\end{theorem}
+
+\begin{theorem}[Progress]
+  If $\bullet  \ottsym{;}  \bullet  \vdash  \ottnt{e}  \ottsym{:}  \tau$, either $\ottnt{e}$ is a value, or $\exists \ottnt{e'}.\ \ottnt{e}  \longrightarrow  \ottnt{e'}$.
+\end{theorem}
+
+
+\paragraph{Elaboration.}
+
+Now consider the translation parts in \cref{fig:typing:fi}. The key idea of
+the translation follows the prior work~\cite{dunfield2014elaborating, oliveira2016disjoint,
+  alpuimdisjoint, bi_et_al:LIPIcs:2018:9227}: merges are elaborated to pairs
+(\rref{T-merge}); disjoint quantification and disjoint type applications
+(\rref{T-tabs,T-tapp}) are elaborated to regular universal quantification and
+type applications, respectively.
+% Below we show an example translation:
+% \[
+%   \ottsym{(}   \Lambda (  \alpha   *   \mathsf{Int}  ) .\, \ottsym{(}   \lambda \ottmv{x} .\, \ottmv{x}   \ottsym{)}   \ottsym{:}  \alpha  \rightarrow  \alpha  \ottsym{)}  \ottsym{:}   \forall (  \alpha   *   \mathsf{Int}  ) .\, \alpha  \, \& \,  \mathsf{Int}   \rightarrow  \alpha \hlmath{\rightsquigarrow  \ottsym{(}  \pi_1  \rightarrow  \mathsf{id}  \ottsym{)} _{\forall}  \, \ottsym{(}   \Lambda  \alpha .\,  \lambda \ottmv{x} .\, \ottmv{x}    \ottsym{)}}
+% \]
+% \begin{align*}
+%   & \ottsym{(}   \Lambda (  \alpha   *   \mathsf{Int}  ) .\, \ottsym{(}   \lambda \ottmv{x} .\, \ottmv{x}   \ottsym{)}   \ottsym{:}  \alpha  \rightarrow  \alpha  \ottsym{)}  \ottsym{:}   \forall (  \alpha   *   \mathsf{Int}  ) .\, \alpha  \, \& \,  \mathsf{Int}   \rightarrow  \alpha \\
+%   \rightsquigarrow & \\
+%   &  \ottsym{(}  \pi_1  \rightarrow  \mathsf{id}  \ottsym{)} _{\forall}  \, \ottsym{(}   \Lambda  \alpha .\,  \lambda \ottmv{x} .\, \ottmv{x}    \ottsym{)}
+% \end{align*}
+Finally, the following lemma connects \fnamee to \tnamee:
+
+% \begin{lemma}[Coercions preserve types]
+%   \label{lemma:sub-correct:fi}
+% \end{lemma}
+% \begin{proof}
+%   By structural induction on the derivation of subtyping.
+% \end{proof}
+\begin{lemma}[Elaboration soundness] We have that:
+  \begin{itemize}
+  \item If $ \ottnt{A}  <:  \ottnt{B}  \rulehl{ \rightsquigarrow   co } $, then $ co  ::  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}   \triangleright   \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} $.
+  \item If $ \Delta  ;  \Gamma    \vdash    \mathit{E}    \Rightarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e} } $, then $\ottsym{\mbox{$\mid$}}  \Delta  \ottsym{\mbox{$\mid$}}  \ottsym{;}  \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \vdash  \ottnt{e}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}$.
+  \item If $ \Delta  ;  \Gamma    \vdash    \mathit{E}    \Leftarrow   \ottnt{A}  \rulehl{ \rightsquigarrow   \ottnt{e} } $, then $\ottsym{\mbox{$\mid$}}  \Delta  \ottsym{\mbox{$\mid$}}  \ottsym{;}  \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \vdash  \ottnt{e}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}}$.
+  \end{itemize}
+\end{lemma}
+% \begin{proof}
+%   By structural induction on the derivation of typing.
+% \end{proof}
+
+
+
+
+\section{Algorithmic System and Decidability}
+
+
+The subtyping relation in \cref{fig:subtype_decl:fi} is highly non-algorithmic
+due to the presence of a transitivity rule.
+This section presents an alternative algorithmic formulation.
+Our algorithm extends that of \namee, which itself was inspired by
+Pierce's decision
+procedure~\cite{pierce1989decision}, to handle
+disjoint quantifiers and the bottom type. We then prove that the algorithm is sound and
+complete with respect to declarative subtyping.
+
+Additionally we prove that the subtyping and disjointness relations are
+decidable. Although the proofs of this fact are fairly straightforward, it is
+nonetheless remarkable since it contrasts with the subtyping
+relation for (full) \fsub~\cite{cardelli1985understanding}, which is 
+undecidable~\cite{pierce1994bounded}. Thus while bounded quantification is
+infamous for its undecidability, disjoint quantification has the nicer property
+of being decidable.
+
+\subsection{Algorithmic Subtyping Rules}
+
+
+While \cref{fig:subtype_decl:fi} is a fine specification of how subtyping
+should behave, it cannot be read directly as a subtyping algorithm for two
+reasons: (1) the conclusions of \rref{S-refl,S-trans} overlap with the other
+rules, and (2) the premises of \rref{S-trans} mention a type that does not
+appear in the conclusion. Simply dropping the two offending rules
+from the system is not possible without losing
+expressivity~\cite{Laurent12note}. Thus we need a
+different approach. Following \namee, we intend the algorithmic judgment $\mathcal{Q}  \vdash  \ottnt{A}  <:  \ottnt{B}$ to be
+equivalent to $\ottnt{A}  <:   \mathcal{Q}  \Rightarrow  \ottnt{B} $, where $\mathcal{Q}$ is a queue used to track record labels, domain types and disjointness constraints.
+The full rules of the algorithmic subtyping of \fnamee are shown \cref{fig:algo:sub:fi}.
+
+\begin{definition}[$\mathcal{Q} \Coloneqq \ottsym{[]} \mid  \ottmv{l}  ,  \mathcal{Q}  \mid  \ottnt{B}  ,  \mathcal{Q}  \mid  \alpha  *  \ottnt{B}  ,  \mathcal{Q} $]
+$ \mathcal{Q}  \Rightarrow  \ottnt{A} $ is defined as follows:
+  \begin{center}
+  \begin{tabular}{rlllrll} \toprule
+    $ \ottsym{[]}  \Rightarrow  \ottnt{A} $ &=& $\ottnt{A}$ & $\qquad$ & $ \ottsym{(}   \ottnt{B}  ,  \mathcal{Q}   \ottsym{)}  \Rightarrow  \ottnt{A} $ &=& $\ottnt{B}  \rightarrow  \ottsym{(}   \mathcal{Q}  \Rightarrow  \ottnt{A}   \ottsym{)}$  \\
+    $ \ottsym{(}   \ottmv{l}  ,  \mathcal{Q}   \ottsym{)}  \Rightarrow  \ottnt{A} $ &=& $\ottsym{\{}  \ottmv{l}  \ottsym{:}   \mathcal{Q}  \Rightarrow  \ottnt{A}   \ottsym{\}}$ & $\qquad$ & $ \ottsym{(}   \alpha  *  \ottnt{B}  ,  \mathcal{Q}   \ottsym{)}  \Rightarrow  \ottnt{A} $ &=& $ \forall (  \alpha   *   \ottnt{B}  ) .\,  \mathcal{Q}  \Rightarrow  \ottnt{A}  $ \\  \bottomrule
+  \end{tabular}
+  \end{center}
+\end{definition}
+
+
+\renewcommand{\rulehl}[2][gray!40]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+
+\begin{figure}[t]
+  \centering
+  \drules[A]{$ \mathcal{Q}   \vdash   \ottnt{A}  <:  \ottnt{B}  \rulehl{ \rightsquigarrow   co } $}{Algorithmic subtyping}{top,and,arr,rcd,forall,const, bot,arrConst,rcdConst,andConst,allConst}
+  \caption{Algorithmic subtyping}
+  \label{fig:algo:sub:fi}
+\end{figure}
+
+\renewcommand{\rulehl}[1]{#1}
+
+
+
+For brevity of the algorithm, we use metavariable $c$ to mean type constants:
+\[
+  \text{Type Constants}\quad c \Coloneqq   \mathsf{Int}  \mid  \bot  \mid \alpha
+\]
+The basic idea of $\mathcal{Q}  \vdash  \ottnt{A}  <:  \ottnt{B}$ is to perform a case analysis on $\ottnt{B}$
+until it reaches type constants. We explain new rules regarding disjoint
+quantification and the bottom type.
+When a quantifier is encountered in $\ottnt{B}$, \rref{A-forall} pushes
+the type variables with its disjointness constraints onto $\mathcal{Q}$ and continue
+with the body. Correspondingly, in \rref{A-allConst}, when a quantifier is
+encountered in $\ottnt{A}$, and the head of $\mathcal{Q}$ is a type variable, this
+variable is popped out and we continue with the body.
+\Rref{A-bot} is similar to its declarative counterpart.
+Two meta-functions $ \llbracket  \mathcal{Q}  \rrbracket^{\top} $
+and $ \llbracket  \mathcal{Q}  \rrbracket^{\&} $ are meant to generate correct forms of coercions, and their
+definitions are shown in \cref{appendix:fnamee}. For other algorithmic rules, we refer to
+\namee~\cite{bi_et_al:LIPIcs:2018:9227} for detailed explanations.
+
+
+\paragraph{Correctness of the algorithm.}
+
+We prove that the algorithm is sound and complete with respect to the
+specification. We refer the reader to our Coq formalization for more details.
+We only show the two major theorems:
+
+\begin{theorem}[Soundness]
+  If $ \mathcal{Q}   \vdash   \ottnt{A}  <:  \ottnt{B}  \rulehl{ \rightsquigarrow   co } $ then $  \ottnt{A}  <:   \mathcal{Q}  \Rightarrow  \ottnt{B}   \rulehl{ \rightsquigarrow   co }    $.
+\end{theorem}
+
+\begin{theorem}[Completeness]
+  If $ \ottnt{A}  <:  \ottnt{B}  \rulehl{ \rightsquigarrow   co } $, then $\exists co'.\  \ottsym{[]}   \vdash   \ottnt{A}  <:  \ottnt{B}  \rulehl{ \rightsquigarrow   co' } $.
+\end{theorem}
+
+
+\subsection{Decidability}
+
+Moreover, we prove that our algorithmic type system is decidable. To see this,
+first notice that the bidirectional type system is syntax-directed, so we only
+need to show decidability of algorithmic subtyping and
+disjointness. The full (manual) proofs for decidability can be found in
+\cref{appendix:decidable}.
+
+\begin{restatable}[Decidability of algorithmic subtyping]{lemma}{decidesub} \label{lemma:decide-sub}
+  Given $\mathcal{Q}$, $\ottnt{A}$ and $\ottnt{B}$, it is decidable whether there exists
+  $co$, such that $ \mathcal{Q}   \vdash   \ottnt{A}  <:  \ottnt{B}  \rulehl{ \rightsquigarrow   co } $.
+\end{restatable}
+
+\begin{restatable}[Decidability of disjointness checking]{lemma}{decidedis} \label{lemma:decide-dis}
+  Given $\Delta$, $\ottnt{A}$ and $\ottnt{B}$, it is decidable whether $\Delta  \vdash  \ottnt{A}  *  \ottnt{B}$.
+\end{restatable}
+
+% Given algorithmic subtyping and disjointness are decidable, it follows that our
+% bidirectional type checking is decidable ($\Leftrightarrow$ is a short-hand for $ \Rightarrow $ and $ \Leftarrow $).
+
+% \begin{restatable}[Decidability of typing]{theorem}{decidetyp} \label{lemma:decide-typing}
+%   Given $\Delta$, $\Gamma$, $\mathit{E}$ and $\ottnt{A}$, it is decidable whether $\Delta  \ottsym{;}  \Gamma  \vdash  \mathit{E} \, \Leftrightarrow \, \ottnt{A}$.
+% \end{restatable}
+
+One interesting observation here is that although our disjointness
+quantification has a similar shape to bounded quantification $ \forall (  \alpha   <:   \ottnt{A}  ) .\,  \ottnt{B} $ in
+\fsub~\citep{cardelli1985understanding}, subtyping for \fsub~is
+undecidable~\citep{pierce1994bounded}. In \fsub, the subtyping relation between
+bounded quantification is:
+{\small
+\[
+  \drule{fsub-forall}
+\]
+}%
+Compared with \rref{S-forall}, both rules are contravariant on
+bounded/disjoint types, and covariant on the body. However, with bounded
+quantification it is fundamental to track the bounds in the
+environment, which complicates the design of the rules and makes
+subtyping undecidable with \rref{fsub-forall}.
+Decidability can be recovered
+by employing an invariant rule for bounded quantification
+(that is by forcing $\ottnt{A_{{\mathrm{1}}}}$ and $\ottnt{A_{{\mathrm{2}}}}$ to be identical).
+Disjoint quantification does not require such invariant rule for
+decidability.
+
+\begin{comment}
+For example, in the original
+type $ \forall (  \alpha   <:   \ottnt{A_{{\mathrm{1}}}}  ) .\,  \ottnt{B_{{\mathrm{1}}}} $, the $\alpha$ in $\ottnt{B_{{\mathrm{1}}}}$ is thought of being bound to
+$\ottnt{A_{{\mathrm{1}}}}$, the premise $\Delta  \ottsym{,}  \alpha  <:  \ottnt{A_{{\mathrm{2}}}}  \vdash  \ottnt{B_{{\mathrm{1}}}}  <:  \ottnt{B_{{\mathrm{2}}}}$ forces $\alpha$ to be bound
+to $\ottnt{A_{{\mathrm{2}}}}$ in $\ottnt{B_{{\mathrm{1}}}}$. This destroys the original connection and makes it
+impossible to give a decision procedure.
+\end{comment}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../paper"
+%%% org-ref-default-bibliography: "../paper.bib"
+%%% End:

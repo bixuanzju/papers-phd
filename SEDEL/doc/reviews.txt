@@ -1,0 +1,535 @@
+> ECOOP 2018 Paper #2 Reviews and Comments
+> ===========================================================================
+> Paper #37 Typed First-Class Traits
+>
+>
+> Review #37A
+> ===========================================================================
+>
+> Overall merit
+> -------------
+> A. Accept
+>
+> Reviewer expertise
+> ------------------
+> X. I am an expert in this area
+>
+> Paper summary
+> -------------
+> Section 1:
+> - Briefly recalls the notion of first-class classes and dynamic inheritance by means of a fragment of Javascript code.
+> - Mentions recent work on statically typing first-class classes and dynamic inheritance [40,24].
+> - Points out that, as far the authors knows, there is no work on statically typing first-class traits.
+> - Briefly recall the notion of traits from [38].
+> - Lists the contributions of the paper: (i) The presentation of SEDEL, a statically typed core language with first-class traits; (ii) The definition of the semantics of SEDEL in terms of the record calculus with disjoint polymorphism F_i [6]; (iii) A case study that uses an implementation of SEDEL to re-code (by exploiting SEDEL support Object Algebras and Visitors) interpreters taken from [13].
+>
+> Section 2:
+> - Introduces first-class classes and traits by examples in Javascript.
+> - Briefly recalls the problem of mixing composition [38].
+> - Identifies six challenges for a type system to accommodate, in a statically typed setting, the programming patterns (first-class classes-/mixing) illustrated by the examples presented through the section.
+> - Provides a brief overview of first-class traits in SEDEL by rewriting, in SEDEL, the Javascript examples presented in the first part of the section.
+>
+> Section 3 gives a more detailed account of SEDEL’s support for statically typed first-class traits by presenting improved version of the examples introduced in the second part of Section 2.
+>
+> Section 4:
+> - Presents the syntax of SEDEL.
+> - Presents the semantics of SEDEL by providing a type-directed translation of SEDEL expression to F_i expressions.
+> - States (by providing the statement of lemmas and theorems) that well-typed SEDEL expressions are translated into well-typed F_i expressions.
+>
+> Section 5 presents the case study.
+>
+> Section 6 discusses related work.
+>
+> Section 7 summarizes the contribution of the paper and mentions possible future work.
+>
+> Points For and Against
+> ----------------------
+> POINTS FOR
+>
+> - The proposed notion of statically typed first-class traits is interesting.
+> - The proposed formalization seems sound (although only an excerpt of the typing rules is presented and the full proofs are not available---see points against).
+> - A case study is presented by using an implementation of SEDEL (although the implementation of SEDEL and of the case study are not available---see points against).
+>
+> POINTS AGAINST
+>
+> - A key property of traits, the “flattening property” is not discussed.
+> In particular, it is not discussed it is possible (or not possible) to formulate it for SEDEL and to exploit it to define the operational semantics of SEDEL.
+> - The fact that (differently from many other models of traits) in SEDEL traits play the two roles of “generators of objects” and “unit of code reuse” is pointed out in Section 3.2. However, the fact that these two roles are considered as competing in the literature on traits (see, e.g., the papers [38] and [i]---see the BIBLIOGRAPHY section of this report) is not discussed.
+> - The proposed notion of first-class traits does not consider mutable fields and recursive types.
+> - The “supplementary material”, mentioned in footnote 1 (page 3), seems not to be available.
+> - Line 7 of Section 4 states “Full proofs can be found in the appendix.”, however, no appendix seems to be available.
+>
+> Comments for author
+> -------------------
+> SUGGESTIONS FOR IMPROVING THE PRESENTATION
+>
+>
+> Section 1
+>
+> This section could be improved by:
+>
+> - recalling the distinction between nominal types (used by, e.g., Java)
+> and structural types (used by, e.g., OCaml); and
+>
+> - pointing out that SEDL uses structural types.
+>
+>
+> Section 2.2
+>
+> - Pag. 8, lines 14-19: this short paragraph could be improved by:
+>
+> -- Inserting, after the sentence
+>
+>    "This looks daunting at first, but spell_mixin has almost the same structure as its JavaScript cousin spellMixin,
+>     albeit with some type annotations.",
+>
+>    a sentence that briefly states what "A" is and what "*" is.
+>
+> -- Inserting, after the sentence
+>
+>    "Trait expressions have trait types of the form Trait[A, B].",
+>
+>    a sentence that briefly states the role played by "A" and the role played by "B".
+>
+> - Page 8, line 37. Please insert, after the sentence
+>
+>    "In summary, Trait[Editor & Version, Editor & A] (the assigned type of base) specifies both method presence and absence.",
+>
+>    a sentence that briefly states the role played by the first component ("Editor & Version") and
+>    the role played by the second component ("Editor & A") of the trait type.
+>
+>
+> Section 3
+>
+> The paper [38] and its journal version [i] present the “flattening property” (i.e., the semantics of a trait defined by using other traits is exactly the same as that of a trait constructed directly from all the non-overridden methods of the traits) as a distinguished feature of traits. Subsequently, Nierstrasz et al. [x] argue that the flattening property of traits should be used as a guiding principle for any attempt to add traits to statically-typed languages. This section could be improved by discussing whether the traits in SEDEL (an first-class traits in general) might enjoy to some extent a suitable formulation of this property---the forwarding operator (page 13) seems to deserve particular attention.
+>
+
+Yes, our elaboration semantics (similar to the flattening function [[ · ]] in
+[x] that translates FTJ to FJ) of SEDEL compiles away traits to obtain pure Fi
+programs. In particular, the translation of trait composition to merges is
+essentially flattening. For example:
+
+```
+trait foo => { m1 = "foo" };
+
+trait bar => { m2 = "bar" };
+
+trait baz inherits foo & bar => {
+  m3 = "baz"
+};
+```
+
+The above program is equivalent to just defining `baz`:
+
+```
+trait baz => {
+  m1 = "foo";
+  m2 = "bar";
+  m3 = "baz"
+}
+```
+
+by verifying that their corresponding Fi translations are equivalent. What's
+more, our Theorem 4 is essentially the property (see [x]) that says if a program
+is well-typed in the extended language (SEDEL) then the flattened program is
+well-typed in the base language (Fi).
+
+>
+> Section 3.2
+>
+> The paper [38] and its journal version [i] point out that the role of “template for object creation” and “unit of code reuse” are conflicting. In SEDEL traits have these two roles. This section could be improved by discussing whether this is in issue in SEDEL, by explicitly referring to the arguments presented in [38] and (in a more detailed way) in [i].
+
+
+This claim applies to classes? We could have defined a more refined system where
+classes serve as template for object creation, and first-class traits as unit of
+code reuse.
+
+
+>
+> This section could also be improved by pointing out another obvious difference between traits in SEDEL and many other model of traits, like in Scala [28] and Chai_2 [ii](Section 4) is that in SEDEL (that has a structural type system) a trait name is not a type.
+>
+>
+> Section 4
+>
+> - Line 7 of Section 4  states that “Full proofs can be found in the appendix.”, however, no appendix seems to be available.
+>
+> This section could be improved by discussing whether the following approach (quite common in the literature on traits) to the operational semantics is feasible in SEDEL (and, in general, for languages with first-class traits):
+>
+> (1) Define a “flattening translation” that translates each SEDEL program into a SEDEL program that do not contain trait composition operations (c.f., [x]).
+> (2) Define the operational semantics of the trait-composition-free fragment of SEDEL.
+>
+
+The problem is really can we define a direct operational semantics for Fi. We
+believe it is possible, but probably could obscure the current contribution, and
+is a good research problem in its own right.
+
+>
+> Section 5
+>
+> The first paragraph of Section 5 is quite difficult to follow.
+>
+> - Line 5 of Section 5: by “In the first half of the section” do you mean “In Section 5.1”?
+> - Line 1 of page 20:  by “the second half” do you mean “Section 5.2”?
+> - What about Section 5.3?
+>
+> This section could be improved by discussing whether Haskell is a good choice for the comparison. Why not considering, e.g, a language like Scala that provides an explicit construct for code reuse (a mixin construct declared by the keyword “trait”) and/or a dynamically type language wit trais (like, e.g., Pharo  [https://pharo.org/]).
+>
+>
+> Section 6.
+>
+> - Paragraph "Mixin-Based Inheritance".
+>
+>   The discussion of related work could be improved by mentioning the FJig calculus by Lagorio et al. [iii] that reformulates Jigsaw constructs in a Java-like setting.
+>
+> - Paragraph "Trait-Based Inheritance".
+>
+>   The journal version of the paper [38] (i.e., [i]) should be cited. Also the journal version of the paper [9] (i.e., [iv]) should be cited instead of [9].
+>
+>   The discussion about the interaction between classes and traits (in models of second class trait) be improved by mentioning
+>   the so called "pure trait-based programming languages", like Xtraitj [v], where (like in SEIDL) the mechanism for code reuse is purely traits.
+>
+> - Paragraph "Languages with More Advanced Forms of Inheritance".
+>
+>   The discussion of related work could be improved by mentioning METAFGIG [vi] (an extension of FGig [iii]) and languages that support "dynamic trait replacement" mechanisms, like, e.g., Chai_3 [ii] (Section 5) and FDTJ [vii].
+>
+> The discussion of related work could be improved also by mentioning the "trait-based metaprogramming" mechanism [xiii] and the related "parametric traits" mechanism [ix].
+>
+>
+>
+> BIBLIOGRAPHY
+>
+> [i] @article{Ducasse:2006:TMF:1119479.1119483,
+>  author = {Ducasse, St{\'e}phane and Nierstrasz, Oscar and Sch\"{a}rli, Nathanael and Wuyts, Roel and Black, Andrew P.},
+>  title = {Traits: A Mechanism for Fine-grained Reuse},
+>  journal = {ACM Trans. Program. Lang. Syst.},
+>  issue_date = {March 2006},
+>  volume = {28},
+>  number = {2},
+>  month = mar,
+>  year = {2006},
+>  issn = {0164-0925},
+>  pages = {331--388},
+>  numpages = {58},
+>  url = {http://doi.acm.org/10.1145/1119479.1119483},
+>  doi = {10.1145/1119479.1119483},
+>  acmid = {1119483},
+>  publisher = {ACM},
+>  address = {New York, NY, USA},
+>  keywords = {Languages, Smalltalk, inheritance, mixins, multiple inheritance, reuse, traits},
+> }
+>
+> [ii] @InProceedings{10.1007/11531142_20,
+> author="Smith, Charles
+> and Drossopoulou, Sophia",
+> editor="Black, Andrew P.",
+> title="Chai: Traits for Java-Like Languages",
+> booktitle="ECOOP 2005 - Object-Oriented Programming",
+> year="2005",
+> publisher="Springer Berlin Heidelberg",
+> address="Berlin, Heidelberg",
+> pages="453--478",
+> isbn="978-3-540-31725-8"
+> }
+>
+> [iii] @article{LAGORIO201286,
+> title = "Featherweight Jigsaw — Replacing inheritance by composition in Java-like languages",
+> journal = "Information and Computation",
+> volume = "214",
+> pages = "86 - 111",
+> year = "2012",
+> issn = "0890-5401",
+> doi = "https://doi.org/10.1016/j.ic.2012.02.004",
+> url = "http://www.sciencedirect.com/science/article/pii/S0890540112000399",
+> author = "Giovanni Lagorio and Marco Servetto and Elena Zucca"
+> }
+>
+> [iv] @article{BETTINI2013521,
+> title = "TraitRecordJ: A programming language with traits and records",
+> journal = "Science of Computer Programming",
+> volume = "78",
+> number = "5",
+> pages = "521 - 541",
+> year = "2013",
+> note = "Special section: Principles and Practice of Programming in Java 2009/2010 & Special section: Self-Organizing Coordination",
+> issn = "0167-6423",
+> doi = "https://doi.org/10.1016/j.scico.2011.06.007",
+> url = "http://www.sciencedirect.com/science/article/pii/S0167642311001572",
+> author = "Lorenzo Bettini and Ferruccio Damiani and Ina Schaefer and Fabio Strocco",
+> keywords = "Java, Trait, Type system, Implementation, Eclipse"
+> }
+>
+> [v] @article{BETTINI2017419,
+> title = "Xtraitj: Traits for the Java platform",
+> journal = "Journal of Systems and Software",
+> volume = "131",
+> pages = "419 - 441",
+> year = "2017",
+> issn = "0164-1212",
+> doi = "https://doi.org/10.1016/j.jss.2016.07.035",
+> url = "http://www.sciencedirect.com/science/article/pii/S0164121216301297",
+> author = "Lorenzo Bettini and Ferruccio Damiani",
+> keywords = "Java, Trait, IDE, Implementation, Eclipse"
+> }
+>
+> [vi] @article{SERVETTO2014219,
+> title = "A meta-circular language for active libraries",
+> journal = "Science of Computer Programming",
+> volume = "95",
+> pages = "219 - 253",
+> year = "2014",
+> note = "Selected and extended papers from Partial Evaluation and Program Manipulation 2013",
+> issn = "0167-6423",
+> doi = "https://doi.org/10.1016/j.scico.2014.05.003",
+> url = "http://www.sciencedirect.com/science/article/pii/S0167642314002317",
+> author = "Marco Servetto and Elena Zucca",
+> keywords = "Java, Meta-programming, Nested classes, Active libraries"
+> }
+>
+> [vii] @article{BETTINI2013907,
+> title = "On flexible dynamic trait replacement for Java-like languages",
+> journal = "Science of Computer Programming",
+> volume = "78",
+> number = "7",
+> pages = "907 - 932",
+> year = "2013",
+> note = "Special section on Formal Methods for Industrial Critical Systems (FMICS 2009 + FMICS 2010) & Special section on Object-Oriented Programming and Systems (OOPS 2009), a special track at the 24th ACM Symposium on Applied Computing",
+> issn = "0167-6423",
+> doi = "https://doi.org/10.1016/j.scico.2012.11.003",
+> url = "http://www.sciencedirect.com/science/article/pii/S0167642312002092",
+> author = "Lorenzo Bettini and Sara Capecchi and Ferruccio Damiani",
+> keywords = "Featherweight Java, Trait, Type system"
+> }
+>
+> [xiii] @InProceedings{10.1007/978-3-540-73589-2_18,
+> author="Reppy, John
+> and Turon, Aaron",
+> editor="Ernst, Erik",
+> title="Metaprogramming with Traits",
+> booktitle="ECOOP 2007 -- Object-Oriented Programming",
+> year="2007",
+> publisher="Springer Berlin Heidelberg",
+> address="Berlin, Heidelberg",
+> pages="373--398",
+> isbn="978-3-540-73589-2"
+> }
+>
+> [iv] @article{BETTINI2015282,
+> title = "Implementing type-safe software product lines using parametric traits",
+> journal = "Science of Computer Programming",
+> volume = "97",
+> pages = "282 - 308",
+> year = "2015",
+> note = "Object-Oriented Programming and Systems (OOPS 2010) Modeling and Analysis of Compositional Software (papers from EUROMICRO SEAA’12)",
+> issn = "0167-6423",
+> doi = "https://doi.org/10.1016/j.scico.2013.07.016",
+> url = "http://www.sciencedirect.com/science/article/pii/S0167642313001901",
+> author = "Lorenzo Bettini and Ferruccio Damiani and Ina Schaefer",
+> keywords = "Featherweight Java, Feature model, Software product line, Trait, Type system"
+> }
+>
+> [x] @article{JOT:issue_2006_05/article4,
+>   author = {Oscar Nierstrasz and St\'{e}phane Ducasse and Nathanael Sch\"{a}rli},
+>   title = {Flattening Traits},
+>   journal = {Journal of Object Technology},
+>   volume = {5},
+>   number = {4},
+>   issn = {1660-1769},
+>   year = {2006},
+>   month = may,
+>   pages = {129-148},
+>   doi = {10.5381/jot.2006.5.4.a4},
+>   url = {http://www.jot.fm/contents/issue_2006_05/article4.html}
+> }
+>
+>
+>
+> Review #37B
+> ===========================================================================
+>
+> Overall merit
+> -------------
+> B. Weak accept
+>
+> Reviewer expertise
+> ------------------
+> Y. I am knowledgeable in this area, but not an expert
+>
+> Paper summary
+> -------------
+> The paper presents a statically-typed language with first-class traits supporting dynamic inheritance. The type system is based on disjoint intersection types and disjoint polymorphism, which allow the programmer to specify that two traits be disjoint before composing them. These constraints ensure compositions are unambiguous. Overlapping traits can be composed by excluding conflicting members from the composition.
+>
+> The semantics are defined by translation to Alpuim et al's Fi (which supports disjoint intersection types). An implementation and small case study are presented.
+>
+> Points For and Against
+> ----------------------
+> The paper is well motivated and well written. The novelty here is an implementation of disjoint intersection types and disjoint polymorphism. Most of the theory comes from previous work. I therefore found the paper a bit incremental, but not fatally so. At present the implementation seems to be mostly a research language. Addressing, at least in a discussion, some of the issues with scaling the language up to build practical applications would be useful (e.g., most OO languages are not pure).
+>
+> The case study is well done, but the comparison with Haskell is not fair. The Haskell implementations do not attempt to reuse code, so naturally SEDEL has fewer lines of code as code is reused. The case study is also rather small, but that is to be expected for a novel language. Also, lines of code is just a proxy metric for complexity. Haskell, even with code duplication, might be easier to read and maintain than SEDEL.
+>
+> Comments for author
+> -------------------
+> Minor:
+>
+> p 24: "less methods" -> "fewer methods"
+>
+> Typesetting of a few examples has bad alignment, for instance see page 20.
+
+> Review #37C
+> ===========================================================================
+> * Updated: 20 Mar 2018 11:12:51pm EDT
+>
+> Overall merit
+> -------------
+> B. Weak accept
+>
+> Reviewer expertise
+> ------------------
+> Y. I am knowledgeable in this area, but not an expert
+>
+> Paper summary
+> -------------
+> The paper presents a type system for first-class traits (a la the
+> extension to Smalltalk by Sharli et al.) based on disjoint
+> intersection types and disjoint polymorphism. The paper defines an
+> elaboration into the F_i calculus of Alpuim et al (ESOP 2017).  The
+> paper evaluates the type system design with a case study that presents
+> a solution to the expression problem, showing how to extend the kinds
+> of AST nodes for a small language and the operations on the AST.  The
+> paper also compares the trait-based approach to mixins and shows how
+> the type system also supports mixins.
+>
+> Points For and Against
+> ----------------------
+> + The proposed type system elegantly supports first-class traits
+>   and solves the expression problem.
+>
+> + The technical development appears to be quite solid.
+>
+> - There is considerable similarity between the present paper and prior
+>   work on module systems, but that prior work is not discussed in the
+>   related work section of the paper. The following prior works are
+>   particularly relevant:
+>
+>   A Calculus of Module Systems by Ancona and Zucca (JFP 2002)
+>
+>   Mixin' up the ML module systems by Rossberg and Dreyer (TOPLAS 2013).
+
+
+Thanks for pointing out the work on module systems, we will discuss them in the
+revised version of the paper. As with the other mixin-based approaches, these
+systems suffer the same problems of mixin composition. More importantly, they
+don't have mechanism for conflict detection and resolution, which is the major
+difference from SEDEL. Also these systems have no support for
+late binding, which is commonly used in OO programming.
+
+
+>
+> - The improvement wrt. row polymorphism, as used for typing mixins
+>   in Typed Racket, seems to be relatively minor.
+>
+> Comments for author
+> -------------------
+> p5.
+>
+> "Therefore spellMixin can be applied to any base classes at runtime."
+> =>
+> "Therefore spellMixin can be applied to any base class at runtime."
+>
+> p7.
+>
+> "and inherit them in the body."
+> Reword and expand.
+>
+> "how to reflect linearity in a type system."
+> What do you mean by "linearity". My first thought is
+> linear types of Girard, but then later in the paper I
+> realize this is not what you meant!
+>
+> "The result code has"
+> =>
+> "The resulting code has"
+>
+> "On a side note"
+> => (use the more common form of this phrase)
+> "As a side note"
+>
+> p8.
+>
+> "In summary, Trait[Editor & Version, Editor & A] (the assigned type of
+> base) specifies both method presence and absence"
+>
+> At this point you haven't explained enough to summarize!
+> For example, what is the meaning of the first and second
+> type parameters of the Trait type?
+>
+> "On a side note"
+> => (use the more common form of this phrase)
+> "As a side note"
+>
+> p9.
+>
+> "Typing Mixin Composition"
+>
+> I found this discussion of mixins to be confusing and got in the way
+> to getting to the main point of the paper.
+>
+> p11.
+>
+> "In general, a trait type Trait[A, B] specifies both the requirements
+> A and the functionality B of a trait."
+>
+> Say this on page 8!
+>
+> "foo & editor"
+> Is the "&" suppose to be the merge operator ",,"?
+>
+> "with an type annotation"
+> =>
+> "with a type annotation"
+>
+> p12.
+>
+> "A common problem in multiple inheritance are conflicts."
+> =>
+> "A common problem in multiple inheritance is detecting and resolving conflicts."
+>
+> p15.
+>
+> "The rationale behind these rules will become clearer when we get to
+> the translation of SEDEL types to Fi types"
+>
+> You didn't return to this point when you got to the translation of
+> SEDEL types to Fi types.
+>
+> p17.
+>
+> What is the relationship between your elaboration and the denotational
+> semantics of Cook and Palsberg?  You claimed that your approach was
+> inspired by theirs.
+>
+> p19.
+>
+> You use an extension to Fi, not plain Fi. Is the extension type safe?
+>
+> p24.
+>
+> "More recently, Lee et al. [24] proposed a model"
+> Start a new paragraph here.
+>
+> "the trait model in SEDEL requires conflicts be resolved explicitly"
+> =>
+> "the trait model in SEDEL requires that conflicts be resolved explicitly"
+>
+> "though enjoy static typing"
+> =>
+> "though they enjoy static typing"
+>
+> "The seminal paper [38] by Schärli el al. introduced traits"
+> => change "el" to "et"
+> "The seminal paper [38] by Schärli et al. introduced traits"
+>
+> p25.
+>
+> "because an object’s parent slots may be assigned"
+> =>
+> "because an object’s parent slot may be assigned"

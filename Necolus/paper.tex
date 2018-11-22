@@ -1,0 +1,168 @@
+
+\documentclass[a4paper,UKenglish]{lipics-v2018}
+%This is a template for producing LIPIcs articles. 
+%See lipics-manual.pdf for further information.
+%for A4 paper format use option "a4paper", for US-letter use option "letterpaper"
+%for british hyphenation rules use option "UKenglish", for american hyphenation rules use option "USenglish"
+% for section-numbered lemmas etc., use "numberwithinsect"
+
+
+\nolinenumbers
+
+\usepackage{microtype}%if unwanted, comment out or use option "draft"
+
+\input{packages.tex}
+\input{macros/pl-theory.tex}
+
+\newcommand{\name}{\textsf{NeColus}\xspace}
+\newcommand{\namee}{$\lambda_{i}^{+}$\xspace}
+\newcommand\oname{$\lambda_{i}$\xspace}
+\newcommand\fname{$F_{i}$\xspace}
+\newcommand\tname{$\lambda_{c}$\xspace}
+
+% Ott includes
+\inputott{ott-rules}
+% I prefer rulenames on the right
+% \renewcommand\ottaltinferrule[4]{
+%   \inferrule*[narrower=0.7,right=#1,#2]
+%     {#3}
+%     {#4}
+% }
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.5,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
+% \renewcommand{\ottnt}[1]{#1}
+% \renewcommand{\ottmv}[1]{#1}
+% \renewcommand{\subparagraph}[1]{\vspace{3pt}\noindent{\bf #1}}
+
+% Logical equivalence related macros
+\newcommand{\valR}[2]{\mathcal{V}\bra{#1 ; #2}}
+\newcommand{\valRR}[1]{\mathcal{V}\bra{#1}}
+\newcommand{\eeR}[2]{\mathcal{E}\bra{#1 ; #2}}
+\newcommand{\eeRR}[1]{\mathcal{E}\bra{#1}}
+\newcommand{\ggR}[2]{\mathcal{G}\bra{#1 ; #2}}
+
+\newcommand{\hll}[2][gray!40]{\colorbox{#1}{#2}}
+\newcommand{\hlmath}[2][gray!40]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+
+
+%\graphicspath{{./graphics/}}%helpful if your graphic files are in another directory
+
+\bibliographystyle{plainurl}% the recommnded bibstyle
+
+\title{The Essence of Nested Composition}
+
+% \titlerunning{Dummy short title}%optional, please use if title is longer than one line
+
+\author{Xuan Bi$^1$}{The University of Hong Kong, Hong Kong, China}{xbi@cs.hku.hk}{}{}%mandatory, please use full name; only 1 author per \author macro; first two parameters are mandatory, other parameters can be empty.
+
+\author{Bruno C. d. S. Oliveira}{The University of Hong Kong, Hong Kong, China}{bruno@cs.hku.hk}{}{Funded by Hong Kong Research Grant Council projects number 17210617 and 17258816}
+
+\author{Tom Schrijvers}{KU Leuven, Belgium}{tom.schrijvers@cs.kuleuven.be}{}{Funded by The Research Foundation - Flanders}
+
+\authorrunning{X.\,Bi, B.\,C.\,d.\,S.\,Oliveira and T.\,Schrijvers} %mandatory. First: Use abbreviated first/middle names. Second (only in severe cases): Use first author plus 'et. al.'
+
+\Copyright{Xuan Bi, Bruno C. d. S. Oliveira and Tom Schrijvers}%mandatory, please use full first names. LIPIcs license is "CC-BY";  http://creativecommons.org/licenses/by/3.0/
+
+
+\subjclass{Software and its engineering $\rightarrow$ Object oriented languages}% mandatory: Please choose ACM 2012 classifications from https://www.acm.org/publications/class-2012 or https://dl.acm.org/ccs/ccs_flat.cfm . E.g., cite as "General and reference $\rightarrow$ General literature" or \ccsdesc[100]{General and reference~General literature}.
+
+\keywords{nested composition, family polymorphism, intersection types, coherence}%mandatory
+
+\category{}%optional, e.g. invited paper
+
+\relatedversion{}%optional, e.g. full version hosted on arXiv, HAL, or other respository/website
+
+\supplement{}%optional, e.g. related research data, source code, ... hosted on a repository like zenodo, figshare, GitHub, ...
+
+\funding{}%optional, to capture a funding statement, which applies to all authors. Please enter author specific funding statements as fifth argument of the \author macro.
+
+\acknowledgements{We thank the anonymous reviewers for their helpful comments.}%optional
+
+%Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\EventEditors{Todd Millstein}
+\EventNoEds{1}
+\EventLongTitle{32nd European Conference on Object-Oriented Programming (ECOOP 2018)}
+\EventShortTitle{ECOOP 2018}
+\EventAcronym{ECOOP}
+\EventYear{2018}
+\EventDate{July 16--21, 2018}
+\EventLocation{Amsterdam, Netherlands}
+\EventLogo{}
+\SeriesVolume{109}
+\ArticleNo{22} % “New number” (=<article-no>) goes here!%\nolinenumbers %uncomment to disable line numbering
+%\hideLIPIcs  %uncomment to remove references to LIPIcs series (logo, DOI, ...), e.g. when preparing a pre-final version to be uploaded to arXiv or another public repository
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Calculi with \emph{disjoint intersection types} support an introduction form
+for intersections called the
+\emph{merge operator}, while retaining a \emph{coherent} semantics.
+% The interesting feature of such calculi is that they
+%retain a coherent semantics, which is known to be hard in the presence
+%of the merge operator.
+Disjoint intersections types have great potential to
+serve as a foundation for powerful, flexible and yet type-safe and
+easy to reason OO languages. This paper shows how to significantly
+increase the expressive power of disjoint intersection types by
+adding support for \emph{nested subtyping and composition}, which
+enables simple forms of \emph{family polymorphism} to be expressed in the calculus.
+%The motivation for those features is Ernst's \emph{family polymorphism}: the idea
+%that inheritance can be extended from a single class, to a whole
+%family of classes. Nested subtyping and composition enable simple forms
+%of family polymorphism to be expressed, while retaining type-safety
+%and coherence.
+The extension with nested subtyping and
+composition is challenging, for two different reasons. Firstly, the
+subtyping relation that supports these features is non-trivial,
+especially when it comes to obtaining an algorithmic version. Secondly,
+the syntactic method used to prove coherence for previous calculi with disjoint
+intersection types is too inflexible, making it hard to
+extend those calculi with new features (such as nested subtyping).
+We show how to address the first problem by adapting and extending
+ the Barendregt, Coppo and Dezani (BCD) subtyping rules for intersections
+with records and coercions. A sound and complete algorithmic
+system is obtained by using an approach inspired by Pierce's
+work. To address the second
+problem we replace the syntactic method to prove coherence,
+by a semantic proof method based on \emph{logical relations}.
+Our work has been fully formalized in Coq, and we have an implementation
+of our calculus.
+\end{abstract}
+
+
+% Main meat
+\input{sections/introduction.tex}
+\input{sections/overview.tex}
+\input{sections/typesystem.mng}
+\input{sections/coherence.mng}
+\input{sections/algorithm.mng}
+% \input{sections/discussion.tex}
+\input{sections/related.tex}
+\input{sections/conclusion.tex}
+
+
+%%
+%% Bibliography
+%%
+
+%% Please use bibtex,
+
+\bibliography{paper}
+
+
+% \ifdefined\submitoption
+\newpage
+\appendix
+\input{appendix.mng}
+% \fi
+
+\end{document}
