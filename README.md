@@ -1,6 +1,6 @@
 # Archives
 
-Being archives for papers I have submitted  / were accepted during my PhD studies.
+Being archives for papers/projects I've worked on in my PhD studies.
 
 
 ## Index
@@ -19,6 +19,6 @@ In reverse chronological order
 | [`Necolus-ESOP2018`](./Necolus-ESOP2018) | Predecessor of [`Necolus`](./Necolus) paper. Submitted to ESOP'18, rejected.                                 |
 | [`POPL2018`](./POPL2018)                 | Predecessor of [`Gradual-ESOP2018`](./Gradual-ESOP2018). Submitted to POPL'18, rejected.                     |
 | [`OOPSLA2017`](./OOPSLA2017)             | Predecessor of [`SEDEL`](./SEDEL). Submitted to OOPSLA'17, rejected.                                         |
+| [`APLAS2016`](./APLAS2016)               | A dependently-typed calculus with general recursion and decidable type-checking. **In APLAS'16**.            |
 | [`module`](./module)                     | Failed project (first-class modules using dependent intersections), my major project from 2016 to 2017.      |
-| [`APLAS2016`](./APLAS2016)               | A dependently typed calculus with general recursion and decidable type-checking. **In APLAS'16**.            |
 
