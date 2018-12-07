@@ -1,0 +1,830 @@
+\section{Specification and Metatheory of \ecore}
+We give the specification and metatheory of \ecore in this section. We
+have completely formalized proofs of metatheory in Coq based on
+Chargu{\'e}raud's work~\citeapp{charcoq}. We also provide brief paper
+proofs for \ecore for reference. Full proofs can be found in the Coq
+scripts\footnote{\fullurl} \verb|WeakCast_*.v|. The corresponding name of
+each lemma in Coq is marked at the beginning in brackets.
+
+\subsection{Syntax}
+\begin{center}
+\begin{minipage}{0.55\textwidth}
+\gram{\ottec}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+\gram{
+  \ottGg\ottinterrule
+  \ottv}
+\end{minipage}
+\\
+\end{center}
+\begin{tabular}{ll}
+Syntactic Sugar \\
+& $\ottcoresugar$ % defined in otthelper.mng.tex
+\end{tabular}
+
+\subsection{Operational Semantics}
+\ottdefnstep{}
+% \ottusedrule{\ottdruleSXXMu{}}
+
+\subsection{Typing}
+\ottdefnctx{}\ottinterrule
+\ottdefnexpr{}
+% \ottusedrule{\ottdruleTXXMu{}}
+
+\subsection{Properties}
+\begin{comment}
+We follow the naming of lemmas and proofs of properties 
+for Pure Type System from \citeapp{handbook}. Some lemmas have other well-known names, like
+Lemma \ref{lem:appendix:thin} is often called \emph{Weakening} and 
+Lemma \ref{lem:appendix:gen} is often called \emph{Inversion}.
+
+\begin{lemma}[Free Variable]\label{lem:appendix:free}
+    If $[[G |- e:t]]$, then $\FV(e) \subseteq \dom([[G]])$ and $\FV([[t]])
+\subseteq \dom([[G]])$.
+\end{lemma}
+
+\begin{proof}
+    By induction on the derivation of $[[G |- e:t]]$. We only treat cases
+\ruleref{T\_Mu}, \ruleref{T\_CastUp} and \ruleref{T\_CastDown} (since proofs of
+other cases are the same as \cc \citeapp{handbook}):
+    \begin{description}
+        \item[Case \ruleref{T\_Mu}:] From premises of $[[G |- (mu x:t.e1) :
+t]]$, by the induction hypothesis, we have $\FV(e_1) \subseteq \dom([[G]]) \cup
+\{[[x]]\}$ and $\FV(\tau) \subseteq \dom([[G]])$. Thus the result follows by
+$\FV([[mu x:t.e1]])=\FV(e_1) \setminus \{[[x]]\} \subseteq \dom([[G]])$ and
+$\FV(\tau) \subseteq \dom([[G]])$.
+        \item[Case \ruleref{T\_CastUp}:] Since $\FV([[castup [t]
+e1]])=\FV([[e1]])$, the result follows directly by the induction hypothesis.
+        \item[Case \ruleref{T\_CastDown}:] Since $\FV([[castdown
+e1]])=\FV([[e1]])$, the result follows directly by the induction hypothesis.
+    \end{description}
+\end{proof}
+
+\begin{definition}[Multi-step reduction]
+    The relation $[[->>]]$ is the transitive and reflexive closure of
+$[[-->]]$.
+\end{definition}
+
+\begin{definition}[$n$-step reduction]
+    The $n$-step reduction is denoted by $[[e0]] [[-->>]] [[en]]$, if
+    there exists a sequence of one-step reductions $[[e0]] [[-->]]
+    [[e1]] [[-->]] [[e2]] [[-->]] \dots [[-->]] [[en]]$, where $n$ is
+    a positive integer and $[[ei]]\,(i=0,1,\dots,n)$ are valid
+    expressions.
+\end{definition}
+\end{comment}
+
+\begin{definition}[Notation of Alpha Equality \footnote{This notation
+    is also applied to sections afterwards.}]
+    The alpha equivalence between terms is denoted by notation $[[=a]]$.
+\end{definition}
+
+\begin{lemma}[Weakening] \label{lem:appendix:thin}
+    \verb|[typing_weaken]|
+    Let $[[G]]$ and $[[G']]$ be well-formed contexts such that $[[G]] \subseteq
+[[G']]$. If $[[G |- e : t]]$ then $[[G' |- e : t]]$.
+\end{lemma}
+
+\begin{proof}
+    By trivial induction on the derivation of $[[G |- e : t]]$.
+\end{proof}
+
+\begin{lemma}[Substitution]\label{lem:appendix:subst}
+\verb|[typing_substitution]|
+	If $[[G1, x:T, G2 |- e1:t]]$ and $[[G1 |- e2:T]]$, then $[[G1, G2 [x |-> e2]
+|- e1[x |-> e2]  : t[x |-> e2] ]]$.
+\end{lemma}
+
+\begin{proof}
+    By induction on the derivation of $[[G1, x:T, G2 |- e1:t]]$. We use the notation $[[e* == e
+[x |-> e2] ]]$ to denote the substitution for short. Then the result can be written as \[ [[G1, G2* |- e1*  : t* ]]\]
+We only treat cases \ruleref{T\_Mu}, \ruleref{T\_CastUp} and
+\ruleref{T\_CastDown} since other cases can be easily followed by the proof for PTS in \citeapp{handbook}.
+Consider the last step of derivation of the following
+cases:
+    \begin{description}
+        \item[Case \ruleref{T\_Mu}:] $\inferrule{[[G1, x:T, G2, y:t |- e1:t]] \\
+[[G1, x:T, G2 |- t:s]]}{[[G1, x:T, G2 |- (mu y:t.e1): t]]}$ 
+        
+        By the induction hypothesis, we have $[[G1, G2*, y:t* |- e1* : t*]]$ and $[[G1,
+G2* |- t* : star]]$. Then by the derivation rule, $[[G1, G2* |- (mu
+y:t*.e1*):t*]]$. Thus we can conclude $[[G1, G2* |- (mu y:t.e1)*:t*]]$.
+        \item[Case \ruleref{T\_CastUp}:] $\inferrule{[[G1, x:T, G2 |- e1:t2]]
+\\ [[G1, x:T, G2 |- t1:s]] \\ [[t1 --> t2]]}{[[G1, x:T, G2 |- (castup [t1]
+e1):t1]]}$ 
+        
+        By the induction hypothesis, we have $[[G1, G2* |- e1*:t2*]]$, $[[G1, G2*
+|- t1*:star]]$ and $[[t1 --> t2]]$. By the definition of substitution, we can
+obtain $[[t1* --> t2*]]$ by $[[t1 --> t2]]$. Then by the derivation rule, $[[G1,
+G2* |- (castup [t1*] e1*):t1*]]$. Thus we can conclude $[[G1, G2* |- (castup [t1]
+e1)*:t1*]]$.
+        \item[Case \ruleref{T\_CastDown}:] $\inferrule{[[G1, x:T, G2 |- e1:t1]]
+\\ [[G1, x:T, G2 |- t2:s]] \\ [[t1 --> t2]]}{[[G1, x:T, G2 |- (castdown
+e1):t2]]}$ 
+        
+        By the induction hypothesis, we have $[[G1, G2* |- e1*:t1*]]$, $[[G1, G2*
+|- t2*:star]]$ and $[[t1 --> t2]]$ thus $[[t1* --> t2*]]$. Then by the
+derivation rule, $[[G1, G2* |- (castdown e1*):t2*]]$. Thus we can conclude $[[G1, G2* |-
+(castdown e1)*:t2*]]$.
+    \end{description}
+\end{proof}
+
+\begin{lemma}[Inversion\footnote{We only formalized some necessary
+    cases, i.e., the ones marked with Coq identifiers, since others
+    could be easily derived by the \texttt{inversion}
+    tactic.}]\label{lem:appendix:gen}
+\begin{enumerate}[(1)]
+	\item If $[[G |- x:T]]$, then there exists an expression $[[t]]$ such that $[[t
+=a T]]$, $[[G |- t:s]]$ and $[[x:t elt G]]$.
+	\item If $[[G |- e1 e2:T]]$, then there exist expressions $[[t1]]$ and
+$[[t2]]$ such that $[[G |- e1 : (Pi x:t2.t1)]]$, $[[G |- e2:t2]]$ and $[[T =a
+t1[x |-> e2] ]]$.
+	\item \verb|[typing_abs_inv]| If $[[G |- (\x:t1.e):T]]$, then there exists an expression $[[t2]]$ such
+that $[[T =a Pi x:t1.t2]]$ where $[[G |- (Pi x:t1.t2):s]]$ and $[[G,x:t1 |-
+e:t2]]$.
+    \item \verb|[typing_prod_inv]| If $[[G |- (Pi x:t1.t2):T]]$, then $[[T == s]]$, $[[G |- t1:s]]$ and
+$[[G, x:t1 |- t2:s]]$.
+	\item If $[[G |- (mu x:t.e):T]]$, then $[[G |- t:s]]$, $[[T =a t]]$ and $[[G,
+x:t|-e:t]]$.
+	\item \verb|[typing_castup_inv]| If $[[G |- (castup [t1] e):T]]$, then there exists an expression $[[t2]]$
+such that $[[G |- e:t2]]$, $[[G |- t1:s]]$, $[[t1 --> t2]]$ and $[[T =a t1]]$.
+	\item If $[[G |- (castdown e):T]]$, then there exist expressions
+$[[t1]],[[t2]]$ such that $[[G |- e:t1]]$, $[[G |- t2:s]]$, $[[t1 --> t2]]$ and
+$[[T =a t2]]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+    Consider a derivation of $[[G |- e:T]]$ for one of cases in the lemma. We
+follow the process of derivation until expression $[[e]]$ is introduced the
+first time. The last step of derivation can be done by
+    \begin{itemize}
+        \item rule \ruleref{T\_Var} for case 1;
+        \item rule \ruleref{T\_App} for case 2;
+        \item rule \ruleref{T\_Lam} for case 3;
+        \item rule \ruleref{T\_Pi} for case 4;
+        \item rule \ruleref{T\_Mu} for case 5;
+        \item rule \ruleref{T\_CastUp} for case 6;
+        \item rule \ruleref{T\_CastDown} for case 7.
+    \end{itemize}
+    In each case, assume the conclusion of the rule is $[[G' |- e : t']]$ where
+$[[G']] \subseteq [[G]]$ and $[[t' =a T]]$. Then by inspection of used
+derivation rules and Lemma \ref{lem:appendix:thin}, it can be shown that the
+statement of the lemma holds and is the only possible case.
+\end{proof}
+
+\begin{lemma}[Determinacy of Reduction]\label{lem:appendix:determ}
+\verb|[reduct_determ]|
+    If $[[t --> t1]]$ and $[[t --> t2]]$, then $[[t1 == t2]]$.
+\end{lemma}
+
+\begin{proof}
+    Trivial induction on the derivation of $[[t --> t1]]$.
+\end{proof}
+
+\begin{lemma}[Well-typedness of Reduction]\label{lem:appendix:wfreduct}
+\verb|[typing_wf_from_reduct]|
+    If $[[G |- t:s]]$ and $[[t --> t']]$, then $[[G |- t' : s]]$.
+\end{lemma}
+
+\begin{proof}
+    Trivial induction on the derivation of $[[t --> t']]$.
+\end{proof}
+
+\begin{lemma}[Correctness of Types]\label{lem:appendix:corrtyp}
+\verb|[typing_wf_from_typing]|
+    If $[[G |- e:t]]$ then $[[G |- t : s]]$.
+\end{lemma}
+
+\begin{proof}
+    Trivial induction on the derivation of $[[G |- e:t]]$ using Lemma
+\ref{lem:appendix:gen}.
+\end{proof}
+
+\subsection{Decidability of Type Checking}
+\begin{lemma}[Decidability of One-step Reduction]\label{lem:appendix:unired}
+  \verb|[reduct_dec]| If there is a well-typed term $e$ such that
+  $[[G |- e : t]]$, it is decidable to determine whether there exists
+  $e'$ such that $[[e --> e']]$.
+\end{lemma}
+
+\begin{proof}
+	By induction on the structure of $[[e]]$:
+	\begin{description}
+        \item[Case $[[e=x]]$:] $[[e]]$ is a variable which does not match any rules of $[[-->]]$. 
+        Thus there is no $[[e]]'$ such that $[[e-->e']]$.
+		\item[Case $[[e=v]]$:] $[[e]]$ is a value that has one of the following forms:
+		\begin{inparaenum}[(1)]
+		    \item $[[star]]$,
+			\item $[[\x:t.e]]$,
+			\item $[[Pi x:t1.t2]]$,
+			\item $[[castup [t] v]]$.
+		\end{inparaenum}
+		Thus, it does not match any rules of $[[-->]]$. Then there is no $[[e]]'$ such that $[[e-->e']]$.
+                \item[Case $[[e]]=[[mu x:t.e1]]$:] Only rule
+                \ruleref{S\_Mu} can be applied. Thus, there exists
+                $[[e]]'=[[e1[x|->mu x:t.e1] ]]$.
+		\item[Case $[[e]]=[[(\x:t.e1) e2]]$:] Since the first
+                  term $[[\x:t.e1]]$ is a value, rule \ruleref{S\_App}
+                  does not apply to this case. Thus, only rule
+                  \ruleref{S\_Beta} can be applied and there exists
+                  $[[e']]=[[ e1[x|->e2] ]]$.
+                
+		\item[Case $[[e]]=[[e1 e2]]$ and $[[e1]]$ is not a
+                  $\lambda$-term:] If $[[e1]]=v$ and is not a
+                  $\lambda$-term, there is no rule to reduce $[[e]]$.
+                  Then there is no $[[e1']]$ such that
+                  $[[e1 --> e1']]$, which does not satisfy the premise
+                  of rule \ruleref{S\_App}. Thus, there is no $[[e]]'$
+                  such that $[[e-->e']]$.
+
+                  Otherwise, if $[[e1]]$ is not a value, by IH it is
+                  decidable to know if $[[e1 --> e1']]$. Suppose there
+                  exists some $[[e1']]$ such that $[[e1 --> e1']]$. By
+                  rule \ruleref{S\_App}, $[[e]]'=[[e1' e2]]$ is the
+                  unique reduction of $[[e]]$. If there is no such
+                  $[[e1']]$, then there does not exist $[[e']]$.
+                \item[Case $[[e]]=[[castup [t] e1]]$ and $[[e1]]$ is
+                  not a value:] By IH it is decidable to know if
+                  $[[e1 --> e1']]$. Suppose there exists $[[e1']]$
+                  such that $[[e1 --> e1']]$. Then by rule
+                  \ruleref{S\_CastUp}, there exists
+                  $[[e']]=[[castup [t] e1']]$. Otherwise, there is no
+                  such $[[e']]$.
+		\item[Case $[[e]]=[[castdown (castup [t] v)]]$:] Since
+                  $[[castup [t] v]]$ is a value, rule
+                  \ruleref{S\_CastDown} does not apply to this
+                  case. Thus, only rule \ruleref{S\_CastElim} can be
+                  applied and there exists $[[e']]=[[v]]$.
+		\item[Case $[[e]]=[[castdown e1]]$ and $[[e1]]$ is not
+                  $[[castup [t] v]]$:] If $[[e1]]=v$ and is not a
+                  $[[castup [t] v]]$, there is no rule to reduce
+                  $[[e1]]$.  Then there is no $[[e1']]$ such that
+                  $[[e1 --> e1']]$, which does not satisfy the premise
+                  of rule \ruleref{S\_CastDown}. Thus, there is no
+                  $[[e]]'$ such that $[[e-->e']]$.
+
+                  Otherwise, if $[[e1]]$ is not a value, by IH it is
+                  decidable to know if $[[e1 --> e1']]$. Suppose there
+                  exists some $[[e1']]$ such that $[[e1 --> e1']]$.
+                  Thus, by rule \ruleref{S\_CastDown},
+                  $[[e]]'=[[castdown e1']]$ is the unique reduction of
+                  $[[e]]$. If there is no such $[[e1']]$, then there
+                  does not exist $[[e']]$.
+	\end{description}
+\end{proof}
+
+\begin{lemma}[Uniqueness of Typing]
+\verb|[typing_unique]|
+If $[[G |- e : t1]]$ and $[[G |- e : t2]]$, then $[[t1 == t2]]$.
+\end{lemma}
+
+\begin{proof}
+  By trivial induction on the derivation of $[[G |- e : t1]]$. We only
+  treat the interesting case \textsc{T\_CastDown}.
+
+  Suppose $e = [[castdown e1]]$. By induction hypothesis, we have
+  $[[G |- e1 : t1']]$, $[[G |- e1 : t2']]$ and $[[t1' == t2']]$. By
+  inversion, we have $[[t1' --> t1]]$ and $[[t2' --> t2]]$. Thus, by
+  Lemma \ref{lem:appendix:determ}, we have $[[t1 == t2]]$.
+\end{proof}
+
+\begin{theorem}[Decidability of Type Checking]
+\verb|[typing_decidable]|
+Given a well-formed context $[[G]]$ and a term $[[e]]$, it is decidable
+to determine if there exists $[[t]]$ such that $[[G |- e : t]]$.
+\end{theorem}
+
+\begin{proof}
+	By induction on the structure of $[[e]]$:
+	\begin{description}
+	    \item[Case $[[e=star]]$:] Trivial by applying \ruleref{T\_Ax} and $[[t ==
+star]]$.
+		\item[Case $[[e=x]]$:] Trivial by rule \ruleref{T\_Var}. If $[[x:t elt G]]$, then $[[t]]$ is the
+unique type of $[[x]]$ such that $[[G |- x : t]]$. Otherwise, if $[[x]] \not \in \dom([[G]])$, there is no such $[[t]]$.
+		\item[Case $[[e]]=[[e1 e2]]$:] By rule \ruleref{T\_App} and induction
+hypothesis, there exist unique $[[t1]]$ and $[[t2]]$ such that $[[G
+|- e1 : (Pi x:t1.t2)]]$, $[[G |- e2:t1]]$. Thus, $[[t2[x |-> e2] ]]$ is the unique type of $[[e]]$ such that $[[G |- e : t2[x |-> e2] ]]$.
+		\item[Case $[[e=\x:t1.e1]]$:] By rule \ruleref{T\_Lam} and induction
+hypothesis, there exist unique $[[t2]]$ such that $[[G |- (Pi
+x:t1.t2):s]]$ and $[[G,x:t1 |- e:t2]]$. Thus, $[[Pi x:t1.t2 ]]$ is the unique type of $[[e]]$ such that $[[G |- e : Pi x:t1.t2  ]]$.
+		\item[Case $[[e=Pi x:t1.t2]]$:] By rule \ruleref{T\_Pi} and induction
+hypothesis, we have $[[G |- t1:s]]$ and $[[G, x:t1 |- t2:s]]$. Thus, $[[s]]$ is the unique type of $[[e]]$ such that $[[G |- e : s  ]]$.
+		\item[Case $[[e=mu x:t.e1]]$:] By rule \ruleref{T\_Mu} and induction
+hypothesis, we have $[[G |- t:s]]$ and $[[G, x:t|-e:t]]$. Thus, $[[t]]$ is the unique type of $[[e]]$ such that $[[G |- e : t]]$.
+		\item[Case $[[e]]=[[castup [t1] e1]]$:] From the premises of rule
+\ruleref{T\_CastUp}, by the induction hypothesis, we can derive the type of
+$[[e1]]$ as $[[t2]]$ by $[[G |- e1:t2]]$, and check whether $[[t1]]$ is legal by $[[G |- t1:star]]$. 
+For a legal $[[t1]]$, by Lemma \ref{lem:appendix:unired} and \ref{lem:appendix:determ}, there is
+a unique $[[t1']]$ such that $[[t1 --> t1']]$ or there is no such $[[t1']]$. 
+If such $[[t1']]$ does not exist, then we report type checking fails. 
+
+Otherwise, we examine if $[[t1']]$ is syntactically equal to $[[t2]]$, 
+i.e., $[[t1' =a t2]]$. If the equality
+holds, we conclude the unique type of $[[e]]$ is $[[t1]]$, i.e., $[[G |- e:t1]]$. Otherwise, we
+report $[[e]]$ fails to type check.
+		\item[Case $[[e]]=[[castdown e1]]$:] From the premises of rule
+\ruleref{T\_CastDown}, by the induction hypothesis, we can derive the type of
+$[[e1]]$ as $[[t1]]$ by $[[G |- e1:t1]]$. By Lemma \ref{lem:appendix:unired} and \ref{lem:appendix:determ}, there is a unique
+$[[t2]]$ such that $[[t1 --> t2]]$ or such $[[t2]]$ does not exist. 
+
+If such $[[t2]]$ exists and its sorts is
+$[[star]]$, we find the unique type of $[[e]]$ is $[[t2]]$ and can conclude $[[G |- e:t2]]$. Otherwise, we
+report $[[e]]$ fails to type check.
+	\end{description}
+\end{proof}
+
+\subsection{Type Safety}
+\begin{theorem}[Subject Reduction]
+\verb|[subject_reduction_result]|
+If $[[G |- e:T]]$ and $[[e]] [[-->]] e'$ then $[[G |- e':T]]$.
+\end{theorem}
+
+\begin{proof}
+%     We prove the case for one-step reduction, i.e., $[[e --> e']]$. The theorem
+% follows by induction on the number of one-step reductions of $[[e]] [[->>]]
+% [[e']]$.
+    The proof is by induction with respect to the definition of one-step
+reduction $[[-->]]$ as follows:
+    \begin{description}
+        \item[Case $\ottdruleSXXBeta{}$:] $\quad$ \\
+        Suppose $[[G |- (\x:t1.e1)e2 :T]]$ and $[[G |- e1 [x |-> e2] :T']]$. By
+Lemma \ref{lem:appendix:gen}(2), there exist expressions $[[t1']]$ and $[[t2]]$
+such that 
+        \begin{align}
+            &[[G |- (\x:t1.e1):(Pi x:t1'.t2)]] \label{equ:lam} \\
+            &[[G |- e2:t1']] \nonumber \\
+            &[[T =a t2 [x |-> e2] ]] \nonumber
+        \end{align}
+        By Lemma \ref{lem:appendix:gen}(3), the judgment (\ref{equ:lam})
+implies that there exists an expression $[[t2']]$ such that
+        \begin{align}
+            &[[Pi x:t1'.t2 =a Pi x:t1.t2']] \label{equ:lameq}\\
+            &[[G, x:t1 |- e1:t2']] \nonumber
+        \end{align}
+        Hence, by (\ref{equ:lameq}) we have $[[t1 =a t1']]$ and $[[t2 =a
+t2']]$. Then we can obtain $[[G, x:t1 |- e1:t2]]$ and $[[G |- e2:t1]]$. By
+Lemma \ref{lem:appendix:subst}, we have $[[G |- e1[x |-> e2] : t2[x |-> e2]
+]]$. Therefore, we conclude with $[[T' =a t2[x |-> e2] ]] [[=a]] [[T]]$.
+        
+        \item[Case $\ottdruleSXXApp{}$:] $\quad$ \\
+        Suppose $[[G |- e1 e2 :T]]$ and $[[G |- e1' e2 :T']]$. By Lemma
+\ref{lem:appendix:gen}(2), there exist expressions $[[t1]]$ and $[[t2]]$ such
+that 
+        \begin{align*}
+            &[[G |- e1:(Pi x:t1.t2)]] \\
+            &[[G |- e2:t1]]\\
+            &[[T =a t2 [x |-> e2] ]]
+        \end{align*}
+        By the induction hypothesis, we have $[[G |- e1':(Pi x:t1.t2)]]$. By rule
+\ruleref{T\_App}, we obtain $[[G |- e1' e2 : t2[x |-> e2] ]]$. Therefore, $[[T'
+=a t2[x |-> e2] ]] [[=a]] [[T]]$.
+        
+        \item[Case $\ottdruleSXXCastDown{}$:] $\quad$ \\
+        Suppose $[[G |- castdown e :T]]$ and $[[G |- castdown e' :T']]$. By
+Lemma \ref{lem:appendix:gen}(7), there exist expressions $[[t1]], [[t2]]$ such
+that 
+        \begin{align*}
+            &[[G |- e:t1]] \qquad [[G |- t2:s]] \\
+            &[[t1 --> t2]] \qquad [[T =a t2 ]]
+        \end{align*}
+        By the induction hypothesis, we have $[[G |- e':t1]]$. By rule
+\ruleref{T\_CastDown}, we obtain $[[G |- castdown e' : t2 ]]$. Therefore, $[[T'
+=a t2]] [[=a]] [[T]]$.
+
+\item[Case $\ottdruleSXXCastUp{}$:] $\quad$ \\
+        Suppose $[[G |- castup [t1] e :T]]$ and $[[G |- castup [t1] e' :T']]$. By
+Lemma \ref{lem:appendix:gen}(6), there exist expressions $[[t2]]$ such
+that 
+        \begin{align*}
+            &[[G |- e:t2]] \qquad [[G |- t1:s]] \\
+            &[[t1 --> t2]] \qquad [[T =a t1 ]]
+        \end{align*}
+        By the induction hypothesis, we have $[[G |- e':t2]]$. By rule
+\ruleref{T\_CastUp}, we obtain $[[G |- castup [t1] e' : t1 ]]$. Therefore, $[[T'
+=a t1]] [[=a]] [[T]]$.
+        
+        \item[Case $\ottdruleSXXCastElim{}$:] $\quad$ \\
+        Suppose $[[G |- castdown (castup [t1] v) :T]]$ and $[[G |- v :T']]$. By
+Lemma \ref{lem:appendix:gen}(7), there exist expressions $[[t1']], [[t2]]$ such
+that 
+        \begin{align}
+            &[[G |- (castup [t1] v):t1']] \label{equ:fold} \\
+            &[[t1' --> t2]] \label{equ:foldeq1} \\
+            &[[T =a t2 ]] \label{equ:foldeq4}
+        \end{align}
+        By Lemma \ref{lem:appendix:gen}(6), the judgment (\ref{equ:fold})
+implies that there exists an expression $[[t2']]$ such that
+        \begin{align}
+            &[[G |- v:t2']] \label{equ:foldr} \\
+            &[[t1 --> t2']] \label{equ:foldeq2} \\
+            &[[t1' =a t1]] \label{equ:foldeq3}
+        \end{align}
+        By (\ref{equ:foldeq1}, \ref{equ:foldeq2}, \ref{equ:foldeq3}) and Lemma
+\ref{lem:appendix:unired} we obtain $[[t2 =a t2']]$. From (\ref{equ:foldr}) we
+have $[[T' =a t2' ]]$. Therefore, by (\ref{equ:foldeq4}), $[[T' =a t2' ]]
+[[=a]] [[t2 =a T]]$.
+        
+        \item[Case $\ottdruleSXXMu{}$:] $\quad$ \\
+        Suppose $[[G |- (mu x:t.e) :T]]$ and $[[G |- e[x |-> mu x:t.e] :T']]$.
+By Lemma \ref{lem:appendix:gen}(5), we have $[[T =a t]]$ and $[[G, x:t |-
+e:t]]$. Then we obtain $[[G |- (mu x:t.e) : t]]$. Thus by Lemma
+\ref{lem:appendix:subst}, we have $[[G |- e[x |-> mu x:t.e] : t[x |-> mu x:t.e]
+]]$.
+        
+        Note that $[[x]]:[[t]]$, i.e., the type of $[[x]]$ is $[[t]]$, then
+$[[x]] \notin \FV([[t]])$ holds implicitly. Hence, by the definition of
+substitution, we obtain $[[t[x |-> mu x:t.e] == t]]$. Therefore, $[[T' =a t[x
+|-> mu x:t.e] ]] [[==]] [[t =a T]]$.
+    \end{description}
+\end{proof}
+
+\begin{theorem}[Progress]
+\verb|[progress_result]|
+If $[[empty |- e:T]]$ then either $[[e]]$ is a value $v$ or there exists $[[e]]'$
+such that $[[e --> e']]$.
+\end{theorem}
+
+\begin{proof}
+    By induction on the derivation of $[[empty |- e:T]]$ as follows:
+    \begin{description}
+        \item[Case $[[e=x]]$:] Impossible, because the context is empty.
+        \item[Case $[[e=v]]$:] Trivial, since $[[e]]$ is already a value that
+has one of the following forms:
+		\begin{inparaenum}[(1)]
+		    \item $[[star]]$,
+			\item $[[\x:t.e]]$,
+			\item $[[Pi x:t1.t2]]$,
+			\item $[[castup [t] v]]$.
+		\end{inparaenum}
+		\item[Case $[[e]]=[[e1 e2]]$:] By Lemma \ref{lem:appendix:gen}(2), there
+exist expressions $[[t1]]$ and $[[t2]]$ such that $[[empty |- e1:(Pi x:t1.t2)]]$ and
+$[[empty |-e2:t1]]$. Consider whether $[[e1]]$ is a value:
+    		\begin{itemize}
+    		    \item If $[[e1]]=v$, by Lemma \ref{lem:appendix:gen}(3), it could be either $[[castup [Pi x : t1 . t2] e1']]$ , or a
+$\lambda$-term such that $[[e1 == \x:t1.e1']]$ for some $[[e1']]$ satisfying
+$[[empty |- e1':t2]]$. Note that $[[Pi x : t1 .t2]]$ is a value, thus there is no $[[t2']]$ such that $[[Pi x : t1 .t2 --> t2']]$ and $[[empty |- e1': t2']]$. Thus, $[[castup [Pi x : t1 . t2] e1']]$ is not well-typed and not a possible case. By rule \ruleref{S\_Beta}, we have $[[(\x:t1.e1') e2 -->
+e1' [x |-> e2] ]]$. Thus, there exists $[[e' == e1' [x |-> e2] ]]$ such that
+$[[e --> e']]$.
+    		    \item Otherwise, by the induction hypothesis, there exists $[[e1']]$ such
+that $[[e1 --> e1']]$. Then by rule \ruleref{S\_App}, we have $[[e1 e2 --> e1'
+e2]]$. Thus, there exists $[[e' == e1' e2]]$ such that $[[e --> e']]$.
+    		\end{itemize}
+                \item[Case $[[e]]=[[castup [t] e1]]$ and $[[e1]]$ is
+                  not a value:] By IH, $[[e1]]$ is well-typed. Then
+                  there exists $[[e1']]$ such that $[[e1 -->
+                  e1']]$. Thus there exists $[[e']]=[[castup [t] e1']]$.
+		\item[Case $[[e]]=[[castdown e1]]$:] By Lemma \ref{lem:appendix:gen}(7),
+there exist expressions $[[t1]]$ and $[[t2]]$ such that $[[empty |- e1:t1]]$ and
+$[[t1 --> t2]]$. Consider whether $[[e1]]$ is a value:
+		     \begin{itemize}
+    		    \item If $[[e1]]=v$, by Lemma \ref{lem:appendix:gen}(6), it must be a
+$[[castup]]$-term. Because the type of any other value is still a value and $[[t1 --> t2]]$ does not hold. Thus we have $[[e1 == castup [t1] e1']]$ for some $[[e1']]$
+satisfying $[[empty |- e1':t2]]$. Then by rule \ruleref{S\_CastElim}, we can obtain
+$[[castdown (castup [t1] e1') --> e1']]$. Thus, there exists $[[e' == e1']]$
+such that $[[e --> e']]$.
+    		    \item Otherwise, by the induction hypothesis, there exists $[[e1']]$ such
+that $[[e1 --> e1']]$. Then by rule \ruleref{S\_CastDown}, we have $[[castdown
+e1 --> castdown e1']]$. Thus, there exists $[[e' == castdown e1']]$ such that
+$[[e --> e']]$.
+    		\end{itemize}
+		\item[Case $[[e]]=[[mu x:t.e1]]$:] By rule \ruleref{S\_Mu}, there always
+exists $[[e' == e1[x |-> mu x:t.e1] ]]$.
+    \end{description}
+\end{proof}
+
+\section{Specification and Metatheory of \namef}
+Like \ecore, proofs for metatheory of \namef are completely formalized
+in Coq. However, we only state lemmas \emph{without} paper proofs in
+this section, since proofs for the erased system are very similar to
+the ones for PTS~\cite{handbook}. Full proofs can be found in the
+following Coq scripts\footnote{\fullurl}: \verb|FullCast_*.v| for the original system and
+\verb|CoCMu_*.v| for the erased system. The corresponding name of each
+lemma in Coq is marked at the beginning in brackets.
+
+\subsection{Syntax}
+\begin{center}
+\begin{minipage}{0.55\textwidth}
+\gram{\ottef}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+\gram{
+  \ottGg\ottinterrule
+  \ottvf}
+\end{minipage}
+\end{center}
+    
+\subsection{Erasure}
+\erasuredef
+
+\subsection{Typing}
+\ottdefnctx{}\ottinterrule
+\ottdefnexprfull{}
+
+\subsection{Erased System}
+\begin{description}
+\item[Syntax]
+\hfill \\[5pt]
+\begin{center}
+\gram{\otter\ottinterrule
+        \ottGr\ottinterrule
+\ottvu}
+\end{center}
+\hfill \\[5pt]
+
+\item[Weak-head Reduction]
+\hfill \\[5pt]
+\ottdefnstepr{}
+
+\item[Parallel Reduction]
+\hfill \\[5pt]
+\ottdefnstepp{}
+\begin{definition}[Multi-step Parallel Reduction]
+    The relation $[[-p*>]]$ is the transitive and reflexive closure of
+    $[[-p*>]]$.
+\end{definition}
+
+\begin{definition}[Equality up to Parallel Reduction]
+  The relation $[[=p]]$ is the reflexive, transitive and symmetric
+  closure of $[[-p>]]$.
+\end{definition}
+
+\item[Typing]
+\hfill \\[5pt]
+\ottdefnctxr{}\ottinterrule
+\ottdefnexprr{}
+\end{description}
+
+\subsection{Decidability of Type Checking}
+\begin{lemma}[Uniqueness of Typing]
+\verb|[typsrc_unique]|
+If $[[G |- e : t1]]$ and $[[G |- e : t2]]$, then $[[t1 == t2]]$.
+\end{lemma}
+
+\begin{lemma}[Decidability of Type Checking]
+\verb|[typsrc_decidable]|
+Given a well-formed context $[[G]]$ and a term $[[e]]$, it is decidable
+to determine if there exists $[[t]]$ such that $[[G |- e : t]]$.
+\end{lemma}
+
+\subsection{Correctness of Types}
+\begin{lemma}[Weakening]
+    \verb|[typsrc_weaken]|
+    Let $[[G]]$ and $[[G']]$ be well-formed contexts such that $[[G]] \subseteq
+[[G']]$. If $[[G |- e : t]]$ then $[[G' |- e : t]]$.
+\end{lemma}
+
+\begin{lemma}[Substitution]
+\verb|[typsrc_substitution]|
+	If $[[G1, x:T, G2 |- e1:t]]$ and $[[G1 |- e2:T]]$, then $[[G1, G2 [x |-> e2]
+|- e1[x |-> e2]  : t[x |-> e2] ]]$.
+\end{lemma}
+
+\begin{lemma}[Inversion of Full Casts]\label{lem:appendix:gen}
+\begin{enumerate}[(1)]
+	\item \verb|[typsrc_castup_inv]| If $[[G |- (castupf [t1] e):T]]$, then there exists an expression $[[t2]]$
+such that $[[G |- e:t2]]$, $[[G |- t1:s]]$, $[[|t1| -p> |t2|]]$ and $[[T =a t1]]$.
+	\item \verb|[typsrc_castdn_inv]| If $[[G |- (castdownf [t2] e):T]]$, then there exists an expression $[[t1]]$
+such that $[[G |- e:t1]]$, $[[G |- t2:s]]$, $[[|t1| -p> |t2|]]$ and $[[T =a t2]]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{lemma}[Correctness of Types]\label{lem:appendix:corrtyp}
+\verb|[typsrc_wf_from_typsrc]|
+    If $[[G |- e:t]]$ then $[[G |- t : s]]$.
+\end{lemma}
+
+\subsection{Soundness of Erasure}
+\begin{lemma}[Substitution commutes with erasure]
+\verb|[erasure_subst]|
+We always have $[[|e [x |-> e']| = |e|[x |-> |e'|] ]]$.
+\end{lemma}
+
+\begin{lemma}[Substitution of Parallel Reduction after Erasure]
+\verb|[erpared_red_out]| If $[[|e1| -p> |e2|]]$, then
+  $[[|e1 [x |-> e]| -p> |e2 [x |-> e]| ]]$.
+\end{lemma}
+
+\begin{lemma}[Soundness of Erasure]
+  \verb|[typsrc_to_typera]| If $[[G |- e : t]]$ then
+  $[[|G| |- |e| : |t|]]$.
+\end{lemma}
+
+\subsection{Properties of Parallel Reduction}
+\begin{lemma}[Reflexivity of $[[-p>]]$]
+  \verb|[pared_red_refl]| If $[[r]]$ is a well-formed term, then
+  $[[r -p> r]]$ holds.
+\end{lemma}
+
+\begin{lemma}[Substitution of $[[-p>]]$]
+  \verb|[pared_red_out]| If $[[r1 -p> r2]]$, then
+  $[[r1 [x |-> r] -p> r2 [x |-> r] ]]$.
+\end{lemma}
+
+\begin{lemma}[Confluence of $[[-p>]]$]
+  \verb|[pared_iter_confluence]| If $[[r -p*> r1]]$ and
+  $[[r -p*> r2]]$, then there exists $[[r']]$ such that
+  $[[r1 -p*> r']]$ and $[[r2 -p*> r']]$.
+\end{lemma}
+
+\subsection{Type Safety of Erased System}
+\begin{lemma}[Weakening]
+    \verb|[typera_weaken]|
+    Let $[[De]]$ and $[[De']]$ be well-formed contexts such that $[[De]] \subseteq
+[[De']]$. If $[[De |- r : rh]]$ then $[[De' |- r : rh]]$.
+\end{lemma}
+
+\begin{lemma}[Correctness of Types]
+\verb|[typera_wf_from_typera]|
+    If $[[De |- r:rh]]$ then $[[De |- rh : s]]$.
+\end{lemma}
+
+\begin{lemma}[Substitution]
+\verb|[typera_substitution]|
+  If $[[De1, x:rh', De2 |- r1:rh]]$ and $[[De1 |- r2:rh']]$, then
+  $[[De1, De2 [x |-> r2] |- r1[x |-> r2] : rh[x |-> r2] ]]$.
+\end{lemma}
+
+\begin{lemma}[Subject Reduction]
+\verb|[subject_reduction_era]|
+  If $[[De |- r:rh]]$ and $[[r -p> r']]$ then $[[De |- r':rh]]$.
+\end{lemma}
+
+\begin{lemma}[Progress]
+\verb|[progress_era]|
+  If $[[empty |- r:rh]]$ then either $[[r]]$ is a value $u$ or there
+  exists $[[r']]$ such that $[[r --> r']]$.
+\end{lemma}
+
+\begin{comment}
+\section{Full Specification of Surface Language}\label{sec:app:sufcc}
+\subsection{Syntax}
+See Figure \ref{fig:appendix:syntax}.
+\begin{figure*}
+\centering
+\gram{\ottpgm\ottinterrule
+\ottdecl\ottinterrule
+\ottu\ottinterrule
+\ottp\ottinterrule
+\ottE\ottinterrule
+\ottGs}
+\begin{align*}
+&\text{Syntactic Sugar} \\
+&\ottsurfsugar % defined in otthelper.mng.tex
+\end{align*}
+\caption{Syntax of the surface language}
+\label{fig:appendix:syntax}
+\end{figure*}
+
+\subsection{Expression Typing}
+See Figure \ref{fig:appendix:typing}.
+
+\subsection{Translation to \ecore}
+See Figure \ref{fig:appendix:translate}.
+
+\subsection{Type Safety of the Translation}
+
+\begin{theorem}[Type Safety of Expression Translation]
+Given a surface language expression $[[E]]$ and context $[[Gs]]$, 
+if $[[Gs |- E:A ~> e]]$, $[[Gs |- A:star ~> t]]$ and $[[|- Gs ~> G]]$, then
+$[[G |- e:t]]$.
+\end{theorem}
+
+\begin{proof}
+    By induction on the derivation of $[[Gs |- E : A ~> e]]$. Suppose there is
+a core language context $[[G]]$ such that $[[|- Gs ~> G]]$.
+    \begin{description}
+        \renewcommand{\hlmath}[1]{#1}
+        \item[Case $\ottdruleTRXXAx{}$:] $\quad$ \\ Trivial. $[[e]] = [[t]] = [[star]]$ and
+$[[G |- star:star]]$ holds by rule \ruleref{T\_Ax}.
+        \item[Case $\ottdruleTRXXVar{}$:] $\quad$ \\ Trivial. By rule \ruleref{T\_Var}, we
+have $[[|- Gs ~> G]]$, then $[[x]]:[[t]] [[elt]] [[G]]$ where $[[Gs |-
+A:star~>t]]$.
+        \item[Case $\ottdruleTRXXApp{}$:] $\quad$ \\ Suppose
+            \[\begin{array}{l}
+            [[Gs |- E1 E2 : A1[x |-> E2] ~> e1 e2]] \\
+            [[Gs |- A1[x |-> E2] : star ~> t1 [x |-> e2] ]].
+            \end{array} \]
+            By induction
+            hypothesis, we have 
+            $
+            [[G |- e1 : (Pi x:t2.t1)]],
+            [[G |- e2:t2]],
+            $
+            where
+            \[\begin{array}{l}
+             [[Gs |- E1 : (Pi x:A2.A1) ~> e1]] \\
+              [[Gs |- (Pi x:A2.A1) : star ~> (Pi x:t2.t1)]] \\
+              [[Gs |- E2 : A2 ~> e2]] \\
+              [[Gs |- A2 : star ~> t2]].
+            \end{array}\] Thus by rule \ruleref{T\_App}, we can conclude $[[G |- e1 e2 : t1 [x |-> e2] ]]$.
+        \item[Case $\ottdruleTRXXLam{}$:] $\quad$ \\ Suppose
+            \[\begin{array}{l}
+            [[Gs |- (\x:A1.E):(Pi x:A1.A2) ~> \x:t1.e]] \\ 
+            [[Gs |- Pi x:A1.A2 : star ~> Pi x:t1.t2]].
+            \end{array} \]
+            By the induction hypothesis, we have 
+            $
+            [[G, x : t1 |- e:t2]],
+            [[G |- Pi x:t1.t2 : star]]
+            $
+            where 
+            \[
+            \begin{array}{ll}
+            [[Gs, x : A1 |- E : A2 ~> e]] & \\
+            [[Gs |- A1 : star ~> t1]] & [[Gs |- A2 : star ~> t2]] \\
+            [[Gs |- (Pi x:A1.A2) : s ~> Pi x:t1.t2]] &
+            \end{array}
+            \]
+            Thus by rule \ruleref{T\_Lam}, we can conclude $[[G |- (\x:t1.e):(Pi x:t1.t2)]]$.
+        \item[Case $\ottdruleTRXXPi{}$:] $\quad$ \\ Suppose 
+                \[ [[Gs |- (Pi x:A1.A2):s ~> Pi x:t1.t2]]. \] 
+            By the induction hypothesis, we have 
+            $
+                [[G |- t1 : star]], [[G, x : t1 |- t2 : star]]
+            $
+            where
+            $
+                [[Gs |- A1 : s ~> t1]], [[Gs, x: A1 |- A2 : s ~> t2]]
+            $
+            Thus by rule \ruleref{T\_Pi} we can conclude $[[G |- (Pi x:t1.t2) : star]]$.
+        \item[Case $\ottdruleTRXXMu{}$:] $\quad$ \\ Suppose 
+                \[\begin{array}{l}
+                    [[Gs |- (mu x:A . E):A ~> mu x:t.e]] \\
+                    [[Gs |- A : star ~> t]]. 
+                \end{array}\]
+            By the induction hypothesis, we have 
+                \[ [[G, x : t |- e : t]],\text{ where }[[Gs, x:A |- E:A ~> e]]. \] 
+            Thus by rule \ruleref{T\_Mu}, we can conclude $[[G |- (mu x:t.e) : t]]$.
+        \item[Case $\ottdruleTRXXCase{}$:] $\quad$ \\ Suppose 
+            \[\begin{array}{l}
+                [[Gs |- case E1 of << p => E2>> : B ~> (unfoldnp e1) T <<e2>>]] \\
+                [[Gs |- B : star ~> T]].
+            \end{array}\]
+            By the induction hypothesis, we have 
+            \[\begin{array}{ll}
+                [[Gs |- E1 : D@<<U>>n ~> e1]] &
+                [[Gs |- D@<<U>>n : star ~> t1]] \\
+                [[G |- e1 : t1]] &
+                [[<< Gs |- p => E2 : D@<<U>>n -> B ~> e2 >>]]            
+            \end{array}\]
+            By rule \ruleref{TRpat\_Alt}, we have
+            \begin{align*}
+                [[p]] &[[==]] [[K <<x:A[<< u |-> U >>]>>]] \\
+                [[<<e2>>]] &[[==]] [[<<\ <<x:t'>> .e>>]]
+            \end{align*}
+            where
+            \[\begin{array}{ll}
+                [[<<Gs |- E2 : B ~> e>>]] &
+                [[<<G |- e : T>>]] \\
+                [[<<Gs |- U : star ~> uu'>>]] &
+                [[<<Gs |- A[<< u |-> U >>]:star ~> t[<<uu |-> uu'>>]>>]] \\
+                [[t']] [[==]] [[ t[<<uu |-> uu'>>] ]]
+            \end{array}\]
+            By rule \ruleref{TRdecl\_Data}, we have $[[D]]  [[ == ]] \ottdeclD$. Thus,
+            \[ [[t1]] [[==]] [[D]] [[<<uu'>>]]^n,\text{ where }[[<<G |- uu' : ro>>]].\] 
+            Note that by operational semantics, the following reduction sequence follows for $[[t1]]$:
+            \begin{align*}
+                [[D]] [[<<uu'>>]]^n~
+                &[[-->]]~ [[(\ <<u:ro>>n . (bb:star) -> << ((<<x : t[D |-> X][X |-> D]>>) -> bb) >> -> bb) ]][[<<uu'>>]]^n\\
+                &[[-->>]]~ [[(bb:star) -> << (<<x:t'>>) -> bb >> -> bb]]
+            \end{align*}
+            Then by
+            rule \ruleref{T\_CastDown} and the definition of $n$-step cast operator, the
+            type of $[[unfoldnp e1]]$ is \[ [[(bb:star) -> << (<<x:t'>>) -> bb >> -> bb]].\] Note
+            that by rule \ruleref{T\_Lam}, $[[G |- e2 : (<<x:t'>>) -> T]]$. Therefore, by rule
+            \ruleref{T\_App}, we can conclude $[[G |- (unfoldnp e1) T <<e2>> : T]]$.
+    \end{description}
+\end{proof}
+
+\begin{figure*}
+\small
+\begin{spacing}{0.8}
+\renewcommand{\hlmath}[1]{}
+\renewcommand{\ottdrulename}[1]{\textsc{\replace{#1}{TR}{TS}}}
+\renewcommand{\ottcom}[1]{\text{\replace{#1}{translation}{typing}}}
+\ottdefnctxtrans{}\ottinterrule
+\ottdefnpgmtrans{}\ottinterrule
+\ottdefndecltrans{}\ottinterrule % defined in otthelper.mng.tex
+\ottdefnpattrans{}\ottinterrule
+\ottdefnexprtrans{}
+\end{spacing}
+\caption{Typing rules of the surface language}
+\label{fig:appendix:typing}
+\end{figure*}
+
+\begin{figure*}
+\small
+\begin{spacing}{0.8}
+\ottdefnctxtrans{}\ottinterrule
+\ottdefnpgmtrans{}\ottinterrule
+\ottdefndecltrans{}
+\[\hlmath{\ottdecltrans}\]\ottinterrule % defined in otthelper.mng.tex
+\ottdefnpattrans{}\ottinterrule
+\ottdefnexprtrans{}
+\end{spacing}
+\caption{Translation rules of the surface language}
+\label{fig:appendix:translate}
+\end{figure*}
+\end{comment}

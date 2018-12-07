@@ -1,0 +1,390 @@
+\section{Formalization of the Surface Language}
+\label{sec:surface}
+
+% \begin{itemize}
+% \item Expand the core language with datatypes and pattern matching by encoding.
+% \item Give translation rules.
+% \item Encode GADTs and maybe other Haskell extensions? GADTs seems challenging, so perhaps some other examples would be datatypes like $Fix f$, and $Monad$ as a record. Could formalize records in Haskell style.
+% \end{itemize}
+
+We formally present the surface language \sufcc,
+built on top of \name with features that are convenient for functional
+programming. All these features
+can be elaborated into the core language without extending the
+built-in language constructs of \name. In what follows, we first give
+the syntax of the surface language, followed by the typing rules, then
+we show the formal translation rules that translates a surface
+language expression to an expression in \ecore. Finally we prove the
+type safety of the translation. Note that for clarity reason, the
+formalization here does not account for \emph{bidirectional type checking}
+and \emph{surface-level casts} which are implemented in the prototype.
+Nevertheless, the difference is subtle and does not affect the key
+discussion on the encoding of datatypes of this section.
+
+
+\begin{figure}[t]
+\begin{small}
+\centering
+\begin{spacing}{0.9}
+\gram{\ottpgm\ottinterrule
+\ottdecl\ottinterrule
+\ottu\ottinterrule
+\ottp\ottinterrule
+\ottE\ottinterrule
+\ottGs}
+\end{spacing}
+\end{small}
+\caption{Syntax of \sufcc}
+\label{fig:surface:syntax}
+\end{figure}
+
+\begin{figure}[t]
+\[\small
+    \begin{array}{l}
+    \text{Syntactic Sugar for \sufcc} \\
+    \ottsurfsugar \end{array}\]
+\[\small
+    \begin{array}{l}
+    \text{Additional Syntactic Sugar for \ecore} \\
+    \ottcoresugar \end{array}\]
+\caption{Syntactic sugar for \sufcc and \ecore}
+\label{fig:surface:sugar}
+\end{figure}
+
+\subsection{Syntax}
+
+The full syntax of \sufcc is defined in
+Figure~\ref{fig:surface:syntax}. \sufcc has a new
+syntax category: a program, consisting of a list of datatype
+declarations, followed by an expression. For the purpose of
+presentation, we adopt the following syntactic convention:
+\[
+\overline{\tau}^n \rightarrow \tau_r \equiv \tau_1 \rightarrow \dots \rightarrow \tau_n \rightarrow \tau_r
+\]
+
+\paragraph{Algebraic Datatypes}
+An \emph{algebraic datatype} $D$ is introduced as a top-level
+$\mathbf{data}$ declaration with its \emph{data constructors}. The type
+of a data constructor $K$ takes the form:
+\[
+[[K : (<<u:k>>n) -> (<<x : A>>) -> D@<<u>>n]]
+\]
+The first $n$ quantified type variables $[[<<u>>]]$ appear in the same
+order in the result type $[[D@<<u>>]]$.  Note that the use of the
+dependent product in the data constructor arguments (i.e.,
+$[[(<<x:A>>)]]$) makes it possible to let the types of some data
+constructor arguments depend on other data constructor arguments.
+%whereas in Haskell, this is not possible, because the function type
+%($\rightarrow$) can be seen as an independent product type. 
+The $\mathbf{case}$ expression is conventional, used to break up values
+built with data constructors.  The patterns of a case expression are
+flat (i.e., no nested patterns), and bind variables.
+
+\paragraph{Syntactic Sugar}
+Figure~\ref{fig:surface:sugar} shows the syntactic sugar for \sufcc.
+We introduce a Haskell-like \emph{record} syntax, which are desugared
+to datatypes with accompanying selector functions.
+We define the let-binding $[[let x:A=E2 in E1]]$ and its recursive
+variant $[[letrec]]$ as syntactic sugar.
+Note that we cannot simply desugar the let-binding into an application like
+\[
+[[let x:A=E2 in E1]] [[:=]] [[(\x:A.E1)E2]]
+\]
+Since $[[E2]]$ can be a type, the application will be ill-typed if
+$[[x]]$ occurs in the type annotation part of $[[E1]]$:
+\[
+[[let x : star= int in (\ y : x . y) three]] [[:=]] [[(\x:star.(\y:x.y)
+3) Int]]
+\]
+The function $[[\x:star.(\y:x.y) 3]]$ is ill-typed since we cannot
+typecheck $[[\y:x.y]]$ without knowing the exact definition of $[[x]]$.
+
+For the brevity of translation rules in Section \ref{sec:suf:typ},
+we also define several syntactic sugar of \ecore.
+We interchangeably use the dependent function type $[[(x:t1) -> t2]]$
+to denote $[[Pi x:t1.t2]]$. We use $[[foldn]]$ and $[[unfoldn]]$ to denote
+$n$ consecutive cast operators. $[[foldn]]$ is simplified to only take
+one type parameter, i.e., the last type $[[t1]]$ of the $n$ cast operations.
+% The original $[[foldn]]$ includes intermediate results $[[t2]], \dots, [[tn]]$
+% of type conversion:
+% \[
+%     [[foldn]] [ [[t1]], \dots, [[tn]] ] [[e]]  [[:=]] [[castup]] [
+%     [[t1]] ] ([[castup]] [ [[t2]] ] (\dots ( [[castup]] [ [[tn]] ]
+%   [[e]] ) \dots ))
+% \]
+Due to the determinacy of one-step reduction (see Section 
+\ref{sec:ecore:meta}), the intermediate types can be uniquely determined, 
+thus can be left out from the $[[foldn]]$ operator.
+
+\paragraph{Differences from the Implementation}
+To simplify the formalization and focus on the key technical
+difficulties, we omit two features of \sufcc from the prototype
+implementation: 1) bidirectional type checking; and 2) surface-level
+casts. We consider such changes have subtle impact on formalization,
+because 1) it is easy to show the fully annotated version formalized
+here is equivalent to the bidirectional version; 2) it is
+straightforward to introduce casts to surface level by directly
+mapping constructs and typing rules from the core language.
+
+Furthermore, casts are mostly intended to be generated by the
+compiler, but not by the programmers. \sufcc generates \emph{weak}
+casts when encoding datatypes and pattern matching. The encoding uses
+casts and type-level computation steps in a fundamental way: we need
+to use casts to simulate \fold/\unfold, and we also need small
+type-level computational steps to encode parametrized datatypes (see
+Section \ref{sec:fun}). An unfortunate consequence is that, for now it
+makes the surface language less expressive (e.g., no explicit
+type-level computation) than the core language. One avenue for future
+work is to explore the addition of good, surface level, mechanisms for
+doing type-level computation built on top of casts.
+%However, as we will point in
+%Section~\ref{sec:discuss}, we plan to address this issue in the future.
+%we will add new language constructs in
+%\sufcc that help programmers perform type-level computation in a way
+%like type classes or type families do for Haskell programmers.
+
+\begin{comment}
+\paragraph{Syntactic Sugar}
+For the sake of programming, \sufcc employs some syntactic sugar shown
+in Figure \ref{fig:surface:syntax}. A non-dependent function type can
+be written as $[[A1 -> A2]]$. A dependent function type
+$[[Pi x : A1 . A2]]$ is abbreviated as $[[(x : A1) -> A2]]$ for easier
+reading. A standard $\mathbf{letrec}$ construct is used to build
+recursive functions. We also introduce a Haskell-like record syntax,
+which are desugared to datatypes with accompanying selector functions.
+\end{comment}
+
+\begin{figure}[htpb]
+\begin{small}
+\centering
+\renewcommand{\ottinterrule}{\\[1.0mm]}
+\begin{spacing}{1.2}
+\renewcommand{\ottdrule}[4][]{{\inferrule{#2 }{#3}\,{\scriptsize \ottdrulename{#4}}}}
+\renewenvironment{ottdefnblock}[3][]{\raggedright \framebox{\mbox{#2}} \quad #3 \\[0pt]}{}
+\renewcommand{\ottusedrule}[1]{$#1\quad$}
+\ottdefnctxtrans{}\ottinterrule
+\ottdefnpgmtrans{}\ottinterrule
+\ottdefndecltrans{}
+\[\hlmath{\ottdecltrans}\]\ottinterrule % defined in otthelper.mng.tex
+\ottdefnpattrans{}\ottinterrule
+% \setlength{\lineskip}{8pt}
+\ottdefnexprtrans{}
+% \end{spacing}
+\end{spacing}
+\end{small}
+\caption{Type-directed translation rules of \sufcc}
+\label{fig:source:translate}
+\end{figure}
+
+\subsection{Typing Rules}
+Figure~\ref{fig:source:translate} defines the type system of the
+surface language. The gray parts can be ignored for the
+moment. Several new typing judgments are introduced in the type
+system. The use of different subscripts in the judgments is to be
+distinct from the ones used in \ecore. Most rules are standard for
+systems based on \coc, including the rules for the well-formedness of
+contexts (\ruleref{TRenv\_Empty}, \ruleref{TRenv\_Var}), inferring the
+types of variables (\ruleref{TR\_Var}), and dependent application
+(\ruleref{TR\_App}).
+
+% Two judgments $[[Gs |- pgm : A]]$ and
+% $[[Gs |- decl : Gs']]$ type check a whole program, and datatype
+% declarations, respectively.
+
+Rule \ruleref{TRpgm\_Pgm} type checks a whole program. It first
+type-checks the declarations, which in return gives a new typing
+environment. Combined with the original environment, it then continues
+to type check the final expression and return the result type. Rule
+\ruleref{TRpgm\_Data} is used to type check datatype declarations. It
+first ensures the well-formedness of the type of the type constructor
+(of sort $\star$). Then it ensures that the types of data constructors
+are valid.  Note that since our system adopts the $\star : \star$
+axiom, this means we can express kind polymorphism in datatypes.
+
+Rules \ruleref{TR\_Case} and \ruleref{TRpat\_Alt} handle the type
+checking of case expressions. The conclusion of \ruleref{TS\_Case}
+binds the scrutinee $[[E1]]$ and alternatives
+$\overline{p \Rightarrow E_2}$ to the right types. The first premise
+of \ruleref{TS\_Case} binds the actual type constructor arguments to
+$[[<<U>>]]$. The second premise checks whether the types of the
+alternatives, instantiated to the actual type constructor arguments
+$[[<<U>>]]$ (via \ruleref{TRpat\_Alt}), are equal. Finally the third
+premise checks the well-formedness of the result type.
+
+%As can be seen, currently \sufcc does not support refinement on the
+%final result of each data constructor, as in GADTs. However, our
+%encoding method does support some form of GADTs, as is discussed in
+%Section~\ref{Discussion}.
+
+\subsection{Translation Overview}\label{sec:suf:typ}
+
+We use a type-directed translation. The basic translation rules have the form:
+
+\[
+[[Gs  |- E : A ~> e]]
+\]
+
+The rule states that \ecore expression $[[e]]$ is the translation of
+the surface expression $[[E]]$ of type $[[A]]$. We emphasize that such
+translation only involves \emph{weak} cast operators, thus the target
+system is \ecore. The extra power of full casts is not needed.
+The gray parts in
+Figure~\ref{fig:source:translate} define the translation
+rules. Among others, rules \ruleref{TRdecl\_Data}, \ruleref{TRpat\_Alt} and
+\ruleref{TR\_Case} are the essence of the translation. Rule
+\ruleref{TR\_Case} translates case expressions into applications by
+first translating the scrutinee $E_1$ to $e_1$, casting it down to the
+right type. It is then applied to the result type of the body
+expression and a list of \ecore expressions of the alternatives. Rule
+\ruleref{TRpat\_Alt} translates each alternative into a lambda
+abstraction, where each bound variable in the pattern corresponds to
+bound variables in the lambda abstraction in the same order. The body
+in the alternative is recursively translated and treated as the body
+of the lambda abstraction. % Note that due to the rigidness of the
+% translation, pattern matching must be exhaustive, and the order of
+% patterns matters (the same order as in the datatype declaration).
+
+As for the translation of datatypes, we choose to work with the Scott
+encodings of datatypes~\citeapp{encoding:scott}. Scott encodings encode
+case analysis, making it convenient to translate pattern
+matching. Rule \ruleref{TRDecl\_Data} translates datatypes into \ecore
+expressions. First of all, it results in an incomplete expression (as
+can be seen by the incomplete $\mathsf{let}$ expressions). The result
+expression is supposed to be prepended to the translation of the last
+expression to form a complete \ecore expression, as specified by Rule
+\ruleref{TRpgm\_Pgm}. Furthermore, each type constructor is translated
+to a recursive type, of which the body is a type-level lambda
+abstraction. What is interesting is that each recursive occurrence of
+the datatype in the data constructor parameters is replaced with the
+variable $[[X]]$. Note that for the moment, the result type variable
+$[[bb]]$ is restricted to have kind $\star$.%  This could pose
+% difficulties when translating GADTs, which is an interesting topic for
+% future work. 
+Each data constructor is translated to a lambda
+abstraction. Notice how we use $[[castup]]$ in the lambda body to get
+the right type.
+
+The rest of the translation rules hold few surprises.
+
+\subsection{Type Safety of the Translation}
+
+Now that we have elaborated the translation, we show the type safety
+theorem of the translation and its proof.
+
+\begin{theorem}[Type Safety of Expression Translation]
+Given a surface language expression $[[E]]$ and context $[[Gs]]$, 
+if $[[Gs |- E:A ~> e]]$, $[[Gs |- A:star ~> t]]$ and $[[|- Gs ~> G]]$, then
+$[[G |- e:t]]$.
+\end{theorem}
+
+\begin{proof}
+    By induction on the derivation of $[[Gs |- E : A ~> e]]$. Suppose there is
+a core language context $[[G]]$ such that $[[|- Gs ~> G]]$.
+    \begin{description}
+        \renewcommand{\hlmath}[1]{#1}
+        \item[Case $\ottdruleTRXXAx{}$:] $\quad$ \\ Trivial. $[[e]] = [[t]] = [[star]]$ and
+$[[G |- star:star]]$ holds by rule \ruleref{T\_Ax}.
+        \item[Case $\ottdruleTRXXVar{}$:] $\quad$ \\ Trivial. By rule \ruleref{T\_Var}, we
+have $[[|- Gs ~> G]]$, then $[[x]]:[[t]] [[elt]] [[G]]$ where $[[Gs |-
+A:star~>t]]$.
+        \item[Case $\ottdruleTRXXApp{}$:] $\quad$ \\ Suppose
+            \[\begin{array}{l}
+            [[Gs |- E1 E2 : A1[x |-> E2] ~> e1 e2]] \\
+            [[Gs |- A1[x |-> E2] : star ~> t1 [x |-> e2] ]].
+            \end{array} \]
+            By induction
+            hypothesis, we have 
+            $
+            [[G |- e1 : (Pi x:t2.t1)]],
+            [[G |- e2:t2]],
+            $
+            where
+            \[\begin{array}{l}
+             [[Gs |- E1 : (Pi x:A2.A1) ~> e1]] \\
+              [[Gs |- (Pi x:A2.A1) : star ~> (Pi x:t2.t1)]] \\
+              [[Gs |- E2 : A2 ~> e2]] \\
+              [[Gs |- A2 : star ~> t2]].
+            \end{array}\] Thus by rule \ruleref{T\_App}, we can conclude $[[G |- e1 e2 : t1 [x |-> e2] ]]$.
+        \item[Case $\ottdruleTRXXLam{}$:] $\quad$ \\ Suppose
+            \[\begin{array}{l}
+            [[Gs |- (\x:A1.E):(Pi x:A1.A2) ~> \x:t1.e]] \\ 
+            [[Gs |- Pi x:A1.A2 : star ~> Pi x:t1.t2]].
+            \end{array} \]
+            By the induction hypothesis, we have 
+            $
+            [[G, x : t1 |- e:t2]],
+            [[G |- Pi x:t1.t2 : star]]
+            $
+            where 
+            \[
+            \begin{array}{ll}
+            [[Gs, x : A1 |- E : A2 ~> e]] & \\
+            [[Gs |- A1 : star ~> t1]] & [[Gs |- A2 : star ~> t2]] \\
+            [[Gs |- (Pi x:A1.A2) : s ~> Pi x:t1.t2]] &
+            \end{array}
+            \]
+            Thus by rule \ruleref{T\_Lam}, we can conclude $[[G |- (\x:t1.e):(Pi x:t1.t2)]]$.
+        \item[Case $\ottdruleTRXXPi{}$:] $\quad$ \\ Suppose 
+                \[ [[Gs |- (Pi x:A1.A2):s ~> Pi x:t1.t2]]. \] 
+            By the induction hypothesis, we have 
+            $
+                [[G |- t1 : star]], [[G, x : t1 |- t2 : star]]
+            $
+            where
+            $
+                [[Gs |- A1 : s ~> t1]], [[Gs, x: A1 |- A2 : s ~> t2]]
+            $
+            Thus by rule \ruleref{T\_Pi} we can conclude $[[G |- (Pi x:t1.t2) : star]]$.
+        \item[Case $\ottdruleTRXXMu{}$:] $\quad$ \\ Suppose 
+                \[\begin{array}{l}
+                    [[Gs |- (mu x:A . E):A ~> mu x:t.e]] \\
+                    [[Gs |- A : star ~> t]]. 
+                \end{array}\]
+            By the induction hypothesis, we have 
+                \[ [[G, x : t |- e : t]],\text{ where }[[Gs, x:A |- E:A ~> e]]. \] 
+            Thus by rule \ruleref{T\_Mu}, we can conclude $[[G |- (mu x:t.e) : t]]$.
+        \item[Case $\ottdruleTRXXCase{}$:] $\quad$ \\ Suppose 
+            \[\begin{array}{l}
+                [[Gs |- case E1 of << p => E2>> : B ~> (unfoldnp e1) T <<e2>>]] \\
+                [[Gs |- B : star ~> T]].
+            \end{array}\]
+            By the induction hypothesis, we have 
+            \[\begin{array}{ll}
+                [[Gs |- E1 : D@<<U>>n ~> e1]] &
+                [[Gs |- D@<<U>>n : star ~> t1]] \\
+                [[G |- e1 : t1]] &
+                [[<< Gs |- p => E2 : D@<<U>>n -> B ~> e2 >>]]            
+            \end{array}\]
+            By rule \ruleref{TRpat\_Alt}, we have
+            \begin{align*}
+                [[p]] &[[==]] [[K <<x:A[<< u |-> U >>]>>]] \\
+                [[<<e2>>]] &[[==]] [[<<\ <<x:t'>> .e>>]]
+            \end{align*}
+            where
+            \[\begin{array}{ll}
+                [[<<Gs |- E2 : B ~> e>>]] &
+                [[<<G |- e : T>>]] \\
+                [[<<Gs |- U : star ~> uu'>>]] &
+                [[<<Gs |- A[<< u |-> U >>]:star ~> t[<<uu |-> uu'>>]>>]] \\
+                [[t']] [[==]] [[ t[<<uu |-> uu'>>] ]]
+            \end{array}\]
+            By rule \ruleref{TRdecl\_Data}, we have $[[D]]  [[ == ]] \ottdeclD$. Thus,
+            \[ [[t1]] [[==]] [[D]] [[<<uu'>>]]^n,\text{ where }[[<<G |- uu' : ro>>]].\] 
+            Note that by operational semantics, the following reduction sequence follows for $[[t1]]$:
+            \begin{align*}
+                [[D]] [[<<uu'>>]]^n~
+                &[[-->]]~ [[(\ <<u:ro>>n . (bb:star) -> << ((<<x : t[D |-> X][X |-> D]>>) -> bb) >> -> bb) ]][[<<uu'>>]]^n\\
+                &[[-->>]]~ [[(bb:star) -> << (<<x:t'>>) -> bb >> -> bb]]
+            \end{align*}
+            Then by
+            rule \ruleref{T\_CastDown} and the definition of $n$-step cast operator, the
+            type of $[[unfoldnp e1]]$ is \[ [[(bb:star) -> << (<<x:t'>>) -> bb >> -> bb]].\] Note
+            that by rule \ruleref{T\_Lam}, $[[G |- e2 : (<<x:t'>>) -> T]]$. Therefore, by rule
+            \ruleref{T\_App}, we can conclude $[[G |- (unfoldnp e1) T <<e2>> : T]]$.
+    \end{description}
+\end{proof}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../main"
+%%% End:

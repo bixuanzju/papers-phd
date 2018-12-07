@@ -1,0 +1,144 @@
+We thank all reviewers for their thoughtful comments.
+
+#General comment
+
+Various reviewers complain that we don't yet have a complete
+solution to the problem we set in the introduction. We think there
+are two different issues at stake:
+
+1)Are we setting the expectation too high?
+
+The paper describes an ambitious goal in the introduction: creating a
+simple core language that can replace existing core languages.
+
+It's true that we don't yet have a complete solution, and although we
+acknowledge various limitations/non-goals of the approach in the paper (no
+full-reduction; no GADTS; dependently typed programming not a goal),
+some reviewers were still expecting solutions for all of these.
+
+However it is easy to tone down. For example, adding "Towards ..." to
+the title, and/or rephrasing the introduction a bit more, would probably
+greatly lower expectations.
+
+2)Is the technical contribution of the paper valuable enough?
+
+It is important to emphasize that people have been trying to create
+core languages, based on unified syntax, long before GADTs (or fancy 
+type-level programming) were being used in FP. See for example Peyton Jones and
+Meijer paper on Henk [22], where the sole motivation of the paper was
+how to use PTS to eliminate the various similar syntactic levels. Yet,
+it remained an open problem how to have:
+
+unified syntax + general recursion + *decidable type-checking*
+
+while preserving the simplicity of PTSs (our related work extensively
+discusses why existing approaches do not achieve this).
+
+We solved this problem using a generalization of iso-recursive
+types. Thus we believe our contribution is valuable/strong.
+
+We think GADTs and type-families introduce novel challenges, but
+the previous problem is a worthy problem on its own!
+
+#Review 1
+
+###"so in practice Fun is roughly as expressive as Haskell98"
+
+This is an unfair statement. The reviewer doesn't mention the
+non-Haskell98 features that we can implement. For example, Fun has
+type-level literals *for free* and kind polymorphism. Kind
+polymorphism would require significant changes/extensions in a version
+of a higher-kinded variant of System F. GHC 7.12, **with another major
+redesign of the core language**, will probably support a bunch of
+features that Fun already supports:
+
++explicit kinds
++kind synonyms
++datatypes that mention *
+
+for your reference:
+
+https://typesandkinds.wordpress.com/2015/08/19/planned-change-to-ghc-merging-types-and-kinds/
+
+(We found the blog post after submission, but we plan to mention it in
+the final version.)
+
+###"the _only_ thing type-conversion is used for is to encode recursive types"
+
+That's incorrect! Iso-recursive types alone are insufficient to
+encode *parametrized* datatypes. Our translation of datatypes uses
+beta-reductions that are not just the fold/unfold operations of
+iso-recursive types. For instance in the "List" example:
+
+data List(a:⋆)=Nil|Cons (x:a) (xs:List a);
+
+"List" is translated into:
+
+List≡μ X:⋆→⋆.λ(a:⋆).Π(B:⋆).B→(Π(x:a).Π(xs:X a). B)→B
+
+and "Nil" is encoded as:
+
+Nil≡λ(a : ⋆).cast↑^2[(List a)](λ(B0:⋆).λ(c0:B0).λ(c1:(Π(x:a).Π(xs:(List a)).B0)).c0)
+
+Note that there are 2 cast↑: the first one unfolds "List" into a
+lambda abstraction (this is just unfold), but the second performs
+beta-reduction on the type application of "a" (which is not an
+iso-recursive fold/unfold). Thus our generalization of iso-recursive
+types is really needed!
+
+#Review 2
+
+###"I don't know offhand how to compile effectful ML programs into
+λ^μ_*."
+
+The reviewer has a point, and indeed a Haskell design for side-effects
+is most appropriate. We'll mention this in the paper.
+
+###"The rationale behind making cast↑ a value from the programmer's
+perspective."
+
+The rationale for this decision is explained in the "Casts and
+Recursive Types" paragraph in Section 4.4. Essentially this
+choice preserves the semantics of iso-recursive types.
+
+###"cast↑ seems to be computationally relevant for me."
+
+This is right! We apologize for the confusion made here, and will fix
+this in the paper.
+
+#Review 3
+
+###"λ*μ's type system is too weak: it does not subsume System U"
+
+We never said that a goal of our work was to type all programs of
+System U/CoC; nor we consider that to be a fundamental property. In
+fact, our introduction explicitly states that we do not support
+full-reduction; we lack a strong (and congruent) form of
+type-equality; and it is a non-goal of our work to model a core
+language for full-blown dependently typed programming.
+
+###The "sequence" program
+
+Since we focus on traditional functional languages like Haskell/ML,
+the "sequence" program is irrelevant because it cannot be encoded in
+those languages either. Haskell (or System FC), for example, lacks
+type-level lambdas, which are used (λ a:★. c → a) in your "sequence"
+program.
+
+#Review 4:
+
+###"There does not seem to be much non-obvious type-level computation
+in the translation rules"
+
+One (small) source of non-obvious type-level computation is presented
+in the 2nd point in Review 1. In future work we will add more surface
+language constructs with other forms of non-obvious type computation.
+
+#Review 5
+
+###"Is there any similar guideline for when casts need to be inserted
+when translating to L*u?"
+
+For encodings of datatypes it is clear where to insert the
+casts. Perhaps the List example in Review 1 is helpful to illustrate
+where to add casts?

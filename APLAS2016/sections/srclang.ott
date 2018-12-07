@@ -1,0 +1,159 @@
+% Formalization of Source Language
+
+%%% Syntax
+grammar
+
+%% Declarations
+pgm                                         :: 'pgm_' ::=      {{ com Program }}
+  | << decl >> ; E                          ::   :: Decl       {{ com Declarations }}
+  | decl ; E                                :: M :: DeclSingle
+  | ( pgm )                                 :: M :: ParenPgm
+
+decl                                        :: 'decl_' ::=     {{ com Declarations }}
+  | data D << u : k >> = << K << x : A >> >>  ::   :: DataDecl   {{ com Datatype }}
+  | data D << u : k >> = K << x : A >>        :: M :: SDataDecl  {{ com Datatype single }}
+  | data D << u : k >>n = << K << x : A >> >> :: M :: DataDeclN   {{ com Datatype declaration }}
+  | data D << u : k >>n = K << x : A >>       :: M :: SDataDeclN  {{ com Datatype single }}
+  | rcrd R << u : k >> = K { << N : A >> }    :: M :: RecordDecl {{ com Record declaration }}
+  | rcrd R << u : k >>n = K { << N : A >> }   :: M :: RecordDeclN {{ com Record declaration }}
+  | ( decl )                                  :: M :: ParenDecl
+  | << decl >>                                :: M :: DeclVec
+
+p                                           :: 'pat_' ::=      {{ com Patterns }}
+  | K << x : A >>                           ::   :: Pattern    {{ com Pattern }}
+  | ( p )                                   :: M :: ParenPat
+
+u, U {{ tex \upsilon }}                     :: 'u_'   ::=      {{ com Atoms }}
+  | x                                       ::  :: Var         {{ com Variable }}
+  | K                                       ::  :: DCon        {{ com Data Constructor }}
+
+%% Expressions
+E , A {{ tex T }}, B {{ tex S }}, k {{ tex \kappa }} :: 'es_' ::=       {{ com Expressions    }}
+  | u                      ::  :: Atom       {{ com Atom }}
+  | star                   ::  :: Star       {{ com Type of Types }}
+  | E1 E2                  ::  :: App        {{ com Application }}
+  | \ x : A . E            ::  :: Lam        {{ com Abstraction }}
+  | Pi x : A . B           ::  :: Pi         {{ com Dependent Product }}
+  | mu x : A . E           ::  :: Mu         {{ com Recursion }}
+  | case E1 of << p => E2 >> ::  :: Case     {{ com Case Analysis }}
+  | let x : A = E2 in E1   :: M:: LetBinding {{ com Let Binding }}
+  | letrec x : A = E2 in E1   :: M:: LetrecBinding {{ com Letrec Binding }}
+  | E1 [ x |-> E2 ]        :: M:: Sub        {{ com Substitution }}
+  | ( E )                  :: M:: Parens     {{ com Parenthesized expression }}
+  | A1 -> A2               :: M:: FuncType   {{ com Function type }}
+  | ( x : A1 ) -> A2       :: M:: DepFunType {{ com Dependent function type }}
+  | << E >>                :: M:: VectorForm
+  | case E of p => E'      :: M:: CaseSingle
+  | D @ << u >>            :: M:: Datatype
+  | ( << u : k >> ) -> A   :: M:: FuncTypeVec
+  | \ << u : k >> . E      :: M:: LamVec
+  | D @ << u >>n           :: M:: DatatypeN
+  | ( << u : k >>n ) -> A  :: M:: FuncTypeVecN
+  | \ << u : k >>n . E     :: M:: LamVecN
+  | E1 [ << u |-> E2 >> ]  :: M:: SubstVec
+  | s                      :: M:: Sort       {{ com Sort }}
+  | E *                    :: M:: Starred    {{ com Starred expression }}
+  | @@                     :: M:: DummyExpr
+
+%% Contexts
+Gs {{ tex \Sigma }} :: 'Gs_' ::= {{ com Contexts }}
+  | empty           ::  :: Empty       {{ com Empty }}
+  | Gs , u : A      ::  :: Binding     {{ com Atom Binding }}
+  | Gs , Gs'        :: M:: CtxBind     {{ com Context Binding }}
+  | Gs ,, Gs'       :: M:: CtxBindHack {{ com Context Binding }}
+  | << u : A >>     :: M:: SrcBindVec
+  | << u : A >>n    :: M:: SrcBindVecN
+  | u : A           :: M:: SrcBind
+  | ( Gs )          :: M:: ParenCtx
+  | << Gs >>        :: M:: CtxVec
+
+%%% Dynamic semantics
+defns
+OpSemSrc :: '' ::=
+
+%%% Typing rules
+defns
+LintSrc :: '' ::=
+
+%%% Translation rules
+defn |- Gs ~~> G     ::  :: ctxtrans :: 'TRenv_' {{ com Context well-formedness }}
+{{ tex \labeledjudge{wf} [[Gs]] \hlmath{[[~~>]] [[G]]} }}
+by
+
+---------------- :: Empty
+|- empty ~~> empty
+
+|- Gs ~~> G
+Gs |- A : s ~~> t
+------------------------- :: Var
+|- Gs, x : A ~~> G, x : t
+
+defn Gs  |- pgm : A ~~> e ::  :: pgmtrans :: 'TRpgm_' {{ com Program translation }}
+{{ tex [[Gs]] \labeledjudge{pg} [[pgm]] : [[A]] \hlmath{[[~~>]] [[e]]} }}
+by
+
+<< Gs0 |- decl : Gs' ~~> e1 >>
+Gs = Gs0, <<Gs'>>
+Gs |- E : A ~~> e
+------------------------------------- :: Pgm
+Gs0 |- (<<decl>>;E) :A ~~> <<e1>> (+) e
+
+
+defn Gs  |- decl : Gs' ~~> e ::  :: decltrans :: 'TRdecl_' {{ com Datatype translation }}
+{{ tex [[Gs]] \labeledjudge{d} [[decl]] : [[Gs']] \hlmath{[[~~>]] [[e]]} }}
+by
+
+Gs |- (<<u:k>>n) -> star : star ~~> (<<u:ro>>n) -> star
+<< Gs, D : (<<u:k>>n) -> star, << u:k >>n |- (<<x:A>>) -> D@<<u>>n : star ~~> (<<x:t>>) -> D@<<u>>n >> \\
+------------------------------------------------------------------ :: Data
+Gs |- (data D << u:k >>n = << K <<x:A>> >>) : (D : (<<u:k>>n) -> star ,, << K : (<<u:k>>n) -> (<<x:A>>) -> D@<<u>>n >>) ~~> e
+
+defn Gs  |- p => E : A -> B ~~> e ::  :: pattrans :: 'TRpat_' {{ com Pattern translation }}
+{{ tex [[Gs]] \labeledjudge{p} [[p]] [[=>]] [[E]] : [[A]] [[->]] [[B]] \hlmath{[[~~>]] [[e]]} }}
+by
+
+K : (<<u:k>>n)->(<<x:A>>)->D@<<u>>n elt Gs
+Gs,<<x:A[<< u |-> U >>]>> |- E:B ~~> e
+<<Gs |- A[<< u |-> U >>]:s ~~> t'>>
+--------------------------- :: Alt
+Gs |- K <<x:A[<< u |-> U >>]>> => E:D@<<U>>n ->B ~~> \<<x:t'>>.e
+
+
+defn Gs  |- E : A ~~> e ::  :: exprtrans :: 'TR_' {{ com Expression translation }}
+{{ tex [[Gs]] \labeledjudge{s} [[E]] : [[A]] \hlmath{[[~~>]] [[e]]} }}
+by
+
+|- Gs
+------------------------------ :: Ax
+Gs |- star : star ~~> star
+
+|- Gs ~~> G
+x:A elt Gs
+------------- :: Var
+Gs |- x:A ~~> x
+
+Gs |- E1 : (Pi x:A2.A1) ~~> e1
+Gs |- E2 : A2 ~~> e2
+---------------------------------- :: App
+Gs |- E1 E2 : A1[x |-> E2] ~~> e1 e2
+
+Gs, x : A1 |- E : A2 ~~> e
+Gs |- (Pi x:A1.A2) : s ~~> Pi x:t1.t2
+------------------------------------ :: Lam
+Gs |- (\x:A1.E):(Pi x:A1.A2) ~~> \x:t1.e
+
+Gs |- A1 : s ~~> t1
+Gs, x:A1 |- A2:s ~~> t2
+---------------------- :: Pi
+Gs |- (Pi x:A1.A2):s ~~> Pi x:t1.t2
+
+Gs, x:A |- E:A ~~> e
+Gs |- A:s ~~> t
+------------------------------- :: Mu
+Gs |- (mu x:A . E):A ~~> mu x:t.e
+
+Gs |- E1 : D@<<U>>n ~~> e1
+<< Gs |- p => E2 : D@<<U>>n -> B ~~> e2 >>
+Gs |- B : s ~~> T
+---------------------------------------- :: Case
+Gs |- case E1 of << p => E2 >> : B ~~> (unfoldnp e1) T <<e2>>

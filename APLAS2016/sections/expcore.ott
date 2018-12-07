@@ -1,0 +1,500 @@
+% Formalization of Explicit CoC
+
+embed {{ tex-preamble
+  \newcommand{\labeledjudge}[1]{\vdash_{\!\!\mathsf{#1} } }
+  \newcommand{\kw}[1]{\mathbf{#1} }
+}}
+
+%%% Metavariables
+metavar x, y, z, d, X, D, K, N, R {{ tex D }}, th {{ tex \theta }}, cc {{ tex c }}, bb {{ tex b }}, nn {{ tex n }}, uu {{ tex u }}, aa {{ tex a }} ::= {{ com Variable names }}
+indexvar i, j, n, m ::= {{ com Index variables }}
+
+%%% Syntax
+grammar
+
+%% Expressions
+e, t {{ tex \tau }}, T {{ tex \sigma }}, ro {{ tex \sigma' }}, rh {{ tex \rho }}, r :: 'e_' ::=       {{ com Expressions    }}
+  | x                         ::  :: Var        {{ com Variable }}
+  | star                      ::  :: Star       {{ com Type of Types }}
+  | e1 e2                     ::  :: App        {{ com Application }}
+  | \ x : t . e               ::  :: Lam        {{ com Abstraction }}
+  | Pi x : t  . T             ::  :: Pi         {{ com Dependent Product }}
+  | castup [ t ] e            ::  :: CastUp     {{ com Cast Up }}
+  | castdown e                ::  :: CastDown   {{ com Cast Down }}
+  | mu x : t . e              ::  :: Mu         {{ com General Recursion }}
+  | e1 [ x |-> e2 ]           :: M:: Sub        {{ com Substitution }}
+  | ( e )                     :: M:: Parens     {{ com Parenthesized expression }}
+  | let x : t = e2 in e1      :: M:: LetBinding {{ com Let binding }}
+  | letrec x : t = e2 in e1   :: M:: LetRecBind {{ com Letrec binding }}
+  | t1 -> t2                  :: M:: FuncType   {{ com Function type }}
+  | lit                       :: M:: Literals   {{ com Literals }}
+  | e *                       :: M:: Starred    {{ com Starred expression }}
+  | << e >>                   :: M:: ExprVec
+  | e1 (+) e2                 :: M:: ExprUnion
+  | ( << u : t1 >> ) -> t2    :: M:: FuncTypeVec
+  | ( << u : t1 >>n ) -> t2   :: M:: FuncTypeVecN
+  | ( u : t1 ) -> t2          :: M:: DepFuncType
+  | \ << u : t >> . e         :: M:: LamVec
+  | \ << u : t >>n . e        :: M:: LamVecN
+  | e1 [ << e2 |-> t2 >> ]    :: M:: SubstVec
+  | D @ << u >>               :: M:: Datatype
+  | D @ << u >>n              :: M:: DatatypeN
+  | e1 [ D @ << u >> |-> e3 ] :: M:: ExprSubst
+  | \\\ e                     :: M:: LineHack
+  | & e                       :: M:: AlignHack
+  | @@                        :: M:: DummyExpr
+  | let x * : t = e2 in e1    :: M:: StarBinding
+  | s                         :: M:: Sort
+  | foldn [ t ] e             :: M:: CastUpMulti
+  | unfoldn e                 :: M:: CastDownMulti
+  | K << u >> << e >>         :: M:: Constructor
+  | fold [ t ] T              :: M:: Fold
+  | unfold T                  :: M:: Unfold
+  | foldnp [ t ] e            :: M:: CastUpMultiP
+  | unfoldnp e                :: M:: CastDownMultiP
+  | castupf [ t ] e           :: M:: CastUpFull
+  | castdownf [ t ] e         :: M:: CastDownFull
+  | lit1 + lit2               :: M:: Plus
+  | | e |                     :: M:: Erasure
+
+%% Literals
+lit :: 'lit_' ::=
+  | int                 :: M:: IntType
+  | Int                 :: M:: IntType2
+  | bool                :: M:: BoolType
+  | Bool                :: M:: BoolType2
+  | three               :: M:: Three
+  | num                 :: M:: Number
+
+num :: 'num_' ::=
+  | 0 :: :: 0
+  | 1 :: :: 1
+  | 2 :: :: 2
+  | 3 :: :: 3
+
+%% Sorts
+s {{ tex \star }} :: 's_' ::= {{ com Sorts }}
+  | star                ::  :: Star                  {{ com Star }}
+
+%% Contexts
+G {{ tex \Gamma }}, De {{ tex \Delta }} :: 'G_' ::= {{ com Contexts }}
+  | empty          ::  :: Empty       {{ com Empty }}
+  | G , x : t      ::  :: Binding     {{ com Variable Binding }}
+  | G , G'         :: M:: CtxBind     {{ com Context Binding }}
+  | G [ x |-> e ]  :: M:: CtxSubst    {{ com Context substitution }}
+  | G *            :: M:: CtxStar     {{ com Starred context }}
+  | ee : tt         :: M:: BindCoC
+  | | G |           :: M:: EraCtx
+
+%% Contexts
+Gg {{ tex \Gamma }} :: 'Gg_' ::= {{ com Contexts }}
+  | empty          ::  :: Empty       {{ com Empty }}
+  | Gg , x : t      ::  :: Binding     {{ com Variable Binding }}
+ 
+%% Values
+v :: 'v_' ::=                               {{ com Values   }}
+  | star                 ::  :: Star       {{ com Type of Types }}
+  | \ x : t . e          ::  :: Lam        {{ com Abstraction  }}
+  | Pi x : t1 . t2       ::  :: Pi         {{ com Dependent Product }}
+  | castup [ t ] v       ::  :: CastUp     {{ com Weak Cast Up }}
+
+vf {{ tex v }} :: 'vf_' ::=                               {{ com Values   }}
+  | star                 ::  :: Star       {{ com Type of Types }}
+  | \ x : t . e          ::  :: Lam        {{ com Abstraction  }}
+  | Pi x : t1 . t2       ::  :: Pi         {{ com Dependent Product }}
+  | castupf [ t ] vf       ::  :: CastUp     {{ com Full Cast Up }}
+  | castdownf [ t ] vf       ::  :: CastDn     {{ com Full Cast Down }}
+
+
+%% Explicit core
+ec {{ tex e }}, tc {{ tex \tau }}, Tc {{ tex \sigma }} :: 'ec_' ::=       {{ com Expressions    }}
+  | x                           ::  :: Var        {{ com Variable }}
+  | star                        ::  :: Star       {{ com Type of Types }}
+  | ec1 ec2                     ::  :: App        {{ com Application }}
+  | \ x : tc . ec               ::  :: Lam        {{ com Abstraction }}
+  | Pi x : tc . Tc              ::  :: Pi         {{ com Dependent Product }}
+  | mu x : tc . ec              ::  :: Mu         {{ com General Recursion }}
+  | castup [ tc ] ec            ::  :: CastUp     {{ com Weak Cast Up}}
+  | castdown ec                 ::  :: CastDown   {{ com Weak Cast Down }}
+
+%% Full cast
+ef {{ tex e }}, tf {{ tex \tau }}, Tf {{ tex \sigma }} :: 'ef_' ::=       {{ com Expressions    }}
+  | x                           ::  :: Var        {{ com Variable }}
+  | star                        ::  :: Star       {{ com Type of Types }}
+  | ef1 ef2                     ::  :: App        {{ com Application }}
+  | \ x : tf . ef               ::  :: Lam        {{ com Abstraction }}
+  | Pi x : tf . Tf              ::  :: Pi         {{ com Dependent Product }}
+  | mu x : tf . ef              ::  :: Mu         {{ com General Recursion }}
+  | castupf [ tf ] ef           ::  :: CastUp     {{ com Full Cast Up}}
+  | castdownf [ tf ] ef         ::  :: CastDown   {{ com Full Cast Down }}
+
+%% Erased System
+er {{ tex r }}, tr {{ tex \rho }} :: 'er_' ::=       {{ com Expressions    }}
+  | x                           ::  :: Var        {{ com Variable }}
+  | star                        ::  :: Star       {{ com Type of Types }}
+  | er1 er2                     ::  :: App        {{ com Application }}
+  | \ x : tr . er               ::  :: Lam        {{ com Abstraction }}
+  | Pi x : tr1 . tr2            ::  :: Pi         {{ com Dependent Product }}
+  | mu x : tr . er              ::  :: Mu         {{ com General Recursion }}
+
+%% Values of Erased System
+vu {{ tex u }} :: 'vu_' ::=                               {{ com Values   }}
+  | star                 ::  :: Star       {{ com Type of Types }}
+  | \ x : tr . er          ::  :: Lam        {{ com Abstraction  }}
+  | Pi x : tr1 . tr2       ::  :: Pi         {{ com Dependent Product }}
+
+%% Contexts
+Gr {{ tex \Delta }} :: 'Gr_' ::= {{ com Contexts }}
+  | empty          ::  :: Empty       {{ com Empty }}
+  | Gr , x : rh      ::  :: Binding     {{ com Variable Binding }}
+
+%%% Terminals
+terminals :: 'terminals_' ::=
+  | \        ::  :: lambda    {{ tex \lambda }}
+  | Pi       ::  :: pi        {{ tex \Pi }}
+  | mu       ::  :: mu        {{ tex \mu }}
+  | star     ::  :: star      {{ tex \star }}
+  | square   ::  :: square    {{ tex \Box }}
+  | empty    ::  :: empty     {{ tex \varnothing }}
+  | ->       ::  :: to        {{ tex \rightarrow }}
+  | -->      ::  :: steps     {{ tex \longrightarrow }}
+  | -p>      ::  :: parastep  {{ tex \longrightarrow_{\mathsf{p} } }}
+  | -p*>     ::  :: paramstep {{ tex \longrightarrow_{\mathsf{p} }^{*} }}
+  | -->>     ::  :: nsteps    {{ tex \longrightarrow_n }}
+  | ->>      ::  :: msteps    {{ tex \twoheadrightarrow }}
+  | |->      ::  :: mapsto    {{ tex \mapsto }}
+  | castup   ::  :: castup    {{ tex \mathsf{cast}_{\uparrow} }}
+  | ]        ::  :: bracketr  {{ tex \ottsym{]} \, }}
+  | |-       ::  :: turnstile {{ tex \vdash }}
+  | ==       ::  :: equiv     {{ tex \equiv }}
+  | =a       ::  :: alphaeq   {{ tex \equiv }}
+  | =b       ::  :: betaeq    {{ tex =_{\beta} }}
+  | =p       ::  :: paraeq    {{ tex =_{\mathsf{p} } }}
+  | castdown ::  :: castdown  {{ tex \mathsf{cast}_{\downarrow} }}
+  | castdownf ::  :: castdownf  {{ tex \mathsf{cast}_{\Downarrow} }}
+  | castupf   ::  :: castupf  {{ tex \mathsf{cast}_{\Uparrow} }}
+  | let      ::  :: let       {{ tex \kw{let} }}
+  | letrec   ::  :: letrec    {{ tex \kw{letrec} }}
+  | in       ::  :: key_in    {{ tex \kw{in} }}
+  | eqb      ::  :: eqb       {{ tex =_{\beta} }}
+  | int      ::  :: int       {{ tex \mathit{Int} }}
+  | bool     ::  :: bool      {{ tex \mathit{Bool} }}
+  | Int      ::  :: int2      {{ tex \mathit{Int} }}
+  | Bool     ::  :: bool2     {{ tex \mathit{Bool} }}
+  | three    ::  :: three     {{ tex 3 }}
+  | elt      ::  :: elt       {{ tex \in }}
+  | *        ::  :: upstar    {{ tex ^{*} }}
+  | .        ::  :: dot       {{ tex .~ }}
+  | =>       ::  :: match     {{ tex \Rightarrow }}
+  | /=       ::  :: ineq      {{ tex \not \eq }}
+  | data     ::  :: data      {{ tex \kw{data} }}
+  | rcrd     ::  :: rcrd      {{ tex \kw{data} }}
+  | case     ::  :: case      {{ tex \kw{case} }}
+  | of       ::  :: of        {{ tex \kw{of} }}
+  | <<       ::  :: vecl      {{ tex \,\overline{ }}
+  | >>       ::  :: vecr      {{ tex }\, }}
+  | >>n      ::  :: vecrn     {{ tex }^{n}\, }}
+  | @        ::  :: marker    {{ tex }}
+  | ~>       ::  :: transto   {{ tex \rightsquigarrow }}
+  | ~~>      ::  :: transtohl {{ tex \rightsquigarrow }}
+  | (+)      ::  :: union     {{ tex \uplus }}
+  | :=       ::  :: define    {{ tex \triangleq ~ }}
+  | &        ::  :: align     {{ tex & }}
+  | \\\      ::  :: newline   {{ tex \\\\ }}
+  | ,,       ::  :: commanl   {{ tex , \\\\ }}
+  | @@       ::  :: dummy     {{ tex }}
+  | foldn    ::  :: foldn     {{ tex \mathsf{cast}_{\uparrow}^n }}
+  | unfoldn  ::  :: unfoldn   {{ tex \mathsf{cast}_{\downarrow}^n }}
+  | cast     ::  :: cast      {{ tex \mathsf{cast} }}
+  | fold     ::  :: fold      {{ tex \mathsf{fold} }}
+  | unfold   ::  :: unfold    {{ tex \mathsf{unfold} }}
+  | foldnp   ::  :: foldnp    {{ tex \mathsf{cast}_{\uparrow}^{n+1} }}
+  | unfoldnp ::  :: unfoldnp  {{ tex \mathsf{cast}_{\downarrow}^{n+1} }}
+  | fresh    ::  :: fresh     {{ tex \mathsf{fresh} }}
+
+%%% Fomulae
+formula :: 'formula_' ::=
+  | judgement                          ::   :: judgement
+  | G1 = G2                            ::   :: context_rewrite
+  | Gs1 = Gs2                          ::   :: context_rewrite_src
+  | e1 = e2                            ::   :: rewrite
+  | e1 -p*> e2                         ::   :: multi_step_pared
+  | e1 /= e2                           ::   :: inequality
+  | e1 =b e2                           ::   :: beta_equality
+  | e1 =a e2                           ::   :: alpha_equality
+  | e1 =p e2                           ::   :: para_equality
+  | e1 == e2                           ::   :: equivalence
+  | ( formula )                        ::   :: parens
+  | x : t elt G                        ::   :: context_inclusion
+  | formula \\                         ::   :: lbhack {{ tex [[formula]] \ottlinebreak }}
+  | u : A elt Gs                       ::   :: context_inclusion_src
+  | << formula >>                      ::   :: formula_vector
+  | E1 = E2                            ::   :: rewrite_src
+  | e1 := e2                           ::   :: definition
+  | x fresh G                          ::   :: freshment
+    {{ tex [[x]] \not \in \kw{dom}([[G]]) }}
+  | ee1 =b ee2                         ::   :: beta_equality_coc
+  | p1 => E1 elt << p2 => E2 >>        ::   :: pattern_inclusion
+  | |- Gs ~> G  ::   :: trans_context
+    {{ tex \labeledjudge{wf} [[Gs]] [[~>]] [[G]] }}
+  | Gs  |- pgm : A ~> e  ::   :: trans_program 
+    {{ tex [[Gs]] \labeledjudge{pg} [[pgm]] : [[A]] [[~>]] [[e]] }}
+  | Gs  |- decl : Gs' ~> e  ::   :: trans_decl
+    {{ tex [[Gs]] \labeledjudge{d} [[decl]] : [[Gs']] [[~>]] [[e]] }}
+  | Gs  |- p => E : B -> A ~> e  ::   :: trans_pattern
+    {{ tex [[Gs]] \labeledjudge{p} [[p]] [[=>]] [[E]] : [[B]] [[->]] [[A]] [[~>]] [[e]] }}
+  | Gs  |- E : A ~> e  ::   :: trans_expr
+    {{ tex [[Gs]] \labeledjudge{s} [[E]] : [[A]] [[~>]] [[e]] }}
+  | |- Gs  ::   :: srcty_context
+    {{ tex \labeledjudge{wf} [[Gs]] }}
+  | Gs  |- pgm : A  ::   :: srcty_program 
+    {{ tex [[Gs]] \labeledjudge{pg} [[pgm]] : [[A]] }}
+  | Gs  |- decl : Gs'  ::   :: srcty_decl
+    {{ tex [[Gs]] \labeledjudge{d} [[decl]] : [[Gs']] }}
+  | Gs  |- p => E : B -> A  ::   :: srcty_pattern
+    {{ tex [[Gs]] \labeledjudge{p} [[p]] [[=>]] [[E]] : [[B]] [[->]] [[A]] }}
+  | Gs  |- E : A  ::   :: srcty_expr
+    {{ tex [[Gs]] \labeledjudge{s} [[E]] : [[A]] }}
+
+%%% Subrule
+subrules
+  v <:: e
+  ec <:: e
+
+%%% Typing rules
+defns
+LintCore :: '' ::=
+
+defn |- G        ::  :: ctx :: 'Env_' {{ com Well-formed Context }}
+by
+
+-------- :: Empty
+|- empty
+
+|- G
+G |- t : s
+----------- :: Var
+|- G, x : t
+
+defn G  |- e : t ::  :: expr :: 'T_' {{ com Expression Typing }}
+by
+
+|- G
+---------------------- :: Ax
+G |- star : star
+
+|- G
+x:t elt G
+---------- :: Var
+G |- x:t
+
+G |- e1 : Pi x:t2.t1
+G |- e2 : t2
+------------------------ :: App
+G |- e1 e2 : t1[x |-> e2]
+
+G, x : t1 |- e : t2
+G |- Pi x:t1.t2 : s
+--------------------------- :: Lam
+G |- \x:t1.e : Pi x:t1.t2
+
+G |- t1 : s
+G, x:t1 |- t2:s
+------------------- :: Pi
+G |- Pi x:t1.t2 : s
+
+G, x:t |- e:t
+G |- t:s
+------------------- :: Mu
+G |- mu x:t . e : t
+
+G |- e : t2
+G |- t1 : s
+t1 --> t2
+---------------------- :: CastUp
+G |- castup[t1] e : t1
+
+G |- e : t1
+t1 --> t2
+---------------------- :: CastDown
+G |- castdown e : t2
+
+defn G  |- e : t ::  :: exprfull :: 'TF_' {{ com Expression Typing }}
+by
+
+|- G
+---------------------- :: Ax
+G |- star : star
+
+|- G
+x:t elt G
+---------- :: Var
+G |- x:t
+
+G |- e1 : Pi x:t2.t1
+G |- e2 : t2
+------------------------ :: App
+G |- e1 e2 : t1[x |-> e2]
+
+G, x : t1 |- e : t2
+G |- Pi x:t1.t2 : s
+--------------------------- :: Lam
+G |- \x:t1.e : Pi x:t1.t2
+
+G |- t1 : s
+G, x:t1 |- t2:s
+------------------- :: Pi
+G |- Pi x:t1.t2 : s
+
+G, x:t |- e:t
+G |- t:s
+------------------- :: Mu
+G |- mu x:t . e : t
+
+G |- e : t2
+G |- t1 : s
+|t1| -p> |t2|
+---------------------- :: CastUp
+G |- castupf[t1] e : t1
+
+G |- e : t1
+G |- t2 : s
+|t1| -p> |t2|
+---------------------- :: CastDown
+G |- castdownf[t2] e : t2
+
+%%% Dynamic semantics
+defns
+OpSem :: '' ::=
+
+defn e --> e' ::  :: step :: 'S_' {{ com One-step Weak-head Reduction }}
+by
+
+----------------------------  :: Beta
+(\x:t.e1) e2 --> e1 [x|->e2]
+
+e1 --> e1'
+---------------- :: App
+e1 e2 --> e1' e2
+
+------------------------------- :: Mu
+mu x:t.e --> e [x |-> mu x:t.e]
+
+e --> e'
+-------------------------- :: CastDown
+castdown e --> castdown e'
+
+e --> e'
+-------------------------- :: CastUp
+castup [t] e --> castup [t] e'
+
+---------------------------- :: CastElim
+castdown (castup[t] v) --> v
+
+% defn e --> e' ::  :: step_cast :: 'S_' {{ com One-step Reduction }}
+% by
+
+% ---------------------------- :: CastUpE
+% castup[t] e --> e
+
+% -------------------------- :: CastDownE
+% castdown e --> e
+
+defn |- De        ::  :: ctxr :: 'EnvE_' {{ com Well-formed Context }}
+by
+
+-------- :: Empty
+|- empty
+
+|- De
+De |- rh : s
+----------- :: Var
+|- De, x : rh
+
+defn De  |- r : rh ::  :: exprr :: 'TE_' {{ com Expression Typing of Erased System }}
+by
+
+|- De
+---------------------- :: Ax
+De |- star : star
+
+|- De
+x:rh elt De
+---------- :: Var
+De |- x:rh
+
+De |- r1 : Pi x:rh2.rh1
+De |- r2 : rh2
+------------------------ :: App
+De |- r1 r2 : rh1[x |-> r2]
+
+De, x : rh1 |- r : rh2
+De |- rh1 : s
+De, x:rh1 |- rh2:s
+--------------------------- :: Lam
+De |- \x:rh1.r : Pi x:rh1.rh2
+
+De |- rh1 : s
+De, x:rh1 |- rh2:s
+------------------- :: Pi
+De |- Pi x:rh1.rh2 : s
+
+De, x:rh |- r:rh
+De |- rh:s
+------------------- :: Mu
+De |- mu x:rh . r : rh
+
+De |- r : rh2
+De |- rh1 : s
+rh1 =p rh2
+---------------------- :: Conv
+De |- r : rh1
+
+defn r --> r' ::  :: stepr :: 'SE_' {{ com One-step Weak-head Reduction }}
+by
+
+----------------------------  :: Beta
+(\x:rh.r1) r2 --> r1 [x|->r2]
+
+r1 --> r1'
+---------------- :: App
+r1 r2 --> r1' r2
+
+------------------------------- :: Mu
+mu x:rh.r --> r [x |-> mu x:rh.r]
+
+defn r -p> r' ::  :: stepp :: 'P_' {{ com One-step Parallel Reduction }}
+by
+
+---------- :: Var
+x -p> x
+
+---------- :: Star
+star -p> star
+
+---------------------- :: Beta
+(\x:rh.r1) r2 -p> r1 [x|->r2]
+
+-------------------------- :: MuBeta
+mu x:rh.r -p> r [x |-> mu x :rh.r]
+
+r1 -p> r1'
+r2 -p> r2'
+----------------- :: App
+r1 r2 -p> r1' r2'
+
+rh -p> rh'
+r -p> r'
+--------------------- :: Lam
+\x:rh.r -p> \x:rh'.r'
+
+rh1 -p> rh1'
+rh2 -p> rh2'
+----------------------------- :: Pi
+Pi x:rh1.rh2 -p> Pi x:rh1'.rh2'
+
+rh -p> rh'
+r -p> r'
+------------------------- :: Mu
+mu x:rh.r -p> mu x:rh'.r'
+

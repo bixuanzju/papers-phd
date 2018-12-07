@@ -1,0 +1,194 @@
+% Hack to use mathpartir for ott
+\newcommand{\ottlinebreak}{}
+\renewcommand{\ottdrule}[4][]{{\inferrule{#2 }{#3}\quad\ottdrulename{#4}}}
+\renewcommand{\ottrulehead}[3]{ $#1$  & $#2$ &  & \multicolumn{2}{l}{#3}}
+\renewcommand{\ottprodline}[6]{& $#1$ & $#2$ & $#5$ & $#6$}
+\renewcommand{\ottgrammartabular}[1]{\begin{tabular}{lclllll}#1\end{tabular}}
+\renewcommand{\ottinterrule}{\\[2.0mm]}
+% \renewcommand{\ottusedrule}[1]{\[\begin{array}{c}#1\end{array}\]}
+\newcommand{\gram}[1]{\ottgrammartabular{#1\ottafterlastrule}}
+\newcommand{\ruleref}[1]{\ottdrulename{#1}}
+
+\newcommand{\castup}{$[[castup]]$\xspace}
+\newcommand{\castdown}{$[[castdown]]$\xspace}
+\newcommand{\cast}{cast\xspace}
+
+\newcommand{\lam}[3]{[[\]] #1:#2.\,#3}
+\newcommand{\pai}[3]{[[Pi]] #1:#2.\,#3}
+\newcommand{\miu}[3]{[[mu]] #1:#2.\,#3}
+
+\newcommand{\FV}{\mathsf{FV}}
+\newcommand{\dom}{\mathsf{dom}}
+
+\newcommand*{\mathscale}[2][4]{\scalebox{#1}{$#2$}}%
+
+\def\replace#1#2#3{%
+ \def\tmp##1#2{##1#3\tmp}%
+   \tmp#1\stopreplace#2\stopreplace}
+\def\stopreplace#1\stopreplace{}
+
+\newcommand{\ottcoresugar}{%%
+\begin{array}{llll} %
+    % [[t1->t2]] & \triangleq & [[Pi x:t1.t2]],~\text{where}~x \not \in %
+        % \FV([[t2]]) \\ %
+    [[(x:t1)->t2]] & \triangleq & [[Pi x:t1.t2]] \\ %
+    [[let x : t = e2 in e1]] & [[:=]] & [[ e1 [x |-> e2] ]] \\ %
+    [[letrec x : t = e2 in e1]] & \triangleq & [[let x : t = mu x : t . e2 in e1]] \\ %
+    [[foldn [t1] e]] & [[:=]] & [[castup]] [ [[t1]] ] ([[castup]] [ %
+        [[t2]] ] (\dots ( [[castup [tn] e]] ) \dots )) \\ %
+    [[unfoldn e]] & [[:=]] & \underbrace{[[castdown]] ([[castdown]] %
+        (\dots ( [[castdown]]}_n [[e]]) \dots ))
+\end{array} %
+}
+
+\newcommand{\ottsurfsugar}{%%
+\begin{array}{lll} %
+    [[A1->A2]] & \triangleq & [[Pi x:A1.A2]],~\text{where}~x \not \in \FV([[A2]]) \\ %
+    [[(x:A1)->A2]] & \triangleq & [[Pi x:A1.A2]] \\ %
+    [[let x : A = E2 in E1]] & [[:=]] & [[ E1 [x |-> E2] ]] \\ %
+      [[letrec x : A = E2 in E1]] & \triangleq & [[let x : A = mu x : A . E2 in E1]] \\ %
+    [[rcrd R <<u:k>>n = K { <<N:A>> }]] & \triangleq & %
+        [[data R <<u:k>>n = K <<x:A>>]]; \\ %
+        && [[let]]~[[N]]_i : [[ (<<u:k>>n) -> R@<<u>>n -> A]]_i = \\ %
+        && \quad [[\ <<u:k>>n . \ y : R@<<u>>n . @@]] \\
+        && \quad[[case y of K <<x:A>> => x]]_i~[[in]] \\ %
+\end{array} %
+}
+
+\newcommand{\ottdeclD}{%%
+[[mu X : (<<u:ro>>n) -> star . \ <<u:ro>>n . (bb:star) -> << ((<<x : t[D |-> X]>>) -> bb) >> -> bb]] %
+}
+
+\newcommand{\ottdeclK}{%%
+[[\ <<u:ro>>n . \<<x:t>> . foldnp [D@<<u>>n] (\bb:star.\<<cc : (<<x:t>>) -> bb >> . cci <<x>>)]] %
+}
+
+\newcommand{\ottdecltrans}{%%
+\begin{array}{lll} %
+    [[e]] [[==]] & [[ let ]]~[[D]] : [[(<<u:ro>>n) -> star]] =& [[mu X : (<<u:ro>>n) -> star . \ <<u:ro>>n . (bb:star) -> @@ ]] \\ && [[<< ((<<x : t[D |-> X]>>) -> bb) >> -> bb]]~ [[ in ]] \\ %
+    & [[ let ]]~[[Ki]] : [[ (<<u:ro>>n) -> (<<x:t>>) -> D@<<u>>n ]] =& [[\ <<u:ro>>n . \<<x:t>> . foldnp [D@<<u>>n] @@]] \\ && [[(\bb:star.\<<cc : (<<x:t>>) -> bb >> . cci <<x>>)]] ~[[ in ]] %
+\end{array} %
+}
+
+
+\newcommand{\syndef}{$::=$}
+\newcommand{\synor}{$\mid$}
+\newcommand{\syneq}{$\triangleq$}
+
+% Core syntax
+\newcommand*{\corelang}{
+\begin{small}
+\begin{tabular}{lrcl}
+Expressions & $e,[[t]],[[T]]$ & \syndef & $x \mid [[star]] \mid [[e1 e2]]$ \\
+&& \synor & $[[\x : t . e]] \mid [[Pi x : t1. t2]] \mid [[mu x : t . e]]$ \\
+&& \synor & $[[castup [t] e]] \mid [[castdown e]]$ \\
+Values &
+$v$ & \syndef & $[[star]] \mid [[\x :t.e]] \mid
+                [[Pi x:t1.t2]]$ \\
+&& \synor & $[[castup [t] v]]$ \\
+Contexts &
+$[[G]]$ & \syndef & $[[empty]] \mid [[G]],x:[[t]]$ \\
+\end{tabular}
+\\
+\end{small}
+}
+
+
+% Syntactic Sugar
+\newcommand*{\coresugar}{
+\begin{small}
+\begin{tabular}{lcl}
+\multicolumn{1}{l}{Syntactic Sugar} \\
+$[[t1 -> t2]]$ & \syneq & $[[Pi x : t1.t2]]$, where $x \not \in \mathsf{FV}(\tau_2)$ \\
+% $\barr x {\tau_1} \tau_2$ & \syneq & $\bpi x {\tau_1} \tau_2$ \\
+% $\barrv[n]{x_i}{\tau_i} \tau$ & \syneq & $(x_1:\tau_1) \to (x_2:\tau_2) \to
+%                                            \cdots$ \\ && $\to (x_n:\tau_n) \to \tau$
+%   \\
+% $\kw{let} x=e_1 \kw{in} e_2$ & \syneq & $e_2 \subst x {e_1}$ \\
+% $\kw{letrec} x:\tau=e_1 \kw{in} e_2$ & \syneq & $\kw{let} x=\bmu x \tau e_1 \kw{in} e_2$ \\
+% $\kw{let} \overline{x_i=e_i}^n \kw{in} e$ & \syneq 
+%                              & $\kw{let} x_1 = e_1 \kw{in}$ \\
+%                     && $\cdots$ \\
+%                     && $\kw{let} x_n = e_n \kw{in} e$ \\
+$[[foldn [t1] e]]$ & \syneq & $[[castup]] [ [[t1]] ] ([[castup]] [ %
+        [[t2]] ] (\dots ( [[castup [tn] e]] ) \dots ))$\\
+                    && , where $\tau_1 [[-->]] \tau_2 [[-->]] \dots [[-->]] \tau_n$ \\
+  $[[unfoldn e]]$ & \syneq & $\underbrace{[[castdown]] ([[castdown]] %
+        (\dots ( [[castdown]]}_n [[e]]) \dots ))$ \\
+% $\eqapp[n] e$ & \syneq & $\underbrace{\langle 
+%                             \langle \dots \langle}_n e~\rangle \dots
+%                          \rangle \rangle$ \\
+\end{tabular}
+\\
+\end{small}
+}
+
+\newcommand{\headercapm}[2]{\vspace{1pt}\raggedright \framebox{\mbox{$#1$}} \;
+  #2}
+\newcommand{\er}[1]{|{#1}|}
+\newcommand{\binder}[3]{#1 #2:#3.~}
+\newcommand{\blam}{\binder \lambda}
+\newcommand{\bmu}{\binder \mu}
+\newcommand{\bpi}{\binder \Pi}
+\newcommand*{\erasuredef}{
+\headercapm{\er e}{Erasure}
+\[
+\begin{array}{lcl}
+\er{x} & = & x \\
+\er{\star} & = & \star \\
+\er{e_1~e_2} &=& \er{e_1}~\er{e_2} \\
+\er{\blam x \tau e} & = & \blam x {\er{\tau}} \er{e} \\
+\er{\bpi x {\tau_1} {\tau_2}} &=& \bpi x {\er{\tau_1}} \er{\tau_2} \\
+\er{\bmu x \tau e} &=& \bmu x {\er{\tau}} \er{e} \\
+[[|castupf [t] e|]] &=& \er{e} \\
+[[|castdownf [t] e|]] &=& \er{e} \\
+\end{array}
+\] \\
+}
+
+\newcommand*{\eradef}{
+% \arraycolsep=1.2pt
+\begin{tabular}{l}
+Erased Expressions $\quad [[r]],[[rh]]$ \\
+Erasure \\
+$\begin{array}{lcl}
+\er{x} & = & x \\
+\er{\star} & = & \star \\
+\er{e_1~e_2} &=& \er{e_1}~\er{e_2} \\
+\er{\blam x \tau e} & = & \blam x {\er{\tau}} \er{e} \\
+\er{\bpi x {\tau_1} {\tau_2}} &=& \bpi x {\er{\tau_1}} \er{\tau_2} \\
+\er{\bmu x \tau e} &=& \bmu x {\er{\tau}} \er{e} \\
+[[|castupf [t] e|]] &=& \er{e} \\
+[[|castdownf [t] e|]] &=& \er{e} \\
+\end{array}$
+\end{tabular}
+}
+
+\newcommand*{\coretyping}{
+  \begin{small}
+    {\raggedright
+    \begin{tabularx}{0.9\columnwidth}{lY}
+  \headercapm{[[|- G]]}{Well-formed Context} & $\ottdruleEnvXXEmpty{} \quad
+    \ottdruleEnvXXVar{}$ \\[1.5em]
+  \headercapm{[[G |- e : t]]}{Typing} & $\ottdruleTXXAx{}\quad\ottdruleTXXVar{}$ \\
+\end{tabularx}
+}
+    \[\ottdruleTXXApp{} \;
+\ottdruleTXXLam{}\]
+\[    \ottdruleTXXPi{}\quad
+    \ottdruleTXXMu{}\] \[
+    \ottdruleTXXCastUp{} \quad
+    \ottdruleTXXCastDown{}
+  \]
+  \\
+\end{small}
+}
+
+\newcommand{\cocconv}[1]{\ottdrule[#1]{%
+{\Gamma  \vdash  e  \ottsym{:}  \tau_{{\mathrm{1}}}}%
+\\ {\Gamma  \vdash  \tau_{{\mathrm{2}}}  \ottsym{:}  s}%
+\\ {\tau_{{\mathrm{1}}}  =_{\beta}  \tau_{{\mathrm{2}}}}%
+}{
+\Gamma  \vdash  e  \ottsym{:}  \tau_{{\mathrm{2}}}}{%
+{}{}%
+}}

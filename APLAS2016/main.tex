@@ -1,0 +1,199 @@
+% Springer template
+\documentclass[runningheads,a4paper]{llncs}
+
+%% -- Packages Imports --
+
+% AMS stuff
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{xspace}
+\usepackage{setspace}
+\usepackage{comment}
+\usepackage{cite}
+\usepackage{verbatim}
+
+% Language
+\usepackage{csquotes}
+\MakeOuterQuote{"}
+
+\newcommand{\name}{{$\lambda I$}\xspace}
+\newcommand{\namef}{{$\lambda I_{\mathsf{p}}$}\xspace}
+\newcommand{\coc}{{\bf $\lambda C$}\xspace}
+\newcommand{\ecore}{$\lambda I_{\mathsf{w}}$\xspace}
+\newcommand{\cc}{$\lambda C$\xspace}
+\newcommand{\sufcc}{{\bf Fun}\xspace}
+\newcommand{\fold}{{\bf $\mathsf{fold}$}\xspace}
+\newcommand{\unfold}{{\bf $\mathsf{unfold}$}\xspace}
+
+\newcommand{\fullurl}{\url{https://bitbucket.org/ypyang/aplas16}\xspace}
+
+% Hyper links
+\usepackage{hyperref}
+\hypersetup{
+   colorlinks,
+   citecolor=black,
+   filecolor=black,
+   linkcolor=black,
+   urlcolor=black
+}
+
+% Figure import
+\usepackage{graphicx}
+\usepackage{xcolor}
+\newcommand{\hl}[2][gray!40]{\colorbox{#1}{#2}}
+\newcommand{\hlmath}[2][gray!40]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+
+%% Typesetting inference rules
+\usepackage{mathpartir}
+
+% Ott includes
+\input{sections/expcore.ott.tex}
+\input{sections/otthelper.tex}
+
+% lhs2tex
+\usepackage{mylhs2tex}
+
+% Table
+\usepackage{booktabs}
+\usepackage{tabularx}
+\newcolumntype{Y}{>{\centering\arraybackslash}X}
+
+% Add dot after paragraph title
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1.}}
+
+%% -- Packages Imports --
+
+% Main
+\begin{document}
+
+\mainmatter
+
+% Title
+\title{Unified Syntax with Iso-Types}
+
+\author{Yanpeng Yang \and Xuan Bi \and Bruno C. d. S. Oliveira}
+\authorrunning{Y. Yang et al.}
+
+\institute{The University of Hong Kong, Pokfulam, Hong Kong, China\\
+\email{\{ypyang,xbi,bruno\}@cs.hku.hk}}
+
+% \authorinfo{Foo \and Bar \and Baz}
+%            {The University of Foo}
+%            {\{foo,bar,baz\}@foo.edu}
+
+\maketitle
+
+% Abstract
+\begin{abstract}
+
+  Traditional designs for functional languages (such as Haskell or ML)
+  have separate sorts of syntax for terms and types. In contrast, many
+  dependently typed languages use a unified syntax that accounts for
+  both terms and types. Unified syntax has some interesting
+  advantages over separate syntax, including less duplication of
+  concepts, and added expressiveness. However, integrating
+  \emph{unrestricted} general recursion in calculi with unified syntax
+  is challenging when some level of type-level computation is present,
+  as \emph{decidable type-checking} is easily lost.
+
+  This paper argues that the advantages of unified syntax also
+  apply to traditional functional languages, and there is no
+  need to give up decidable type-checking.  We present a 
+  dependently typed calculus that uses unified syntax, supports
+  general recursion and has decidable type-checking.  The key to
+  retain decidable type-checking is a generalization of
+  \emph{iso-recursive types} called \emph{iso-types}. Iso-types
+  replace the conversion rule typically used in dependently typed
+  calculus, and make every computation explicit via cast operators. 
+  We study two variants of the calculus that differ on the reduction 
+  strategy employed by the cast operators, and give different
+  trade-offs in terms of simplicity and expressiveness.
+
+%As
+%  an application of the calculus, we develop a higher-ranked
+%  polymorphic functional language with algebraic datatypes and some
+%  interesting type-level features.
+
+\begin{comment}
+The obvious drawback of making each step
+of type-level computation explicit is the loss of convenience to
+perform type-level computation. However, the advantage is that the
+calculus can easily support general recursion and generalized
+iso-recursive types, while retaining the desirable properties of type
+soundness and decidable type-checking. 
+
+
+Our approach is inspired 
+by \emph{iso-recursive types} 
+
+
+
+Typed core (or intermediate) languages for modern 
+functional languages, such as Haskell or ML, 
+are becoming more and more complex. This is a natural tendency.
+Programmers and language designers wish for more expressive and
+powerful source-language constructs. In turn this requires new, more
+powerful constructs in core languages. Unfortunately, the added
+complexity means that the meta-theory and implementation of such core
+languages becomes significantly harder.
+
+This paper proposes a simple yet expressive core calculus (\name),
+which has a fraction of the language constructs of existing core
+languages. The key to simplicity is the combination of two ideas. The
+first idea is to use a Pure Type Systems (PTS) style of syntax that
+unifies the various syntactic levels of the language. However, this
+creates an immediate challenge: with types and terms unified, the
+\emph{decidability} of type checking requires type-level computation
+to terminate, but with general recursion it is hard to have such
+guarantee. The second idea, inspired by the traditional treatment of
+iso-recursive types, is to solve this challenge by making each
+type-level computation step explicit. The usefulness of \name is
+illustrated by a light surface language built on top of \name, which
+supports many advanced programming language features of
+state-of-the-art functional languages. 
+%The main limitation of \name is
+%the absence of a more expressive form of type-equality, which is left
+%for future work.
+\end{comment}
+
+\end{abstract}
+
+% Category, terms & keywords
+% \category{D.3.1}{Programming Languages}{Formal Definitions and Theory}
+% \terms Languages, Design
+% \keywords Dependent types, Intermediate language
+
+%% -- Starting Point -- 
+
+\input{sections/introduction.tex}
+
+\input{sections/overview.tex}
+
+\input{sections/explicitcore.tex}
+
+\input{sections/fullreduct.tex}
+
+\input{sections/related.tex}
+
+\input{sections/conclusion.tex}
+
+%% -- References --
+
+\subsubsection*{Acknowledgments.} We thank the anonymous reviewers for
+their helpful comments. This work has been sponsored by the Hong Kong
+Research Grant Council Early Career Scheme project number 27200514.
+
+\bibliographystyle{splncs03}
+\bibliography{main}
+
+%% -- The end --
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

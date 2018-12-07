@@ -1,0 +1,232 @@
+\section{Iso-Types with Full Casts}\label{sec:full}
+
+In Section \ref{sec:ecore}, casts use one-step \emph{weak-head} reduction,
+which is also used by term evaluation and simplifies the design. To gain
+extra expressiveness, we take one step further to generalize casts
+with \emph{full} reduction. In this section, we present a variant of
+\name called \namef, where casts use \emph{parallel reduction} for
+type conversion. Full specification and proofs can be found in the extended version~\cite{full}.
+
+%We show the metatheory of this variant still
+%holds, which has proofs completely formalized in Coq. Full
+%specification can be found in the appendix.
+
+\subsection{Full Casts with Parallel Reduction}
+
+Using weak-head reduction in cast operators keeps the simplicity of the
+language design. However, it lacks the ability to do \emph{full}
+type-level computation, because reduction cannot occur at certain
+positions of terms. For example, weak casts cannot convert the type
+$\mathit{Vec}~(1 + 1)$ to $\mathit{Vec}~2$ since the desired reduction
+is at the non-head position. Thus, we generalize weak casts to
+\emph{full} casts ($[[castupf]]$ and $[[castdownf]]$) utilizing
+\emph{one-step parallel reduction} ($[[-p>]]$) for type conversion.
+Figure \ref{fig:full:pared} shows the definition of $[[-p>]]$. It allows to reduce terms
+at any position, e.g., non-head positions or inside binders
+$[[\x:s.1+1 -p> \x:s.2]]$, thus enables full type-level computation
+for casts.
+
+\begin{figure}[t]
+\begin{small}
+\centering
+\renewcommand{\ottdrule}[4][]{{\inferrule{#2 }{#3}\,{\scriptsize \ottdrulename{#4}}}}
+\renewenvironment{ottdefnblock}[3][]{\raggedright \framebox{\mbox{#2}} \quad #3 \\[0pt]}{}
+\renewcommand{\ottusedrule}[1]{$#1\quad$}
+\begin{spacing}{0.9}
+\ottdefnstepp{}
+\end{spacing}
+\end{small}
+\caption{One-step parallel reduction of erased terms}
+    \label{fig:full:pared}
+\end{figure}
+
+There are three remarks for parallel reduction worth mentioning.  First,
+parallel reduction is defined up to \emph{erasure}, a process that removes
+all casts from terms (see Figure \ref{fig:full:erasure}). We use
+metavariable $[[r]]$ and $[[rh]]$ to range over erased terms and
+types, respectively.
+The only syntactic change of erased terms is that there is no
+cast. The syntax is omitted here and can be found in
+the extended version~\cite{full}. It is feasible to define
+parallel reduction only for erased terms because casts in \namef
+(also \ecore) are only used to ensure the
+decidability of type checking and have no effect on dynamic semantics,
+thus are \emph{computationally irrelevant}.
+
+\begin{figure}[t]
+\centering
+\begin{minipage}[b]{.37\textwidth}
+\centering
+\begin{small}
+\eradef
+\end{small}
+\caption{Erasure of casts}
+\label{fig:full:erasure}
+\end{minipage}
+\begin{minipage}[b]{.6\textwidth}
+\centering
+\begin{small}
+\renewcommand{\ottdrule}[4][]{{\inferrule{#2 }{#3}}}
+\renewcommand{\ottusedrule}[1]{\multicolumn{1}{c}{$#1$}}
+\begin{tabular}{l}
+Erased Values \\
+$u ::= [[star]] \mid [[\x :rh.r]] \mid
+                [[Pi x:rh1.rh2]]$ \\[9pt]
+Evaluation Rules \\
+\ottusedrule{\ottdruleSEXXBeta{}}\\
+\ottusedrule{\ottdruleSEXXApp{}}\\
+\ottusedrule{\ottdruleSEXXMu{}}\\
+\end{tabular}
+\vspace{8pt}
+\end{small}
+\caption{Values and evaluation rules of erased terms}
+\label{fig:full:wred}
+\end{minipage}
+\end{figure}
+
+Second, the definition of parallel reduction in Figure
+\ref{fig:full:pared} is slightly different from the standard one for
+PTS~\cite{para}. It is \emph{partially} parallel: rules
+\ruleref{P\_Beta} and \ruleref{P\_MuBeta} do not parallel reduce
+sub-terms but only do beta reduction and recursion unrolling,
+respectively. Such definition makes the decidability property (see
+Lemma \ref{lem:full:dec}) easier to prove than the conventional fully
+parallel version. It also requires fewer reduction steps than the
+non-parallel version, thus correspondingly needs fewer casts.
+
+Third, parallel reduction does \emph{not} have the determinacy
+property like weak-head reduction (Lemma \ref{lem:ecore:unique}).
+For example, for term $[[(\x:s.1+1) Int]]$, we can (parallel)
+reduce it to either $[[(\x:s.2) Int]]$ by rule \textsc{P\_App} and
+\textsc{P\_Lam}, or $1+1$ by rule \textsc{P\_Beta}. Thus, to ensure
+the decidability, we also need to add the type annotation for
+$[[castdownf]]$ operator to indicate what exact type we want to reduce
+to. Similar to $[[castupf]]$, $[[castdownf [t] v]]$ is a value,
+which is different from the weak $[[castdown]]$-term.
+
+Figure \ref{fig:full:syntax} shows the syntactic and typing changes of
+\namef. Notice that in \ecore, reduction rules for type casting and
+term evaluation are the \emph{same}, i.e., the weak-head call-by-name
+reduction. But in \namef, parallel reduction is only used by casts. We
+define \emph{weak-head} reduction ($[[-->]]$) for
+term evaluation individually (see Figure \ref{fig:full:wred}). Note
+that the relation $[[-->]]$ is defined only for
+\emph{erased terms}, which is similar to the treatment of $[[-p>]]$. We also define syntactic values for erased
+terms, ranged over by $u$ (see Figure \ref{fig:full:wred}).
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+    \renewcommand{\ottdrule}[4][]{{\inferrule{#2 }{#3}\;{\scriptsize\ottdrulename{#4}}}}
+\begin{tabular}{lrclr}
+Expressions \hspace{1em} & $e,\tau,\sigma$ & \syndef & $\dots \mid [[castupf [t] e]] \mid [[castdownf [t] e]]$ \\
+Values \hspace{1em} & $v$ & \syndef & $\dots \mid [[castupf [t] v]] \mid [[castdownf [t] v]]$ \\
+Typing \\
+& \multicolumn{4}{l}{$\ottdruleTFXXCastUp{}$} \\[10pt]
+& \multicolumn{4}{l}{$\ottdruleTFXXCastDown{}$} \\
+\end{tabular}
+\end{small}
+\caption{Syntactic and typing changes of \namef}
+\label{fig:full:syntax}
+\end{figure}
+
+\subsection{Metatheory}\label{sec:full:meta}
+We show that the two key properties, type safety and decidability of type
+checking, still hold in \namef.
+%The proofs are fully formalized in Coq. Full specifications
+%and properties of the system can be found in the appendix.
+
+\paragraph{Type Safety}
+Full casts are more expressive but also complicate the
+metatheory: term evaluation could get stuck by full casts. For
+example, the following term,
+\[ [[(castdownf [Int -> Int] (\x:((\y:s.y) Int).x)) 3]]
+\]
+cannot be further reduced because the head position is already a value
+but not a $\lambda$-term.
+Note that weak casts do not have such problem because only
+$[[castup]]$ is annotated and not legal to have a $\Pi$-type in the
+annotation (see last paragraph of Section \ref{sec:ecore:meta}).
+To avoid getting stuck by full casts, one could
+introduce several \emph{cast push rules} similar to System
+$F_C$~\cite{fc}. For example, the stuck term above can be further
+evaluated by pushing $[[castdownf]]$ into the $\lambda$-term:
+\[
+ [[(castdownf [Int -> Int] (\x:((\y:s.y) Int).x)) 3 --> (\x : Int . x) 3]]
+\]
+
+However, adding ``push rules'' significantly complicates the reduction
+relations and metatheory. Instead, we adopt the erasure approach
+inspired by \textsf{Zombie}~\cite{zombie:popl15} and \textsc{Guru}~\cite{guru}
+that removes all casts when proving the type safety.
+We define a type system for erased
+terms, called \emph{erased system}. Its typing judgment is
+$[[De |- r : rh]]$ where $[[De]]$ ranges over the erased
+context. Omitted typing rules are available in the extended version~\cite{full}.
+
+The erased system is basically calculus of constructions
+with recursion and ``type-in-type''. Thus, we follow the standard
+proof steps for PTS~\cite{handbook}.
+Notice that term evaluation uses the weak-head reduction $[[-->]]$.
+We only need to prove subject reduction and
+progress theorems for $[[-->]]$. But we generalize the result for
+subject reduction, which holds up to the parallel reduction
+$[[-p>]]$.
+
+\begin{lemma}[Substitution of Erased System]\label{lem:full:subst}
+% \verb|[typera_substitution]|
+  If $[[De1, x:rh', De2 |- r1:rh]]$ and $[[De1 |- r2:rh']]$, then
+  $[[De1, De2 [x |-> r2] |- r1[x |-> r2] : rh[x |-> r2] ]]$.
+\end{lemma}
+
+\begin{theorem}[Subject Reduction of Erased System]\label{lem:full:reduct}
+% \hfill \\ \verb|[subject_reduction_era]|
+  If $[[De |- r:rh]]$ and $[[r -p> r']]$ then $[[De |- r':rh]]$.
+\end{theorem}
+
+\begin{theorem}[Progress of Erased System]\label{lem:full:prog}
+% \verb|[progress_era]|
+  If $[[empty |- r:rh]]$ then either $[[r]]$ is a value $u$ or there
+  exists $[[r']]$ such that $[[r --> r']]$.
+\end{theorem}
+
+Given that the erased system is type-safe, if we want to show the
+type-safety of the original system, it is sufficient to show the typing
+is preserved after erasure:
+
+\begin{lemma}[Soundness of Erasure]\label{lem:full:soundera}
+% \verb|[typsrc_to_typera]|
+If $[[G |- e : t]]$ then $[[|G| |- |e| : |t|]]$.
+\end{lemma}
+
+\paragraph{Decidability of Type Checking}
+The proof of decidability of type checking \namef is similar to \ecore
+in Section \ref{sec:ecore:meta}. The only difference is for cast rules
+\textsc{TF\_CastUp} and \textsc{TF\_CastDown}, which use parallel
+reduction $[[|t1| -p> |t2|]]$ as a premise. We first show the
+decidability of parallel reduction:
+
+\begin{lemma}[Decidability of Parallel Reduction]\label{lem:full:dec}
+% \verb|[pared_dec]|
+  If $[[De |- r1 : rh1]]$ and $[[De |- r2 : rh2]]$, then whether
+  $[[r1 -p> r2]]$ holds is decidable.
+\end{lemma}
+
+As $[[castupf]]$ and $[[castdownf]]$ are annotated, both $[[t1]]$ and
+$[[t2]]$ can be determined and the well-typedness is checked in the
+original system. By Lemma \ref{lem:full:soundera}, the erased terms
+keeps the well-typedness. Thus, by Lemma \ref{lem:full:dec}, it is
+decidable to check if $[[|t1| -p> |t2|]]$. We conclude the
+decidability of type checking by following lemmas:
+
+\begin{lemma}[Uniqueness of Typing for \namef]
+% \verb|[typsrc_unique]|
+If $[[G |- e : t1]]$ and $[[G |- e : t2]]$, then $[[t1 == t2]]$.
+\end{lemma}
+
+\begin{theorem}[Decidability of Type Checking for \namef]\label{lem:ecore:decide}
+% \verb|[typsrc_decidable]|
+Given a well-formed context $[[G]]$ and a term $[[e]]$, it is decidable
+to determine if there exists $[[t]]$ such that $[[G |- e : t]]$.
+\end{theorem}
+

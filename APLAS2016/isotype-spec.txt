@@ -1,0 +1,178 @@
+=== Formalization of Iso-types ===
+
+# Syntax
+
+## Meta-variables
+Variable x
+
+## Strategy
+m ::= up | dn
+
+## Expression
+e, t ::= x | * | e1 e2
+       | \x : t . e | pi x : t1 . t2
+       | /x : t . e | cast m [t] e
+
+## Context
+G ::= . | G, x : t
+
+## Syntactic Sugar
+t1 -> t2                ==> pi x : t1 . t2, where x \notin FV(t2)
+(x : t1) -> t2          ==> pi x : t1 . t2
+let x : t = e1 in e2    ==> (\x : t . e2) e1
+letrec x : t = e1 in e2 ==> let x : t = (/x : t . e2) in e1
+
+## Value
+Values       v ::= u | cast m [t] u
+Plain Values u ::= * | \x : t . e | pi x : t1 . t2
+
+# Dynamic Semantics
+
+## Evaluation Context
+E ::= [.] | E e | cast m [t] E
+
+## Negation of Strategy: ~m
+~up = dn
+~dn = up
+
+## One-Step Reduction: e ~> e'
+
+--------------------------------- R-Beta
+(\x : t1 . e1) e2 ~> e1 [x := e2]
+
+----------------------------------------------- R-CastBeta
+(cast m [pi x : t1' . t2'] \x : t1 . e1) e2 ~>
+(\x : t1' . cast m [t2'] e1) (cast ~m [t1'] e2)
+
+--------------------------------- R-Mu
+/x : t . e ~> e [x := /x : t . e]
+
+e ~> e'
+------------- R-Ctx
+E[e] ~> E[e']
+
+## Parallel One-Step Reduction: r ~p> r'
+
+------- P-Refl
+e ~p> e
+
+t ~p> t'  e ~p> e'
+--------------------------- P-Lam
+\x : t . e ~p> \x : t' . e'
+
+t1 ~p> t1'  t2 ~p> t2'
+----------------------------------- P-Pi
+pi x : t1 . t2 ~p> pi x : t1' . t2'
+
+e1 ~p> e1'  e2 ~p> e2'
+---------------------- P-App
+e1 e2 ~p> e1' e2'
+
+e1 ~p> e1'  e2 ~p> e2'
+----------------------------------- P-AppBeta
+(\x : t . e1) e2 ~p> e1' [x := e2']
+
+t ~p> t'  e ~p> e'
+--------------------------- P-Mu
+/x : t . e ~p> /x : t' . e'
+
+t ~p> t'  e ~p> e'
+------------------------------------- P-MuBeta
+/x : t . e ~p> e' [x := /x : t' . e']
+
+e ~p> e'
+------------------ P-Cast
+cast m [t] e ~> e'
+
+# Static Semantics
+
+## Well-formed context: |- G
+
+---- E-Empty
+|- .
+
+|- G
+G |- t : *
+x fresh
+----------- E-Var
+|- G, x : t
+
+## Typing Rule: G |- e : t
+
+|- G
+x : t \in G
+----------- T-Var
+G |- x : t
+
+|- G
+---------- T-Star
+G |- * : *
+
+G |- e1 : pi x : t1 . t2
+G |- e2 : t1
+------------------------- T-App
+G |- e1 e2 : t2 [x := e2]
+
+G |- t1 : *
+G, x : t1 |- t2 : *
+----------------------- T-Pi
+G |- pi x : t1 . t2 : *
+
+G | t1 : *
+G, x : t1 |- e : t2
+--------------------------------- T-Lam
+G |- \x : t1 . e : pi x : t1 . t2
+
+G |- t1 : *
+G |- e : t2
+G |-c t1 ~m> t2
+----------------------- T-Cast
+G |- cast m [t1] e : t1
+
+G | t : *
+G, x : t |- e : t
+------------------- T-Mu
+G |- /x : t . e : t
+
+## Cast Rule: G |-c t1 ~m> t2
+
+t1 ~p> t2
+------------------- S-Up
+G |-c t1 ~up> t2
+
+t2 ~p> t1
+------------------- S-Down
+G |-c t1 ~dn> t2
+
+# Meta-theory
+
+## Type Soundness
+
+1. Substitution
+If G1, x : t2, G2 |- e1 : t1 and G1 |- e2 : t2, then
+G1, G2[x := e2] |- e1[x := e2] : t1[x := e2].
+
+2. Subject Reduction
+If G |- e : t and e ~> e', then G |- e' : t.
+
+3. Subject Reduction w.r.t. Parallel Reduction
+If G |- e : t, e ~p> e' and G |- e' : t', then
+either t ~p> t' or t' ~p> t.
+
+4. Canonical Forms
+Suppose . |- v : t, then either v = cast m [t] u, or
+if t = pi x : t1 . t2, then v = \x : t1 . e;
+
+5. Progress
+If . |- e : t then either e is a value or there exists e'
+such that e ~> e'.
+
+## Decidability of Type Checking
+
+1. Decidability of Checking Parallel One-Step Reduction
+Given well-typed terms e1 and e2, checking whether e1 ~p> e2 holds
+is decidable.
+
+2. Decidability of Type Checking
+Given G and e, it is decidable to either compute a unique t such that
+G |- e : t, or report such t does not exist.

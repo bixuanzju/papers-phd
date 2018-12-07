@@ -1,0 +1,322 @@
+>> ----------------------- REVIEW 1 ---------------------
+>> PAPER: 34
+>> TITLE: Unified Syntax with Iso-Types
+>> AUTHORS: Yanpeng Yang, Xuan Bi and Bruno C. D. S. Oliveira
+>> 
+>> OVERALL EVALUATION: 2 (accept)
+>> 
+>> ----------- Review -----------
+>> This paper hits a novel point in the design space of dependently-typed functional languages. The aim is to preserve decidable type checking while unifying the syntax of terms and types. To do so, the proposed system gives up on logical consistency, motivated by the need to support the design of practical functional programming languages, for which term-level general recursion is required anyway.
+>> 
+>> The key insight is to avoid using general beta reduction at the type level, and to rely instead on explicit casts for one-step reduction or expansion. While writing down explicit casts for type-level computation is inconvenient, the paper shows that the approach allows for encoding interesting constructs (it focuses on parametrized algebraic datatypes).
+>> 
+>> I find that the paper presents a very interesting insight, which is novel as far as I can tell, and properly explains both the intuition, the formalism, and the possible applications. Seeing casts as a generalization of fold/unfold for iso-recursive types is brilliant. The two step presentation of weak casts and full casts is welcome.
+>> 
+>> Additionally, the paper is nicely written, with clear and informative discussions and illustrations.
+>> 
+>> I strongly support accepting this paper.
+>> 
+>> suggestions:
+>> 
+>> - what about annotating casts with an arbitrary integer that would represent the "computational budget" for a type level judgment?
+>> (I can see a glimpse of that idea in Section 5 where you use cast^2)
+>> It seems that it would trivially preserve decidability of type checking, while being more convenient. Granted, this can be a simple syntactic sugar on top of the system presented here, but it might be nice to at least mention the possibility.
+>> 
+
+Linus: We could recover the discussion of syntactic sugar of cast steps again in Section 4 (the core language part).
+
+Bruno: This is probably a good idea (especially because we have the space), and we can also 
+mention that instead of syntactic sugar another option would be to have built-in 
+constructs for n-ary casts. Some advantages would be reduced number of annotations, although 
+the construct would be less fundamental then. 
+
+>> - the paper would be better with more examples, in particular by relating the language constructs listed at the beginning of Section 5 with the form of casts that are needed (eg. which ones require full casts? which only require expansion? reduction? etc.)
+>> I understand that space is scarce, so a suggestion would be to shorten 3.4 (eg. it is not necessary to show the reduction of fact 3) in order to make space for at least a small additional paragraph in Section 5.
+>> 
+
+Linus: We already have a concluding paragraph at the end of Section 5 discussing when to use which kind of cast. I wonder if we need to add the example of Vector?
+
+>> 
+>> minor details:
+>> p5
+>> - "we must use cast-up" -> I think it's not that you "must", it's that you "can" (you could alternatively cast the function)
+>> - "consider the same example from Section 2.1" -> there are two examples in that section
+>> 
+
+Linus: Fixed.
+
+>> p11
+>> - Theorem 1: the formulation is actually more than type _checking_ it is type _inference_ (since tau is not given)
+>> 
+
+Linus: I think using type checking is also okay here?
+
+>> p14
+>> - the back reference to Section 3.5 (first line of the page) was a bit too vague (I had to re-parse all of 3.5 to recall what you were referring to). It would help to either have a lemma number, or to say something like "see last paragraph of Section 3.5".
+>> 
+
+Linus: Fixed.
+
+>> p15
+>> - is it always the case that parametrized datatypes only require expansion casts?
+>> (this is related to my suggestion above to relate the 4 cast operators to their use in the different encoded type-level features)
+>> 
+
+Linus: I think so. In the extended version, we show a mechanical translation of algebraic datatypes to the core. Expansion casts (castup) are used in the definition and downcasts are used in the pattern matching.
+
+>> 
+>> ----------------------- REVIEW 2 ---------------------
+>> PAPER: 34
+>> TITLE: Unified Syntax with Iso-Types
+>> AUTHORS: Yanpeng Yang, Xuan Bi and Bruno C. D. S. Oliveira
+>> 
+>> OVERALL EVALUATION: 1 (weak accept)
+>> 
+>> ----------- Review -----------
+>> The paper investigates a dependent type system Lambda_I, a version of the Calculus of Constructions. The motivation for the model is as follows:
+>> 1. The calculus has a unified syntax for terms, types and kinds. This is simplifies the presentation of the model and has other benefits from the point of view of implementation and expressiveness.
+>> 2. The unifying syntax should not destroy meta-properties such as type safety and decidability of type checking.
+>> To achieve 1 and 2 the authors generalize the explicit coercion to iso-types. The key idea of the iso-types can be one-step type reduction rule
+>> 
+>>    (Cast-down) e:tau and tau-->tau' implies case-down(e):tau'
+>> 
+>> and the one-step type expansion rule
+>> 
+>>    (Cast-up) e:tau' and tau-->tau' implies case-up[tau](e):tau.
+>> 
+>> In the version of Lambda_I where only head reductions are admitted, reductions are deterministic. This is the property that the semantics of Cast-down and Cast-up rely on. The authors establish for this version the subject reduction property, the progress property and the decidability property. The authors also study Lambda_Ip where parallel reductions are admitted. The meta theory of this more expressive calculus is investigated, and similar properties are derived.
+>> The paper is well written. The metatheoretical properties proved for the proposed calculi justify the introduction of the models. I think the paper is publishable.
+>> 
+>> 
+>> ----------------------- REVIEW 3 ---------------------
+>> PAPER: 34
+>> TITLE: Unified Syntax with Iso-Types
+>> AUTHORS: Yanpeng Yang, Xuan Bi and Bruno C. D. S. Oliveira
+>> 
+>> OVERALL EVALUATION: 2 (accept)
+>> 
+>> ----------- Review -----------
+>> Summary
+>> 
+>> This paper presents a decidable dependent type system where general recursion is supported and strong normalization is not required. The paper draws inspiration from iso-recursive types, where type-level computations are explicitly reduced and expanded. The key constructs are a pair of casting operators, and the paper presents two alternative reduction strategies with different simplicity and expressiveness. Key properties such as soundness and decidability are formally established.
+>> 
+>> Evaluation
+>> 
+>> This paper deserves exposure. It marks a significant departure from existing work. Instead of focusing on strong normalization checking, the proposed approach focuses on explicit finite-step type-level reduction/expansion to preserve decidability. It may not be the most mightily sophisticated system there is, but this philosophical treatise is thought-provoking. I think this paper should be accepted, so that the authors (and others) can continue on this less trodden path to develop systems that may compete with existing systems in terms of sophistication and usability.
+>> 
+>> The most inspiring part of this paper is how the design philosophy of iso-recursive types is mapped to the design of decidable dependent types. Folding and unfolding in iso-recursive types are analogous to reduction and expansion in the new design.
+>> 
+>> This paper is well written. The formalism is clean, and the meta theory is likely to hold.
+>> 
+>> 
+>> Some questions:
+>> 
+>> In practice, I wonder if you would still require explicit casting for type-level computations that are guaranteed to be strongly normalizing. I think the real future of this calculus is how it can work together with existing approaches, not supersede them. Indeed, at a principled level, one may say your approach subsumes the strongly normalizing case --- analogously we could say recursive types subsumes non-recursive types --- but casting operators after all are very cumbersome.
+>> 
+>> A more philosophical concern is whether the use of casts in your calculus would be at a discordance with the basic principle of dependent types: types and terms are mixed. The cast up/down operators only work on type-level computations, which in a way heightens this separation. I wonder if a more uniform treatment exists.
+>> 
+
+Linus: This is a good point. Actually type-level cast up/down could be used to control the kind level conversion. Maybe we could show some examples for this in the future?
+
+>> In page 5, you presented an example that requires double castings for two steps, one step at a time. This is somewhat awkward. Isn't it true what matters here is only a fixed step number of reductions can happen? Maybe there is a family of reduction strategies exist. (Think nCFA in program analysis, where n can be any constant. )
+>> 
+
+Linus: Similar to the question of Reviewer 1. I think we could recover the discussion of this syntactic sugar (castup^n).
+
+>> Related to this point, but more broadly, I wish you could offer some insights on the "completeness" of reduction strategies: to make your system work, what are the sufficient conditions of a reduction strategy? In Sec 4, you also presented a parallel reduction strategy, which is interesting in its own right, but it is hardly a "generalized" strategy for "full type-level computation" to me.
+>> 
+
+Linus: The reduction strategy must be decidable. This is critical for the decidability of type checking. We believe it covers full type-level computation because we could show the parallel reduction chosen in the system is somehow equivalent to full beta reduction.
+
+>> 
+>> ----------------------- REVIEW 4 ---------------------
+>> PAPER: 34
+>> TITLE: Unified Syntax with Iso-Types
+>> AUTHORS: Yanpeng Yang, Xuan Bi and Bruno C. D. S. Oliveira
+>> 
+>> OVERALL EVALUATION: 1 (weak accept)
+>> 
+>> ----------- Review -----------
+>> This paper proposes a new dependently-typed core calculus \I, which is a variant
+>> on the Calculus of Constructions.  The particular novelty of \I is that it
+>> includes general recursion and the Type:Type axiom, but retains decidability of
+>> type-checking by requiring explicit casts in terms when type-checking them would
+>> require reduction in types.  The goal of \I is to be a sensible core language
+>> for general-purpose functional programming with dependent types - in such a
+>> setting we might not care about consistency of the type system as a logic, but
+>> decidability of type checking would still be convenient.
+>> 
+>> Two variants of \I are proposed: \Iw, where the casts employ a weak-head
+>> reduction strategy, and \Ip, where the casts employ full reduction.  The former
+>> has simpler metatheory and requires less programmer annotation, but the
+>> restriction to head reduction means the programmer can't show as many
+>> equivalences between types (for example, only in \Ip could one use "Vec (1+1) A"
+>> where "Vec 2 A" is required).
+>> 
+>> The metatheory for both variants of \I are examined.  For both systems, type
+>> safety and decidability of type-checking is proved.  The proofs are mechanized
+>> in Coq, indicating a high degree of moral character on the part of the authors.
+>> The paper also includes a few examples of how typical dependently typed programs
+>> are represented in \I.
+>> 
+>> I recommend accepting this paper.  I agree with the authors that inconsistent
+>> dependently-typed languages with decidable type checking are insufficiently
+>> explored.  The authors pick a reasonable point in that design space, and explain
+>> it clearly.  That said, the paper does have some weaknesses, so I do not
+>> completely endorse it.  In particular:
+>> 
+>> - The authors describe their system as a variant of CC with Type:Type and
+>>   recursion that has casts for decidable type checking.  But I was disappointed
+>>   to see that they don't prove any kind of conservativity or completeness
+>>   results.  In particular, there are two very natural questions that aren't
+>>   addressed at all:
+>> 
+>>   1) Can every well-typed term in CC be annotated with casts such that it type
+>>      checks in \Ip?
+>> 
+>>   2) Can every well-typed term in (CC+mu+type:type) be annotated with casts such
+>>      that it type checks in \Ip?
+>> 
+>>   Without any examination of these questions, it's hard to judge how restrictive
+>>   the casts are, even imagining a surface language where they are largely
+>>   inferred.
+>> 
+
+Linus: This is a good point. However, I believe this is beyond the discussion of this paper. The completeness problem is not easy, which might need another whole paper to discuss. The whole "Explicit PTS" paper [11] discusses the equivalence of an explicit PTS system (PTSf) with equality proofs and the normal implicit PTS. For question (1), I believe it is true. By [11], we already know that:
+
+PTS <=> PTSe <=> PTSf
+
+If we could show: "CoCf (PTSf) => \Ip", we can derive "CoC <=> COCf => \Ip".
+
+For (2), I think it might not hold. Because typechecking CoC w/ Mu is undecidable, which means it is possible to construct a term that requires infinite type checking steps, which is not possible to typecheck in \Ip as the discussion in Section 2 (the number of casts is finite).
+
+>> - Second, the authors don't do a very good job distinguishing themselves from
+>>   existing work, and in some cases they misrepresent it.  In particular, their
+>>   discussion of Sjoberg et. al.'s 2012 paper (citation 19) suggests that it
+>>   describes a logically consistent system.  But, as here, that paper actually
+>>   explores inconsistent dependently typed languages with general recursion and
+>>   describes how to add annotations to conversion to regain decidable type
+>>   checking.  Additionally, the related work section fails to discuss any of the
+>>   recent work on FC, Haskell's core language, which also controls type-level
+>>   computation carefully for decidability.
+>> 
+
+Linus: Do we need to recover the discussion of FC? I think it is not quite relevant. Because FC and some other examples like F star are not using a unified syntax. For [19], we also discuss the inconsistent part of that system in the related work.
+
+Bruno: I think we can recover the discussion on FC, and I do believe it is relevant to at least 
+say that a difference between FC and our System is the use of unified syntax. 
+
+Linus: Done. See Related Work.
+
+
+>>   I think the authors have picked an interesting point in this design space by
+>>   focusing on single steps of computation, inspired by iso-recursive types.
+>>   While this is a relatively simple idea, its metatheory is interesting and it's
+>>   plausible as a core language for a surface language with more convenient
+>>   annotations.  The authors would do better to pitch it in this light, and
+>>   explore more fully how it differs from other languages with inconsistent type
+>>   theories due to recursion but decidable type checking thanks to annotations.
+>> 
+>> 
+>> Detailed feedback for the authors:
+>> 
+>> - In the introduction paragraph beginning "However having unified syntax..."
+>>   suggests that it's the combination of general recursion and unified syntax
+>>   that causes problems for consistency and decidability of type checking.  Of
+>>   course, those problems would appear in a dependently typed language with
+>>   general recursion even if the syntax was not collapsed.  So, I suggest editing
+>>   this paragraph.
+>> 
+
+Linus: I believe our discussion is appropriate in that we want to emphasize the problem when combining unified syntax and general recursion, but not only for dependent types.
+
+Bruno: Unfinished sentence
+
+Linus: Fixed.
+
+>> - The last paragraph of section 2.1 is oversimplified to the point of
+>>   inaccuracy.  You say, "Due to the conversion rule, any non-terminating term
+>>   would force the type checker to go into an infinite loop... rendering the type
+>>   system undecidable".  Of course, this example only demonstrates that the
+>>   "normalize+compare" decision procedure fails, not that type checking is
+>>   undecidable in general - there might be some other decision procedure.  You
+>>   should instead sketch a reduction to the halting problem, or something
+>>   similar, if you want to explain the undecidability.
+>> 
+
+Linus: This paragraph is a informal discussion. Showing a reduction to the halting problem is more or less a strict proof of undecidability. Another problem is that I am not sure if there are any other decision procedure? If it does exist, maybe it is possible to show it can be converted to the "normalize and compare" approach?
+
+Bruno: I think we can ignore this comment.
+
+>> - The discussion of \Iw skips over some details that I wished were explained.
+>>   In particular, in Fig 1 upcasts are values but downcasts are not.  This is a
+>>   subtle point - for example, it took me a while to understand why a downcast
+>>   value isn't a stuck term for progress, and it differs from the presentation of
+>>   \Ip.  The metatheory has some interesting subtleties that are worth discussing
+>>   in more detail.  I think you could make space for this by trimming from
+>>   sections 1 and 2 (put another way, the basic idea of iso-types is easy to
+>>   grasp, so I'd prefer to see less time spent setting it up and more time
+>>   talking about why it's interesting to study).
+>> 
+
+Linus: We mentioned the definition of values in \Iw in "Operational Semantics" in Section 4. About the values of \Ip, they are phantom definitions. We never (and cannot) define formal operational semantics for \Ip but only for the erased system, otherwise we need to deal with the cast pushing problems. And for the erased system, there are no casts, thus no need to discuss them. 
+
+Bruno: Can the discussion be expanded in the paper a bit? Explain a few things 
+in more detail?
+
+Linus: Done. I add some sentences to explain the progress lemma by the end of "Metatheory" part of Section 4. I also add a sentence to emphasize castdown in \Ip is a value.
+
+>> - On page 11, under "Decidability of Type Checking", it wasn't obvious to me
+>>   what "induction on the length of e and ranging over the typing rules" means.
+>>   I think this is a standard induction on the structure of e, so I'd suggest
+>>   rephrasing to say so.
+>> 
+
+Linus: Fixed.
+
+>> - A typo on page 11: "For other form of terms..." should be "For other forms of
+>>   terms".
+>> 
+
+Linus: Fixed.
+
+>> 
+>> ----------------------- REVIEW 5 ---------------------
+>> PAPER: 34
+>> TITLE: Unified Syntax with Iso-Types
+>> AUTHORS: Yanpeng Yang, Xuan Bi and Bruno C. D. S. Oliveira
+>> 
+>> OVERALL EVALUATION: 1 (weak accept)
+>> 
+>> ----------- Review -----------
+>> I reviewed a precursor of this paper for ESOP 2016. My main criticism then was:
+>> 
+>> 1. Lack of expressivity since only weak-head reduction casts (now System λI_w) are allowed.
+>> 
+>> 2. Lack of references to related work like [11] (PTS with explicit equality).
+>> 
+>> Point 1 has been addressed by presenting another calculus with full reduction (λI_p). However, I find the choice of reduction relation a bit weird. They call it "parallel reduction" but it is not the well-known parallel reduction which has the diamond property. I do not see why they would not simply stick to ordinary (one-step) β-reduction.
+>> 
+
+Linus: It is true that the "parallel" reduction ("pared" in Coq code) chosen for \Ip is not the conventional one. It is kind of a middle state between the standard parallel reduction ("para" in Coq code) and one-step full beta reduction ("beta" in Coq code). There are two reasons of using it: 1) It is much easier to prove the decidability of this relation than the conventional one, i.e., decidability of deciding e1 -p> e2 if given e1 and e2; 2) It requires fewer reduction steps than the ordinary one-step full beta-reduction, which could reduce the number of casts used.
+
+Bruno: Seems worthwhile mentioning the above in the paper.
+
+Linus: Added one paragraph in Section 5 (the 2nd worth noting point of parallel reduction).
+
+>> Wrt. 2., the situation has improved, but I don't follow the judgement
+>> they cast over works like [11].
+>> 
+
+Linus: We have discussed PTSf in the related work. Since PTSf does not consider recursion, it seems not easy to generalize its approach under the settings of our paper. And it uses "proof terms" requiring more language constructs than \I, which we intended to avoid in our system.
+
+Bruno: We can ignore this comment.
+
+>> In the end, practice has to show which approach to explicit casting is more feasible. The authors here present only a core language. The main challenge is to elaborate a surface language into this core language and use it in large examples. It seems that their approach, if implemented directly, leads to severely bloated internal representations. E.g., the full target type needs to be given in any non-deterministic cast. Combined with a structure-based (as opposed to "name-based") core language, this might lead to large type expressions which are abundantly placed inside terms. I see huge performance problems at the horizon...
+>> 
+
+Linus: Casts are computationally irrelevant and can be erased later for code generation. So I believe erasure of casts could reduce such performance impact?
+
+Bruno: I think he is thinking in terms of type-checking performance.
+
+>> Still, I think this paper can be accepted as a first presentation of the idea.  It should be fleshed out in future work though, to give hard evidence for the feasibility of the approach.

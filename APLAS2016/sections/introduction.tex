@@ -1,0 +1,418 @@
+\section{Introduction}
+
+\begin{comment}
+Modern statically typed functional languages (such as ML, Haskell,
+Scala or OCaml) have increasingly expressive type systems. Often these
+large source languages are translated into a much smaller typed core
+language. The choice of the core language is essential to ensure that
+all the features of the source language can be encoded. For a simple
+polymorphic functional language it is possible to pick a
+variant of System $F$~\cite{systemfw,Reynolds:1974} as a core
+language. However, the desire for more expressive type system features
+puts pressure on the core languages, often requiring them to be
+extended to support new features.  For example, if the source language
+supports \emph{higher-kinded types} or \emph{type-level functions}
+then System $F$ is not expressive enough and can no longer be used as
+the core language. Instead another core language that does provide
+support for higher-kinded types, such as
+System~$F_{\omega}$~\cite{systemfw}, needs to be used. Of course the
+drive to add more and more advanced type-level features means that
+eventually the core language needs to be extended again. Indeed modern
+functional languages like Haskell use specially crafted core
+languages, such as System $F_{C}$~\cite{fc}, that provide support for all
+modern features of Haskell. Although \emph{extensions} of System
+$F_{C}$~\cite{fc:pro,Eisenberg:2014} satisfy the current needs of
+modern Haskell, it is very likely to be extended again in the
+future~\cite{fc:kind}. Moreover System $F_{C}$ has grown to be a relatively
+large and complex language, with multiple syntactic levels, and dozens
+of language constructs.
+\end{comment}
+
+\begin{comment}
+However System~$F_{\omega}$ is
+significantly more complex than System F and thus harder to
+maintain. If later a new feature, such as \emph{kind polymorphism}, is
+desired the core language may need to be changed again to account for
+the new feature, introducing at the same time new sources of
+complexity. Indeed the core language for modern versions of 
+functional languages are quite complex, having multiple syntactic 
+sorts (such as terms, types and kinds), as well as dozens of 
+language constructs~\cite{}\bruno{$F_{C}$}. 
+\end{comment}
+
+We live exciting times in the design of functional programming
+languages. In recent years, dependent types have inspired novel
+designs for new programming languages, such as Agda~\cite{agda} or
+Idris~\cite{idris}, as well as numerous programming language research~\cite{cayenne,dep:pisigma,sjoberg:msfp12,guru,fc:kind,zombie:popl14,zombie:popl15}.
+Dependently typed languages bring additional expressiveness to type
+systems, and they can also support different forms of assurances, such 
+as strong normalization and logical consistency, not
+typically present in traditional programming languages.
+\begin{comment}
+ For example,
+many dependently typed languages are strongly normalizing and can
+ensure termination of programs. Moreover they are typically also
+logically consistent, ensuring that programs can be interpreted as
+proofs. This is in contrast with traditional functional languages like
+Haskell or ML, which have no such additional assurances.
+\end{comment}
+Nevertheless, traditional designs for functional languages still have
+some benefits. While strong normalization and logical consistency are
+certainly nice properties to have, and can be valuable to have in many
+domains, they can also impose restrictions on how programs are
+written. For example, the termination checking algorithms typically employed by
+dependently typed languages such as Agda or Idris can only automatically ensure termination
+of programs that follow certain patterns.
+% Thus, for many programs, it
+%may not be possible for the termination checker to automatically establish
+%termination and the program is rejected; or, alternatively, 
+%a manual termination proof has to be provided. Moreover, some programs are
+%non-terminating by nature (for example, an operating system).
+%While there is research on how to write such programs in strongly
+%normalizing languages (see for example \cite{}), those programs are
+%not yet written as directly as in traditional functional languages. 
+In contrast Haskell or ML programmers can write their programs much more
+freely, since they do not need to worry about retaining strong
+normalization and logical consistency. Thus there is still plenty of space
+for both types of designs.
+
+From an implementation and foundational point-of-view, dependently
+typed languages and traditional functional languages also have
+important differences. Languages like Haskell or ML have a strong
+separation between terms and types (and also kinds). This separation
+often leads to duplication of constructs. For example, when the type
+language provides some sort of type level computation, constructs such
+as type application (mimicking value level application) may be needed.
+In contrast many dependently typed languages unify types and
+terms. There are benefits in unifying types and terms.  In
+addition to the extra expressiveness afforded, for example, by
+dependent types, only one syntactic level is needed. Thus
+duplication can be avoided. Having less language constructs
+simplifies the language, making
+it easier to study (from the meta-theoretical point of view) and maintain
+(from the implementation point of view). 
+
+In principle having unified syntax would be beneficial even for more
+traditional designs of functional languages, which have no strong
+normalization or logical consistency. Not surprisingly, researchers
+have in the past considered such an option for implementing functional
+languages~\cite{cayenne, typeintype, pts:henk}, by using 
+some variant of  \emph{pure type systems} (PTS)~\cite{handbook}
+(normally extended with general recursion). Thus, with a simple and tiny 
+calculus, they showed that powerful and quite expressive functional 
+languages could be built with unified syntax.
+
+However having unified syntax for types and terms brings
+challenges. One pressing problem is that integrating (unrestricted)
+general recursion in dependently typed calculi with unified syntax,
+while retaining logical consistency, strong normalization and
+\emph{decidable type-checking} is difficult. Indeed, many early
+designs using unified syntax and unrestricted general
+recursion~\cite{cayenne, typeintype} lose all three properties. 
+For pragmatic reasons languages like Agda or Idris also allow 
+turning off the termination checker, which allows for added 
+expressiveness, but loses the three properties as well.
+More recently, various
+researchers~\cite{zombie:popl14,zombie:popl15,Swamy2011} have been
+investigating how to combine those properties, general recursion and
+dependent types. However, this is usually done by having the type
+system carefully control the total and partial parts of computation,
+adding significant complexity to those calculi when compared to
+systems based on pure type systems.
+
+\begin{comment}
+ In
+particular, dependently typed calculi typically support type-level
+computation, but if general recursion is allowed during such
+computation non-terminating programs will make the type-checking
+procedure non-terminating as well. 
+\end{comment}
+
+Nevertheless, if we are interested in traditional languages, only the
+loss of decidable type-checking is problematic. Unlike strong
+normalization and logical consistency, decidable type-checking is
+normally one property that is expected from a traditional programming
+language design.  
+
+This paper proposes \name: a simple call-by-name
+variant of the calculus of constructions. The key challenge solved in
+this work is how to define a calculus comparable in simplicity to the
+calculus of constructions, while featuring both general recursion and
+decidable type checking. The main idea, is to recover
+decidable type-checking by making each type-level computation step
+explicit. In essence, each type-level reduction or expansion is
+controlled by a \emph{type-safe} cast. Since single computation steps
+are trivially terminating, decidability of type checking is possible
+even in the presence of non-terminating programs at the type level.
+At the same time term-level programs using general recursion work as
+in any conventional functional languages, and can be
+non-terminating.
+
+Our design generalizes \emph{iso-recursive
+  types}~\cite{tapl}, which are our main source of inspiration. 
+In \name, not only folding/unfolding of
+recursion at the type level is explicitly controlled by term level
+constructs, but also any other type level computation (including beta
+reduction/expansion). There is an analogy to language designs with
+\emph{equi-recursive} types and \emph{iso-recursive} types, which are
+normally the two options for adding recursive types to languages. With
+equi-recursive types, type-level recursion is implicitly
+folded/unfolded, which makes establishing decidability of
+type-checking much more difficult. In iso-recursive designs, the idea is to 
+trade some convenience by a simple way to ensure decidability. 
+Similarly, we view the design of traditional dependently typed
+calculi, such as the calculus of constructions as analogous 
+to systems with equi-recursive types. In the calculus of constructions 
+it is the \emph{conversion rule} that allows type-level computation to 
+by implicitly triggered. However, the proof of decidability
+of type checking for the \emph{calculus of constructions}~\cite{coc}
+(and other normalizing PTS) is non-trivial, as it depends on strong normalization
+~\cite{pts:normalize}. Moreover decidability is lost when adding
+general recursion. In contrast, the cast operators in \name have to be used 
+to \emph{explicitly} trigger each step of type-level computation, but 
+it is easy to ensure decidable type-checking, even with general recursion. 
+
+\begin{comment}
+Usually type systems based on PTS have a conversion rule
+to support type-level computation.  In such type systems ensuring the
+\emph{decidability} of type checking requires type-level computation
+to terminate. When the syntax of types and terms is the same, the
+decidability of type checking is usually dependent on the strong
+normalization of the calculus. An example is the proof of decidability
+of type checking for the \emph{calculus of constructions}~\cite{coc}
+(and other normalizing PTS), which depends on strong normalization
+~\cite{pts:normalize}. Modern dependently
+typed languages such as Idris~\cite{idris} and Agda~\cite{agda}, which are also
+built on a unified syntax for types and terms, require strong
+normalization as well: all recursive programs must pass a termination
+checker.  An unfortunate consequence of coupling
+decidability of type checking and strong normalization is that adding
+(unrestricted) general recursion to such calculi is difficult. Indeed
+past work on using a simple PTS-like calculi to model functional languages
+with unrestricted general recursion, had to give up on \emph{decidability of
+type-checking}~\cite{cayenne, typeintype}.
+%There
+%is a clear tension between decidability of type checking and allowing
+%general recursion in calculi with unified syntax.
+
+
+
+This paper proposes \name: a simple yet expressive call-by-name
+variant of the calculus of constructions, which has a fraction of the
+language constructs of existing core languages. The key challenge
+solved in this work is how to define a calculus comparable in
+simplicity to the calculus of constructions, while featuring both
+general recursion and decidable type checking. The main idea, 
+inspired by the traditional treatment of \emph{iso-recursive
+  types}~\cite{tapl}, is to recover decidable type-checking by making each
+type-level computation step explicit, i.e., each beta reduction or
+expansion at the type level is controlled by a \emph{type-safe}
+cast. Since single computation steps are trivially terminating, decidability
+of type checking is possible even in the presence of non-terminating
+programs at the type level.  At the same time term-level programs
+using general recursion work as in any conventional functional
+languages, and can even be non-terminating.
+\end{comment}
+
+\begin{comment}
+For example, if a type-level program requires two beta reductions to
+reach normal form, then two casts are needed in the program. If a
+non-terminating program is used at the type level, it is not possible
+to cause non-termination in the type checker, because that would
+require a program with an infinite number of casts. Therefore, since
+single beta-steps are trivially terminating, decidability of type
+checking is possible even in the presence of non-terminating programs
+at the type level.  At the same time term-level programs using general
+recursion work as in any conventional functional languages, and can
+even be non-terminating.
+\end{comment}
+
+We study two variants of the calculus that differ on the reduction
+strategy employed by the cast operators, and give different trade-offs
+in terms of simplicity and expressiveness.  The first variant \ecore uses
+weak-head reduction in the cast operators.  This allows for a very
+simple calculus, but loses some expressiveness in terms of type level
+computation. Nevertheless in this variant it is still possible to
+encode useful language constructs such as algebraic datatypes.  
+The second variant \namef uses \emph{parallel
+  reduction} for casts and is more expressive.
+% \linus{I removed the
+%   text about Zombie. I think only the approach for proving metatheory is
+%   inspired, but perhaps not our design?}
+It allows equating terms such as $\mathit{Vec}~(1+1)$ and $\mathit{Vec}~2$
+as equal.  The price to pay for this more expressive design is some
+additional complexity. For both designs type soundness and
+decidability of type-checking are proved.
+
+
+%We also briefly illustrate a prototype implementation of a simple
+%functional language build on top of \name. 
+
+\begin{comment}
+To show the expressiveness and applicability of \name and the cast
+operators, we develop a simple polymorphic functional language with
+algebraic datatypes and some interesting type-level features. While
+casts in \name do sacrifice convinience and some expressiveness to
+gain the ability of doing arbitrary general recursion at the term
+level, they are still powerful enough to express common features
+available in traditional functional languages. These features include:
+\emph{records}, \emph{higher-kinded types}, \emph{nested
+  datatypes}~\cite{nesteddt}, \emph{kind polymorphism}~\cite{fc:pro},
+and some \emph{simple forms of dependent types}. Casts are used to in
+the implementation of records and algebraic datatypes. The additional
+power of generalized casts is needed for encoding \emph{parametrized}
+algebraic datatypes and records, since parametrization relies on
+\emph{type abstraction}. We do not attempt to encode some non-trivial
+type-level features available in modern languages like Haskell, and
+also dependently typed languages. However we do present a discussion,
+in Section~\ref{}, on how \name could be extended to support more expressiveness.
+\end{comment}
+
+It is worth emphasizing that \name does sacrifice some convenience
+when performing type-level computations in order to gain the ability
+of doing arbitrary general recursion at the term level. The goal of
+this work is to show the benefits of unified syntax in terms of
+economy of concepts for programming language design, and not use
+unified syntax to express computationally intensive type-level
+programs.  Investigating how to express computationally intensive
+type-level programs (as in dependently typed programming) in \name is left for future work.
+
+
+\begin{comment}
+Our motivation to develop \name is to use it as a simpler alternative
+to existing core languages for functional programming. We focus on traditional
+functional languages like ML or Haskell extended with many interesting
+type-level features, but perhaps not the \emph{full power} of
+dependent types.  The paper shows how many of programming language
+features of Haskell, including some of the latest extensions, can be
+encoded in \name via a surface language. The surface
+language supports \emph{algebraic datatypes}, \emph{higher-kinded
+  types}, \emph{nested datatypes}~\cite{nesteddt}, \emph{kind
+  polymorphism}~\cite{fc:pro} and \emph{datatype
+  promotion}~\cite{fc:pro}.  This result is interesting because \name
+is a minimal calculus with only 8 language constructs and a single
+syntactic sort. In contrast the latest versions of System $F_{C}$
+(Haskell's core language) have multiple syntactic sorts and dozens of
+language constructs.
+%Even if support for equality and
+%coercions, which constitutes a significant part of System $F_{C}$,
+%would be removed the resulting language would still be significantly
+%larger and more complex than \name.
+
+A non-goal of the current work (although a worthy avenue for future
+work) is to use \name as a core language for modern dependently typed
+languages like Agda or Idris. In contrast to \name, those languages
+use a more powerful notion of equality. In particular \name
+currently lacks full-reduction and it is unable to exploit injectivity 
+properties when comparing two types for equality. Moreover,
+\name (and also System $F_{C}$) lack \emph{logical consistency}:
+that is ensuring the soundness of proofs written as programs.
+This is in contrast to dependently typed languages, where logical
+consistency is typically ensured.
+Various researchers~\cite{zombie:popl14,zombie:thesis,Swamy2011} have been investigating how to combine logical
+consistency, general recursion and dependent types. However, this is
+usually done by having the type system carefully control the total and
+partial parts of computation, making those calculi significantly more
+complex than \name or the calculus of constructions. In
+\name, logical consistency is traded by the simplicity of the system.
+\end{comment}
+
+\begin{comment}
+In particular
+the treatment of type-level computation in \name shares similar ideas
+with Haskell. Although Haskell's surface language provides a rich set
+of mechanisms to do type-level computation~\cite{}, the core language
+lacks fundamental mechanisms todo type-level computation. Type
+equality in System $F_{C}$ is, like in \name, purely syntactic (modulo
+alpha-conversion).
+\end{comment}
+
+\begin{comment}
+ and there is no type-level
+abstraction. In other words in Haskell, mechanisms such as type
+classes and type families
+
+Although it may seem that forcing each step of computation 
+at the type-level to be explicit will prevent convinient use of 
+type-level computation.
+
+Point about the treatment of type-level computation in Haskell. Haskell's
+core language has type applications, but no type-level lambda. Equality 
+is syntactic modulo alpha-conversion. This design choice was rooted in the 
+desire to support Hindley-Milner type-inference... 
+\end{comment}
+
+In summary, the contributions of this work are:
+
+\begin{itemize}
+\item {\bf The \name calculus:} A simple calculus for functional programming, that collapses terms, types and
+  kinds into the same hierarchy and supports general recursion. \name
+  is type-safe and the type system is decidable. Full proofs are provided in the extended version of this paper~\cite{full}.
+
+\item {\bf Iso-types:} \name 
+ generalizes iso-recursive types by making all type-level computation
+ steps explicit via \emph{casts operators}. In \name the combination of
+ casts and recursion subsumes iso-recursive types.
+
+%\item {\bf An example surface language}, built on top of \name,
+%  that supports datatypes, pattern matching and some advanced
+%  type-level features. The type safety of the type-directed
+%  translation to \name is proved.\bruno{should we have some paragraphs
+%  about the surface language?}
+
+\item {\bf A prototype implementation:} The prototype of \name is
+  available online\footnote{\fullurl}.
+\end{itemize}
+
+\begin{comment}
+\begin{enumerate}[a)]
+\item Motivations:
+
+\begin{itemize}
+
+\item Because of the reluctance to introduce dependent
+  types\footnote{This might be changed in the near future. See
+    \url{https://ghc.haskell.org/trac/ghc/wiki/DependentHaskell/Phase1}.},
+  the current intermediate language of Haskell, namely System $F_C$
+  \cite{fc}, separates expressions as terms, types and kinds, which
+  brings complexity to the implementation as well as further
+  extensions \cite{fc:pro,fc:kind}.
+
+\item Popular full-spectrum dependently typed languages, like Agda,
+  Coq, Idris, have to ensure the termination of functions for the
+  decidability of proofs. No general recursion and the limitation of
+  enforcing termination checking make such languages impractical for
+  general-purpose programming.
+
+\item We would like to introduce a simple and compiler-friendly
+  dependently typed core language with only one hierarchy, which
+  supports general recursion at the same time.
+
+\end{itemize}
+
+\item Contribution:
+
+\begin{itemize}
+
+\item A core language based on Calculus of Constructions (CoC) that
+  collapses terms, types and kinds into the same hierarchy.
+
+\item General recursion by introducing recursive types for both terms
+  and types by the same $\mu$ primitive.
+
+\item Decidable type checking and managed type-level computation by
+  replacing implicit conversion rule of CoC with generalized
+  \textsf{fold}/\textsf{unfold} semantics.
+
+\item First-class equality by coercion, which is used for encoding
+  GADTs or newtypes without runtime overhead.
+
+\item Surface language that supports datatypes, pattern matching and
+  other language extensions for Haskell, and can be encoded into the
+  core language.
+
+\end{itemize}
+
+
+\end{enumerate}
+\end{comment}
