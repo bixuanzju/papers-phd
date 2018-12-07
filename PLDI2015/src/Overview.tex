@@ -1,0 +1,766 @@
+
+
+\section{\name and IFOs, Informally}\label{sec:overview}
+
+This section informally presents \name programs and their IFO-based
+encoding. It also shows how to deal with tail-call elimination.
+Sections~\ref{sec:fcore} and \ref{sec:tce} present a formalized
+compilation method for a subset of \name (System F) into Middleweight Java, 
+a formalized subset of Java, based on the ideas from this section.
+Note that, for purposes of presentation, we simplify the encodings shown in this
+section slightly compared to what we generate by our formal compilation
+method.
+
+
+\begin{comment}
+\subsection{Imperative Functional Objects}
+
+\begin{figure}[t]
+
+% use scala
+\begin{lstlisting}
+def tfact : Int => Int => Int = acc => n => 
+  if (n == 0) acc else tfact(acc*n)(n-1)
+
+def even : Int => Boolean = n =>
+    if (n == 0) true else odd(n-1)
+    
+def odd : Int => Boolean = n =>
+    if (n == 0) false else even(n-1)
+\end{lstlisting}
+
+\caption{Scala function definitions for computing factorial, even and odd.}
+
+\label{fig:scala_defs}
+
+\end{figure}
+
+Currently, functional programming in the JVM requires some compromises, especially 
+when performance or memory are primary considerations. For example, consider the 
+Scala functions in Figure~\ref{fig:scala_defs}.
+The function \lstinline{tfact} computes the factorial of some number
+\lstinline{n} using a standard tail-recursive implementation with an accumulator.  The
+functions \lstinline{even} and \lstinline{odd} define a naive
+algorithm for detecting whether a number is even or
+odd. We define the later two functions using \emph{mutually recursive tail calls}. 
+The code uses Scala first-class functions (\lstinline{A => B}), represented by the following trait:
+%\footnote{For the purposes of this
+%  paper a trait can be interpreted as a Java interface.}:
+
+\begin{lstlisting}
+// slightly simplified for presentation
+trait Function[A,B] { 
+  def apply(x : A) : B
+}
+\end{lstlisting}
+
+\noindent This trait is a variant of FAOs. A small differerence to 
+the \lstinline{FAO} interface presented in Section~\ref{sec:intro}
+is that the argument and returned values are typed.
+Scala provides a syntactic sugar that makes defining and
+applying functions much more convenient than using the
+\lstinline{Function} interface directly. The type \lstinline{Int =>Int=> Int} 
+corresponds to
+\lstinline{Function[Int,Function[Int,Int]]}. In other words, a function
+such as \lstinline{tfact} is a function that returns another function. 
+
+%In the code, the function
+%\lstinline{tfact} provides a simple recursive implementation of the
+%factorial function using an accumulator parameter. Thus computing the
+%factorial of a number amounts to calling \lstinline{tfact(0)}. 
+
+While the definitions of the functions in Figure~\ref{fig:scala_defs}
+are standard in ML-like languages, they pose problems
+in Scala. 
+
+\noindent {\bf Problem 1: Multiple representations of functions} 
+The first problem is that, when efficiency is a concern, we need multiple
+function representations. JVM
+methods are typically a better choice to achieve
+performance. Nevertheless, functions as objects are still needed to encode currying
+and partial application. 
+We can illustrate the performance problem with the definition of
+\lstinline{tfact}. In \lstinline{tfact}, every recursive call creates
+one new instance of \lstinline{Function} (to encode the second
+argument of the function). 
+
+Naive encoding using \lstinline{Function} objects to represent multi-argument
+recursive functions can be inefficient. We require an amount of
+memory proportional to the number of recursive calls; allocating and
+garbage collecting \lstinline{Function} objects incurs a
+performance penalty; and invoking methods for each
+\lstinline{Function} object adds extra performance penalties.
+
+Alternatively, Scala programmers can use standard 
+JVM methods to define \lstinline{tfact}:
+
+\begin{lstlisting}
+def tfact2(acc : Int, n : Int) = acc => n => 
+  if (n == 0) acc else tfact(acc*n,n-1)
+\end{lstlisting}
+
+\noindent This definition is more efficient than 
+the one using functions as objects. Indeed in Scala, this is
+probably the recommended way to define \lstinline{tfact}. 
+However, if we needed to compute, for
+example, a list of factorial numbers up to \lstinline{n}, a simple 
+functional definition would be:
+
+\begin{lstlisting}
+ def facts(n : Int) : List[Int] = 
+    List.range(0,n,(x : Int) => x + 1)
+      .map(tfact(1))
+\end{lstlisting}
+
+\noindent Unfortunately, this definition would not work if we replaced 
+\lstinline{tfact} with \lstinline{tfact2}. JVM methods cannot be curried.
+Thus to achieve the same effect, we need to change the argument 
+of \lstinline{map} to \lstinline{x => tfact(1,x)}, using a functional
+object to encode the partial application. 
+
+
+At the very best, compilers need to be aware of the two possible
+representations and try to automatically choose the best representation
+for a particular definition or expression. However, it may be
+difficult to automatically choose the best representation, since it
+depends on how we use the functions. Furthermore, the compilation
+process becomes more complicated. 
+Some languages, such as Scala,
+avoid this problem by offering programmers control over which function
+representation to use. However, this makes programming less
+transparent: the user now has to decide which representation to
+use; and programmers also need to explicitly convert between
+these representations. Furthermore, it also makes the language itself 
+more complex, since the language constructs that deal 
+with we need both representations.
+
+
+
+\noindent {\bf Problem 2: Eliminating general tail-calls efficiently
+  on the JVM is hard.} We expose the second problem by
+\lstinline{even} and \lstinline{odd}. When we call these functions 
+on large inputs (typically larger than 10000), the JVM throws a
+\lstinline{StackOverflow} exception. In a functional language, we might 
+hope that tail-call elimination would prevent \lstinline{StackOverflow}
+exceptions and allow tail calls on arbitrarily large
+inputs. Unfortunately, the JVM does not provide support for proper 
+tail-calls and eliminating tail-calls via other techniques is hard. 
+Existing techniques can only deal with direct tail-recursive calls (such as \lstinline{tfact}) effectively on the JVM. However, this excludes 
+other classes of useful tail-call functions, including
+mutually tail-recursive functions such as \lstinline{even} and \lstinline{odd}.
+Although there are some techniques for dealing with general tail calls
+in the JVM, these solutions come with important drawbacks. 
+For example, trampolines~\cite{} (which provide a general
+solution for tail-calls in the JVM) require more time and
+memory. Programs using trampolines are usually orders of magnitude times slower
+than programs without trampolines.
+
+Generally speaking, tail-call elimination/optimization is essential
+for functional programming, for three reasons:
+
+\begin{itemize}
+
+\item {\bf Correctness:} (Proper) tail-call elimination enables programs with tail calls and 
+deep call stacks to run without stack overflows. Therefore, 
+those programs can terminate normally, instead of with exceptional
+behavior.
+
+\item {\bf Space optimization:} (Proper) tail-call elimination removes tail
+  calls and removes all stack-space required by these
+  calls. Therefore, in contrast to regular calls, tail-calls consume no
+  memory.
+
+\item {\bf Time optimization:} When we replace tail calls with jumps, 
+the performance of programs greatly improves. Steele's famous 
+paper introducing tail call optimization~\cite{Steele1977} illustrated how purely
+functional programs written in a functional language can beat
+imperative programs written in Fortran using tail-call optimization.
+
+\end{itemize}
+
+
+The absence of an effective technique for dealing with tail-call
+elimination in the JVM means that idiomatic functional programs
+have to be rewritten in a different style to achieve correctness and performance.
+
+\end{comment}
+
+\begin{comment}
+If we try to compute the
+factorial of \lstinline{n}, we need to create \lstinline{n}
+\lstinline{Function} objects. Moreover, invoking \lstinline{tfact}
+with two arguments will also require \lstinline{2*n} method calls. We
+have to invoke the \lstinline{apply} method of the first function and
+then the \lstinline{apply} method of the returned (and freshly
+created) \lstinline{Function} object.
+
+Generally speaking, a recursive function \lstinline{f} with the form
+
+\begin{lstlisting}
+def f : T1 => (*\ldots *) => Tm => Tm1 = 
+   a1 => (*\ldots *) => am => (*\ldots *) f(a1',(*\ldots*),am') (*\ldots*)
+\end{lstlisting}
+
+\noindent that takes n recursive iterations to terminate requires the
+creation of \lstinline{(m-1) * n + 1} function objects and (at least)
+\lstinline{m*n} method calls. 
+\end{comment}
+
+\begin{comment}
+{\bf Summary:}
+Although Functional Programming is possible on the JVM
+Indeed the Scala language offers various other alternatives for defining
+multi-argument functions like \lstinline{tfact} (for example using
+standard JVM methods). However these alternatives require programmers 
+to change the style in which programs are written, and often 
+\end{comment}
+
+\begin{comment}
+
+The Java interface \lstinline{Function} represents a function with input 
+\lstinline{x} and some resulting output. With this representation,
+we can encode curried functions, partial application and 
+pass functions as arguments. However, compared with JVM methods, this
+representation can be quite costly in terms of time and memory. Every
+time a function (or closure) is needed, we need to allocated a new object.
+For recursive functions, this representation can be
+particularly costly, since we may need a number of object allocations 
+(for functions) proportial to the number of recursive calls.
+\bruno{Pointer to Section 2, with examples?} Therefore, programmers
+that care about performance, usually try to avoid using this representation
+when possible. 
+
+\end{comment}
+
+
+\subsection{Encoding Functions with IFOs}\label{subsec:ifos}
+
+\begin{comment}
+\begin{figure*}
+\begin{tabular}[t]{l l}
+\begin{lstlisting}
+//Naive factorial
+Closure tfact = new Closure() {
+		void apply() {
+			out = new Closure() {
+				void apply() {
+					Integer n = (Integer) this.x;
+					Integer acc = (Integer) tfact.x;
+					if (n == 0) {
+						out = acc;  
+					} else {
+						tfact.x = n * acc;
+						tfact.apply(); // call first apply
+						Closure r = (Closure) tfact.out;
+						r.x = n-1;
+						r.apply();     // call second apply
+						out = r.out;
+					}
+        }};	
+		}
+}; 
+\end{lstlisting}&
+\hspace{10pt}\begin{lstlisting}
+  // Multi-argument optimization
+	Closure tfact2 = new Closure() {
+		{ // Initialization block
+			out = new Closure() {
+				void apply() {
+					Integer n = (Integer) this.x;
+					Integer acc = (Integer) tfact2.x;
+					if (n == 0) {
+						out = acc;
+					} else {
+						tfact2.x = n * acc;
+						//tfact2.apply(); // no call here
+						Closure r = (Closure) tfact2.out;
+						r.x = n-1;
+						r.apply(); // call apply 1 time
+						out = r.out;
+					}}};
+		} 	
+		void apply() {} // empty apply method
+	};
+\end{lstlisting}
+\end{tabular}
+
+\caption{Factorial function using IFOs naively (left) and with
+  multi-argument optimization (right).}\bruno{Using Closure instead of
+Function!}
+
+\label{fig:multi}
+
+\end{figure*}
+\end{comment}
+
+
+
+%%Using a function representation based on IFOs, it is possible to 
+%%have a more efficient representation of functions and tail-call elimination.
+%%\paragraph{Naively encoding IFOs}
+%Recall the IFOs \lstinline{Function} interface presented in
+%Section~\ref{sec:intro}:
+%
+%\begin{lstlisting}
+%abstract class Function { 
+%   Object arg, res;
+%   abstract void apply();
+%}
+%\end{lstlisting}
+
+\noindent In \Name, we compile all functions to objects that are
+instances of the \lstinline{Function} class presented in 
+Section~\ref{sec:intro}. For example, consider a simple identity
+function on integers. In \name or System F (extended with integers),
+we represent such function as follows:
+
+\vspace{5pt}
+$id \equiv (\lambda x : Int).~x$
+\vspace{5pt}
+
+\noindent We can manually encode this definition with an IFO in Java as follows: 
+
+\begin{lstlisting}
+class Id extends Function
+{
+    Function x = this;
+    public void apply ()
+    {
+        final Integer y = (Integer) x.arg;
+        res = y;
+    }
+}
+\end{lstlisting}
+
+\noindent The \lstinline{arg} field encodes the argument of the
+function, whereas the \lstinline{res} field encodes the result. Thus, 
+to create the identity function, all we need to do is to copy the
+argument to the result. A function invocation such as 
+$id~3$ is encoded as follows:
+
+\begin{lstlisting}
+Function id = new Id();
+id.arg = 3; // setting argument
+id.apply();  // invoking apply()
+\end{lstlisting}
+
+\noindent The function application goes in two steps:
+it first sets the \lstinline{arg} field to \lstinline{3} and then 
+invokes the \lstinline{apply()} method. 
+
+\paragraph{Curried Functions.} Of course, a 
+fundamental feature in functional programming is currying. 
+Therefore in \Name, it is also possible to define 
+curried functions, such as:
+
+\vspace{5pt}
+$constant \equiv (\lambda x : Int) .~(\lambda y : Int) .~x$
+\vspace{5pt}
+
+\noindent Given two integer arguments, this function will always return
+the first one. Using IFOs, we can encode $constant$ in Java as follows:
+
+\begin{lstlisting}
+class Constant extends Function
+{
+    Function x = this;
+    public void apply ()
+    {
+        final Integer y = (Integer) x.arg;
+        class IConstant extends Function
+        {
+            Function x1 = this;
+            public void apply()
+            {
+              final Integer y1 = (Integer) x1.arg;
+              res = y; // overwrite if: res = x.arg;
+            }
+        }
+        res = new IConstant();
+    }
+}
+\end{lstlisting}
+
+\noindent Here, the first lambda function sets the second one as its result.
+The definition of the second \lstinline{apply} method
+sets the result of the function to the argument of the first lambda
+function. The use of inner classes enforces the lexical scoping of functions.
+ We encode an application such as $constant~3~4$ as:
+
+\begin{lstlisting}
+Function constant = new Constant();
+constant.arg = 3;
+constant.apply();
+Function f = (Function) constant.res;
+f.arg = 4;
+f.apply();
+\end{lstlisting}
+
+\noindent We first set the argument of the \lstinline{constant} function to $3$. Then,
+we invoke the \lstinline{apply} method and store the
+resulting function to a variable \lstinline{f}. Finally, we set the
+argument of \lstinline{f} to $4$ and invoke \lstinline{f}'s
+\lstinline{apply} method.
+Note that the alias \lstinline{y} for \lstinline{x.arg} is needed to prevent accidental
+overwriting of arguments in partial applications. For example in 
+$constant~3~(constant~4~5)$, the inner application $constant~4~5$ would overwrite
+$3$ to $4$ if \lstinline{x.arg} was used instead of \lstinline{y},
+ and the outer one would incorrectly return $4$ instead of $3$.
+\begin{comment}
+An alternative way to encode $constant$ is:
+
+\begin{lstlisting}
+static class Constant2 extends Function
+{
+    Function x = this;
+    {
+        res = new Function() {
+            void apply() { res = x.arg; }
+        };
+    }
+    public void apply () {}
+}
+\end{lstlisting}
+
+\noindent Differently from the previous definition, we set the first
+\lstinline{res} field when
+initializing \lstinline{constant2}, instead of only after we invoke the
+\lstinline{apply} method. This
+approach has two benefits: 1) when we create \lstinline{constant2}, the 
+second lambda is also initialized; 2) because the
+\lstinline{apply} method of the first lambda function becomes 
+empty, it is redundant to call it. Therefore, as a consequence of 2), 
+the invocation $constant~3~4$ becomes:
+
+\begin{lstlisting}
+Function constant2 = new Constant2();
+constant2.arg = 3;
+// no call needed here
+Function g = (Function) constant2.res;
+g.arg = 4;
+g.apply();
+\end{lstlisting}
+
+\noindent Instead of two \lstinline{apply} method calls, we only need one call.
+This alternative encoding can improve 
+memory and time performance of multi-argument functions. It is especially important
+in recursive multi-argument functions. 
+With the first encoding, those functions create new
+\lstinline{Function} objects on every recursive call and require
+multiple \lstinline{apply} methods. This is exactly the same
+deficiency as of the FAO encoding. However, the alternative encoding 
+avoids these problems.
+\end{comment}
+
+\begin{figure*}
+\begin{tabular}[t]{l l}
+\hspace{30pt}\begin{lstlisting}
+//Naive even and odd
+class Mutual {
+	Function even;
+	Function odd;
+	class Even extends Function {
+		Function x = this;
+		public void apply () {
+			final Integer n = (Integer) x.arg;
+			if (n == 0) {
+				res = true;
+			}
+			else {
+				odd.arg = n - 1;
+				odd.apply();
+				res = odd.res;
+			}
+		}
+	}
+	class Odd extends Function {
+		Function x = this;
+		public void apply () {
+			final Integer n = (Integer) x.arg;
+			if (n == 0) {
+				res = false;
+			}
+			else {
+				even.arg = n - 1;
+				even.apply();
+				res = even.res;
+			}
+		}
+	}
+	{ // initialization block
+		odd = new Odd();
+		even = new Even();
+	}
+}
+\end{lstlisting}&
+\hspace{70pt}\begin{lstlisting}
+// tail call elimination
+class Mutual {
+	Function teven;
+	Function todd;
+	class TEven extends Function {
+		Function x = this;
+		public void apply () {
+			final Integer n = (Integer) x.arg;
+			if (n == 0) {
+				res = true;
+			}
+			else {
+				todd.arg = n - 1;
+				// tail call
+				Next.next = todd;
+			}
+		}
+	}
+	class TOdd extends Function {
+		Function x = this;
+		public void apply () {
+			final Integer n = (Integer) x.arg;
+			if (n == 0) {
+				res = false;
+			}
+			else {
+				teven.arg = n - 1;
+				// tail call
+				Next.next = teven;
+			}
+		}
+	}
+	{ // initialization block
+		todd = new TOdd();
+		teven = new TEven();
+	}
+}
+\end{lstlisting}
+\end{tabular}
+
+\caption{Functions \lstinline{even} and \lstinline{odd} using IFOs naively (left) and with
+  tail-call elimination (right).}
+
+\label{fig:even}
+
+\end{figure*}
+
+\paragraph{Partial Function Application.} With curried functions, we can encode partial application easily.
+For example, consider the following 
+expression:
+
+\vspace{5pt}
+$three \equiv constant~3$
+\vspace{5pt}
+
+\noindent The code for this partial application is simply:
+
+\begin{lstlisting}
+Function constant = new Constant();
+constant.arg = 3;
+constant.apply();
+\end{lstlisting}
+
+\begin{comment}
+\noindent If we use the alternative encoding, it is even simpler, since
+we do not need to invoke the \lstinline{apply} method:
+
+\begin{lstlisting}
+Function constant2 = new Constant2();
+constant2.arg = 3;
+\end{lstlisting}
+\end{comment}
+
+\begin{comment}
+We begin by illustrating how it is possible to encode functional
+definitions using IFOs without any optimizations. This is helpful to
+introduce the key ideas of IFOs. In Figure~\ref{fig:even}, there are
+two versions of an encoding of \lstinline{even} and \lstinline{odd}
+using IFOs. The encoding on the left is naive and it disallows
+tail-call elimination. Each function is encoded as an IFO function
+object. The bodies of \lstinline{apply} show how the definitions 
+of the functions are encoded. The argument \lstinline{n} of 
+the functions is recovered from the field \lstinline{arg} in the 
+function object. The last statement in each path of the programs 
+sets the \lstinline{res} field.  
+\end{comment}
+
+\begin{comment}
+While direct encodings of functions using IFOs do not by
+themselfves immediatly solve the two problems, it is possible to create
+simple optimizations
+
+We illustrate how both of these goals are achieved using the 
+the functions 
+\end{comment}
+
+\begin{comment}
+\paragraph{Multi-argument Optimization}
+To remove the inefficiencies that occur with multi-argument functions,
+we propose a new optimisation technique. This optimisation technique
+ensures that: multi-argument functions require only a constant amount
+of memory; and only one \lstinline{apply} method call is needed for
+calling multi-argument functions. 
+
+To illustrate the idea of the optimisation, consider the definition of
+\lstinline{tfact} on the right-side of Figure \ref{fig:multi}. 
+There are two key differences to the definition on the left-side: 
+1) the \lstinline{out} field in the first function is set
+only once, at the initialisation of the object; 
+2) there is only one call to \lstinline{apply()} in each recursive
+iteration. The first difference builds on the observation that all 
+the objects that are constructed in the recursive calls are the same. So we 
+can effectively build a single object instead at the initialisation 
+of the object. Since the second function object is now built at the
+initialisation of the first function, the \lstinline{apply()} method
+of the first function no longer does anything. Therefore, the second 
+difference is to remove spurious \lstinline{apply()}
+calls to the empty apply methods.
+\end{comment}
+
+\paragraph{Recursion.} \name supports simple recursion, as well as
+mutual recursion. For example, consider the functions $even$ and $odd$
+defined to be mutually recursive:
+
+\vspace{5pt}
+\noindent$even \equiv \lambda (n : Int).~{\bf if}~(n=0)~{\bf then}~true~{\bf  else}~odd(n-1)$ \\
+\noindent$odd \equiv \lambda (n : Int).~{\bf if}~(n=0)~{\bf then}~false~{\bf else}~even(n-1)$
+\vspace{5pt}
+
+\noindent These two functions define a naive algorithm for detecting
+whether a number is even or odd. The left-side of
+Figure~\ref{fig:even} shows a naive encoding of these two
+functions using IFOs in Java. Recursion is encoded using Java's own
+recursion: the Java references \lstinline{even} and
+\lstinline{odd} are themselves mutually recursive.
+
+\subsection{Tail-call Elimination}
+
+The recursive calls in $even$ and $odd$ are tail calls. 
+IFOs present new ways for doing tail-call elimination in the JVM.
+The key idea, inspired by Steele's work on encoding tail-call
+elimination~\cite{Steele1978}, is to use a simple
+auxiliary structure
+
+\begin{lstlisting}
+class Next {static Function next = null;}
+\end{lstlisting}
+
+\noindent that keeps track of the next call to be executed.  The
+right-side of Figure~\ref{fig:even} illustrates the use of the
+\lstinline{Next} structure. The code differs from the code on the
+left-side on the recursive (tail) calls of \lstinline{even}
+and \lstinline{odd}. This is where we make a fundamental use of the fact
+that function application is divided into two parts with IFOs.
+In tail calls, we set the arguments of the
+function, but we delay the \lstinline{apply} method calls.
+Instead, the \lstinline{next} field of \lstinline{Next} is set
+to the function with the \lstinline{apply} method. The \lstinline{apply}
+method is then invoked at the call-site of the functions. For example, 
+the following code illustrates the call \lstinline{even 10}:
+
+\begin{lstlisting}
+teven.arg = 10;
+Next.next = teven;
+Function c;
+Boolean res;
+do {
+  c = Next.next;
+  Next.next = null;
+  c.apply();
+} while (Next.next != null);
+res = (Boolean) c.res;
+\end{lstlisting}
+
+\noindent The idea is that a function call (which is not a tail-call) 
+has a loop that jumps back-and-forth into functions. The technique 
+is similar to some trampoline approaches in C-like languages. However, 
+an important difference to JVM-style trampolines is that utilization of heap space is not growing.
+In other words, tail-calls do not create new objects for their execution, which
+improves memory and time performance.
+Note that this method is \emph{general}: it works for \emph{simple recursive
+tail calls}, \emph{mutually recursive tail calls}, and \emph{non-recursive tail calls}.
+
+\begin{comment}
+\subsection{Thread Safety}\label{sec:thread-safe}
+System F is not a concurrent calculus and the presented technique focuses on sequential
+functional-style code compilation. Nevertheless, JVM is inherently a concurrent platform
+and the use of mutable fields may seem to prevent thread safety. This would be a major
+drawback of IFOs, because, for instance, the generated code could not be safely used from
+multi-threading Java applications. Here, we briefly illustrate this is not the case
+with two trivial changes.
+
+\noindent Consider the following program: $constant~3~4~\|~constant~5~6$ where the 
+$\|$ operator denotes parallel execution (each invocation runs in its own thread).
+If the \lstinline{Function} instance representing $constant$ is shared, there is a race
+condition and results of function invocations may be incorrect. Depending on the interleaving
+of the assignments, one of the threads could overwrite the argument or the result field
+of the other. This, however, can be easily fixed: we would enforce a separate instance 
+for each thread by allocating the object at its call site rather than at its definition site.
+This is illustrated below:
+
+\begingroup
+\setlength{\tabcolsep}{-10pt} % Default value: 6pt
+\begin{tabular}[t]{l l}
+\begin{lstlisting}
+
+//thread unsafe
+...
+Function constant = 
+  new Constant();
+...
+Thread thread1 = 
+  new Thread() {
+		public void run() {
+			constant.arg = 3;
+			constant.apply();
+			...
+		}
+	};
+		
+Thread thread2 = 
+  new Thread() {
+		public void run() {
+			constant.arg = 5;
+			constant.apply();
+			...
+		}
+	};
+...
+\end{lstlisting}&
+\hspace{45pt}\begin{lstlisting}
+//thread safe
+...
+Thread thread1 = 
+  new Thread() {
+		public void run() {
+			Function constant = 
+			  new Constant();
+			constant.arg = 3;
+			constant.apply();
+			...
+		}
+	};
+		
+Thread thread2 =
+  new Thread() {
+		public void run() {
+			Function constant = 
+			  new Constant();
+			constant.arg = 5;
+			constant.apply();
+			...
+		}
+	};
+...
+\end{lstlisting}
+\end{tabular}
+\endgroup
+
+\noindent In the TCE version of the code, there would be an additional race condition
+due to the static \lstinline{next} field. Again, we only need a small modification:
+the \lstinline{next} field should not be static and \lstinline{Next} must have a local
+instance in each thread. Function applications would be done via this local
+instance of \lstinline{Next} rather than the class.
+
+For the matter of implementation, instead of creating instances
+immediately after function definitions, we would return \emph{thunk}s
+to delay memory allocations. Section~\ref{sec:implementation} presents
+some implementation details.
+\end{comment}

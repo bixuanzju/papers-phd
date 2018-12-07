@@ -1,0 +1,489 @@
+%\documentclass[prodmode,acmtoplas]{acmsmall}
+\documentclass[preprint]{sigplanconf}
+
+\usepackage{color}
+\usepackage{graphicx}
+\usepackage{latexsym}
+\usepackage{stmaryrd}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{stmaryrd}
+\usepackage{mathpartir}
+\usepackage{wasysym}
+\usepackage{booktabs}
+%
+% the following standard packages may be helpful, but are not required
+%
+%\usepackage{SIunits}            % typset units correctly
+\usepackage{courier}            % standard fixed width font
+\usepackage[scaled]{helvet} % see www.ctan.org/get/macros/latex/required/psnfss/psnfss2e.pdf
+
+\usepackage{url}             % format URLs
+
+\usepackage{listings}          % format code
+\usepackage{enumitem}      % adjust spacing in enums
+\usepackage[colorlinks=true,allcolors=blue,breaklinks,draft=false]{hyperref}   % hyperlinks, including DOIs and URLs in bibliography
+% known bug: http://tex.stackexchange.com/questions/1522/pdfendlink-ended-up-in-different-nesting-level-than-pdfstartlink
+\newcommand{\doiX}[1]{doi:~\href{http://dx.doi.org/#1}{\Hurl{#1}}}   % print a hyperlinked DOI
+%\newcommand{\imageof}[1]{\llbracket #1 \rrbracket}
+
+%%\usepackage{algorithm, algpseudocode}
+\usepackage{fancyvrb}
+%\usepackage[[style=1]{mdframed}
+\usepackage{lipsum}
+\usepackage{comment}
+\usepackage{todonotes}
+
+\definecolor{light}{gray}{.75}
+
+\newcommand\tomas[1]{\textcolor{blue!70!black}{[Tomas: #1]}}
+\newcommand\bruno[1]{\textcolor{green!70!black}{[Bruno: #1]}}
+
+% \mdfdefinestyle{MyFrame}{%
+%     linecolor=white,
+% %%    outerlinewidth=2pt,
+% %%    roundcorner=20pt,
+% %%    innertopmargin=\baselineskip,
+% %%    innerbottommargin=\baselineskip,
+% %%    innerrightmargin=20pt,
+% %%    innerleftmargin=20pt,
+%     backgroundcolor=light}
+
+\lstset{ %
+language=Java,                % choose the language of the code
+columns=flexible,
+lineskip=-1pt,
+basicstyle=\ttfamily\small,       % the size of the fonts that are used for the code
+numbers=none,                   % where to put the line-numbers
+numberstyle=\ttfamily\tiny,      % the size of the fonts that are used for the line-numbers
+stepnumber=1,                   % the step between two line-numbers. If it's 1 each line will be numbered
+numbersep=5pt,                  % how far the line-numbers are from the code
+backgroundcolor=\color{white},  % choose the background color. You must add \usepackage{color}
+showspaces=false,               % show spaces adding particular underscores
+showstringspaces=false,         % underline spaces within strings
+showtabs=false,                 % show tabs within strings adding particular underscores
+morekeywords={var},
+%  frame=single,                   % adds a frame around the code
+tabsize=2,                  % sets default tabsize to 2 spaces
+captionpos=none,                   % sets the caption-position to bottom
+breaklines=true,                % sets automatic line breaking
+breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+title=\lstname,                 % show the filename of files included with \lstinputlisting; also try caption instead of title
+escapeinside={(*}{*)},          % if you want to add a comment within your code
+keywordstyle=\ttfamily\bfseries,
+% commentstyle=\color{Gray},
+% stringstyle=\color{Green}
+}
+
+\newcommand{\gbox}[1]{\colorbox{light}{$\!\!#1\!\!$}}
+
+\newcommand{\name}{{\bf FCore~}}
+\newcommand{\Name}{{\bf FCore}}
+
+%%\bibliographystyle{plain}
+
+%% for comments
+%\input{macro-comments}
+\input{macros}
+\input{Preamble}
+%%\input{lemmas}
+
+% \newenvironment{example}{\par\noindent\textit{Example}\quad}{}
+
+
+% Document starts
+\begin{document}
+\special{papersize=8.5in,11in}
+\setlength{\pdfpageheight}{\paperheight}
+\setlength{\pdfpagewidth}{\paperwidth}
+
+\conferenceinfo{ICFP '15}{August 31--September 2, 2015, Vancouver, British Columbia, Canada}
+\copyrightyear{2015}
+\copyrightdata{978-1-nnnn-nnnn-n/yy/mm}
+%\doi{nnnnnnn.nnnnnnn}
+
+\lstset{keywordstyle=\textbf,language=Java}
+
+% Page heads
+%\markboth{B. Oliveira et al.}{The Implicit Calculus: A New Foundation for Generic Programming}
+
+% Title portion
+%\title{}
+%\title{Imperative Functional Objects}
+%\subtitle{A new Representation of First-Class Functions for JVM-like platforms}
+%\title{\Name: An Efficient JVM Implementation of System F using
+%  Imperative Functional Objects}
+\title{\Name: From System F to Java Efficiently!}
+
+%FCore: Functional Programming on the JVM without
+%  Compromises, Now!\bruno{Old title: An Intermediate Functional Language for JVM-lik%e Platforms}}
+
+\authorinfo{Tom\'{a}\v{s} Tauber}{The University of Hong Kong}{ttauber@cs.hku.hk}
+\authorinfo{Xuan Bi}{The University of Hong Kong}{xbi@cs.hku.hk}
+\authorinfo{Zhiyuan Shi}{The University of Hong Kong}{zyshi@cs.hku.hk}
+\authorinfo{Weixin Zhang}{The University of Hong Kong}{wxzhang2@cs.hku.hk}
+\authorinfo{Huang Li}{Zhejiang University}{lihuanglx@gmail.com}
+\authorinfo{Zhenrui Zhang}{Zhejiang University}{jerryzh168@gmail.com}
+\authorinfo{Bruno C. d. S. Oliveira}{The University of Hong Kong}{bruno@cs.hku.hk}
+
+\maketitle
+
+\begin{abstract}
+
+
+%System F is a
+%foundational calculus often used as a basis for core languages of
+%functional programming compilers.
+%The motivation for \name
+%is to provide functional language designers with an easy way to write
+%compilers for functional languages in the JVM.
+
+This paper presents \Name: an efficient JVM implementation of System F
+with support for full \emph{tail-call elimination} (TCE). Developing compilers for
+functional languages targeting the JVM is well-known to be difficult:
+compiler writers usually have to implement difficult optimizations;
+or find compromising solutions for their languages to work
+around the limitations of the JVM. \name aims at removing the high
+burden faced by functional compiler writers in the JVM.  Variants of
+System F are often used by compilers for languages such as ML or Haskell
+as a target for the source language. Therefore, instead of developing
+a compiler from scratch, compiler writers can simply use \name as a
+target and enjoy of multiple optimizations for free.
+
+Our compilation technique for \name is innovative in two respects: it
+uses a new representation for first-class functions called
+\emph{imperative functional objects}; and it provides a new way
+to do TCE on the JVM using constant space. Programs written in \name
+can use idiomatic functional programming styles (such as relying
+on TCE or using partial-application) without worrying about
+the limitations of the JVM. Our empirical results show that programs compiled with \name
+achieve a better performance than with existing TCE approaches
+in the JVM.
+
+%, while being faster and using less memory than programs
+%using trampolines.
+
+%%The new representation for first-class functions, c
+%%\emph{imperative functional objects} (IFOs),
+%.  IFOs allow for more efficient representations of first-class
+%functions and also cheaper tail-call elimination on the JVM.
+% better in both in
+%terms of memory and time when compared to similar programs written in
+%other JVM-based functional languages.\bruno{revise last sentence later}
+
+\begin{comment}
+
+Languages such as Scala or Clojure bring functional programming to the
+JVM.  However this is done with a catch: programmers aiming at
+writting efficient functional programs need to be aware of certain
+
+Languages, such as Scala or Clojure, bring functional programming to the
+JVM.  However, this is done with a catch: programmers aiming at
+writing efficient functional programs need to be aware of certain
+
+limitations of the JVM and avoid otherwise idiomatic functional
+programming styles. In particular, two common issues are: the
+standard representation of first-class functions as objects can be very
+inefficient in terms of time and memory; the JVM has no support for
+proper tail-calls. Moreover, although there are some approaches for
+doing general tail-call elimination on the JVM, these approaches come with a
+heavy price tag in terms of poor time and memory performance.  As a result,
+programmers usually have to work around these limitations to write
+efficient (and well-behaved) programs.
+
+This paper proposes a new way to represent first-class functions in
+JVM-like platforms called \emph{imperative functional objects} (IFOs).
+IFOs allow for more efficient representations of first-class functions
+and also cheaper tail-call elimination on the JVM. To illustrate the
+usefulness of IFOs, we developed a compiler for \Name: a simple
+ML-style functional programming language targeting the JVM. Using
+\name, programmers can use idiomatic functional programming (such as
+relying on tail-call elimination) styles without worrying about the
+limitations of the JVM. Our empirical results show that programs
+written in \name perform significantly better in both in terms of
+memory and time when compared to similar programs written in other
+JVM-based functional languages.  \tomas{replace with some concrete statement when results
+  are known?}
+
+\end{comment}
+
+\begin{comment}
+
+\Name
+\name provides a
+functional layer on top of JVM-like platforms, which liberates
+compiler writters from implementing a number of tedious and difficult
+compiler optimizations themselves. Instead, compilers writters can
+simple translate from their source functional language into \Name,
+which will take care of applying a number of compiler optimizations.
+
+
+claim: efficient functional programming transparently on the JVM
+without compromises.
+
+This paper shows that it is possible to compile
+
+This paper claims that it is possible to compile functional programs
+transparently on the JVM with acceptable performance. In contrast
+existing approaches to functional programming in the JVM require
+programmers to be aware of JVM ...
+
+Developing efficient compilers for functional languages that target
+JVM-like architectures is well-known to be hard. Building an efficent
+compiler for a functional language requires compiler writers to
+implement a number of non-trivial optimizations. In some settings,
+such as the JVM, an additional problem is that restrictions on the
+supported bytecode complicate implementation of standard
+(functional) optimizations, such as proper tail calls.
+
+This paper proposes \Name: an intermediate language that serves as a
+target for compiler writters for functional languages.  \name is an
+extended version of \emph{System F}: a simple core calculus often used
+as a target for ML-style languages' compilers.  \name provides a
+functional layer on top of non-functional platforms, which liberates
+compiler writters from implementing a number of tedious and difficult
+compiler optimizations themselves. Instead, compilers writters can
+simple translate from their source functional language into \Name,
+which will take care of applying a number of compiler optimizations.
+The compiler for \name includes two important innovations: a new
+representation for functions; and a new way approach to full
+tail-call elimination in settings without global jumps (such as
+the JVM). Our experimental results indicate that the compiler
+for \name is capable of producing efficient code that beats mature
+functional language compilers on the JVM. \tomas{replace beats with some concrete statement when results are known}
+
+\end{comment}
+
+\end{abstract}
+
+\input{src/Introduction.tex}
+
+\input{src/Overview.tex}
+
+\input{src/FCore.tex}
+
+\input{src/Compilation.tex}
+
+\input{src/Implementation.tex}
+
+\input{src/Evaluation.tex}
+
+\input{src/RelatedWork.tex}
+
+\input{src/Conclusion.tex}
+
+\acks{We would like to thank all members of the newly formed Programming Languages Research Group 
+at the University of Hong Kong and all contributors to \name code repository. We especially thank 
+Haoyuan Zhang, Boya Peng, and Ningning Xie for their contributions.}
+
+%\category{D.3.2}{Programming Languages}
+%               {Language Classifications}
+%                [Functional Languages, Object-Oriented Languages]
+%\category{F.3.3}{Logics and Meanings of Programs}
+%                {Studies of Program Constructs}
+%                []
+
+%\terms{Languages}
+
+%\keywords{
+%Implicit parameters, type classes, C++ concepts, generic programming,
+%Haskell, Scala}
+
+% Bibliography
+\bibliographystyle{abbrvnat}
+\bibliography{papers}
+
+\begin{comment}
+\newpage
+
+\begin{appendix}
+
+
+\newsavebox{\primclosure}
+
+\newsavebox{\whileapply}
+\newsavebox{\nextapply}
+\begin{lrbox}{\whileapply}
+\begin{minipage}{3in}
+\begin{lstlisting}[mathescape]
+$S_3$ :=  {Closure f = $J_1$;
+       f.a = $J_2$;
+       Next.next = f;
+       Closure c;
+       (Object) $x_f$;
+while((c = Next.next) != null) {
+              Next.next = null;
+              c.apply();
+              $x_f$ = c.out;
+       } }
+\end{lstlisting}
+\end{minipage}
+\end{lrbox}
+
+\begin{lrbox}{\nextapply}
+\begin{minipage}{3in} % http://tex.stackexchange.com/questions/102416/error-when-compiling-a-minted-listings-inside-a-memoir-subfloat
+\begin{lstlisting}[mathescape]
+$S_3$ :=  {Closure f = $J_1$;
+       f.a = $J_2$;
+       Next.next = f;}
+\end{lstlisting}
+\end{minipage}
+\end{lrbox}
+\begin{lrbox}{\primclosure}
+\begin{minipage}{3in}
+\begin{lstlisting}[mathescape]
+$S_2$ :=  {class FUN extends CClass {
+           CClass x = this;
+           void apply() {
+             $T_1~x_f$ = ($T_1$) f.a;  $S$;
+             out = J;
+           }  }
+      CClass f = new FUN();}
+\end{lstlisting}
+\end{minipage}
+\end{lrbox}
+
+%\input{../formalization/src/SystemF}
+
+\figtwocol{f:tailcall}{Tail Call Optimization when Translating from Closure
+  F to Java (Different rules and additional rules only)}{
+\small
+\bda{l}
+
+\ba{lc}
+
+\multicolumn{2}{l}{\myruleform{\Delta; \Sigma \turns  E : T \leadsto J
+    \textbf{~in~} S}} \\ \\
+
+  (\texttt{CJ-App-$\Sigma$1}) &
+\myirule{
+  \Delta_1; False \turns E_1 : \forall (\relation{x}{T_2}) \Delta_2. T_1 \\
+  \leadsto J_1 \textbf{~in~} S_1 ~~~ \Delta_1; False \turns E_2 : T_2 \\
+  \leadsto J_2 \textbf{~in~} S_2 ~~~ x_f~fresh ~~ f~fresh ~~ c~fresh
+          }{
+           \Delta_1; False \turns E_1 \, E_2 : T_3 \leadsto x_f \\ \textbf{~in~}
+           S_1 \uplus S_2 \uplus S_3
+} \\ \\ &
+\usebox{\whileapply} \\ \\
+
+  (\texttt{CJ-App-$\Sigma$2}) &
+\myirule{
+  \Delta_1; False \turns E_1 : \forall (\relation{x}{T_2}) \Delta_2. T_1
+\\  \leadsto J_1 \textbf{~in~} S_1 ~~~~
+           \Delta_1; False \turns E_2 : T_2
+		  \\ \leadsto J_2 \textbf{~in~} S_2 ~~~~ x_f~fresh ~~ f~fresh
+          }{
+           \Delta_1; True \turns E_1 \, E_2 : T_3 \leadsto f.out \\ \textbf{~in~}
+           S_1 \uplus S_2 \uplus S_3
+} \\ \\ &
+\usebox{\nextapply}  \\ \\
+
+  (\texttt{CJ-TApp-$\Sigma$}) &
+\myirule{
+  \Delta_1; \Sigma \turns E : \forall \alpha \Delta_2. T_2  \\ \leadsto J
+  \textbf{~in~} S ~~~~
+           \Delta_2; T_2 \Downarrow T_3
+           }{
+            \Delta_1; True \turns E \, T_1 : T_3[T_1/\alpha] \\ \leadsto J
+            \textbf{~in~} S
+} \\ \\
+
+  (\texttt{CJ-Abs-$\Sigma$}) &
+\myirule{
+           \epsilon ;\Delta_1 \uplus \Delta_2; \Delta_2; \Sigma \\ \turns E : T \leadsto J \textbf{~in~} S
+ }{
+           \Delta_1; True \turns \lambda \Delta_2.E \\ : \forall \Delta_2. T \leadsto J \textbf{~in~} S
+} \\ \\
+
+\ea
+
+\eda
+}
+
+\figtwocol{f:applyopt}{Optimized Type-Directed Translation from Closure
+  F to Java (Different rules and additional rules only)}{
+\small
+\bda{l}
+
+\ba{lc}
+
+  (\texttt{CJ-AppM}) &
+\myirule{
+  \Delta_1 \turns E_1 : \forall (\relation{x}{T_2}) \Delta_2. T_1
+  \leadsto J_1 \textbf{~in~} S_1 ~~~~~~~\\
+           \Delta_1 \turns E_2 : T_2 \leadsto J_2 \textbf{~in~} S_2~~~~~~~\\
+           \Delta_2; f; T_1 \Downarrow T_3 \leadsto S_3
+          }{
+           \Delta_1 \turns E_1 \, E_2 : T_3 \leadsto f.out \textbf{~in~}
+           S_1 \uplus S_2 \uplus \\ \{Closure~f = ((Closure)~J_1).clone(); f.a =
+           J_2;\} \\ \uplus S_3
+} \\ \\
+
+  (\texttt{CJ-TAppM}) &
+\myirule{
+  \Delta_1 \turns E : \forall \alpha \Delta_2. T_2  \leadsto J
+  \textbf{~in~} S_1 ~~~~~~~ \\
+           \Delta_2; J; T_2 \Downarrow T_3 \leadsto S_2
+           }{
+            \Delta_1 \turns E \, T_1 : T_2[T_1/\alpha] \leadsto J
+            \textbf{~in~} S_1 \uplus S_2
+} \\ \\
+
+
+  (\texttt{CJD-Bind1M}) &
+\myirule{
+           \Delta_1; \Delta_2 \turns \relation{E}{T} \leadsto f_1 \textbf{~in~} S
+}{
+           \Delta_1; (\relation{x}{T_1})\; \Delta_2 \turns
+           \relation{E}{T} \leadsto  f_2 \textbf{~in~} \{\\
+              \textbf{class}~FUN~\textbf{extends}~Closure \{ \\
+                   Closure~x = \textbf{this}; \\
+                   \textbf{void}~apply() \{S; out = J;\} \\
+                   \textbf{Closure}~clone() \{Closure~c = new~FUN(); \\ c.x = \textbf{this}.x; c.apply(); \textbf{return}~c;\}
+              \};\\
+              Closure~f_2 = new~FUN(); \}
+} \\ \\
+
+  (\texttt{CJD-Bind1MO}) &
+\myirule{
+           \Delta_1; \Delta_2 \turns \relation{E}{T} \leadsto  J \textbf{~in~} S
+}{
+           \Delta_1; (\relation{x}{T_1})\; \Delta_2 \turns
+           \relation{E}{T} \leadsto  f \textbf{~in~} \{\\
+              \textbf{class}~FUN~\textbf{extends}~Closure \{ \\
+                   Closure~x = \textbf{this}; \\
+                   \textbf{void}~apply() \{S; out = J;\} \\
+                   \textbf{Closure}~clone() \{Closure~c = new~FUN(); \\ c.x = \textbf{this}.x; c.apply(); \textbf{return}~c;\}
+              \};\\
+              Closure~f = new~FUN(); \}
+} \\ \\
+
+
+\multicolumn{2}{l}{\myruleform{\Delta; J; T_1 \Downarrow  T_2 \leadsto
+  S}} \\ \\
+
+  (\texttt{D-Empty}) &
+\myirule{}{
+           \epsilon; J; T \Downarrow T \leadsto \{J.apply(); e_l = J.out;\}
+} \\ \\
+
+  (\texttt{D-NonEmpty}) &
+\myirule{}{
+           \Delta; J; T \Downarrow \forall \Delta. T \leadsto \{\}
+} \\ \\
+
+\ea
+
+\eda
+}
+
+\end{appendix}
+\end{comment}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

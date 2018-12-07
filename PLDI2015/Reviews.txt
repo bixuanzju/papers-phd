@@ -1,0 +1,156 @@
+===========================================================================
+                          PLDI '15 Review #167A
+                    Updated 10 Dec 2014 1:32:25pm EST
+---------------------------------------------------------------------------
+          Paper #167: FCore: From System F to Java Efficiently!
+---------------------------------------------------------------------------
+
+                     Overall merit: 1. Reject
+                        Conviction: 2. Low
+
+                        ===== Paper summary =====
+
+The paper presents a new approach for efficiently implementing higher-order
+functions on the JVM. It is argued that existing approaches for translating
+higher-order functions have their limitations: a translation to straightforward
+methods becomes problematic in the presence of currying and partial
+function application, and the Function-as-Object approach suffers from
+poor performance. The proposed approach, called "Imperative Functional Objects"
+separates the argument passing and the retrieval of the function result
+from the actual call. It is shown how this approach enables the important
+optimization of Tail-Call Elimination (TCE). 
+
+The paper starts by presenting an informal overview of the approach,
+using small code examples. Then, a formalization is presented in which
+it is shown how an extension of System F is translated to Java (with
+an intermiate translation to Closure F) by way of a set of type judgments.
+Then, it is shown how this basic translation scheme can be adapted to
+incorporate TCE. 
+
+To evaluate the work, a compiler was implemented in Haskell. In addition
+to the translation and the TCE optimization, some additional optimizations
+are implemented. The evaluation considers 4 small example programs,
+and compares the performance of the IFO approach against implementations
+in Java, Scala, and Clojure. The results seem to indicate that IFOs 
+enable good performance of recursive programs.
+
+                       ===== Points in favor =====
+
+ - The basic idea behind IFOs is very simple, but it seems to be a very
+   good one.  I'm not an expert in FP, so I'm not in a good position to
+   judge novelty, but I haven't seen this idea before.
+
+                       ===== Points against =====
+
+ - The informal exposition of the idea is very well-written, and
+   explained using good examples. However, the formalization is
+   extremely heavyweight and complex, and I could not follow it.
+   (as an aside, I question the choice of typing judgments as a
+   vehicle for formalization in this case and wonder if a more
+  simple approach using rewrite rules would be more understandable)
+
+ - The evaluation on 4 small programs is unconvincing. First, a larger
+   suite of programs should be used (preferably using some standard
+   benchmark suite). Second, I have concerns about the comparisons
+   against Java, Scala, and Clojure. How do we know to what extent
+   the differences in performance are due to IFOs?
+
+                     ===== Comments for author =====
+
+ - It is not clear to me why an *anonymous* subclass is needed
+   in the translation. If you can use a regular named class, that
+   would ease the adoption of existing formalizations such as
+   Featherweight Java. 
+
+ - p3: the use of a downcast in this code is unfortunate, from
+   an aesthetic point of view. Would it be possible to avoid the
+   cast, at least at the source level, by parameterizing your
+   abstract class Function with the argument and result types?
+
+ - p3: wording issue: it does not make sense that the *fields* "even"
+   and "odd" are mutually recursive.
+
+ - Fig 1: here, I feel that a better informal discussion is needed to
+   explain how you go from the original code on the left side to
+   the code after TCE on the right side.
+
+ - p4: please explain the term "multi binders"
+
+ - in several places, the paper refers to the term "trampolines". This
+   should be explained, perhaps with a small example
+
+ - Note that, in Java 8, lambda-calls are translated into code that
+   use the new "invokedynamic" bytecode instruction.
+
+===========================================================================
+                          PLDI '15 Review #167B
+                    Updated 9 Dec 2014 1:50:49pm EST
+---------------------------------------------------------------------------
+          Paper #167: FCore: From System F to Java Efficiently!
+---------------------------------------------------------------------------
+
+                     Overall merit: 1. Reject
+                        Conviction: 1. High
+
+                        ===== Paper summary =====
+
+The paper proposes a new implementation technique for functional languages on the JVM. Specifically, the paper proposes to encode first class functions as objects that, unlike existing techniques, model the argument and result values as a mutable field. This enables decoupling of argument passing and function invocation, which is helpful for implementing constant-space tail-calls.
+
+The paper presents the encoding informally and formally, and demonstrates speedups in comparison to existing trampolining methods for efficient tail-calls implemented in Java, Scala and Clojure.
+
+                       ===== Points against =====
+
+The paper spends not a single thought on concurrency, even though the JVM is an inherently concurrent platform.
+
+The use of mutable fields seems to prevent any use of a function object from multiple threads at the same time.
+
+Even in the single-threaded case, the paper glosses over any potential issues of mutability. The partial application example in Section 2.1. is flat out wrong if taken literally, as it does not implement closure semantics. Consider changing constant.arg if there are multiple partially applied function object around: each will see the most recent value of constant.arg, not the one closed over at partial application time. This is fixed in the accompanying code and also in rule (CJD-Bind1) by first copying to a local variable, but this discrepancy is not discussed.
+
+Since a main concern in Clojure and Scala is support for concurrency, the evaluation does not seem fair. 
+
+Moreover I'm not sure what the IFO encoding really brings to the table. It appears that similar (non-thread-safe) performance could be achieved by just going with the existing encoding (for example in Scala) and keeping two mutable variables as the state of the trampoline: one for the next function to be called, and one (or more) for the argument(s). In other words: a straightforward registerization of the (thread-safe) functional version used now that creates a new continuation object (containing function and argument) for each recursive call.
+
+===========================================================================
+                          PLDI '15 Review #167C
+                    Updated 13 Dec 2014 6:21:36am EST
+---------------------------------------------------------------------------
+          Paper #167: FCore: From System F to Java Efficiently!
+---------------------------------------------------------------------------
+
+                     Overall merit: 2. Accept
+                        Conviction: 2. Low
+
+                        ===== Paper summary =====
+
+The paper describes a new technique for compiling first-class
+functions to Java that enables better performance and space-efficient
+tail-calls. The new technique, named imperative functional objects (IFO),
+encodes functions as objects, but unlike prior approaches, parameter
+passing and return values are handled through the object's fields; the
+apply method itself has no parameters or return value. The paper
+presents a formal description of a translation from System F to Java,
+first without tail-call optimization and then with it. The paper then
+presents an empirical performance evaluation, comparing the
+performance of programs written in System F, using their translation,
+to the performance of equivalent programs written in Java, Scala, and
+Clojure.
+
+                       ===== Points in favor =====
+
+The paper addresses and important an interesting challenge, how to
+compile functional languages for the JVM.
+
+The paper is well written, clear, and thorough. It was a pleasure to
+read.
+
+The IFO technique is simple and effective at enabling the generation
+of efficient code (in both space and time).
+
+                       ===== Points against =====
+
+The paper leaves out a proof of type preservation, citing the
+difficulty in formalizing the target language, which is a subset of
+Java that includes inner classes and mutable objects. I'm not so sure
+it would have been so difficult. Given that there are already
+formalizations of inner classes and mutable objects, just not in the
+same calculus.

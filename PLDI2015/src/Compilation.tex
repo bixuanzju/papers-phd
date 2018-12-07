@@ -1,0 +1,107 @@
+\section{Tail-call Elimination}\label{sec:tce}
+
+In this section, we show how we can augment the basic translation in
+Section~\ref{sec:fcore} to support tail-call elimination.
+ 
+As shown in Figure \ref{fig:even}, we can do TCE
+with IFOs. To capture this formally, we augment the
+\lstinline{apply} method call generation, in rule \texttt{CJ-App}, with two possibilities:
+
+\begin{enumerate}
+
+\item The \lstinline{apply} method is in a tail position. This means we can
+  immediately return by setting the \texttt{next} field of the
+  controlling auxiliary \lstinline{Next} class to the current \lstinline{Function} object,
+  without calling the apply method.
+
+\item The \lstinline{apply} method is not in a tail position. This means we
+  need to evaluate the corresponding chain of calls, starting with the
+  current call, followed by any apply calls within it. 
+
+\end{enumerate}
+
+We need to make two changes to achieve this goal: 1) add a tail call
+detection mechanism; and 2) use a different way of compiling function
+applications.
+
+\paragraph{Detecting Tail Calls.}
+We base the detection mechanism on the tail call context from the
+Revised Report on Scheme \cite{Abelson1998}. When we translate a value
+application $e_1~e_2$, we know that $e_2$ is not in a tail position,
+whereas $e_1$ may be if the current context is a tail context.  In
+type applications and abstractions, we know they only affect types: they do not
+affect the tail call context.  Thus, they preserve the state we
+entered with for translating the apply calls. In $\lambda$
+abstractions, we enter a new tail call context. This detection mechanism 
+is integrated in our translation and used when compiling function applications.
+
+\paragraph{Compiling Function Applications.}
+We augment the \lstinline{apply} method call generation as follows. We extend the 
+premise of \texttt{CJ-App} to include one extra freshly generated variable $c$: 
+
+{\small
+ \bda{l}
+  \ba{l}
+\myirule{
+\Gamma \turns e_1 : \type_2 \rightarrow \type_1
+ \leadsto J_1 \textbf{~in~} \Gamma_{J1};C_1;S_1 ~~~~~~~\\
+ \Gamma \turns e_2 : \type_2 \leadsto J_2 \textbf{~in~} \Gamma_{J2};C_2;S_2 ~~~~~~~
+ f,~x_f~,~c~fresh
+ }{
+ \Gamma \turns e_1 \, e_2 : \type_1 \leadsto x_f \textbf{~in~} 
+ \Gamma_{J1} \uplus \Gamma_{J2} \\ \uplus \{f : Function, c : Function,
+ x_f : \langle\type_1\rangle\}; C_1, C_2;\{S_1;S_2;S_3\}
+ }
+  \ea
+ \eda
+}
+
+In the conclusion, we change $S_3$. For tail calls, we define it as follows:
+
+\begin{lstlisting}[mathescape]
+$S_3$ :=  {
+       Function f = $J_1$;
+       f.arg = $J_2$;
+       Next.next = f;
+}
+\end{lstlisting}
+
+Note that $x_f$ is not bound in $S_3$ here. Because the result of a
+tail call is delayed, the result of the tail call is still not
+available at this point.  However, this does not matter: since we are
+on a tail-call, the variable would be immediately out of its scope
+anyway and cannot be used.
+
+For non-tail calls, we initialize $x_f$ in $S_3$ as the final result:
+
+\begin{lstlisting}[mathescape]
+$S_3$ :=  {
+       Function f = $J_1$;
+       f.arg = $J_2$;
+       Next.next = f;
+       Function c;
+       Object $x_f$;
+       do {
+         c = Next.next;
+         Next.next = null;
+         c.apply();
+       } while (Next.next != null);
+       $x_f$ = c.res;
+}
+\end{lstlisting}
+
+This generated code resembles the example in
+Section~\ref{sec:overview}, except for the general \lstinline{Object}
+$x_f$ being in place of the specialized \lstinline{Boolean res}. The
+idea of looping through a chain of function calls remains the same.
+Note that the rules here do not produce valid MJ programs, because MJ does not support
+\lstinline{static} fields and looping constructs. For restating the translation properties,
+we would need to use a different formalization of Java that supports both of these features.
+The \emph{type preservation} proof would be augmented in two ways: the global class table
+$\Delta_G$ would also contain information about the \lstinline{Next} class and 
+the value application case would have two sub-cases for tail and non-tail calls.
+The \emph{semantic preservation} proof would require formalization of the tail call
+detection mechanism and be even more involved due to the interaction between
+tail and non-tail calls. Since this is a major endeavor, which is not in-scope
+for this paper, we leave formalizing an extended subset of Java and 
+proving the properties of the TCE-augmented translation for future work.

@@ -1,0 +1,287 @@
+\section{Introduction}\label{sec:intro}
+
+% Motivation
+
+Efficient compilers for functional languages in platforms such as the JVM
+are attractive to both compiler writers and programmers: 
+it enables cross-platform development and comes with a
+large collection of libraries and tools that took many
+man-years to develop. Moreover, programmers can
+benefit from functional programming (FP) languages on the
+JVM. Functional languages provide
+simple, concise and elegant ways to write different algorithms and achieve
+code reuse via higher-order functions. They also
+offer more opportunities for parallelism, by avoiding the overuse
+of side-effects (and shared mutable state) \cite{erlang}.
+
+%There are two main defining characteristics in functional programming.
+%Functional Programming promotes a programming style where functions
+%are first-class values and can be partially applied and curried. FP
+%also promotes the use of recursion instead of mutable state and loops
+%to define algorithms.
+
+% What is the Problem?
+
+%The JVM is not transparent in current 
+
+Unfortunately, compilers for functional languages are hard to
+implement efficiently in the JVM. Functional Programming promotes a
+programming style where \emph{functions are first-class values} and are often
+\emph{partially applied} and \emph{curried}. FP also promotes the use of \emph{recursion}
+instead of mutable state and loops to define algorithms. The JVM is
+not designed to deal with programs that make intensive use of a
+functional programming style.
+
+The difficulty in optimizing FP in the JVM means that: 
+\emph{while functional programming in the JVM is possible today, 
+some compromises are still necessary for writing efficient programs.}
+Existing JVM functional languages, including
+Scala~\cite{Odersky2014b} 
+and Clojure~\cite{Hickey2008}, usually
+work around the challenges imposed by the JVM. Those languages give
+programmers alternatives to a FP
+style. Therefore, performance-aware programmers avoid certain idiomatic
+functional styles, which may be costly in those languages, and use
+the available alternatives instead.
+ 
+%\paragraph{JVM Challenges}
+In particular, two important challenges when writing a
+compiler for a functional language targeting the JVM are:
+
+\begin{enumerate}
+
+\item How to efficiently represent first-class functions, currying, and 
+partial function application.
+
+\item How to eliminate and/or optimize tail calls.
+
+\end{enumerate}
+
+For the first problem,
+there are two standard options to represent functions in the JVM: \emph{JVM methods} and 
+\emph{functions as objects} (FAOs).
+Encoding first-class functions using only JVM methods directly is
+limiting: JVM methods do not support currying and partial function
+application directly. 
+To support these features, the majority of functional languages or extensions (including Scala,
+Clojure, and Java 8) also adopt variants of the functions-as-objects
+approach: 
+%\footnote{In statically typed languages (like Scala or Java 8)
+%an interface like \lstinline{FAO} is typically parametrized by the input and
+%output types.}:
+
+\begin{lstlisting}
+interface FAO { Object apply(Object arg);}
+\end{lstlisting}
+
+\noindent With this representation,
+we can encode curried functions, partial application and 
+pass functions as arguments.
+
+Nevertheless, encoding functions as objects can have substantial time and memory overheads,
+especially when defining multi-argument
+functions. Every time a function is needed, we need to
+allocate a new object. For recursive functions, this can be
+particularly costly, since we may need a number of object allocations
+(for functions) proportional to the number of recursive calls.
+Therefore, programmers (and compiler writers) that care about
+performance try to avoid using this representation when possible.  In
+other words, we face a dilemma: FAOs have severe performance
+penalties, but they seem unavoidable to support currying and partial function
+applications. As a result, languages that care about performance have to
+use both representations: JVM methods when possible; and FAOs when
+necessary.
+
+For the second problem, neither FAOs nor JVM methods offer a good solution to
+deal with \emph{general tail-call elimination}
+(TCE)~\cite{Steele1977}. The JVM does not support proper tail calls.
+In particular scenarios, such as single, tail-recursive calls, we can
+easily achieve an optimal solution in the JVM.  Both Scala and Clojure
+provide some support for tail-recursion~\cite{Odersky2014b,recur}.
+However, for more general tail calls (such as mutually recursive
+functions or non-recursive tail calls), existing solutions can worsen
+the overall performance. For example, JVM-style trampolines~\cite{Schinz2001}
+(which provide a general solution for tail calls) are significantly
+slower than normal calls and consume heap memory for every tail call.
+%Programs using trampolines
+%are usually several times slower than programs without trampolines.
+
+\begin{comment}
+
+There are many good solutions for solving the two problems 
+and compiling FP languages into native code. However, often these
+solutions cannot be directly ported to higher-level target platforms,
+such as the JVM. The JVM bytecode provides a relatively high-level set
+of instructions, which was originally developed with the Java language
+in mind. For non-Java languages, and especially languages that use a
+different computational model, the available bytecodes can be quite
+restrictive.
+
+
+Existing functional programming languages or extensions on the JVM --
+including Scala, Clojure or Java 8 -- provide 
+
+{\bf Existing Approaches to First-Class Functions}
+While the JVM already support methods, methods are not first-class
+\bruno{Need to be careful here because of JVM 8 and lambdas}. That 
+is they cannot directly passed as arguments or support currying. 
+In Java 8 ...
+Therefore, the majority of existing JVM functional languages~\cite{}
+adopt (variations of) the following representation of first-class
+functions (written as plain Java code):
+
+
+First-class functions: Consume more memory \& time compared to native
+methods. 
+
+% some old text
+
+To build an
+efficient compiler for a functional language requires compiler writers
+to implement a number of of non-trivial optimizations. In some
+settings, such as the JVM, an additional problem is that restrictions
+on the supported bytecode makes it very hard to implement standard
+(functional) optimizations such as proper tail calls.
+
+For a compiler writer, the challenge is how to efficiently support
+that programming style.
+
+in a platform that did not account for such features in the first place. 
+
+Two Problems with the JVM as a target for functional languages:
+
+\begin{itemize}
+
+\item How to represent and implement first-class functions, currying and 
+partial function application?
+
+Methods calls do not provide good support for currying.
+
+\item How to eliminate and/or optimize tail calls?
+
+\end{itemize}
+
+% What are the existing solutions?
+
+What do current functional languages do? Essentially they implement 
+a number of compiler optimizations (such as tail-recursion optimization). 
+They 
+
+% What is our solution and how does it improve on the state-of-the-art?
+
+\end{comment}
+
+\paragraph{Contributions.} 
+This paper presents a new JVM compilation technique for
+functional programs, and creates an efficient implementation of System
+F~\cite{girard72dissertation,reynolds74towards} using the new
+technique. The compilation technique builds on a new representation of
+first-class functions in the JVM: \emph{imperative functional
+  objects} (IFOs). IFOs are representations of
+functions that support currying, partial function applications, and TCE. 
+\emph{With IFOs it is possible to use a single
+ representation of functions in the JVM and still achieve reasonable
+efficiency for FP}. Thus, IFOs provide a good solution for the two problems
+mentioned above.
+
+We represent an IFO by the following abstract class:
+
+\begin{lstlisting}
+abstract class Function { 
+   Object arg, res;
+   abstract void apply();
+}
+\end{lstlisting}
+
+\noindent With IFOs, we encode both the argument
+(\lstinline{arg}) and the result of the functions (\lstinline{res})
+as mutable fields. 
+We set the argument field before
+invoking the \lstinline{apply()} method. At the end of the \lstinline{apply()} method, we set  the result field. 
+An important difference between the IFOs and FAOs encoding of 
+first-class functions is that, in IFOs, \emph{function application is
+divided in two parts}: \emph{setting the argument field}; and \emph{invoking the
+apply method}.
+%\emph{function application
+%  is no longer an atomic operation} 
+For example, if we have a function call
+\lstinline{factorial 10}, the corresponding Java code using IFOs
+is:
+
+\begin{lstlisting}
+factorial.arg = 10;  // setting argument
+factorial.apply();      // invoking function
+\end{lstlisting} 
+
+The fact that we can split function application into two parts is key
+to enable new optimizations related to functions
+in the JVM. In particular, this paper focuses on showing how this
+allows a new and more efficient way to do TCE. The new TCE
+approach does not require memory allocation for each tail
+call and is faster than the JVM-style trampolines used in languages
+such as Clojure and Scala. Essentially, with IFOs, it is possible to
+provide a straightforward TCE implementation, resembling Steele's ``UUO
+handler''~\cite{Steele1978}, in the JVM.
+% Moreover it consistently beats trampoline-based implementations 
+%of functional programs in terms of time performance. 
+ 
+Using IFOs and the new TCE technique, we created
+\Name: an efficient JVM implementation of an extension of \emph{System
+  F}. 
+\name aims to serve as an intermediate functional layer on top
+of the JVM, which ML-style languages can target. 
+Compiler writers can simply translate from their source
+functional language into \name and get a number of FP 
+optimizations for free!  This liberates compiler
+writers from implementing a number of tedious and difficult compiler
+optimizations by themselves, allowing them to focus on the development
+of their source languages.
+
+
+Our experimental results show that \name programs perform
+competitively against programs using regular JVM methods,
+while still supporting TCE. Programs in \name are also
+faster and use less memory than programs using conventional 
+JVM trampolines. 
+%Moreover, programs written in \name are free 
+%of the compromises needed by other functional languages on the JVM.
+Therefore, \name has the performance needed to serve as a target for a 
+source language.
+%So far, the only complete implementation of System F in a
+%JVM-like platform that we know of was done in the .Net
+%platform~\cite{Kennedy2004}. This implementation accounts for full
+%System F, but due to the use of FAOs, it
+%is too inefficient to be used as a target language of a
+%compiler. Furthermore TCE is not supported.  In
+%contrast, functional programs using \name provide competitive
+%performance and support TCE. 
+
+
+%Moreover, the essential parts of the translation process of
+%\name into Java are formalized and implemented.
+
+In summary, the contributions of this paper are:
+
+\begin{itemize}
+
+\item \Name: An efficient implementation of a System F-based
+  intermediate language that can be used to target the JVM by FP
+  compilers.
+
+\item {\bf Imperative Functional Objects:} A new representation of
+  first-class functions in the JVM, offering new ways to
+  optimize functional programs.
+
+\item {\bf A new approach to tail-call elimination:} A new way to
+  implement TCE in the JVM using IFOs. 
+
+\item {\bf Formalization and empirical results:} Our compilation 
+  method from a subset of \name into Java is formalized. Our empirical
+  results indicate that the performance of \name is competitive with regular JVM methods 
+  and significantly better than existing TCE approaches.
+
+ 
+%%\item {\bf A new optimization for multi-argument (first-class)
+%%    functions in the JVM:}
+
+\end{itemize}

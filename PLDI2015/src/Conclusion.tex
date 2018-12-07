@@ -1,0 +1,30 @@
+\section{Conclusion}
+
+Functional Programming in the JVM is already possible today. 
+However, when efficiency is a concern, programmers and compiler 
+writers still need to be aware of the limitations of the JVM. 
+Some of the problems are the need for two function representations; 
+and the lack of a good solution for TCE.
+This paper shows that IFOs allow for a uniform representation of 
+functions, while being competitive in terms of time performance and 
+supporting TCE in constant space. We believe that IFOs 
+bring transparency to FP in the JVM: programmers will be able to 
+be oblivious of the limitations of the JVM. Furthermore, using \name 
+will bring transparency to compiler writers: compiler writers will 
+be able to easily target the JVM, without having to spend lots of 
+effort working around the limitations of the JVM.
+
+There is much to be done for future work. We would like to prove
+semantic preservation of our translation from System F to Middleweight Java.
+We have also barely begun exploring what optimizations can be done with IFOs. We
+would like to formalize and refine a number of optimizations that we
+have been experimenting with in \Name. We are particularly interested
+in addressing the pressing problem of boxing and unboxing of primitive
+types in the JVM. Currently, our compiler supports a mechanism based on
+specialization, much like the one employed in Scala~\cite{dragos10compiling}. However,
+we believe IFOs offer a new alternative to unboxing that avoids
+the code bloat problems of specialization, without giving up the
+performance benefits. Finally, we want to build frontends for
+realistic functional languages on top of \name and write large
+functional programs, such as a full bootstrapping compiler of \Name, in those frontends.
+

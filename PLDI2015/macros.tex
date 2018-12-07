@@ -1,0 +1,275 @@
+\newcommand{\arrow}{\rightarrow}
+
+\newtheorem{theorem}{Theorem}[section]
+% \newtheorem{conjecture}{Conjecture}[section]
+\newtheorem{lemma}{Lemma}[section]
+% \newtheorem{definition}{Definition}[section]
+% \newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\newcommand{\mca}{\mathcal{A}}
+\newcommand{\mcb}{\mathcal{B}}
+\newcommand{\mcc}{\mathcal{C}}
+\newcommand{\mcd}{\mathcal{D}}
+\newcommand{\mce}{\mathcal{E}}
+\newcommand{\mcf}{\mathcal{F}}
+\newcommand{\mcg}{\mathcal{G}}
+\newcommand{\mch}{\mathcal{H}}
+\newcommand{\mci}{\mathcal{I}}
+\newcommand{\mcj}{\mathcal{J}}
+\newcommand{\mck}{\mathcal{K}}
+\newcommand{\mcl}{\mathcal{L}}
+\newcommand{\mcm}{\mathcal{M}}
+\newcommand{\mcn}{\mathcal{N}}
+\newcommand{\mco}{\mathcal{O}}
+\newcommand{\mcp}{\mathcal{P}}
+\newcommand{\mcq}{\mathcal{Q}}
+\newcommand{\mcr}{\mathcal{R}}
+\newcommand{\mcs}{\mathcal{S}}
+\newcommand{\mct}{\mathcal{T}}
+\newcommand{\mcu}{\mathcal{U}}
+\newcommand{\mcv}{\mathcal{V}}
+\newcommand{\mcw}{\mathcal{W}}
+\newcommand{\mcx}{\mathcal{X}}
+\newcommand{\mcy}{\mathcal{Y}}
+\newcommand{\mcz}{\mathcal{Z}}
+
+\newcommand{\ourlang}{\lambda_{?}}
+\newcommand{\ourpolylang}{\lambda_{\rho}^{\it poly}}
+
+\newcommand{\figtwocol}[3]
+{\begin{figure*} #3 \caption{#2}\label{#1}\end{figure*}}
+
+\newcommand{\myirule}[2]{{\renewcommand{\arraystretch}{1.2}\ba{c} #1
+                      \\ \hline #2 \ea}}
+
+\newcommand{\ba}{\begin{array}}
+\newcommand{\ea}{\end{array}}
+\newcommand{\bda}{\[\ba}
+\newcommand{\eda}{\ea\]}
+
+\newcommand{\myset}[1]{\{#1\}}
+\newcommand{\relation}[2]{#1:#2}
+\newcommand{\myrelation}[2]{#1\!:\!#2}
+\newcommand{\To}{\Rightarrow}
+
+\newcommand{\Abs}[2]{\Lambda #1. #2}
+\newcommand{\abs}[2]{\lambda #1. #2}
+%\newcommand{\ruleabs}[2]{\langle\!|  #2  :  #1 |\!\rangle}
+%\newcommand{\ruleabs}[2]{(\!|  #2  :  #1 |\!)}
+\newcommand{\ruleabs}[2]{\lambda_? #1. #2}
+\newcommand{\ruleapp}[2]{#1 {\bf ~with~} #2}
+\newcommand{\iarrow}{\Rightarrow}
+\newcommand{\ilambda}{\lambda_{?}}
+\newcommand{\with}{{\bf ~with~}}
+\newcommand{\query}{?}
+\newcommand{\type}{\tau}
+\newcommand{\tyint}{{\it Int}}
+\newcommand{\tybool}{{\it Bool}}
+\newcommand{\tychar}{{\it Char}}
+\newcommand{\tystr}{{\it String}}
+\newcommand{\tyunit}{()}
+\newcommand{\unit}{()}
+\newcommand{\btrue}{{\it True}}
+\newcommand{\bfalse}{{\it False}}
+\newcommand{\Eq}{{\tt Eq}}
+\newcommand{\ShowC}{{\tt ShowC}}
+\newcommand{\Monad}{{\tt Monad}}
+\newcommand{\MonadTrans}{{\tt MonadTrans}}
+\newcommand{\GTree}{{\tt GTree}}
+\newcommand{\TT}{{\tt \#t}}
+\newcommand{\FF}{{\tt \#f}}
+
+
+\newcommand{\kind}{\kappa}
+\newcommand{\rulet}{\rho}
+\newcommand{\ruleschr}[3]
+{\forall #1. #2 \To #3}
+\newcommand{\rulesch}[3]
+{\forall \vec{#1}. #2 \To #3}
+\newcommand{\ruleset}{\bar{\rulet}}
+\newcommand{\rulesetvar}{\ruleset}
+\newcommand{\nil}{\varnothing}
+\newcommand{\meta}[1]{{\it #1 }}
+\newcommand{\finto}{\stackrel{\mathsf{fin}}{\to}}
+\newcommand{\rulepgm}{\overline{\relation{\rulet}{v}}}
+\newcommand{\rulepgmvar}{\eta}
+\newcommand{\grulepgm}[2]{\overline{\relation{#1}{#2}}}
+\newcommand{\rulesetexp}{\overline{\relation{e}{\rulet}}}
+
+\newcommand{\FV}     {\meta{fv}}
+\newcommand{\FTV}    {\meta{FTV}}
+\newcommand{\BV}     {\meta{bv}}
+\newcommand{\BTV}    {\meta{BTV}}
+\newcommand{\dom}    {\meta{dom}}
+
+\newcommand{\tstate}{\mce}
+\newcommand{\rclos}[1]{(#1)}
+\newcommand{\lookup}[2]{{#1\langle{#2}\rangle}}
+\newcommand{\kenv}{\Phi}
+\newcommand{\denv}{\Delta}
+\newcommand{\env}{\Delta}
+\newcommand{\tenv}{\Gamma}
+\newcommand{\eval}{\Downarrow}
+\newcommand{\turns}{\vdash}
+\newcommand{\vturns}{\vdash_{r}}
+\newcommand{\kturns}{\vdash_{k}}
+\newcommand{\vtyping}{\models}
+
+\newcommand{\case}[1]{\----{\bf case}~#1}
+\newcommand{\mcase}[1]{\----{\bf cases}~#1}
+
+\newcommand{\facerule}[1]{{\tt #1}}
+\newcommand{\tlabel}[1]{\mbox{(#1)}}
+
+\newcommand{\mylabel}[1]{\tlabel{\facerule{#1}}}
+
+\newcommand{\OpQuery}{\tlabel{\facerule{OpQuery}}}
+\newcommand{\OpRule}{\tlabel{\facerule{OpRule}}}
+\newcommand{\OpInst}{\tlabel{\facerule{OpInst}}}
+\newcommand{\OpRApp}{\tlabel{\facerule{OpRApp}}}
+\newcommand{\OpRClos}{\tlabel{\facerule{OpRClos}}}
+
+\newcommand{\TyQuery}{\tlabel{\facerule{Ty-Query}}}
+\newcommand{\TyRule}{\tlabel{\facerule{TyRule}}}
+\newcommand{\TyInst}{\tlabel{\facerule{TyInst}}}
+\newcommand{\TyRApp}{\tlabel{\facerule{TyRApp}}}
+
+\newcommand{\TyRClos}{\tlabel{\facerule{TyRClos}}}
+\newcommand{\TyREnv}{\tlabel{\facerule{TyREnv}}}
+\newcommand{\TyRPgm}{\tlabel{\facerule{TyRPgm}}}
+
+\newcommand{\RTAbs}{\tlabel{\facerule{RTAbs}}}
+\newcommand{\RIAbs}{\tlabel{\facerule{RIAbs}}}
+\newcommand{\RSimpl}{\tlabel{\facerule{RSimp}}}
+
+\newcommand{\IDone}{\tlabel{\facerule{IDone}}}
+\newcommand{\ITAbs}{\tlabel{\facerule{ITAbs}}}
+\newcommand{\IIAbs}{\tlabel{\facerule{IIAbs}}}
+
+\newcommand{\LHere}{\tlabel{\facerule{LHead}}}
+\newcommand{\LThere}{\tlabel{\facerule{LTail}}}
+
+\newcommand{\MDone}{\tlabel{\facerule{MDone}}}
+\newcommand{\MTAbs}{\tlabel{\facerule{MTAbs}}}
+\newcommand{\MIAbs}{\tlabel{\facerule{MIAbs}}}
+
+\newcommand{\TrRTAbs}{\tlabel{\facerule{TrRTAbs}}}
+\newcommand{\RRho}{\tlabel{\facerule{RRho}}}
+\newcommand{\TrRIAbs}{\tlabel{\facerule{TrRIAbs}}}
+\newcommand{\TrRSimpl}{\tlabel{\facerule{TrRSimp}}}
+
+\newcommand{\TrIDone}{\tlabel{\facerule{TrIDone}}}
+\newcommand{\TrITAbs}{\tlabel{\facerule{TrITAbs}}}
+\newcommand{\TrIIAbs}{\tlabel{\facerule{TrIIAbs}}}
+
+\newcommand{\TrLHere}{\tlabel{\facerule{TrLHead}}}
+\newcommand{\TrLThere}{\tlabel{\facerule{TrLTail}}}
+
+
+\newcommand{\TrInt}{\tlabel{\facerule{TrInt}}}
+\newcommand{\TrVar}{\tlabel{\facerule{TrVar}}}
+\newcommand{\TrAbs}{\tlabel{\facerule{TrAbs}}}
+\newcommand{\TrApp}{\tlabel{\facerule{TrApp}}}
+\newcommand{\TrTAbs}{\tlabel{\facerule{TrTAbs}}}
+\newcommand{\TrTApp}{\tlabel{\facerule{TrTApp}}}
+\newcommand{\TrIAbs}{\tlabel{\facerule{TrIAbs}}}
+\newcommand{\TrIApp}{\tlabel{\facerule{TrIApp}}}
+\newcommand{\TrQuery}{\tlabel{\facerule{TrQuery}}}
+
+\newcommand{\TermSimpl}{\tlabel{\facerule{TermSimp}}}
+\newcommand{\TermTyVar}{\tlabel{\facerule{TermTyVar}}}
+\newcommand{\TermInt}{\tlabel{\facerule{TermInt}}}
+\newcommand{\TermForall}{\tlabel{\facerule{TermForall}}}
+\newcommand{\TermFun}{\tlabel{\facerule{TermFun}}}
+\newcommand{\TermRule}{\tlabel{\facerule{TermRule}}}
+
+\newcommand{\ResNil}{\tlabel{\facerule{ResNil}}}
+\newcommand{\Res}{\tlabel{\facerule{Res}}}
+\newcommand{\SimpleRes}{\tlabel{\facerule{SimpleRes}}}
+\newcommand{\RuleRes}{\tlabel{\facerule{RuleRes}}}
+\newcommand{\StaRes}{\tlabel{\facerule{TyRes}}}
+\newcommand{\DynRes}{\tlabel{\facerule{DynRes}}}
+
+\newcommand{\TrRes}{\tlabel{\facerule{TrRes}}}
+
+\newcommand{\Canon}[1]{\mathsf{canon}(#1)}
+\newcommand{\unify}[3]{\mcu_{#3}(#1, #2)}
+
+\newcommand{\KiVar}{\tlabel{\facerule{KiVar}}}
+\newcommand{\KiApp}{\tlabel{\facerule{KiApp}}}
+\newcommand{\KiForall}{\tlabel{\facerule{KiForall}}}
+
+\newcommand{\err}{{\it err}}
+
+\def\ruleform#1{{\setlength{\fboxrule}{1pt}\fbox{\normalsize $#1$}}}
+
+\newcommand{\Ex}[1]{\[\begin{array}{l}#1\end{array}\]}
+\newcommand{\Cmnt}[1]{{\tt #1}}
+
+\newcommand{\subst}[2]{[ #1\!\mapsto\!#2 ]}
+\newcommand{\substone}{\subst{\alpha}{\type}}
+
+\newcommand{\leteq}{\overset{{\sf let}}{=}}
+\newcommand{\defeq}{\overset{{\sf def}}{=}}
+
+\newcommand{\overlap}{{\sf overlap}}
+\newcommand{\nonoverlap}{{\sf nonoverlap}}
+\newcommand{\wellformed}{{\sf wellformed}}
+\newcommand{\stable}{{\sf stable}}
+\newcommand{\coherent}{{\sf coherent}}
+\newcommand{\distinct}{{\sf distinct}}
+\newcommand{\unrelated}{{\sf unrelated}}
+\newcommand{\disjoint}{{\sf distinct}}
+\newcommand{\converge}{{\sf converge}}
+\newcommand{\welldefined}{{\sf welldefined}}
+
+\newcommand{\distinctrs}{{\sf distinct\_rs}}
+\newcommand{\distinctctx}{{\sf distinct\_ctx}}
+\newcommand{\distinctwith}{{\sf distinct\_with}}
+\newcommand{\unambiguous}{{\sf unambiguous}}
+
+\definecolor{gray}{gray}{0.7}
+\definecolor{dark-gray}{gray}{0.4}
+\definecolor{light-gray}{gray}{0.8}
+
+%\newcommand{\shade}[1]{\colorbox{gray}{\color{dark-gray} {$#1$}}}
+%\newcommand{\shade}[1]{\colorbox{light-gray}{\color{dark-gray} {$#1$}}}
+\newcommand{\shade}[1]{\colorbox{light-gray}{\color{black}{$#1$}}}
+\newcommand{\hide}[1]{}
+\def\myruleform#1{
+\setlength{\fboxrule}{0.5pt}\fbox{\normalsize $#1$}
+}
+
+\newcommand{\WFIntTy}{\tlabel{\facerule{WF-IntTy}}}
+\newcommand{\WFVarTy}{\tlabel{\facerule{WF-VarTy}}}
+\newcommand{\WFAbsTy}{\tlabel{\facerule{WF-AbsTy}}}
+\newcommand{\WFFunTy}{\tlabel{\facerule{WF-FunTy}}}
+\newcommand{\WFRulTy}{\tlabel{\facerule{WF-RulTy}}}
+
+\newcommand{\TyTyAbs}{\tlabel{\facerule{TyTyAbs}}}
+\newcommand{\TyTyApp}{\tlabel{\facerule{TyTyApp}}}
+\newcommand{\TyUnit}{\tlabel{\facerule{TyUnit}}}
+\newcommand{\TyInt}{\tlabel{\facerule{Ty-Int}}}
+\newcommand{\TyVar}{\tlabel{\facerule{Ty-Var}}}
+\newcommand{\TyIntL}{\tlabel{\facerule{TyIntL}}}
+\newcommand{\TyLVar}{\tlabel{\facerule{TyLVar}}}
+\newcommand{\TyIVar}{\tlabel{\facerule{TyIVar}}}
+\newcommand{\TyRec}{\tlabel{\facerule{TyRec}}}
+\newcommand{\TyAbs}{\tlabel{\facerule{Ty-Abs}}}
+\newcommand{\TyTAbs}{\tlabel{\facerule{Ty-TAbs}}}
+\newcommand{\TyIAbs}{\tlabel{\facerule{Ty-IAbs}}}
+\newcommand{\TyApp}{\tlabel{\facerule{Ty-App}}}
+\newcommand{\TyTApp}{\tlabel{\facerule{Ty-TApp}}}
+\newcommand{\TyIApp}{\tlabel{\facerule{Ty-IApp}}}
+\newcommand{\TyLet}{\tlabel{\facerule{TyLet}}}
+\newcommand{\TyImp}{\tlabel{\facerule{TyImp}}}
+\newcommand{\TyWith}{\tlabel{\facerule{TyWith}}}
+\newcommand{\TyAnn}{\tlabel{\facerule{TyAnn}}}
+
+\newcommand{\eqv}{\Longleftrightarrow}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "Main"
+%%% End: 

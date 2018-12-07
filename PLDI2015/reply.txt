@@ -1,0 +1,58 @@
+We thank all reviewers for their valuable and thoughtful comments:
+we address the most crucial points in 500 words;
+the paper's revision will clarify all questions.
+
+#167A
+
+Point 1) We understand that the formalization may look daunting, but
+the chosen approach is not accidental: *the compilation technique is
+type-directed*. For the correct code generation, we *must* know
+type-information in the rules. Namely in CJ-App and CJ-Bind1, the
+type-information determines the right casts. Thus, we have to perform
+type-checking altogether with code generation. The work of Kennedy
+and Syme (2004) (see references in paper) on a System F translation to
+C# uses a similar formalization. We invite the reviewer to look at
+their Figure 5 for comparison with our approach.
+
+Point 2) Our evaluation consists of two parts, while the reviewer only
+refers to *Part 1* (S6.1) which isolates different plain recursive
+behaviors in four programs. Additional programs in it would only
+follow one of these behaviors. In *Part 2* (S6.2), we present 
+two additional medium size realistic functional programs.
+Its results assess the overall impact of IFOs: While there is indeed
+some time performance variance, we took steps to minimize it for the
+estimated difference. With respect to memory performance,
+it is clear that the *difference in is solely due to IFOs*:
+no other optimizations affect memory. For Part 2, a large
+standard benchmark suite would surely be desirable. We are, however, not
+aware of any standard independent suite with *functional programs*.
+
+#167B
+
+The reviewer's main concern is concurrency/thread-safety. The reviewer
+argues that the encoding cannot be made thread-safe, and it is unfair
+to compare IFOs with other approaches (known to be thread-safe).
+
+We agree thread-safety is an important concern and if IFOs could not
+support thread-safety, this would be a major drawback. We have of course 
+thought about this issue before: *IFOs do not prevent thread-safety*.
+Consider, for example, a functional program that sums all numbers up to n:
+
+sum 6000 | sum 5000 
+
+The "|" operator denotes parallel execution: each invocation runs in
+its own thread. *Without care* an encoding of this program with IFOs
+would indeed not be thread-safe. However, this program can easily
+become thread-safe: each function invocation must run in its own
+memory space. In the compilation technique, the creation of a
+function instance should be done at call-site, rather than at
+definition-site. At the end of the reply, we attach a Java program
+that illustrates this idea. We invite the reviewer to have a look at
+it and convince him/herself that thread-safety is indeed possible with
+IFOs.
+
+Even though the paper's main focus is not about concurrent programming and
+System F is not a concurrent calculus, we understand the reviewer's concern
+and it will be worthwhile discussing this point in the paper's revision.
+Overall, we are very confident that the current compilation scheme works
+well for its purpose: sequential compilation of functional programs.
