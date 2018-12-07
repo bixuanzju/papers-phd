@@ -1,0 +1,255 @@
+New subtyping + non-dependent intersection
+
+
+--------------
+e <|  A <: B  |> e'        target term e of type |A| can be transformed into target term e' of type |B| (Rule form)
+--------------
+
+e <|  x <: x  |> e   SVar
+
+
+e <|  * <: *   |> e   SStar
+
+
+x <|  A' <: A  |> e1              e e1 <|  B <: B'  |> e2
+-----------------------------------------  SPi
+e <|  forall (a : A). B <: forall (a : A') . B'  |> \x . e2
+
+
+castDown e <|  A <: B  |> e'
+----------------------------  SLam
+e  <|  \x. A <: \x . B  |> castUp e'
+
+
+e  <|  A <: B  |> e'
+----------------- SApp
+e  <|  A E <: B E  |> e'
+
+
+e <|  A <: B  |> e'
+------------------------------ SCastDown
+e <|  castDown A <: castDown B  |> e'
+
+
+e <|  A <: B  |> e'
+------------------------- SCastUp
+e <|  castUp A <: castUp B  |> e'
+
+
+fst e <|  A <: C  |> e'
+-------------------- S&L1
+e <|  A & B <: C  |> e'
+
+
+snd e <|  B <: C  |> e'
+-------------------- S&L2
+e <|  A & B <: C  |> e'
+
+
+e <|  A <: B  |> e1       e <|  A <: C  |> e2
+-------------------------------- S&R
+e <|  A <: B & C  |> (e1,e2)
+
+=======================
+Typing: T |- A : B ~> e  (assumming source-target)
+=======================
+
+T |- * : * ~> *  TStar
+
+x : A ~> e in T
+---------------- TVar
+T  |- x : A ~> e
+
+T, x : A ~> x |- E : B ~> e
+------------------------------------------ TLam
+T |- \x . E : forall (x : A) . B ~> \x . e
+
+T |- E1 : forall (x : A). B ~> e1          T |- E2 : A ~> e2
+------------------------------------------------------------ TApp
+T |- E1 E2 : B [x |-> E2] ~> e1 e2
+
+T |- A : * ~> t1         T, x : A ~> x |- B : * ~> t2
+----------------------------------------------------- TPi
+T |- forall (x : A) . B : * ~> forall (x : t1) . t2
+
+T |- A : * ~> t1         T |- B : * ~> t2
+----------------------------------------- TInter
+T |- A & B : * ~> (t1,t2)
+
+T |- B : * ~> t1      T |- C : * ~> t2
+T |- A : B ~> e       t1 --> t2
+-------------------------------------- TCastDown
+T |- castDown A : C ~> castDown e
+
+T |- B : * ~> t1      T |- C : * ~> t2
+T |- A : C ~> e       t1 --> t2
+------------------------------------ TCastUp
+T |- castUp A : B ~> castUp e
+
+T |- A : C ~> e1      T |- B : D ~> e2
+-------------------------------------- TMerge
+T |- A ,, B : C & D ~> (e1,e2)
+
+T |- A : B ~> e      e <| B <: C |> e'
+---------------------------------   TSub
+T |- A : C ~> e'
+
+=================
+Well-Typed Transformation
+=================
+
+This relation describes well-typed transformations.
+
+T |- e : A ~~> e : A
+
+T, x : C |- x : C ~~> e1 : A                  T, x : C |- e e1 : B ~~> e2 : D
+-----------------------------------------------------
+T |- e : Pi (x : A) . B ~~> \x . e2 : Pi (x : C) . D
+
+T |- castDown e : B ~~> e' : B'      A --> B         C --> B'
+---------------------------------------------
+T |- e : A ~~> castUp e' : C
+
+T |- fst e : A ~~> e' : C
+------------------------
+T |- e : (A, B) ~~> e' : C
+
+T |- snd e : B ~~> e' : C
+--------------------------
+T |- e : (A , B) ~~> e' : C
+
+T |- e : A ~~> e1 : B             T |- e : A ~~> e2 : C
+-------------------------------------------
+T |- e : A ~~> (e1,e2) : (B , C)
+
+
+Lemma 1: If e is well-typed and e' is in the well-typed transformation
+relation, then e' is well-typed.
+
+if T |- e : A and T |- e : A ~~> e' : B then T |- e' : B
+
+and/or
+
+if T |- e : A and T |- e' : B then T |- e : A ~~> e' : B
+
+if T |- e : A ~~> e' : B then T |- e : A and T |- e : B ??? (not
+true?)
+
+Lemma 2:
+
+if T |- e : |A| ~~> e' : |B| then e <|  A  <: B   |> e' (is
+it true
+
+Lemma 3: if e <|  A <: B  |> e' then T |- e : |A| ~~> e' : |B|
+
+
+if    T |- A : * ~> t1 and T |- B : * ~> t2 and  |T| |- e : t1 then
+foreall e', if  e <|  A <: B  |> e' then |T| |- e : t1 ~~> e' : t2.
+
+============
+Well-Kinded Types (find a better name for this relation?)
+============
+
+-----
+wk e k (rule form)  (e and k are target terms)
+-----
+
+wk * *   WKStar
+
+
+wk e1 (\(x:k1). k2)          wk e2 k1
+---------------------------
+wk (e1 e2)
+
+======
+Properties
+======
+
+Lemma 0: Generalized subtyping lemma
+
+if    T |- A : K ~> t1 and T |- B : K ~> t2 and  |T| |- e : t3 and e <|  A <: B  |> e' then
+|T| |- e : t2 and |T| |- t1 : * and |T| |- t2 : *.
+
+
+
+Lemma 1: Generated term produced by subtyping is well-typed.
+
+if    T |- A : * ~> t1 and T |- B : * ~> t2 and  |T| |- e : t1 and e <|  A <: B  |> e' then
+|T| |- e' : t2 and |T| |- t1 : * and |T| |- t2 : *.
+
+
+
+Lemma 2: Generated term produced by typing is well-typed.
+
+if    T |- A : B ~> t1 and T |- B : * ~> t2 then |T| |- t1 : t2 and
+|T| |- t2 : *.
+
+
+
+Lemma 3 Generalized reflexivity (not true at the moment):
+
+forall A e, e <|  A <: A |> e
+
+I think this lemma is true if we can produce optimal transformations.
+Currently we still may have:
+
+e : Int & Bool
+
+e <| Int & Bool <: Int & Bool  |> (fst e, snd e)
+
+but it should be quite easy to produce:
+
+e <| Int & Bool <: Int & Bool  |> e
+
+instead. But see the section on optimizations.
+
+This Lemma would be useful to say that when subtyping two equal types
+no run-time costs should be introduced.
+
+
+
+Lemma 4: Subtyping is reflexive (special case of Lemma 3)
+
+
+
+
+Lemma 5: Generalized transitivity (prob not true at the moment; may
+require uniqueness?)
+
+If e1 <| A <: B |> e2 and e2 <| B <: C |> e3 then e1 <| A <: C |> e3
+
+Not sure if the lemma is true, but it seems likely the case in a very
+discipled system. Probably we need uniqueness.
+
+
+
+=========
+Optimizations
+=========
+
+Here we define two simplification functions that are used in the SLam
+and S&R rules. The hope is that with these two simple functions we
+can actually prove Lemma 3 above:
+
+|castDown e| = e
+|e|                  = castUp e
+
+
+castDown e <|  A <: B  |> e'
+----------------------------  SLam
+e  <|  \x. A <: \x . B  |> |e'|
+
+
+||fst e, snd e||   = e
+||e1, e2||           = (e1,e2)
+
+e <|  t1 <: t2  |> e1       e <|  t1 <: t3  |> e2
+-------------------------------- S&R
+e <|  t1 <: {x : t2} & t3  |> ||e1,e2||
+
+
+We should also consider this case:
+
+y <| * <: * |> y        (\x.x y) <| * <: * |> (\x.x y)
+------------------------------------------------------
+\x.x   <|  Pi(x:*).*   <:   Pi(x:*).*  |> \y.(\x.x y)

@@ -1,0 +1,142 @@
+The declarative version:
+
+
+Int <: Int ~> \x.x
+
+|- Int : * ~> Int
+
+|- Int : * ~> (\x.x) Int (by subsumption)
+
+The following typing judgment doesn't hold:
+
+|- \x.x : Int -> (\x.x) Int
+
+
+==============================================================================
+
+New subtyping system (source to target)
+
+Counter example (variable subtyping)
+
+x <: x ~> \y.y
+
+
+
+
+
+x : * & * |- x => * & * ~> x        * & * <: * ~> \y . id (fst y)
+------------------------------------------------------------------ (T-Sub)
+x : * & * |- x <= * ~> (\y . id (fst y)) x
+
+
+x : * & * |- x => * & * ~> x        * & * <: * ~> \y . id (snd y)
+------------------------------------------------------------------ (T-Sub)
+x : * & * |- x <= * ~> (\y . id (snd y)) x
+
+
+But
+
+x : (*, *) |- \y . y : ((\y . id (fst y)) x) -> ((\y . id (snd y)) x)
+
+does not hold.
+
+Even we add reduction on T-Sub, still not hold I think.
+
+
+
+================================================================================
+
+
+Counter example (Pi substyping)
+
+II x : * . * <: II x : * & * . *  ~>  \f . \x . c2 (f (c1 x))
+
+where c1 = \x . id (fst x)
+      c2 = id
+
+
+II x : * . * => *  ~>  II x : * . *
+
+II x : * & * . * => *  ~>  II x : id (id * , id *) . id *
+
+Does
+
+\f . \x . c2 (f (c1 x)) : (II x : * . *) -> (II x : id (id * , id *) . id *)
+
+hold?
+
+No, because the application (c1 x) won't type check in the first place
+
+
+
+===============================================================
+
+New subtyping system (source to source)
+
+Look at the lambda subtyping:
+
+D |- castDown E <|  A <: B  |> E'
+--------------------------------  SLam
+D, T |- E  <|  \x. A <: \x . B  |> castUp E'
+
+This rule doesn't make sense because castDown should do reduction, i.e,
+
+If E : (\x.A) (T :: D) then
+
+(castDown E) is not of type (A D) in general (A may mention x).
+
+So I thought perhaps we need substitution in the premise, e.g.,
+
+D |- castDown E <|  A[x |-> T] <: B[x |-> T]  |> E'
+-----------------------------------------------------  SLam
+D, T |- E  <|  \x. A <: \x . B  |> castUp E'
+
+This however is still problematic:
+
+Let's just assume D is empty, and
+
+E : (\x. x) (Int ,, Bool)
+
+then
+
+. |- castDown E <|  x[x |-> (Int ,, Bool)] <: ...
+-----------------------------------------------------  SLam
+(Int ,, Bool) |- E  <|  \x. x <: \x . x  |> ...
+
+
+The question is
+
+castDown E : (Int ,, Bool)?
+
+I think not, see the rule for castDown:
+
+
+T |- B : * ~> t1      T |- C : * ~> t2
+T |- A : B ~> e       t1 --> t2
+-------------------------------------- TCastDown
+T |- castDown A : C ~> castDown e
+
+First (\x.x)(Int ,, Bool) : * ~> (\x.x)(fst (Int, Bool))      --- if \x . x : Int -> Int
+
+Then (\x.x)(fst (Int,Bool)) --> fst (Int,Bool)
+
+But (Int ,, Bool) : * ~> fst (Int,Bool) is impossible
+
+Therefore  castDown E : (Int ,, Bool) doesn't hold
+
+I think the problem is, if we do substitution blindly, we lose some context in the application.
+
+
+===========================================================
+
+Variable case
+
+y : * & * , x : y |- x : y ~~> x
+
+y : * & * , x : y ~~> y : * x * , x : opt (fst y)
+
+y : * & *, x : y |- y : * ~~> opt (snd y)
+
+But
+
+y : * x * , x : opt (fst y) |/- x : opt (snd y)

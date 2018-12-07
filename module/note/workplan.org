@@ -1,0 +1,91 @@
+
+
+* Work plan
+
+** Week 1 <2015-11-30 Mon>--<2015-12-06 Sun>
+
++ syntax S & T (Huang)
++ type system S & T (Huang & Jeremy)
++ translation (Jeremy)
+
+** Week 2 <2015-12-07 Mon>--<2015-12-13 Sun>
+
++ translation (Jeremy)
++ impl (Huang)
+
+** Week 3 <2015-12-14 Mon>--<2015-12-20 Sun>
+
++ translation (Jeremy)
++ impl (Huang)
++ proof (Jeremy & Huang)
+
+** Week 4 <2015-12-21 Mon>--<2015-12-27 Sun>
+
+Jeremy is out, Huang is around
+
++ finish details for pi types (Huang)
++ figure out subtyping applications (potentially make use of cast
+  rules) (Huang and Jeremy)
++ come up with a simple source language equipped with coercive
+  subtyping (Jeremy)
++ Impl (Huang)
+
+** Week 5 <2015-12-28 Mon>--<2016-01-03 Sun>
+
+Jeremy is out, Huang is around
+
++ finish details for pi types (Huang)
++ figure out subtyping applications (potentially make use of cast
+  rules) (Huang and Jeremy)
++ come up with a simple source language equipped with coercive
+  subtyping (Jeremy)
++ Impl (Huang)
+
+** Week 6 <2016-01-04 Mon>--<2016-01-10 Sun>
+
++ syntax and type system for functor (Huang)
++ same for manifest type (Jeremy)
++ paper sketch (Huang & Jeremy)
+
+** Week 7 <2016-01-11 Mon>--<2016-01-17 Sun>
+
+same as last week
+
+** Week 8 <2016-01-18 Mon>--<2016-01-24 Sun>
+
++ translation (Jeremy)
++ impl (Huang)
++ proof (Jeremy & Huang)
++ think about examples (Huang & Jeremy)
+
+** Week 9 <2016-01-25 Mon>--<2016-01-31 Sun>
+
+same as last week
+
+** Week 10 <2016-02-01 Mon>--<2016-02-07 Sun>
+
+Jeremy and Huang are out
+
+** Week 11 <2016-02-08 Mon>--<2016-02-14 Sun>
+
+Jeremy and Huang are out
+
+** Week 12 <2016-02-15 Mon>--<2016-02-21 Sun>
+
+improvement? writing (together)
+
+** Week 13 <2016-02-22 Mon>--<2016-02-28 Sun>
+
+writing (together)
+
+** Week 14 <2016-02-29 Mon>--<2016-03-06 Sun>
+
+writing
+
+** Week 15 <2016-03-07 Mon>--<2016-03-13 Sun>
+
+writing
+
+** Week 16 <2016-03-14 Mon>--<2016-03-20 Sun>
+
+writing

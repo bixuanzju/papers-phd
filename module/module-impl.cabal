@@ -1,0 +1,62 @@
+name:                module-impl
+version:             0.1.0.0
+synopsis:            Firsr-Class Module Language
+description:         Please see README.md
+license:             BSD3
+license-file:        LICENSE
+category:            Language
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+                     , src/source
+                     , src/target
+  exposed-modules:     Lib
+                       Tokens
+                       Source.Env
+                       Source.TypeCheck
+                       Source.Parser
+                       Source.Syntax
+                       Target.Parser
+                       Target.Syntax
+                       Target.Env
+                       Target.TypeCheck
+                       Translation
+                       Common
+  build-depends:       base >= 4.7 && < 5
+                     , unbound-generics
+                     , array == 0.5.*
+                     , text == 1.2.*
+                     , ansi-wl-pprint == 0.6.*
+                     , transformers
+                     , mtl == 2.2.*
+
+  default-language:    Haskell2010
+  build-tools:         alex == 3.1.*,
+                       happy == 1.19.*
+
+executable module-impl-exe
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , module-impl
+                     , haskeline == 0.7.*
+                     , text == 1.2.*
+
+  default-language:    Haskell2010
+
+test-suite module-impl-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , module-impl
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/bixuanzju/module

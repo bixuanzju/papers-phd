@@ -1,0 +1,588 @@
+\newcommand{\ruleform}[1]{\vspace{7mm} \leftline{\fbox{#1}} \vspace{3mm}}
+\newcommand{\typeinfer}[3]{\[\inferrule*[Right=#1]{ #2 }{#3}\]}
+
+\newcommand{\sigwrapper}[1]{\kw{sig}\,\{#1\}}
+\newcommand{\modwrapper}[1]{\kw{mod}\,\{#1\}}
+\newcommand{\trans}[1]{\colorbox{gray!30}{$\rightsquigarrow{} #1$}}
+\newcommand{\coerf}[1]{\colorbox{orange!30}{$\hookrightarrow{} #1$}}
+\newcommand{\transenv}[1]{\colorbox{cyan!30}{$ \mapsto #1$}}
+\newcommand{\subst}[2]{[#1/#2]}
+\newcommand{\letin}[3]{\kw{let}\, #1 = #2\,\kw{in}\,#3}
+\newcommand{\open}[2]{\kw{open}\,#1\,\kw{in}\,#2}
+\newcommand{\projk}{\mathsf{proj}_\mathsf{k}\,}
+\newcommand{\intersec}[2]{#1\,\&\,#2}
+
+
+\section{Source Language}
+
+\subsection{Syntax}
+% \gram{\ottes\ottinterrule{}
+%       % \ottpp\ottinterrule{}
+%       % \ottd\ottinterrule{}
+%       % \ottb\ottinterrule{}
+%       % \ottG\ottinterrule{}
+%     }
+
+
+% $T \{X_i \mapsto Y_i \mid X_i \in S \}$ means for each $X_i$ in the
+% set $S$, substitute $X_i$ for $Y_i$ in $T$.
+
+
+% \subsection{Syntax Sugar}
+
+% \[
+% \begin{array}{ll}
+% % \kw{let}\,B\,\kw{in}\,E &\triangleq \modwrapper{B, x = E}.x \\
+% E:T &\triangleq (\lambda X : T . X)\, E
+% \end{array}
+% \]
+
+\subsection{Type System}
+
+% Context Formation Rules
+\ruleform{$ \vdash\Gamma $}
+
+\jeremy{should check $X_1 \leq X_2 \coerf{f}$ in the enviroment?}
+
+\typeinfer {Env-Empty} { } {\vdash\varnothing}
+
+\typeinfer {Env-Var} {\vdash\Gamma \\ \Gamma\vdash T :\star}
+{\vdash\Gamma,X:T \transenv{e}}
+
+% \typeinfer {Env-Def} {\vdash\Gamma \\ \Gamma \vdash T:\star \\ \Gamma \vdash{}
+%   E:T} {\vdash\Gamma,X:T=E \transenv{e}}
+
+% \typeinfer {Env-Sub} {\vdash \Gamma \\ \Gamma \vdash X_1:\star \\ \Gamma \vdash
+%   X_2:\star} {\vdash \Gamma, X_1 \leq X_2 \coerf{f}}
+
+
+% Subtyping Rules
+\ruleform{$\Gamma\vdash{}T_1\leq{}T_2 \coerf{c}$}
+
+\jeremy{subtyping merge?}
+
+\paragraph{Notes}
+
+\begin{enumerate}
+\item Unlike \cite{chen-2003-coerc}, the coercion functions in our
+  calculus operate on translated types, which means coercive subtyping
+  and translation are intimately tangled. This could potentially
+  complicate the meta-theoretic study of the system.
+\item Only well-typed terms have subtyping relations. This is
+  guaranteed by the typing rules.
+\item In the coercive subtyping relation, sometimes we write $\Gamma
+  \vdash T \trans{t}$ to mean that $T$ is well-typed and translates to
+  $t$.
+\end{enumerate}
+
+\typeinfer {S-Var} { \Gamma \vdash X_1:\star \\ \Gamma \vdash X_2:\star \\ X_1 \leq
+  X_2 \coerf{c} \in \Gamma } { \Gamma \vdash X_1 \leq X_2 \coerf{c} }
+
+\typeinfer {S-Eq} {\Gamma \vdash T_1 = T_2 \\ \Gamma \vdash T_1
+  \trans{t}} {\Gamma \vdash T_1 \leq T_2 \coerf{\lambda x:t . x}}
+
+% \typeinfer {S-Tran} {\Gamma \vdash T_1 \leq T_2 \coerf{f} \\ \Gamma
+%   \vdash T_2 \leq T_3 \coerf{g}} {\Gamma \vdash T_1 \leq T_3 \coerf{g \circ f}}
+
+\typeinfer {S-Pi} {\Gamma \vdash T_2 \leq T_1 \coerf{c_1} \\ \Gamma,
+  X_1:T_1 \transenv{c_1 x}, X_2:T_2 \transenv{x}, X_1 \leq X_2
+  \coerf{\lambda y:c_1 x .  \mathsf{cast}_{\downarrow} y} \\ \vdash
+  T_1' \leq T_2' \coerf{c_2} \\
+  \Gamma \vdash \Pi X_1:T_1.T'_1 \trans{t_1} \\ \Gamma \vdash T_2
+  \trans{t_2}}
+{\Gamma \vdash \Pi X_1:T_1.T'_1 \leq \Pi X_2:T_2.T'_2 \\
+  \coerf{\lambda f:t_1 . \lambda x:t_2 . c_2(f(c_1\,x))}}
+
+\typeinfer{S-Rec}{ \Gamma \vdash \mu X_1:\star . E_1 \trans{t_1} \\ \Gamma \vdash \mu
+  X_2:\star . E_2 \trans{t_2} \\ \Gamma, X_1:\star \transenv{t_1}, X_2:\star \transenv{t_2}, X_1
+  \leq X_2 \coerf{c} \vdash E_1 \leq E_2 \coerf{f} }{ \Gamma \vdash \mu X_1:\star . E_1 \leq \mu X_2:\star .
+  E_2 \\ \coerf{\mu (c:t_1 \rightarrow t_2) . \lambda y:t_1 .
+    \mathsf{cast}^{\uparrow}[t_2] f(\mathsf{cast}_{\downarrow} y)} }
+
+\huang{S-Lam breaks the coercion property}
+
+\typeinfer {S-Lam} { \Gamma \vdash T \trans{t} \\ \Gamma \vdash E \trans{e} \\
+  \Gamma, X : T \transenv{x}; S \vdash A \leq B \coerf{c} }
+{\Gamma; E,S \vdash \lambda X:T . A \leq \lambda X:T . B \coerf{(\lambda x:t . c) e}}
+
+\typeinfer {S-App} {\Gamma;E,S \vdash A \leq B \coerf{c}} {\Gamma;S \vdash
+  A E \leq B E \coerf{c}}
+
+\typeinfer {S-App-E} {\Gamma \vdash A E \trans{\tau} \\ \Gamma \vdash B E
+  \trans{u} \\ \Gamma \vdash A : \Pi \overline{(X:T)}^n . \star \\ \Gamma;E \vdash
+  A \leq B \coerf{c}} {\Gamma;\emptyset \vdash A E \leq B E \coerf{\lambda
+    y:\tau . \mathsf{cast}^{\uparrow}_n [u] (c (\mathsf{cast}_{\downarrow}^n y))}}
+
+\typeinfer {S-And} { \Gamma \vdash T_1 \trans{t_1} \\ \Gamma \vdash T_1 \leq T_2 \coerf{c_1} \\ \Gamma
+  \vdash T_1 \leq T_3 \coerf{c_2} } { \Gamma \vdash T_1 \leq
+  \intersec{T_2}{T_3} \coerf{\lambda x : t_1 . (c_1\,x, c_2\,x)}}
+
+\typeinfer {S-And$_{\mathsf{k}}$} { \Gamma \vdash \intersec{T_1}{T_2}
+  \trans{t} \\ \Gamma \vdash T_\mathsf{k} \leq T_3 \coerf{c} } {
+  \Gamma \vdash \intersec{T_1}{T_2} \leq T_3 \coerf{\lambda x : t
+    . c(\projk x)} }
+
+% \typeinfer {S-Sig} {\Gamma \vdash T \trans{t} \\ \Gamma \vdash
+%   \sigwrapper{X:T, \overline{D} } \trans{\sigma_1} \\ \Gamma \vdash
+%   \sigwrapper{X:T',\overline{D'} } \trans{\sigma_2} \\ \Gamma \vdash T \leq
+%   T' \coerf{f} \\ \Gamma,X:T \transenv{x} \vdash \sigwrapper{ \overline{D} } \leq
+%   \sigwrapper{ \overline{D'} } \coerf{g} }
+% {\Gamma \vdash \sigwrapper{X:T, \overline{D} } \leq \sigwrapper{X:T',
+%     \overline{D'} } \\ \coerf{\lambda m:\sigma_1 . (f (\pi_1 m), (\lambda x:t.g) (\pi_1 m)
+%     (\pi_2 m))\ \kw{as}\ \sigma_2} }
+
+% \typeinfer {S-Thin} {\Gamma \vdash \sigwrapper{D, \overline{D_1} }
+%   \trans{t} } {\Gamma \vdash \sigwrapper{D, \overline{D_1} } \leq
+%   \sigwrapper{\overline{D_1}} \coerf{\lambda x:t . \pi_2 x}}
+
+% \typeinfer {S-Proj} { ? } { ? }
+
+
+
+\paragraph{Properties of Coercive Substyping}
+
+\begin{description}
+\item[{Reflexivity}] if $\Gamma \vdash T : \star$, then $\exists c$
+  such that $\Gamma \vdash T \leq T \hookrightarrow c$
+\item[{Transitivity}] if $\Gamma \vdash T_1 : \star$ and $\Gamma
+  \vdash T_2 : \star$ and $\Gamma \vdash T_3 : \star$ and $\Gamma
+  \vdash T_1 \leq T_2 \hookrightarrow c_1$ and $\Gamma \vdash T_2 \leq T_3
+  \hookrightarrow c_2$, then $\exists c$ such that $\Gamma \vdash T_1
+  \leq T_3 \hookrightarrow c$
+\item[{Subtyping rules produce type-correct coercions}] if $\Gamma
+  \vdash T_1 : \star \rightsquigarrow e_1$ and $\Gamma \vdash T_2 :
+  \star \rightsquigarrow e_2$ and $\Gamma \vdash T_1 \leq T_2
+  \hookrightarrow c$ and $\Gamma \rightsquigarrow \Gamma'$, then
+  $\Gamma' \vdash c : e_1 \rightarrow e_2$
+% \item[{Coherence}] if $\Gamma \vdash T_1 : \star$ and $\Gamma \vdash
+%   T_2 : \star$ and $\Gamma \vdash T_1 \leq T_2 \hookrightarrow c_1$
+%   and $\Gamma \vdash T_1 \leq T_2 \hookrightarrow c_2$, then $c_1
+%   =_{\alpha\eta} c_2$
+\end{description}
+
+
+
+% Type Equality Rules
+% \ruleform{$ \Gamma \vdash T_1 = T_2 $}
+
+% \paragraph{Note}
+
+% By restricting module projections only on variables, we avoid equating
+% arbitrate module expressions (which, in general, is undecidable), thus
+% paths are equated syntactically.
+
+% \typeinfer {E-REFL} { } {\Gamma \vdash T = T }
+
+% \typeinfer {E-SYM} {\Gamma \vdash T_2 = T_1} {\Gamma \vdash T_1 = T_2}
+
+% \typeinfer {E-Tran} {\Gamma \vdash T_1 = T_2 \\ T_2 = T_3} {\Gamma \vdash T_1 = T_3}
+
+% \typeinfer {E-Pi} {\Gamma \vdash T_1 = T_2 \\ \Gamma, X:T_1 \vdash
+%   T'_1 = T'_2} {\Gamma \vdash \Pi X:T_1.T'_1 = \Pi X:T_2.T'_2}
+
+% \typeinfer {E-Sig} {\Gamma \vdash D = D' \\ \Gamma, D \vdash \sigwrapper{\overline{D_1}} = \sigwrapper{ \overline{D'_1} } } {\Gamma \vdash
+%   \sigwrapper{D, \overline{D_1} } = \sigwrapper{D', \overline{D'_1} }}
+
+% \typeinfer {E-Lam} {\Gamma \vdash T_1 = T_2 \\ \Gamma, X:T_1 \vdash T'_1 = T'_2}
+% {\Gamma \vdash \lambda X:T_1.T'_1 = \lambda X:T_2.T'_2}
+
+% \typeinfer {E-Mu} {\Gamma \vdash T_1 = T_2 \\ \Gamma, X:T_1 \vdash T'_1 = T'_2} {\Gamma \vdash \mu X:T_1.T'_1 = \mu X:T_2.T'_2}
+
+% \typeinfer {E-App} {\Gamma \vdash E_1 = E'_1 \\ \Gamma \vdash E_2 = E'_2} {\Gamma \vdash E_1\,E_2 = E'_1\,E'_2}
+
+% \typeinfer {E-And} {\Gamma \vdash T_1 = T'_1 \\ \Gamma \vdash
+%   T_2 = T'_2} {\Gamma \vdash \intersec{T_1}{T_2} = \intersec{T'_1}{T'_2}}
+
+% \typeinfer {E-Merge} {\Gamma \vdash E_1 = E'_1 \\ \Gamma \vdash E_2 = E'_2} {\Gamma \vdash E_1,,E_2 = E'_1,,E'_2}
+
+
+% \typeinfer {E-Def} {X : T = E \in \Gamma} {\Gamma \vdash X = E}
+
+
+% Term Formation Rules
+\ruleform{$ \Gamma \vdash  E:T \trans{e} $}
+
+% \paragraph{Identifiers}
+
+% In order to handle identifiers as simply as possible, we make the
+% following assumptions. First, we assume the identifier $x$ in module
+% language can be injectively mapped to the variable $x$ in the target
+% language. Second, we assume that this mapping is applied implicitly,
+% and thus we use module-language identifiers as if they were
+% target-language variables.
+
+
+\typeinfer {T-Ax} {\vdash\Gamma} {\Gamma\vdash\star:\star \trans{\star}}
+
+\typeinfer {T-Var} {\vdash\Gamma \\ X:T\transenv{e} \in \Gamma} {\Gamma\vdash X:T \trans{e}}
+
+\typeinfer {T-App} {\Gamma\vdash E_1: (\Pi X:T_2 . T_1) \trans{e_1} \\
+  \Gamma\vdash E_2:T_2 \trans{e_2}} {\Gamma\vdash E_1 E_2:T_1 \subst{E_2}{X}
+  \trans{e_1 e_2}}
+
+\typeinfer {T-Lam} {\Gamma\vdash T_1:\star \trans{t_1} \\
+  \Gamma, X:T_1 \transenv{x} \vdash E:T_2 \trans{e} \\
+  \Gamma\vdash(\Pi X:T_1 . T_2):\star} {\Gamma\vdash(\lambda X:T_1 . E): (\Pi X:
+  T_1 . T_2) \trans{\lambda x:t_1 . e}}
+
+\typeinfer {T-Pi} {\Gamma \vdash T_1 : \star \trans{t_1} \\
+  \Gamma, X:T_1 \transenv{x} \vdash T_2:\star \trans{t_2}} {\Gamma \vdash (\Pi X:T_1 . T_2) :
+  \star \trans{\Pi x:t_1 . t_2}}
+
+\typeinfer {T-Mu} {\Gamma,X:T \transenv{x} \vdash E:T \trans{e} \\ \Gamma \vdash
+  T:\star \trans{t}} {\Gamma\vdash(\mu X:T . E) : T \trans{\mu x:t . e}}
+
+% \typeinfer {T-SigUnit} { \vdash \Gamma } {\Gamma \vdash \sigwrapper{} : \star \trans{\kw{Unit}}}
+
+% \typeinfer {T-Sig} {\Gamma,X:T\transenv{x} \vdash \sigwrapper{\overline{D}} :
+%   \star \trans{e} \\ \Gamma \vdash T:\star \trans{t}} {\Gamma \vdash
+%   \sigwrapper{X:T,\overline{D}} : \star \trans{\Sigma x:t . e}}
+
+% \typeinfer {T-ModUnit} { } {\Gamma \vdash \modwrapper{ } : \sigwrapper{} \trans{\kw{unit}}}
+
+% \typeinfer {T-Mod} {\Gamma \vdash E:T \trans{e_1} \\
+%   \Gamma \vdash T:\star \trans{t_1} \\ \Gamma, X:T=E\transenv{e_1} \vdash
+%   \modwrapper{\overline{B}} : \sigwrapper{\overline{D}} \trans{e_2} \\
+%   \Gamma, X:T=E\transenv{x} \vdash \sigwrapper{\overline{D}} : \star \trans{t_2}}
+%   {\Gamma \vdash \modwrapper{X\,[: T] = E,\overline{B}} :
+%     \sigwrapper{X:T,\overline{D}} \\ \trans{(e_1, e_2)\ \kw{as}\ \Sigma x:t_1 . t_2}}
+
+% \typeinfer {T-Seal} {\Gamma\vdash E:T \trans{e}} {\Gamma\vdash (E : T) : T \trans{e}}
+
+% \typeinfer {T-Path} {\Gamma \vdash P : \sigwrapper{\overline{D_1}^n, X
+%     : T, \overline{D_2}} \trans{e}} {\Gamma \vdash P.X : T \{Y \mapsto P.Y
+%   \mid Y \in \overline{D_1}\} \trans{\underbrace{\pi_2 (\dots ( \pi_2}_n
+%     (\pi_1 e)))}}
+
+% \typeinfer {T-Let} {\Gamma\vdash E_1 : T_1 \trans{e_1} \\ \Gamma, x : T_1 = E_1 \vdash E_2 : T_2 \trans{e_2}}
+% {\Gamma\vdash \letin{x}{E_1}{E_2} : T_2 \trans{\letin{x}{e_1}{e_2}}}
+
+
+\typeinfer{T-And}{\Gamma \vdash T_1 : \star \trans{t_1} \\
+  \Gamma \vdash T_2 : \star \trans{t_2}}{\Gamma \vdash
+  \intersec{T_1}{T_2} : \star \trans{ t_1 \times t_2 }}
+
+\typeinfer{T-Merge}{\Gamma \vdash E_1 : T_1 \trans{e_1} \\ \Gamma
+  \vdash E_2 : T_2 \trans{e_2}}{\Gamma \vdash E_1,,E_2 :
+  \intersec{T_1}{T_2} \trans{(e_1,e_2)}}
+
+\typeinfer {T-Subs} {\Gamma\vdash E:T' \trans{e} \\ \Gamma \vdash T' \leq
+  T \coerf{c}} {\Gamma \vdash E : T \trans{c\,e}}
+
+
+\paragraph{Properties of Elaboration}
+
+\begin{description}
+\item[{Equivalence of elaborating and source typing}] if $\Gamma
+  \vdash E : T \trans{e}$ then $\Gamma \vdash E : T$, and vice versa.
+\item[{Elaboration produces well-typed terms}] if $\Gamma \vdash E : T
+  \trans{e}$, $\Gamma \vdash T : \star \trans{t}$, and the
+  translations of $\Gamma$ is $\Gamma'$ \jeremy{formalize?}, then
+  $\Gamma' \vdash e : t$.
+
+\end{description}
+
+
+
+% \subsection{Typing Rules (Algorithmic)}
+
+% \ruleform{$ \Gamma \vdash  E:T \trans{e} $}
+
+% \paragraph{Note}
+
+% Omit unaffected rules.
+
+% % \typeinfer {T-Ax} { } { }
+
+% % \typeinfer {T-Var} { } { }
+
+% % \typeinfer {T-App} { } { }
+
+% % \typeinfer {T-Lam} { } { }
+
+% % \typeinfer {T-Pi} { } { }
+
+% % \typeinfer {T-Mu} { } { }
+
+% % \typeinfer {T-SigUnit} { } { }
+
+% % \typeinfer {T-Sig} { } { }
+
+% % \typeinfer {T-ModUnit} { } { }
+
+% \typeinfer {T-Mod} {\Gamma \vdash E:T' \trans{e_1} \\ \Gamma \vdash T'
+%   \leq T \coerf{f} \\ \Gamma , x:T=E \vdash \modwrapper{\overline{B}} :
+%   \sigwrapper{\overline{D}} \trans{e_2\ \kw{as}\ t_2}} { \Gamma \vdash
+% \modwrapper{x:T=E, \overline{B}} : \sigwrapper{x:T, \overline{D}} \\
+% \trans{(f e_1, e_2\ \kw{as}\ t_2 [x \mapsto f e_1])\ \kw{as}\ \Sigma x:t_1 . t_2} }
+
+% % \typeinfer {T-Seal} {\Gamma \vdash E:T' \trans{e} \\ \Gamma \vdash T' \leq T \coerf{f}}
+% % {\Gamma \vdash (E : T) : T \trans{f e}}
+
+% % \typeinfer {T-Path} { } { }
+
+% % \typeinfer {T-Let} { } { }
+
+
+\newpage{}
+
+\section{Target Language}
+
+\subsection{Syntax}
+% \gram{\ottet{}}
+
+\subsection{Type System}
+
+\ruleform{$ \Gamma\vdash{}e:\tau $}
+\typeinfer {T-CastUp} {\Gamma\vdash{}e:\tau_2 \\ \Gamma\vdash\tau_1:\star
+\\ \tau_1\longrightarrow\tau_2} {\Gamma\vdash(\mathsf{cast}^{\uparrow}[\tau_1]e):\tau_1}
+
+\typeinfer {T-CastDown} {\Gamma\vdash{}e:\tau_1 \\
+  \Gamma\vdash\tau_2:\star \\ \tau_1\longrightarrow\tau_2} {\Gamma\vdash(\mathsf{cast}_{\downarrow}e):\tau_2}
+
+% \typeinfer {T-Sum} {\Gamma\vdash\tau:\star \\
+%   \Gamma,x:\tau\vdash{}\sigma:\star} {\Gamma\vdash(\Sigma{}x:\tau.\sigma):\star}
+
+\typeinfer {T-Product} {\Gamma \vdash \tau_1 : \star \\
+  \Gamma \vdash \tau_2 : \star} {\Gamma \vdash \tau_1 * \tau_2 : \star}
+
+% \typeinfer {T-Pair} {\Gamma \vdash e_1 : \tau \\  \Gamma\vdash{}e_2:\sigma[x\mapsto{}e_1]}
+% {\Gamma\vdash(e_1,e_2)\ \kw{as} \ (\Sigma{}x:\tau.\sigma) : \Sigma{}x:\tau.\sigma}
+
+\typeinfer {T-Pair} {\Gamma \vdash e_1 : \tau_1 \\  \Gamma \vdash
+  e_2:\tau_2 }
+{\Gamma \vdash(e_1,e_2) : \tau_1 * \tau_2}
+
+% \typeinfer {T-Proj-1} {\Gamma\vdash{}e:\Sigma{}x:\tau.\sigma}
+% {\Gamma\vdash\pi_1 e:\tau}
+
+% \typeinfer {T-Proj-2} {\Gamma\vdash{}e:\Sigma{}x:\tau.\sigma}
+% {\Gamma\vdash\pi_2 e:\sigma\subst{\pi_1 e}{x}}
+
+\typeinfer {T-Proj} {\Gamma \vdash e: \tau_1 * \tau_2}
+{\Gamma \vdash \projk e : \tau_\mathsf{k}}
+
+
+\typeinfer {T-Let} {\Gamma\vdash e_1 : \tau_1 \\ \Gamma, x : \tau_1 = e_1 \vdash e_2 : \tau_2}
+{\Gamma\vdash \letin{x}{e_1}{e_2} : \tau_2}
+
+
+\newpage{}
+
+\section{New Source}
+
+\jeremy{2 sets of syntax, one annotation-free}
+
+\subsection{Subtyping}
+
+\ruleform{$ T_1 \leq T_2 \coerf{c} $}
+
+\typeinfer{S-Var} { } { X \leq X \coerf{\lambda x.x} }
+
+\typeinfer{S-Star} { } { \star \leq \star \coerf{\lambda x.x} }
+
+\typeinfer{S-Pi} { A' \leq A \coerf{c_1} \\ B \leq B' \coerf{c_2} } { \Pi x:A .
+  B \leq \Pi x:A' . B' \coerf{\lambda f. \lambda x . c_2 (f (c_1 x))} }
+
+\typeinfer{S-Lam} { A \leq B \coerf{c} } { \lambda x . A \leq \lambda x . B
+  \coerf{\lambda x . \mathsf{cast}^{\uparrow} (c (\mathsf{cast}_{\downarrow} x))} }
+
+\typeinfer{S-App} { A \leq B \coerf{c} } { A E \leq B E \coerf{c} }
+
+\typeinfer{S-CastUp} { A \leq B \coerf{c} } { \mathsf{cast}^{\uparrow} A \leq
+  \mathsf{cast}^{\uparrow} B \coerf{c} }
+
+\typeinfer{S-CastDown} { A \leq B \coerf{c} } { \mathsf{cast}_{\downarrow} A \leq
+  \mathsf{cast}_{\downarrow} B \coerf{c} }
+
+\typeinfer{S-Inter-1} { A \leq C \coerf{c} } { A \& B \leq C \coerf{\lambda x . c
+  (\mathsf{proj}_1 x)} }
+
+\typeinfer{S-Inter-2} { B \leq C \coerf{c} } { A \& B \leq C \coerf{\lambda x . c
+  (\mathsf{proj}_2 x)} }
+
+\typeinfer{S-Inter-3} { A \leq B \coerf{c_1} \\ A \leq C \coerf{c_2} } { A \leq
+  B \& C \coerf{\lambda x . (c_1 x, c_2 x)} }
+
+\typeinfer{S-Merge} { } { A ,, B \leq A ,, B \coerf{\lambda x.x} }
+
+\typeinfer{S-Anno} { A \leq B \coerf{c} } { A :: T \leq B :: T \coerf{c} }
+
+\subsection{Type Checking}
+
+\newcommand{\gao}[1]{\colorbox{gray!30}{$\hookrightarrow{} #1$}}
+
+\ruleform{$ \Gamma \vdash E:T \gao{ (E', e) } $}
+
+\typeinfer{T-Star} { } { \Gamma \vdash \star : \star \gao{(\star, \star)} }
+
+\typeinfer{T-Var} { X : T \in \Gamma } { \Gamma \vdash X : T \gao{(X, x)} }
+
+\typeinfer{T-App} { \Gamma \vdash E_1 : \Pi X:T_1 . T_2 \gao{(E'_1, e_1)} \\
+  \Gamma \vdash E_2 : T_1 \gao{(E'_2, e_2)} } { \Gamma \vdash E_1 E_2 : T_2 [X \mapsto
+  E_2] \gao{(E'_1 E'_2, e_1 e_2)} }
+
+\typeinfer{T-Pi} { \Gamma \vdash T_1 : \star \gao{(T'_1, t_1)} \\ \Gamma,
+  X:T_1 \vdash T_2 : \star \gao{(T'_2, t_2)} } { \Gamma \vdash \Pi X:T_1 .
+  T_2 : \star \gao{(\Pi X:T'_1 . T'_2, \Pi x : t_1 . t_2)} }
+
+\typeinfer{T-Inter} { \Gamma \vdash T_1 : \star \gao{(T'_1, t_1)} \\ \Gamma
+  \vdash T_2 : \star \gao{(T'_2, t_2)} } { \Gamma \vdash T_1 \& T_2 : \star \gao{(T'_1 \& T'_2, t_1 \times t_2)} }
+
+\typeinfer{T-Merge} { \Gamma \vdash E_1 : T_1 \gao{(E'_1, e_1)} \\ \Gamma
+  \vdash E_2 : T_2 \gao{(E'_2, e_2)} } { \Gamma \vdash E_1 ,, E_2 : T_1 \& T_2
+  \gao{(E'_1 ,, E'_2, (e_1, e_2))} }
+
+\typeinfer{T-CastUp} { \Gamma \vdash E : T_1 \gao{(E', e)} \\ \Gamma \vdash T_1 :
+  \star \gao{(T'_1, t_1)} \\ \Gamma \vdash T_2 : \star \gao{(T'_2, t_2)} \\ t_2
+  \longrightarrow t_1 } { \Gamma \vdash \mathsf{cast}^{\uparrow} E : T_2
+  \gao{((\mathsf{cast}^{\uparrow} E') :: T'_2, \mathsf{cast}^{\uparrow}e)} }
+
+\typeinfer{T-CastDown} { \Gamma \vdash E : T_1 \gao{(E', e)} \\ \Gamma \vdash T_1 :
+  \star \gao{(T'_1, t_1)} \\ \Gamma \vdash T_2 : \star \gao{(T'_2, t_2)} \\ t_1
+  \longrightarrow t_2 } { \Gamma \vdash \mathsf{cast}_{\downarrow} E : T_2
+  \gao{((\mathsf{cast}_{\downarrow} E') :: T_2', \mathsf{cast}_{\downarrow}e)} }
+
+\typeinfer{T-Lam} { \Gamma, X:T_1 \vdash E : T_2 \gao{(E',e)} \\ \Gamma \vdash \Pi
+  X:T_1 . T_2 : \star \gao{(T, t)}} { \Gamma \vdash \lambda X.E : \Pi X:T_1 .
+  T_2 \gao{((\lambda X.E') :: T, \lambda x. e)} }
+
+\typeinfer{T-Sub} { \Gamma \vdash E : T \gao{(E', e)} \\ \Gamma \vdash T : \star
+  \gao{(T'', t)} \\ T \leq T' \coerf{c}} {
+  \Gamma \vdash E : T' \gao{(E' :: T'', c\,e)} }
+
+\subsection{Bi-directional Type Checking}
+
+\ruleform{$ \Gamma \vdash E \Rightarrow T \trans{e} $}
+
+\typeinfer{T-Star} { } { \Gamma \vdash \star \Rightarrow \star \trans{\star} }
+
+\typeinfer{T-Var} { X : T \in \Gamma } { \Gamma \vdash X \Rightarrow T
+  \trans{x} }
+
+\typeinfer{T-Anno} {  \Gamma \vdash
+  E \Leftarrow T \trans{e} } { \Gamma \vdash E :: T \Rightarrow T \trans{e} }
+
+\typeinfer{T-App} { \Gamma \vdash E_1 \Rightarrow \Pi X:T_1 . T_2 \trans{e_1} \\
+  \Gamma \vdash E_2 \Leftarrow T_1 \trans{e_2} } { \Gamma \vdash E_1 E_2
+  \Rightarrow T_2 [X \mapsto E_2] \trans{e_1 e_2} }
+
+\typeinfer{T-Pi} { \Gamma \vdash T_1 \Leftarrow \star \trans{t_1} \\ \Gamma,
+  X:T_1 \vdash T_2 \Leftarrow \star \trans{t_2} } { \Gamma \vdash \Pi X:T_1 .
+  T_2 \Rightarrow \star \trans{\Pi x:t_1 . t_2} }
+
+\typeinfer{T-Inter} { \Gamma \vdash T_1 \Leftarrow \star \trans{t_1} \\ \Gamma
+  \vdash T_2 \Leftarrow \star \trans{t_2} } { \Gamma \vdash T_1 \& T_2
+  \Rightarrow \star \trans{t_1 \times t_2} }
+
+\typeinfer{T-Merge} { \Gamma \vdash E_1 \Rightarrow T_1 \trans{e_1} \\ \Gamma
+  \vdash E_2 \Rightarrow T_2 \trans{e_2} } { \Gamma \vdash E_1 ,, E_2
+  \Rightarrow T_1 \& T_2 \trans{(e_1, e_2)} }
+
+\ruleform{$ \Gamma \vdash E \Leftarrow T \trans{e} $}
+
+\typeinfer{T-CastUp} { \Gamma \vdash E \Rightarrow  T_1 \trans{e} \\ \Gamma \vdash T_1 \Leftarrow
+  \star \trans{t_1} \\ \Gamma \vdash T_2 \Leftarrow \star \trans{t_2} \\ t_2
+  \longrightarrow t_1 } { \Gamma \vdash \mathsf{cast}^{\uparrow} E \Leftarrow T_2
+  \trans{\mathsf{cast}^{\uparrow} e} }
+
+\typeinfer{T-CastDown} { \Gamma \vdash E \Rightarrow T_1 \trans{e} \\ \Gamma \vdash T_1 \Leftarrow
+  \star \trans{t_1} \\ \Gamma \vdash T_2 \Leftarrow \star \trans{t_2} \\ t_1
+  \longrightarrow t_2 } { \Gamma \vdash \mathsf{cast}_{\downarrow} E \Leftarrow T_2
+  \trans{\mathsf{cast}_{\downarrow} e} }
+
+\typeinfer{T-Lam} { \Gamma, X:T_1 \vdash E \Leftarrow T_2 \trans{e} } { \Gamma
+  \vdash \lambda X.E \Leftarrow \Pi X:T_1 . T_2 \trans{\lambda x.e} }
+
+\typeinfer{T-Sub} { \Gamma \vdash E \Rightarrow T' \trans{e} \\ T'
+  \leq T \coerf{c} } { \Gamma \vdash E \Leftarrow T \trans{c\, e} }
+
+% \huang{Already included in T-Sub?}
+% \typeinfer{T-Check} { \Gamma \vdash E \Rightarrow T \trans{e} } { \Gamma \vdash
+%   E \Leftarrow T \trans{e} }
+
+\newpage{}
+
+\section{Test}
+
+\newpage{}
+
+\section{New Subtyping + Nondependent Intersection}
+
+\subsection{Subtyping}
+
+\newcommand{\subty}[4]{#1 \triangleleft\ #2 \leq #3\ \triangleright #4}
+\newcommand{\castdown}[1]{\mathsf{cast}_{\downarrow} #1}
+\newcommand{\castup}[1]{\mathsf{cast}^{\uparrow} #1}
+\newcommand{\proj}[1]{\mathsf{proj}_\mathsf{#1}}
+\newcommand{\etaconv}[1]{\eta_{\downarrow}(#1)}
+\newcommand{\optcast}[1]{\lceil #1 \rceil}
+\newcommand{\optpair}[1]{\lfloor #1 \rfloor}
+
+\ruleform{$ \etaconv{e} = e' $}
+
+$$
+\etaconv{e} =
+\begin{cases}
+f & e = \lambda x . f x \land x \notin fv(f) \\
+e & otherwise
+\end{cases}
+$$
+
+\ruleform{$ \optcast{e} = e' $}
+
+$$
+\optcast{e} =
+\begin{cases}
+e' & e = \castup \castdown e' \\
+e & otherwise
+\end{cases}
+$$
+
+\ruleform{$ \optpair{e} = e' $}
+
+$$
+\optpair{e} =
+\begin{cases}
+e' & e = (\proj{1} e', \proj{2} e') \\
+e & otherwise
+\end{cases}
+$$
+
+\ruleform{$ \subty{e}{T}{T'}{e'} $}
+
+\typeinfer{S-Var} { } { \subty{e}{x}{x}{e} }
+
+\typeinfer{S-Star} { } { \subty{e}{\star}{\star}{e} }
+
+\typeinfer{S-Pi}
+{ \subty{x}{A'}{A}{e_1} \\ \subty{e\ e_1}{B}{B'}{e_2} }
+{ \subty{e}{\Pi y:A.B}{\Pi y:A'.B'}{\etaconv{\lambda x . e_2}} }
+
+\typeinfer{S-Lam}
+{ \subty{\castdown e}{A}{B}{e'} }
+{ \subty{e}{\lambda x.A}{\lambda x.B}{\optcast{\castup e'}} }
+
+\typeinfer{S-App}
+{ \subty{e}{A}{B}{e'} }
+{ \subty{e}{A\ E}{B\ E}{e'} }
+
+\typeinfer{S-CastUp}
+{ \subty{e}{A}{B}{e'} }
+{ \subty{e}{\castup A}{\castup B}{e'} }
+
+\typeinfer{S-CastDown}
+{ \subty{e}{A}{B}{e'} }
+{ \subty{e}{\castdown A}{\castdown B}{e'} }
+
+\typeinfer{S-AndL1}
+{ \subty{\proj{1} e}{A}{C}{e'} }
+{ \subty{e}{A \& B}{C}{e'} }
+
+\typeinfer{S-AndL2}
+{ \subty{\proj{2} e}{B}{C}{e'} }
+{ \subty{e}{A \& B}{C}{e'} }
+
+\typeinfer{S-AndR}
+{ \subty{e}{A}{B}{e_1} \\ \subty{e}{A}{C}{e_2} }
+{ \subty{e}{A}{B \& C}{\optpair{(e_1, e_2)}} }

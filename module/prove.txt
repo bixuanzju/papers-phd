@@ -1,0 +1,55 @@
+Theorem
+=======
+
+If T |- A : * ~> t1 and T |- B : * ~> t2 and A <: B ~> c
+then |T| |- c : t1 -> t2 and |T| |- t1 : * and |T| |- t2 : *
+
+
+For simplicity, let's assume the following lemma holds first
+
+Lemma
+=====
+
+If T |- A : * ~> t1 , then |T| |- t1 : *
+
+Proof
+=====
+
+The proof proceeds by induction on the subtyping derivation. Here I
+just consider only the Pi case.
+
+We have for some T
+
+T |- forall x : A . B : *                    ~>   forall x : a . b
+
+T |- forall x : A' . B' : *                  ~>   forall x : a' . b'
+
+forall x : A . B <: forall x : A' . B'       ~>   \f. \x . c2 (f (c1 x))
+
+and
+
+A' <: A  ~> c1
+
+B  <: B  ~> c2
+
+We know that using the same environment T, we have
+
+T |- A : *     ~> a
+
+T |- A' : *    ~> a'
+
+Therefore by induction, we get
+
+|T| |- c1 : a' -> a
+
+Also using the same T, we have
+
+T, x : A |- B : *     ~> b
+
+T, x : A' |- B' : *   ~> b'
+
+But now can we say something about c2? Ideally by induction
+
+|T, x : ???| |- c2 : b -> b'
+
+What ??? stands for

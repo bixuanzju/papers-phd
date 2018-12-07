@@ -1,0 +1,116 @@
+* Notes
+
+** General
+
+1. for the core language, users specify principle signatures for their
+   modules, e.g., mod { x : * = int, f : t -> t = \x : t . x }
+
+   later we might use bi-directional type checking to reduce annotations
+
+2. for the moment we stick to opaque types, in the future, maybe add
+   manifest types, while remaining decidable type checking
+
+3. Type in Type may cause problem in first class module
+
+4. should we consider name clashes in module applications?
+
+5. play with Coq's module system
+
+6. dependent record
+
+7. Generative vs applicative functors
+
+
+** Meetings
+
+*** 12.15
+
+-  add translation environment
+-  complete coersive subtyping (esp. pi type)
+-  complete equality (esp. path)
+-  open can be desugard by paths
+-  fix minor issues in the typing rules
+
+B: dependent pairs embeded inside mu, might eliminate the need of
+substitution?
+
+*** 12.22
+
+B: let's focus on coercive subtyping for dependent types between two
+languages (one has subtyping, the other doesn't). Later we come back
+to modules.
+
+- finish details for pi types (add information in translation
+  environment), e.g., =Γ (x : T → e)= where =x= and =T= are the source
+  variable and type respectively, =e= is the target term for which we
+  might want to substitute in the translated term.
+- figure out subtyping applications (potentially make use of cast
+  rules)
+- come up with a simple source language equipped with coercive
+  subtyping
+
+*** 1.6
+
+B: a good strategy to designing rules: 1) come up with a simple yet
+non-trivial example; 2) write coercive function by hand for this
+particular example; 3) generalize to formal rules
+
+- Huang: replace module constructs with intersection types
+- Jeremy: subtyping & typing & translation rules for intersection types
+- Huang & Jeremy: fill in subtyping rules for applications, lambdas,
+  variables (use stack)
+- Huang: research on subtyping of iso-recursive types
+
+
+*** 1.12
+
+B: let's think about coercive functions on the source language, in the
+same way as the paper "elaborating intersection and union types". In
+the meantime, think about subtyping of intersection types.
+
+- adapt the subtyping rules to account for the change
+- think about subtyping of dependent intersections
+- think about properties to prove
+
+
+*** 4.26
+
+Four possibilities:
+1. In the target language, add conversion rule to convert fst(e1,e2) to e1 and
+2. Bidirectional type checking and uniqueness of translation
+3. generate type & term at the same time (change has_type_source2)
+4. T |- B : * ~> b where b is in some shape
+
+
+** References
+
+*** Module System
+
+- [[http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.105.1185&rep=rep1&type=pdf][A module calculus for Pure Type Systems]]
+- [[https://www.google.com.hk/url?sa=t&rct=j&q=&esrc=s&source=web&cd=2&cad=rja&uact=8&ved=0ahUKEwiJio3h89_JAhXBnpQKHdToB-YQFgggMAE&url=http%253A%252F%252Fwww.mimuw.edu.pl%252F~chrzaszc%252Fpapers%252FChrzaszcz_Implementing-modules-in-the-Coq-system_TPHOLS2003.ps.gz&usg=AFQjCNHboL81Wljjv5JEinkBofHNr12VsQ&sig2=2xRCQ9t8inn9DCjm_uEv-w][Implementing Modules in the Coq System]]
+- [[https://www.cs.cmu.edu/~crary/papers/2003/thoms/thoms.pdf][A Type System for Higher-Order Modules]]
+- [[https://www.cs.cmu.edu/~rwh/papers/sharing/popl94.pdf][A Type Theoretic Approach to Higher Order Modules with Sharing]]
+- [[http://caml.inria.fr/pub/papers/xleroy-manifest_types-popl94.pdf][Manifest types, modules, and separate compilation]]
+- [[https://www.mpi-sws.org/~rossberg/f-ing/f-ing-jfp.pdf][F-ing modules]]
+- [[https://www.mpi-sws.org/~rossberg/1ml/1ml-extended.pdf][1ML]]
+
+*** (Coercive) Subtyping
+
+- [[http://homepages.inf.ed.ac.uk/da/papers/psub-long/psub-long.pdf][Subtyping Dependent Types]]
+- [[http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.147.259&rep=rep1&type=pdf][Coercive subtyping for the calculus of constructions]]
+- [[http://www.cs.rhul.ac.uk/~zhaohui/subtyping.html][Luo's work on coercive subtyping]]
+- [[https://pure.tue.nl/ws/files/1316189/9903363.pdf][Object-oriented concepts and proof rules : formalization in type theory and implementation in Yarrow]]
+
+*** Dependent Records, Intersection types
+
+- [[http://www.cs.cornell.edu/home/kreitz/teaching/cs671/kopylov02a.pdf][Dependent Intersection: A New Way of Defining Records in Type Theory]]
+- [[http://www.cs.rhul.ac.uk/~zhaohui/DRT09.pdf][Dependent Record Types Revisited]]
+- [[http://www.cs.cmu.edu/~joshuad/papers/intcomp/Dunfield12_elaboration.pdf][Elaborating Intersection and Union Types]]
+- [[http://www.cs.cmu.edu/~fp/papers/icfp00.pdf][Intersection Types and Computational Effects]]
+*** Bidirectional type checking
+
+The proof-theoretic formulation of bidirectional type checking
+
+- [[http://www.cs.cmu.edu/~fp/papers/icfp00.pdf][Intersection Types and Computational Effects]]
+- [[https://www.cs.cmu.edu/~fp/courses/15312-f04/handouts/15-bidirectional.pdf][Lecture notes on bidirectional type checking]]
+- [[http://www.cs.cmu.edu/~joshuad/papers/tridirectional-typechecking/Dunfield04_tridirectional.pdf][Tridirectional Typechecking]]

@@ -1,0 +1,229 @@
+New subtyping + non-dependent intersection
+
+=================
+Subtyping (source-source)
+=================
+
+D ::= . | D, E
+
+------------------
+D |- E <|  A <: B  |> E'        
+------------------
+
+D |- E <|  x <: x  |> E   SVar
+
+
+. |- E <|  * <: *   |> E   SStar
+
+
+. |- a <|  A' <: A  |> E1             . |- E E1 <|  B <: B' |> E2
+----------------------------------------------------  SPi
+. |- E <|  forall (a : A). B <: forall (a : A') . B'  |> \a . E2
+
+
+D |- castDown E <|  A <: B  |> E'
+--------------------------------  SLam
+D, T |- E  <|  \x. A <: \x . B  |> castUp E'
+
+
+D, T |- E  <|  A <: B  |> E'
+--------------------- SApp
+D |- E  <|  A T <: B T  |> E'
+
+
+. |- E <|  A <: B  |> E'
+------------------------------ SCastDown (D = . ??)
+. |- E <|  castDown A <: castDown B  |> E'
+
+
+. |- E <|  A <: B  |> E'
+------------------------- SCastUp (D = . ??)
+. |- E <|  castUp A <: castUp B  |> E'
+
+
+. |- E <|  A <: C  |> E'
+-------------------- S&L1
+. |- E <|  A & B <: C  |> E'
+
+
+. |- E <|  B <: C  |> E'
+-------------------- S&L2
+. |- E <|  A & B <: C  |> E'
+
+
+. |- E <|  A <: B  |> E1       . |- E <|  A <: C  |> E2
+---------------------------------------- S&R
+. |- E <|  A <: B & C  |> E1,,E2
+
+--------
+Examples
+--------
+
+example 1)  . |- E <| Int <: Int |> E
+
+E : Int
+
+example 2) . | E <| (\x . x) Int <: (\x . x) Int |> E'
+
+for the intermediate step:
+
+Int | E <| (\x . x) <: (\x . x) |> E'
+
+you should have:
+
+E : (\x . x) Int
+
+=======================
+Typing: T |- A : B ~> e  (assumming source-target)
+=======================
+
+T |- * : * ~> *  TStar
+
+x : A ~> e in T
+---------------- TVar
+T  |- x : A ~> e
+
+T, x : A ~> x |- E : B ~> e
+------------------------------------------ TLam
+T |- \x . E : forall (x : A) . B ~> \x . e
+
+T |- E1 : forall (x : A). B ~> e1          T |- E2 : A ~> e2
+------------------------------------------------------------ TApp
+T |- E1 E2 : B [x |-> E2] ~> e1 e2
+
+T |- A : * ~> t1         T, x : A ~> x |- B : * ~> t2
+----------------------------------------------------- TPi
+T |- forall (x : A) . B : * ~> forall (x : t1) . t2
+
+T |- A : * ~> t1         T |- B : * ~> t2
+----------------------------------------- TInter
+T |- A & B : * ~> (t1,t2)
+
+T |- B : * ~> t1      T |- C : * ~> t2
+T |- A : B ~> e       t1 --> t2
+-------------------------------------- TCastDown
+T |- castDown A : C ~> castDown e
+
+T |- B : * ~> t1      T |- C : * ~> t2
+T |- A : C ~> e       t1 --> t2
+------------------------------------ TCastUp
+T |- castUp A : B ~> castUp e
+
+T |- A : B ~> e      |- A <| B <: C |> A'      T |- A' : C ~> e'
+---------------------------------------------  TSub
+T |- A : C ~> e'
+
+T |- E1 : A ~> e
+------------
+T |- E1 ,, E2 : A ~> e
+
+T |- E2 : A ~> e 
+------------
+T |- E1 ,, E2 : A ~> e
+
+T |- E : A1 ~> e1     T |- E : A2 ~> e2
+-----------------------------
+T |- E : A1 & A2 ~> (e1,e2)
+
+T |- E : A1 & A2 ~> e
+-------------
+T |- E : A1 ~> fst e
+
+T |- E : A1 & A2 ~> e
+-----------------
+T |- E : A2 ~> snd e
+
+======
+Properties
+======
+
+Lemma 0: Generalized subtyping lemma
+
+if T |- A : B D ~> e   and  D |- A <| B <: C |> A'   then T |- A' : C D
+
+Lemma 1: subtyping lemma
+
+if T |- A : B   and   . |- A <| B <: C |> A'  then T |- A' : C
+
+
+Lemma 2: Generated term produced by typing is well-typed.
+
+if    T |- A : B ~> t1 and T |- B : * ~> t2 then |T| |- t1 : t2 and
+|T| |- t2 : *.
+
+Lemma 3 Generalized reflexivity (not true at the moment):
+
+forall A E, E <|  A <: A |> E
+
+I think this lemma is true if we can produce optimal transformations.
+Currently we still may have:
+
+e : Int & Bool
+
+e <| Int & Bool <: Int & Bool  |> (fst e, snd e)
+
+but it should be quite easy to produce:
+
+e <| Int & Bool <: Int & Bool  |> e
+
+instead. But see the section on optimizations.
+
+This Lemma would be useful to say that when subtyping two equal types
+no run-time costs should be introduced.
+
+Lemma 4: Subtyping is reflexive (special case of Lemma 3)
+
+
+
+Lemma 5: Generalized transitivity (prob not true at the moment; may
+require uniqueness?)
+
+If e1 <| A <: B |> e2 and e2 <| B <: C |> e3 then e1 <| A <: C |> e3
+
+Not sure if the lemma is true, but it seems likely the case in a very
+discipled system. Probably we need uniqueness.
+
+-------
+
+compute_type : Exp -> list Exp -> Exp
+compute_type e [] = e
+compute_type e (x:xs) = compute_type (App e x) xs
+
+B = \x . x
+D = Int
+
+castUp 3 : (\x . x) Int
+
+. |- castDown (castUp 3) <| x <: x |> castDown (castUp 3)
+-----------------------------------------------
+Int |- castUp 3 <| (\x . x) <: (\x . x) |> castUp (castDown (castUp 3))
+-------------------------------------
+castUp 3 <| (\x.x) Int <: (\x.x)Int |> castUp (castDown (castUp 3))
+
+Note:
+
+. |- castDown (castUp 3) : x
+
+doesn't hold!
+
+
+castUp (castDown (castUp 3)) :  (\x . x) Int
+
+==================
+Dependent Pi types may be problematic
+==================
+
+One solution may be:
+
+a \in fv(B)            . |- E a <|  B <: B' |> E2
+------------------------------------------  SPi
+. |- E <|  forall (a : A). B <: forall (a : A) . B'  |> \a . E2
+
+
+not (a \in fv(B))
+. |- a <|  A' <: A  |> E1          . |- E E1 <|  B <: B' |> E2
+------------------------------------------  SPi
+. |- E <|  forall (a : A). B <: forall (a : A') . B'  |> \a . E2
+
+Another solution, casts with full reduction? But still
+how to know if cast is needed?

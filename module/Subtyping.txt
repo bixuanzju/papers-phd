@@ -1,0 +1,327 @@
+=========
+Source Syntax:
+=========
+
+A, B, E ::= * | x | \x . A | A B | forall (x : A) . B | castDown A | castUp A | A & B | A ,, B
+
+=======================
+Subtyping on pre-terms:
+=======================
+
+-------------
+A <: B ~> c      (Rule form)
+-------------
+
+x <: x ~> \x.x    SVar
+
+* <: * ~> \x.x     SStar
+
+A' <: A ~> c1          B <: B' ~> c2
+-----------------------------------------------------------------------      SPi
+forall (x : A) . B <: forall (x : A') . B' ~> \f . \x . c2 (f (c1 x))
+
+A <: B ~> c
+------------------------------------------------      SLam
+\x . A <: \x . B ~> \x . castUp (c (castDown x))
+
+A <: B ~> c
+---------------      SApp
+A E <: B E ~> c
+
+A <: B ~> c
+----------------------------- SCast1
+castDown A <: castDown B ~> c
+
+A <: B ~> c
+------------------------- SCast2
+castUp A <: castUp B ~> c
+
+Rules for intersection (assumming source-target):
+
+A <: C ~> c
+----------------------------
+A & B <: C ~> \x . c (fst x)
+
+B <: C ~> c
+----------------------
+A & B <: C ~> \x . c (snd x)
+
+A <: B ~> c1       A <: C ~> c2
+-------------------------------
+A <: B & C ~> \x . (c1 x, c2 x)
+
+Note: Rules for merge?
+
+----------------------
+A,,B <: A,,B ~> \x . x
+
+
+===============
+value of target
+===============
+
+v := * | \x . e | forall (x : t) . e | castUp v | t1 & t2 | (v1, v2)
+
+
+================
+Static semantics (assuming call by value)
+================
+
+---------------------- R-Beta
+(\x . e) v --> [x/v]e
+
+
+e1 --> e1'
+------------------------- R-App1
+e1 e2 --> e1' e2
+
+
+e2 --> e2'
+----------------- R-App2
+v e2 --> v e2'
+
+
+---------------------------- R-CastElem
+castDown (castUp v) --> v
+
+
+e --> e'
+--------------------------- R-CastDn
+castDown e --> castDown e'
+
+
+e --> e'
+--------------------------- R-CastUp
+castUp e --> castUp e'
+
+
+e1 --> e1'
+-------------------- R-Pair1
+(e1, e2) --> (e1', e2)
+
+
+e2 --> e2'
+----------------------- R-Pair2
+(v, e2) --> (v, e2')
+
+
+e --> e'
+---------------- R-Fst1
+fst e --> fst e'
+
+
+----------------- R-Fst2
+fst (v1, v2) --> v1
+
+
+e --> e'
+---------------- R-Snd1
+snd e --> snd e'
+
+
+-------------------- R-Snd2
+snd (v1, v2) --> v2
+
+
+
+
+
+
+=======================
+Typing: T |- A : B ~> e  (assumming source-target)
+=======================
+
+T |- * : * ~> *  TStar
+
+x : A ~> e in T
+----------------
+T  |- x : A ~> e     TVar
+
+T, x : A ~> x |- E : B ~> e
+------------------------------------------ TLam
+T |- \x . E : forall (x : A) . B ~> \x . e
+
+T |- E1 : forall (x : A). B ~> e1          T |- E2 : A ~> e2
+------------------------------------------------------------ TApp
+T |- E1 E2 : B [x |-> E2] ~> e1 e2
+
+T |- A : * ~> t1         T, x : A ~> x |- B : * ~> t2
+----------------------------------------------------- TPi
+T |- forall (x : A) . B : * ~> forall (x : t1) . t2
+
+T |- A : * ~> t1         T |- B : * ~> t2
+----------------------------------------- TInter
+T |- A & B : * ~> (t1,t2)
+
+T |- B : * ~> t1      T |- C : * ~> t2
+T |- A : B ~> e       t1 --> t2
+-------------------------------------- TCastDown
+T |- castDown A : C ~> castDown e
+
+T |- B : * ~> t1      T |- C : * ~> t2
+T |- A : C ~> e       t1 --> t2
+------------------------------------ TCastUp
+T |- castUp A : B ~> castUp e
+
+T |- A : C ~> e1      T |- B : D ~> e2
+-------------------------------------- TMerge
+T |- A ,, B : C & D ~> (e1,e2)
+
+T |- A : B ~> e       B <: C ~> c
+---------------------------------   TSub
+T |- A : C ~> c e
+
+======================
+Implementation version
+======================
+
+A' <: A ~> c1          B <: B' ~> c2
+-----------------------------------------------------------------------      SPi
+forall (x : A) . B <: forall (x : A') . B' ~> \f . \x . (c2 : |B| -> |B'|) (f ((c1 : |A'| -> |A|) x))
+
+A <: B ~> c
+------------------------------------------------      SLam
+\x . A <: \x . B ~> \x . castUp ((c : |A| -> |B|) (castDown x))
+
+
+A <: C ~> c
+----------------------------
+A & B <: C ~> \x . (c : |A| -> |C|) (fst x)
+
+B <: C ~> c
+----------------------------
+A & B <: C ~> \x . (c : |B| -> |C|) (snd x)
+
+A <: B ~> c1       A <: C ~> c2
+-------------------------------
+A <: B & C ~> \x . ((c1 : |A| -> |B|) x, (c2 : |A| -> |C|) x)
+
+
+T |- B : * ~> T1      T |- C : * ~> T2
+T |- A : B ~> e       B <: C ~> c
+---------------------------------   TSub
+T |- A : C ~> (c : T1 -> T2) e
+
+
+T |- B : * ~> *      T |- C : * ~> *
+T |- A : B ~> e       * <: * ~> \x.x
+---------------------------------   TSub
+T |- A : C ~> (\x.x : * -> *) e
+
+==========
+Properties
+==========
+
+Source-target (if we chose source-to-target):
+
+if    T |- A : * ~> t1 and T |- B : * ~> t2 and A <: B ~> c then
+|T| |- c : t1 -> t2 and |T| |- t1 : * and |T| |- t2 : *
+
+
+Old stuff (does not hold for current system): Source-source (if we chose source-to-source):
+
+if    T |- A : * and T |- B : * and A <: B ~> c then T |- c : A -> B
+
+=========
+Examples:
+=========
+
+Example 1: forall (x : * & *) . x
+
+
+                                                                    ----------------- TVar
+|- * : * ~> *        T |- * : * ~> *                     x : * & * ~> x |- x : * & * ~> x                  * & * <: * ~> \y . (\z.z) (fst y)
+----------------------- TInter            ------------------------------------------------------ TSub
+|- * & * : * ~> (*,*)                                        x : * & * ~> x |- x : * ~> (\y . (\z.z) (fst y)) x
+------------------------------------------------------------------------ TPi
+|- forall (x : * & *) . x : * ~> forall (x : (*,*)) . (\y . (\z.z) (fst y)) x
+
+Coq program:
+
+Definition test : Type := forall (x : Set * Set), (fun y => (fun z => z) (fst y)) x.
+
+Example 2: forall (x : *) . x <: forall (x : * & *) . x
+
+* <: * ~> \z.z
+-----------------------                  ------------
+* & * <: * ~> \y . (\z.z) (fst y)                   x <: x ~> \a.a
+-----------------------------------------------------------
+forall (x : *) . x <: forall (x : * & *) . x ~> \f . \x . (\a. a) (f ((\y . (\z.z) (fst y)) x))
+
+Coq program:
+
+Definition test1 : (forall (x : Set), x) -> forall (x : Set * Set), (fun y => (fun z => z) (fst y)) x :=
+ fun f => fun x => (fun a => a) (f ((fun y => (fun z => z) (fst y)) x)).
+
+Example 3:
+
+Int <: Int ~> \z.z
+------------------------
+castUp * <: castUp * ~> \z.z
+----------------------------------------------
+castDown (castUp *) <: castDown (castUp *) ~> \z.z
+
+Notes: The Coq programs are reassuring, but they don't detect possible (incorrect) uses
+of the conversion rule. This needs to be carefully validated by hand.
+
+==============================================
+Source-Source and Dependent Intersection Types
+==============================================
+
+I think this would be a following starting point for dependent
+intersection types:
+
+T |- A : *      T, (x : A) |- B : *
+----------------------------------- TInter
+T |- (x : A) & B : *
+
+T |- E : (x : A) & B
+-------------------- TPrj1
+T |- E : A
+
+T |- E : (x : A) & B
+-------------------- TPrj2
+T |- E : B [x |-> E]
+
+T |- E1 : A        T |- E2 : B [x |-> E1]
+----------------------------------------- TMerge
+T |- E1,,E2 : (x : A) & B
+
+
+Some rough examples:
+
+|- nat : *               |- 3 : x [x |-> nat]          (x [x |-> nat] = nat)
+--------------------------------------------------------- TMerge
+|- nat,,3 : (x : *) & x
+
+
+|- nat,,3 : (x : *) & x      (link to derivation above)
+----------------------- TPrj2
+|- nat,,3 : nat,,3
+----------------------- TSub
+|- nat,,3 : nat
+
+
+
+Old examples:
+
+let id = \x.x
+
+                                       --------------------- SVar
+* & * <: * ~> fst                 x <: x ~> id
+---------------------------------------------- SPi
+forall (x : *) . x <: forall (x : * & *) . x ~> \f . \x . id (f (fst x))
+
+
+                                          x <: x ~> id
+                                          --------------------- SInter
+* & * <: * ~> fst                 x & nat <: x ~> \x . id (fst x)         (simplifies to fst)
+---------------------------------------------- SPi
+forall (x : *) . x & nat <: forall (x : * & *) . x ~> \f . \x . fst (f (fst x))
+
+
+\x .
+-------------------- SLam
+(\x . \y . x) <: (\x . \y . x) ~>
+------------------------- SApp (2x)
+(\x . \y . x) * * <: (\x . \y . x) * * ~>

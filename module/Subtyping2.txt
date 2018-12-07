@@ -1,0 +1,198 @@
+
+=========
+Source Syntax:
+=========
+
+A, B, E ::= * | x | \x . A | A B | forall (x : A) . B | castDown A | castUp A | mu x . A |A & B | A ,, B
+
+
+=====
+Subtyping (source to source)
+=====
+
+
+-----------        SStar
+* <: * ~> \x . x
+
+
+-----------        SVar1
+x <: x ~> \x . x
+
+
+
+A <: A' ~> C1            B <: B' ~> C2
+---------------------------------------   SPi
+forall (x : A) . B <: forall (x : A') . B' ~> C2 (castDown (f (C1 x)))
+
+Note: or castDown (C2 (f (C1 x)))?
+
+Note: but not work for non-dependent!
+
+
+
+A <: B ~> C
+------------------------------------------------      SLam
+\x . A <: \x . B ~> \x . castUp (C (castDown x))
+
+
+
+A <: B ~> c
+---------------      SApp
+A E <: B E ~> c
+
+
+
+A <: B ~> c
+----------------------------- SCast1
+castDown A <: castDown B ~> c
+
+
+A <: B ~> c
+------------------------- SCast2
+castUp A <: castUp B ~> c
+
+
+Note: can't imagine casts subtyping
+
+
+[x^f/x]A <: B ~> C
+--------------------   SRec
+mu x . A <: mu y . B ~> mu f . \x . castUp (C (castDown x))
+
+Note: binders need to be different, one binder is marked an coercive variable
+
+
+
+A_k <= B ~> C
+-----------   SAndk
+A_1 & A_2 <: B ~> C
+
+
+
+B <: A_1 ~> C1    B <: A_2 ~> C2
+---------------------------------  SAnd
+B <: A_1 & A_2  ~> C1,,C2
+
+
+Note: Rules for merge?
+
+----------------------
+A,,B <: A,,B ~> \x . x
+
+
+
+=======================
+Typing: T |- A : B ~> e  (assumming source-source)
+=======================
+
+T |- * : * ~> *  TStar
+
+
+x : A ~> e in T
+----------------
+T  |- x : A ~> e     TVar
+
+
+T |- A : * ~> a
+T, x : A ~> x |- E ~> e
+------------------------------------------ TLam
+T |- \x . E : forall (x : A) . B ~> \x : a . e
+
+
+T |- E1 : forall (x : A). B ~> e1          T |- E2 : A ~> e2
+------------------------------------------------------------ TApp
+T |- E1 E2 : B [x |-> E2] ~> e1 e2
+
+
+T |- A : * ~> t1         T, x : A ~> x |- B : * ~> t2
+----------------------------------------------------- TPi
+T |- forall (x : A) . B : * ~> forall (x : t1) . t2
+
+
+T |- A : * ~> t1         T |- B : * ~> t2
+----------------------------------------- TInter
+T |- A & B : * ~> (t1,t2)
+
+
+T |- B : * ~> t1      T |- C : * ~> t2
+T |- A : B ~> e       t1 --> t2
+-------------------------------------- TCastDown
+T |- castDown A : C ~> castDown e
+
+
+T |- B : * ~> t1      T |- C : * ~> t2
+T |- A : C ~> e       t1 --> t2
+------------------------------------ TCastUp
+T |- castUp A : B ~> castUp e
+
+Note: reduction on source or target
+
+
+T |- E : A ~> a    T |- E : B ~> b
+----------------------------          TAnd
+T |- E : A & B ~> (a, b)
+
+
+T |- E : A_1 & A_2  ~> e
+-----------------------------  TAndk
+T |- E : A_k  ~> proj_k e
+
+
+T |- B : * ~> b
+T, x : B ~> x |- A : B ~> a
+--------------------------------     TRec
+T |- mu x . A : B ~> mu x : b . a
+
+
+T |- E : A     A <: B ~> C
+----------------                 TSub
+T |- E : B
+
+
+======
+Example
+======
+
+
+Example 1: forall (x : *) . x <: forall (x : * & *) . x
+
+* <: * ~> id
+---------  SAnd1
+* & * <: * ~> id       x <= x ~> id
+----------------------------
+forall (x : *) . x <: forall (x : * & *) . x ~> \f. \x. id (castdown (f (id x)))
+
+
+Easy to verify
+
+\f. \x. id (castdown (f (id x))) : (forall (x : *) . x) -> (forall (x : * & *) . x)
+
+
+
+Example 2: forall (x : * & *) . x : *          (using subsumption)
+
+x : * & * |- x : * & *        * & * <: * ~> id
+--------------------------------------------- TSub
+x : * & * |- x : *
+-----------------------------------
+|- forall (x : * & *) . x : *
+
+
+
+Eliminate TSub
+
+
+
+                                     x : * & * |- x : * & * ~> x
+                                    --------------------        TAnd1
+x : * & * |- id : * -> *            x : * & * |- x : *  ~> fst x
+---------------------------------------------------------
+x : * & * |- id x : * ~> id (fst x)
+-----------------------------
+|- forall (x : * & *) . id x : * ~> forall (x : (*, *)) . id (fst x)
+
+
+Verify by coq
+
+
+Definition test : Type := forall (x : Type * Type ), (fun x => x) (fst x).
