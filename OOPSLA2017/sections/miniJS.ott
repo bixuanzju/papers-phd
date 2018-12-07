@@ -1,0 +1,73 @@
+
+embed {{ tex-preamble
+  \newcommand{\kw}[1]{\mathbf{#1} }
+}}
+
+
+metavar x, f, T, l, a {{ tex \alpha }} ::= {{ com Variable names }}
+indexvar i, j, n, m ::= {{ com Index variables }}
+
+
+grammar
+
+jpgm {{ tex pgm }}                      :: 'jpgm_' ::=      {{ com Program }}
+  | jdecl1 .. jdecln e                          ::   :: Decl
+
+jdecl {{ tex decl }}                           :: 'jdecl_' ::=     {{ com Top-level function }}
+  | function f ( x : t ) { e }  ::   :: Fun
+
+
+e :: 'e_' ::=                                                    {{ com Term }}
+  | x                              ::   :: Var                 {{ com Variable }}
+  | N                              ::   :: Arith               {{ com Literal }}
+  | BL                              ::   :: Bool                {{ com Bool }}
+  | e1 + e2                        ::   :: Add                 {{ com Add }}
+  | e1 - e2                        ::   :: Sub                 {{ com Sub }}
+  | e1 * e2                        ::   :: Mult                {{ com Mult }}
+  | e1 / e2                        ::   :: Div                 {{ com Division }}
+  | e1 == e2                       ::   :: Eq                  {{ com Equality }}
+  | e1 < e2                        ::   :: Lt                  {{ com Comparison }}
+  | e1 && e2                        ::   :: And                  {{ com And }}
+  | e1 || e2                        ::   :: Or                  {{ com Or }}
+  | if e1 then e2 else e3          ::   :: If                  {{ com Conditional }}
+  | var x = e1 ; e2                 ::   :: Decl                {{ com Local Def }}
+  | e1 e2                 ::   :: Call                {{ com Call }}
+
+
+
+v :: 'v_' ::=                                          {{ com Value }}
+  | N                             ::   :: Arith      {{ com Literal }}
+  | BL                             ::   :: Bool       {{ com Bool }}
+
+t :: 't_' ::=                                              {{ com Type }}
+  | nat                           ::   :: Arith          {{ com Arith }}
+  | bool                          ::   :: Bool           {{ com Bool }}
+
+%%% Terminals
+terminals :: 'terminals_' ::=
+  | N        ::  :: Arith      {{ tex \mathbb{N} }}
+  | S        ::  :: String      {{ tex \mathbb{S} }}
+  | BL        ::  :: Bool       {{ tex \mathbb{B} }}
+  | int        ::  :: int       {{ tex \mathsf{int} }}
+  | bool        ::  :: bool       {{ tex \mathsf{bool} }}
+  | Int        ::  :: int2       {{ tex \mathsf{Int} }}
+  | Bool        ::  :: bool2       {{ tex \mathsf{Bool} }}
+  | String        ::  :: String2       {{ tex \mathsf{String} }}
+  | /        ::  :: Div       {{ tex \div }}
+  | *        ::  :: Time       {{ tex \times }}
+  | \        ::  :: lambda    {{ tex \lambda }}
+  | --        ::  :: rem    {{ tex \,\backslash\, }}
+  | &&        ::  :: and    {{ tex \,\&\&\, }}
+  | ||        ::  :: or    {{ tex \,||\, }}
+  | blam       ::  :: blam        {{ tex \Lambda }}
+  | top       ::  :: Top        {{ tex \top }}
+  | ,,       ::  :: Merge        {{ tex \,,,\, }}
+  | **       ::  :: Dis        {{ tex * }}
+  | ->       ::  :: to        {{ tex \rightarrow }}
+  | forall       ::  :: forall        {{ tex \forall }}
+  | &       ::  :: And        {{ tex \,\&\, }}
+  | ]        ::  :: bracketr  {{ tex \ottsym{]} \, }}
+  | [        ::  :: bracketl  {{ tex \, \ottsym{[} }}
+
+subrules
+v <:: e

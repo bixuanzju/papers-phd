@@ -1,0 +1,268 @@
+We thank the reviewers for their comments.
+
+Most reviewers seem to be confused by the concept of inheritance in our paper.
+We believe there is a established standard of what is inheritance in the
+literature, that is, the denotational model of inheritance proposed by Cook in
+his thesis: "Inheritance is an incremental modification mechanism in the
+presence of late-bound self-reference". We understand the confusion as the word
+"inheritance" is overloaded too much. We agree that we should clear the
+confusion up front in the paper.
+
+Second, most reviewers seems to be unhappy with our little contribution to the
+theoretical parts of Fi, which we didn't claim to have. As is stated clearly in
+the paper, what we focus here is to "put these ideas into practice", notably,
+the area of extensible designs, which is an important application domain, and
+which are difficult to solve in mainstream OO languages. We offer a simple and
+elegant language-based solution. Previous works focus on the theoretical parts,
+but they didn't consider applications as thoroughly as we have, neither did they
+realize the connections between disjoint intersection types from FP world and
+safe delegation-based programming from OO world.
+
+Third, SEDEL is a purely functional OO language. It certainly lacks realistic
+features such as mutable state, private/public methods. These are all
+acknowledged in the paper (Sec. 9), and we are interested to investigate in that
+regard. Even that, SEDEL has already shown remarkably expressiveness power that
+solves a number of difficult design problems. We believe the approach described
+here sheds some light in the study of modularity and extensible designs.
+
+Forth, SEDEL has a more general notion of the self-reference. In lots of work on
+typing the self-reference, people expect this to be the type of the object
+itself (the so-called "This" type). What we propose here is something different
+where we can choose any type for the self-reference. In principle we could
+choose "This" too.
+
+
+==================
+Reviewer A
+==================
+
+> First of all, it seems that there are very few extensions with respect to the
+> typed core language $F_i$ to be a paper on its own. In fact, there are only
+> the desugaring of traits (Sec. 6.2) and some modifications to the subtyping
+> system (Sec. 7).
+
+We never claim that this paper is about extensions of Fi! We *clearly*
+state *5 contributions* at the end of our introduction and none of them
+says anything about extensions to Fi.
+
+With all due respect for the reviewer, this review is non-constructive. It appears to
+expect some extensions to Fi (which he do not claim anywhere), and
+simply ignores the 5 contributions that are stated in the
+introduction. Therefore, we end up not having any useful information
+on how to improve the work from this review.
+
+The reviewer could at least go through the contributions and say
+something (positive or negative) about those!
+
+> Without presenting the complete subtyping system together with its extensions
+> it is impossible to understand which are the changes and their consequences.
+
+As acknowledged by us, the type system, subtyping as well as the
+complete meta-theory are presented in previous work (Alpuim et
+al. 2017) There are no fundamental changes at all. All we add is some
+syntactic sugar (covered in Section 6) and standard constructs to
+create a larger language, such as declarations, programs, primitive
+types...  All of which quite standard and often ommitted from
+formalizations.  We use the same set of typing/subtyping rules in Fi,
+plus an additional rule which is shown in Sec. 7. SEDEL enjoys the
+same properties as found in Fi. As we emphasized in the paper, the
+theoretical parts of Fi are not a contribution of this paper.
+
+==================
+Reviewer B
+==================
+
+> p1.30-40: When you imply that subclasses do not need to create subtypes, the
+> question immediately arises how a subclass can inherit a method ...
+
+See "A Denotational Semantics of Inheritance and its Correctness " paper,
+especially on late binding and self-reference. This is not "some extra tricks",
+but a formal denotational model of inheritance. You can find more on typing for
+inheritance in Cook's thesis.
+
+
+> p2.2, 'inheritance .. a relation on objects': Well, (Cook et al 1989)
+> considers 'inheritance' to be a relationship that creates a ...
+
+What we mean is "object inheritance" in Cook's paper (they also have "class
+inheritance"), that is, to construct objects incrementally. If this is agreed
+(since SEDEL has no classes, and is object-centered), then inheritance is really
+a relation on objects. And the way we encode traits is exactly the way
+inheritance is modelled, that is, by fixed-point semantics.
+
+> p4.23, 'inherit code without creating any subtype relation': How would C++
+> private inheritance fail to do this? I assume you won't be satisfied ...
+
+In C++, a derived class from private inheritance is not a subtype of the base
+class. In that sense, this is like what we wanted here. But private inheritance
+also imply that all public and protected members of the base become *private*
+members of the derived. Now this is not what we wanted. There are situations
+where we still want to be able to access those members. In that sense, C++
+private inheritance does not suit our purpose.
+
+
+> p4.37: It would of course be near-trivial to define the Java override rules
+> such that contravariant method argument types are allowed, but I think ...
+
+We didn't say it breaks the soundness of the type system. What we do
+say is that it is a missing feature in Java, and is required, as we
+show, by extensible designs.
+
+> p6.33: You could give a tiny hint about what you'd like 'new x with y' to do.
+> It doesn't make a lot of sense to say that it isn't supported if it is ...
+
+Perhaps we shouldn't have written that code. The point is that there's
+no easy way to build a value with type A with B in scala when A or B
+are not statically known. In SEDEL the merge operator allows us to do
+this.
+
+
+> p8.12: Is the 'Point' type going to be an inherent property of the new 'point'
+> object, or is it just going to be the type of the 'new' expression? ...
+
+First of all, there is no truly "typeless" objects. SEDEL is explictly typed,
+every trait has a type. "Point" is just an alias for the record type defined
+before, and it is the type of the "new" expression. Yes, it is useful, as this
+is to specify the *intended* type of the object and the self-reference!
+
+> p9.37: If trait composition conflicts are checked by the type checker at the
+> expression where the traits are composed, composition of traits cannot ...
+
+SEDEL is explicitly typed, each trait has a precisely known type. If the
+"color_point" trait is typed as "Point", then it doesn't have "color" member.
+You would need to define another type, say "ColorPoint" with a "color" member,
+and another type "SportsCar" with a "color" member, then composing these two
+traits results in a conflict.
+
+
+> p10.9: It is not obvious how it would have eliminated the conflict if the
+> 'radius' fields in 'circle' and in 'asOval' had had different types ...
+
+Then it doesn't have conflict at all, they can coexist nicely. We allow the same
+field names to coexist, as along as their types are *disjoint*. We suggest
+taking a look at (Alpuim et al. 2017) to have a better understanding of what
+constitutes a conflict (or non-disjointness in their jargon).
+
+
+> p10.31: So you can have first-class traits, nice! It's not obvious, however,
+> what you mean by saying that 'norm' is "parameterized"; isn't it more
+> reasonable to say that it's a first class value, and it happens to be received
+> as an actual argument in this case, and hence it's accessed using the formal
+> parameter 'norm'?
+
+By "parameterized" we mean that the implementation of trait "norm" is not
+statically known. Still we can combine it with statically known traits such as
+"circleFns2" to form a new trait. After desugaring, every thing is a first class
+values, but the point is that traditional OO languages wouldn't allow you to do
+this.
+
+
+> p12.43, 'ExtExp should be a supertype of Exp': Note that these types are
+> essentially function types (they are single-method interfaces ...
+
+The reason we define ExtExp and Exp is that we want to have *first-class object
+values*. To do that in Java for example, you would need to crate a class that
+contains a single method called "accept", then you lose extensibility, see p12,
+last paragraph.
+
+
+>       A <: {l: A_1->B_1 } & {l: A_2->B_2}
+>       -----------------------------------
+>       A <: {l: A_1 | A_2 -> B_1 & B_2}
+
+We think the reviewer is confused with the subtyping of intersection types and
+subtyping of union types.
+
+The rule proposed is unsound! It allows the following subtyping judgment:
+
+{l : Int -> String} & {l : Bool -> Char} <: {l : Int | Bool -> String & Char}
+
+We can understand the situation better by writing the coercion function from
+{l : Int -> String} & {l : Bool -> Char} to {l : Int | Bool -> String & Char}:
+
+Suppose we have a function f1 :: Int -> String, and f2 :: Bool -> Char, how can
+we make a function of type Int | Bool -> String & Char? Something like (in
+Haskell syntax):
+
+\f :: Int | Bool ->
+  case f of
+    x :: Int   -> f1 x    -- x is of type Int, the return type should be (String, Char), but we can only make a value of String
+    y :: Bool  -> f2 y    -- y is of type Bool, the return type should be (String, Char), but we can only make a value of Char
+
+There is no way to write such coercion!
+
+For union subtyping, We suggest "Elaborating Intersection and Union Types" by
+Joshua Dunfield.
+
+==================
+Reviewer C
+==================
+
+> One concern with your example in 2.2 If the method m had type () -> A rather
+> than A -> A, then the merge of C[A] and C[B] would not work as you would have
+> variants of m with types () -> a and () -> B, which will not live happily in the
+> same object
+
+They do live happily in the same object in SEDEL as long as A and B are
+disjoint. See more on function disjointness in (Oliveira et al. 2016).
+In fact this feature is essential for composing Object Algebras, and
+is related to the limitation pointed out in Section 2.2.
+
+> The disjoint type and disjoint polymorphism seem to be the key ideas here that
+> lead to a powerful extension over other languages. The example of modeling
+> Object Algebras is key here, particularly the use of the merge operator for
+> building objects out of traits. However, you don't mention the equivalent of
+> private/protected methods. Do those make a difference as they may not be visible
+> to the merge operator? Having a duplicate method that is protected can disrupt a
+> public method.
+
+No. "protected" and "private" methods never give rise to conflicts
+(even if they have the same names). So the merge operator only really
+cares about the public interfaces.
+
+Importantly, information hiding is achieved by different means in SEDEL. We do
+not actually use private/protected as other languages, but we can
+simulate those.
+
+For example, for protected methods, in Java you may write:
+
+class A {
+   public Int foo() {return bar();}
+   protected Int bar() {...}
+}
+
+class B extends A {
+   public Int m() {return bar();}
+}
+
+...
+B x = new B();
+...
+
+In SEDEL you accomplish the same by:
+
+// public interfaces
+type A = {foo : () -> Int}
+type B = A & {m : () -> Int}
+
+trait a() {self : {bar : () -> Int} => // self requires a bar
+   def foo() = self.bar()
+   def bar() = ...
+}
+
+trait b() inherits a {self :  {bar : () -> Int} =>
+   def m() = self.bar() // bar is inherited and visible here
+}
+
+...
+new[B] b() // no bar is visible here!
+...
+
+For private methods, SEDEL actually supports a syntax (which we did not present in the
+paper) that allows us to completely hide methods:
+
+// the syntax ": A" next specifies the "public" type of the trait
+trait a() : A {self : {bar : () -> Int} =>
+   def foo() = self.bar()
+   def bar() = ...  // bar is only visible inside trait a, so it is effectively private
+}

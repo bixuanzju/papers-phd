@@ -1,0 +1,287 @@
+\section{Introduction}
+\label{sec:intro}
+
+Mainstream statically-typed Object-Oriented Programming (OOP) languages (such as Java,
+C++, C\# or Scala) all use a similar programming model based on
+classes. This programming model has its roots on the
+origins of OOP in the 1960s in the Simula language~\citep{dahl1967simula}.
+We will refer to this model as the \emph{covariant model} for the
+remainder of this paper, because in this model inheritance and
+subtyping vary in the same way. More concretely
+the following is expected in the covariant model:
+
+\begin{itemize}
+
+\item {\bf Extensions always produce subtypes:} In the covariant model, when a
+subclass \emph{extends} a class it automatically becomes a
+\emph{subtype} of the superclass.
+
+\item{\bf Inheritance and subtyping go along together:}
+Class extension does two things at once: it inherits code from the
+superclass; and it creates a subtype.
+
+\end{itemize}
+
+The covariant model has been successfully used for over 50 years,
+so it clearly has demonstrated its value in practice.
+Part of this success can probably be attributed
+to its relative simplicity. In particular, programmers do not have to think carefully
+about the difference between subtyping and inheritance (indeed many
+programmers confuse the two concepts).
+
+Nevertheless the study of the theoretical foundations of OOP has taught us that
+the story is not quite so simple. Since the earliest works on the theory of OOP
+and subtyping, we have known that the covariant view of objects is somewhat
+simplified. Already in \citeauthor{cardelli1984semantics}'s earliest work on
+the theoretic foundations of OOP~\citep{cardelli1984semantics}, we knew that functions do not behave in a
+strictly covariant way. However it was only until \citeauthor{cook1989inheritance}'s
+famous paper~\citeyear{cook1989inheritance} on ``\emph{Inheritance is not Subtyping}'' that the issues were
+discussed in more detail. As \citeauthor{cook1989inheritance} argued inheritance and subtyping are
+different relations: subtyping being a relation on types and inheritance being a
+relation on objects. In the covariant model the subtype relation is based on the
+inheritance hierarchy. This works very well if extensions produce subtypes.
+However, as \citeauthor{cook1989inheritance}'s work famously demonstrated this is not always the
+case. The essential implication of this is that the covariant model cannot
+express well programs where inheritance and subtyping do not go along together.
+Following their observations about inheritance and subtyping, \citeauthor{cook1989inheritance}
+suggest a more general and flexible programming model (which we call the
+\emph{flexible model}) with the following properties:
+
+\begin{itemize}
+
+\item {\bf Inheritance and subtyping should be decoupled:}
+That is, there should be different mechanisms for class inheritance
+and class/interface subtyping.
+
+\item {\bf Extensions do not always produce subtypes:}
+There are cases where classes can inherit from other classes without
+producing subtypes.
+
+\end{itemize}
+
+
+\begin{comment}
+Cardelli's work on calculi for OOP has shown, for example, that
+functions are not strictly covariant.  A function of type $A \to B$ is
+a subtype of another function $C \to D$ when $B$ is a subtype of $D$
+and $A$ is a \emph{supertype} of $C$. This means, for example that a
+function of type $Cat \to Int$ \emph{cannot not be subtype} of a
+function with type $Animal \to Int$ (assuming that $Cat$ is a subtype
+of $Animal$). In fact, only the opposite can
+happen: $Animal \to Int$ can be a subtype of $Cat \to Int$.  This is
+at odds with the covariant view. Most mainstream OOP languages, such as Java or C\#, address this
+disturbance of the covariant view by making methods \emph{invariant} on
+their argument types. In other words, if a class $A$ with method $m$
+extends a class $B$ with method $m$, then $A.m$ can only override
+$B.m$ if the parameters types in both method signatures are \emph{exactly
+the same}. Thus mainstream OOP languages restrict the natural subtyping of
+functions. Various other issues related to covariance are known.
+For example...
+
+Cook et al.'s work on ``\emph{Inheritance is not Subtyping}''~\cite{}
+is another example of how the theory of  OOP languages contradicts
+the simple covariant model. As Cook et al. argued inheritance and
+subtyping are different relations: subtyping being a relation on types
+and inheritance being a relation on objects. In the covariant model
+the subtype relation is based on the inheritance hierarchy. This
+works very well if extensions produce
+subtypes. However, as Cook et al.'s work famously demonstrated
+this is not always the case. The essential implication of this is that
+the covariant model cannot express programs that do not follow the
+covariant view of objects well. Following their observations about
+inheritance and subtyping, Cook et al. suggest a more general and
+flexible programming model (which we call the \emph{flexible model}) with the following properties:
+
+\begin{itemize}
+
+\item {\bf Inheritance and subtyping should be decoupled:}
+That is, there should be different mechanisms for class inheritance
+and class/interface subtyping.
+
+\item {\bf Extensions do not always produce subtypes:}
+There are cases where classes can inherit from other classes without
+producing subtypes.
+
+\end{itemize}
+
+\end{comment}
+
+Despite being proposed almost 30 years ago, and one of the most famous papers in
+OOP, \citeauthor{cook1989inheritance}'s paper has not had much impact on the design of mainstream OOP
+languages (although it has influenced the design of several academic
+languages~\cite{america1991designing,graver1989type,chambers1992object,bruce1995polytoil}).
+%Certainly this is not because
+%researchers or designer of OOP language are unaware of the subtleties
+%of covariance and contravariance. Indeed over the years, and for other
+%reasons various features have been added to programming languages to
+We believe that there are two primary reasons for the lack of adoption
+of their model.  Firstly, the mental programming model is not
+as simple as the covariant model. In the flexible model programmers have to
+think more carefully on whether extensions produce subtypes or not,
+for example.  Thus, it is crucial for programmers to understand the
+difference between subtyping and inheritance.
+Secondly, and perhaps more importantly, there are not many compelling applications in
+the literature where the need for a more flexible OOP model is
+necessary. Thus language designers may argue that the costs outweigh
+the benefits, and may decide to stick instead to the covariant
+model, which is simple, and well-understood by programmers.
+%Indeed a famous instance of this is the design of DART
+
+This paper has three primary goals. The first goal is to argue that the
+covariant model significantly restricts statically-typed OOP in terms of
+modularity and reuse for important practical applications. The second goal is to
+identify additional desirable features that improve flexibility of OOP and are
+needed in practice. In particular we argue that supporting a more \emph{dynamic}
+form of inheritance (where concrete implementations of the inherited code are
+possibly unknown) is highly desirable in practice. Thus we are naturally led to
+a OO language design using \emph{delegation} (or \emph{dynamic
+  inheritance})~\cite{ungar1988self,chambers1992object}. Finally, we present
+\name\footnote{\name stands for: {\bf S}afe and {\bf E}xpressive {\bf
+    DEL}egation}: a purely functional OO language that puts these ideas into
+practice using a polymorphic structural type system based on \emph{disjoint
+  intersection types}~\cite{oliveira2016disjoint} and \emph{disjoint
+  polymorphism}~\cite{alpuimdisjoint}. The choice of structural typing is due to
+its simplicity, but we think similar ideas should also work in a nominal type
+system.
+
+Regarding the first goal, we show that the inflexibility of type systems of
+mainstream statically-typed OOP languages is problematic for \emph{extensible
+  designs}. There has been a remarkable number of works aimed at improving
+support for extensibility in programming languages
+~\cite{Prehofer97,Tarr99ndegrees,Harrison93subject,McDirmid01Jiazzi,Aracic06CaesarJ,Smaragdakis98mixin,nystrom2006j,togersen:2004,Zenger-Odersky2005,oliveira09modular,oliveira2012extensibility}.
+Some of the more recent work on extensibility is focused on design patterns such
+as Extensible Visitors~\cite{togersen:2004,oliveira09modular} or Object Algebras
+\cite{oliveira2012extensibility}. Although such design patterns give practical
+benefits in terms of extensibility, they also expose limitations in existing
+mainstream OOP languages. In particular there are two main issues:
+
+\begin{enumerate}
+
+\item {\bf Visitor/Object-Algebra extensions produce supertypes:}
+  Since in the covariant model extensions always produce subtypes, it
+  is very hard to correctly express the subtyping relations between
+  Visitor and Object Algebra extensions and the original types.
+
+\item {\bf Object Algebra combinators require a very flexible form of
+    dynamic inheritance:} As shown by \citet{oliveira2013feature,rendel14attributes}, Object Algebra
+  combinators, which allow a very flexible form of composition for
+  Object Algebras, requires features not available in languages like
+  Java or Scala.
+
+\end{enumerate}
+
+It is clear that an obvious way to solve the first issue is to move away from
+the covariant model, and this is precisely what \name does. For the second
+issue, \citet{oliveira2013feature,rendel14attributes} do show how to encode
+Object Algebra combinators in Scala. However, this requires the use of low-level
+(type-unsafe) reflection techniques, such as dynamic proxies, reflection or
+other forms of meta-programming. Better language support is desirable. \name
+does this by embracing delegation, and having a powerful polymorphic type system
+with intersection types and disjoint polymorphism. \name's type system is
+capable of statically type checking the code for delegation-based Object Algebra
+combinators and their uses, while at the same time ensuring that the composition
+is \emph{conflict-free}. The mechanism that enables this is called
+\emph{dynamically composable traits}, since the model is quite close to
+traits~\cite{scharli2003traits}, but based on dynamic inheritance.
+
+The theoretical foundations of \name are grounded on the work by
+\citet{oliveira2016disjoint} on disjoint intersection types, and the work by
+\citet{alpuimdisjoint} on disjoint polymorphism. They develop core calculi that supports an
+expressive form of \emph{intersection
+  types}~\cite{coppo1981functional,pottinger1980type} with a \emph{merge
+  construct}~\cite{dunfield2014elaborating}, while ensuring
+type-safety and coherence. Since \name is built on top of disjoint
+intersection types and polymorphism, it inherits those properties for
+free. The coherence property ensures that the semantics of
+\name is unambiguous. In particular this property is useful to ensure that
+programs using multiple dynamic inheritance are free of conflicts/ambiguities
+(even when the types of the object parts being composed are not statically
+know).
+
+This paper shows how dynamically composable traits
+and OO mechanisms for delegation-based programming can be built on top
+of a calculus with disjoint intersection types and polymorphism.
+In essence, \name's subtyping is modelled with
+disjoint intersection types, and inheritance is modelled with the merge
+construct.
+
+\begin{comment}
+However
+\citeauthor{oliveira2016disjoint} and \citeauthor{alpuimdisjoint}
+ do not show how to build high-level OOP constructs for
+delegation-based programming, discuss the applications to extensible designs, or
+provide a language implementation and conduct case studies to evaluate a
+language design. What their work does is to develop core calculi that support an
+expressive form of \emph{intersection
+  types}~\cite{coppo1981functional,pottinger1980type} with a \emph{merge
+  construct}~\cite{dunfield2014elaborating}. In \name subtyping is modelled with
+disjoint intersection types, and inheritance is modelled with the merge
+construct. \name inherits the key properties of these calculi, which are
+type-safety and coherence.
+\end{comment}
+
+
+\begin{comment}
+The
+novelty of the work in this paper is a three-fold. Firstly we show how
+to develop and implement a statically typed, delegation-based OOP
+source language on top of core language constructs provided by
+disjoint intersection types. Secondly we illustrate the applications
+of those high-level constructs to solve issues that show up in
+extensibility designs. Finally, we provide a case study on
+modularization of language components.
+\end{comment}
+
+In summary the contributions of this paper are:
+
+\begin{itemize}
+
+\item {\bf The design of \name}: We present a language design for a polymorphic,
+  statically-typed and delegation-based programming language. In this design
+  inheritance and subtyping are separated, and a powerful form of conflict-free
+  multiple dynamic inheritance is supported.
+
+\item {\bf Improved variants of extensible designs:} We present
+  improved variants of \emph{Object
+    Algebras} and \emph{Extensible Visitors} in \name.
+
+\item {\bf A practical example where ``Inheritance is not Subtyping'' matters:}
+  This paper shows that extensible Object-Algebras/Visitors suffer from the
+  ``inheritance is not subtyping'' problem. We think this is a
+  compelling application where distinguishing inheritance from
+  subtyping is important.
+
+\item {\bf Elaboration of dynamically composable traits into disjoint
+    intersection types/polymorphism:} We show that, with a simple syntax directed layer of
+  sugar, the high-level OOP abstractions of \name can be translated into a
+  calculus with disjoint intersection types and polymorphism. The elaboration is
+  based on the work by \citet{cook1989denotational} on the denotational semantics of
+  inheritance.
+
+\item {\bf Implementation and modularization case study:} \name is implemented
+  and available online. To evaluate \name in terms of its support for more
+  modular design we conduct a case study, based on \citeauthor{poplcook}'s undergraduate
+  Programming Languages book~\cite{poplcook}, where the features of a small
+  subset of a JavaScript-like language are modularized using \name's improved
+  support for Object Algebras\footnote{{\bf Note to reviewers:} Due to the
+    anonymous submission process, all code is submitted as supplementary material.}.
+
+\end{itemize}
+
+\begin{comment}
+
+\paragraph{\bf JavaScript-style Mixin-Based Programming}
+A common programming pattern in JavaScript is based on a variant of
+Mixins. This programming style is very flexible and enables forms
+of reuse not usually available in more statically typed languages like Java.
+However, mixins in JavaScript fundamentally rely on an \emph{object-level composition}
+operator for inheritance~\cite{}. This requires a very dynamic form of
+inheritance/delegation that is not available in most class-based
+statically-typed OO languages. Ideally the essence of such
+form of mixins should be capturable in statically-typed languages.
+Languages such as TypeScript do attempt to provide better static
+type-checking support for those patterns. However, as recently illustrated
+by the work of \citet{alpuimdisjoint}, there are several issues with such an
+approach, including type-unsoundness!
+
+\end{comment}

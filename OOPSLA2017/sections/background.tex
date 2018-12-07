@@ -1,0 +1,214 @@
+
+\section{Background}
+\label{sec:background}
+
+This section recaps the terminologies~\cite{oliveira2016disjoint,
+  alpuimdisjoint} that are used throughout the paper in case the readers are not
+familiar with the type system (\bname with some extensions) behind \name. In
+particular, we show that \name supports (disjoint) intersection types, the merge
+operator, parametric polymorphism and extensible records.
+
+\subsection{(Disjoint) Intersection Types and the Merge Operator}
+\label{sec:intersection}
+
+Intersection types date back as early as Coppo et al.'s
+work~\cite{coppo1981functional}. Since then researchers have studied
+intersection types, and some languages have adopted them in one form or another.
+
+In Java, for examples,
+\begin{lstlisting}[language=java]
+  interface AwithB extends A, B {}
+\end{lstlisting}
+introduces a new interface \lstinline$AwithB$ that satisfies the interface of
+both \lstinline{A} and \lstinline{B}. In Scala, given two concrete traits, it is
+possible to use \textit{mixin composition} to create an object that implements
+both traits.
+\begin{lstlisting}[language=scala]
+  trait A
+  trait B
+  val newAB : A with B = new A with B
+\end{lstlisting}
+Scala also allows intersection of type parameters. For example,
+\begin{lstlisting}[language=scala]
+  def merge[A,B] (x: A) (y: B) : A with B = ...
+\end{lstlisting}
+uses the anonymous intersection of two type parameters \lstinline{A} and
+\lstinline{B}.
+
+However, in Scala it is not possible to dynamically compose two objects. For
+example, the following code:
+\begin{lstlisting}[language=scala]
+  // Invalid Scala code:
+  def merge[A,B] (x: A) (y: B) : A with B = x with y
+\end{lstlisting}
+is rejected by the Scala compiler. The problem is that the \lstinline$with$
+construct for Scala expression can only be used to mixin traits or classes, not
+arbitrary objects. This limitation essentially puts intersection types in Scala
+in a second-class status. Although \lstinline{merge} returns an intersection
+type, it is hard to build values with such types.
+
+To address the limitation of intersection types in language like Scala, \name
+takes the approach of a particular formulation, where intersection types are
+introduced by a \textit{merge operator} (denoted by \lstinline{,,}). As
+~\citet{dunfield2014elaborating} has argued, a merge operator adds considerable
+expressiveness to a calculus. With the merge operator, it is trivial to
+implement the \lstinline{merge} function in \name\footnote{Note that this is not
+  the correct definition in \name, see Section~\ref{sec:polymorphism} for
+  disjoint quantification.}:
+\begin{lstlisting}
+  def merge A B (x: A) (y: B) : A & B = x ,, y
+\end{lstlisting}
+In \name, type variables use capitalized names, while term variables use
+lowercase names. In contrast to Scala's expression-level \lstinline{with}
+construct, the merge operator \lstinline{,,} allows two arbitrary values to be
+merged. The resulting type is an intersection type (\lstinline{A & B} in this
+case).
+
+\subsubsection{Incoherence and Disjointness}
+
+Unfortunately the implicit nature of elimination for intersection types built
+with a merge operator can lead to incoherence. For a language to be coherent, it
+is required that any \textit{valid program} has exactly one
+meaning~\cite{reynolds1991coherence}. The naive addition of a merge operator
+would allow values of overlapping types to be merged. For example, what should
+be the result of the following program, which asks for an integer out of a merge
+of two integers:
+\begin{lstlisting}
+  (1 ,, 2) : Int
+\end{lstlisting}
+Should the result be 1 or 2?
+
+Following the work of~\citet{oliveira2016disjoint}, in \name, two types can be
+merged if and only if they are \textit{disjoint}. Disjointness, in its simplest
+form, means that the set of values of both types are disjoint. With the
+disjointness requirement, \lstinline{1 ,, 2} is rejected by the type system,
+while \lstinline{1 ,, 'c'} is accepted.
+
+As for the above \lstinline{merge} function, since it is a polymorphic function,
+it is unknown whether the instantiated types of \lstinline{A} and \lstinline{B}
+are disjoint or not. It is still possible that incoherence may occur, as shown
+in the following program:
+\begin{lstlisting}
+  (merge Int Int 1 2) : Int
+\end{lstlisting}
+To avoid incoherence in such circumstances, \name also employs the notion of
+disjoint quantification, as explained in Section~\ref{sec:polymorphism}.
+
+\subsubsection{Parametric Polymorphism and Intersection Types}
+\label{sec:polymorphism}
+
+Inspired by the work of~\citet{alpuimdisjoint}, \name uses an extension to
+universal quantification called \textit{disjoint quantification}, where a type
+variable can be constrained so that it is disjoint with a given type. With
+disjoint quantification, the correct version of \lstinline{merge}, which is
+accepted in \name, is written as:
+\begin{lstlisting}
+  def merge A [B * A] (x: A) (y: B) : A & B = x ,, y
+\end{lstlisting}
+
+The only difference with the previous version lies in the declaration of the
+type parameter \lstinline{B}. The notation \lstinline{B * A} means that the type
+variable \lstinline{B} is constrained so that it can only be instantiated with
+any type disjoint to \lstinline{A}. Thus the problematic use of
+\lstinline{merge} as in \lstinline$merge Int Int 1 2$ is rejected because
+\lstinline{Int} is not disjoint with \lstinline{Int}.
+
+
+\subsection{Extensible Records}
+\label{sec:records}
+
+Following~\citet{reynolds1997design} and~\citet{castagna1995calculus}, \name
+leverages intersection types to type extensible records. The idea is that a
+multi-field record can be encoded as merges of single-field records, and
+multi-record types as intersections. Therefore in \name, there are only
+single-field record constructs. As such, record operations in \name can occur on
+\textit{any} type.
+
+\subsubsection{Record Operations}
+
+To illustrate the various operations on records, we consider a record with three
+fields:
+\begin{lstlisting}
+  {open : Int, high : Int, low : Int}
+\end{lstlisting}
+Note that this type is just syntactic sugar for:
+\begin{lstlisting}
+  {open : Int} & {high : Int} & {low : Int}
+\end{lstlisting}
+That is, a multi-field record type is desugared as intersections of single-field
+record types.
+
+\name supports three primitive operations related to records:
+\textit{construction} \textit{selection} and \textit{restriction}.
+\textit{Extension}, described in many other record systems, is delegated to the
+merge operator. Working with records is type-safe: the type system prevents
+accessing a field that does not exist.
+
+\paragraph{Record construction.} The usual notation for constructing records
+\begin{lstlisting}
+  {open = 192, high = 195, low = 189}
+\end{lstlisting}
+is a shorthand for merges of single-field records
+\begin{lstlisting}
+  {open = 192} ,, {high = 195} ,, {low = 189}
+\end{lstlisting}
+
+\paragraph{Record selection.} Fields are extracted using the dot notation. For
+example,
+\begin{lstlisting}
+  {open = 192, high=195, low= 189}.open
+\end{lstlisting}
+selects the value of the field labelled \lstinline{open} from the record. Since
+records are just merges of terms, we can even select a field that is buried deep
+inside a merge, so long as it is present.
+\begin{lstlisting}
+  ({open = 192} ,, 3 ,, {low = 189}).open
+\end{lstlisting}
+
+\jeremy{say something about record restriction}
+
+\paragraph{Record extension} Extension, just like construction, is implemented
+with the merge operator. The following example adds a \lstinline{close} field to
+the record:
+\begin{lstlisting}
+  {open = 192, high=195, low=189} ,, {close = 195}
+\end{lstlisting}
+
+
+\begin{comment}
+\subsubsection{Restriction via Subtyping}
+
+Unlike most record systems, restriction is not a primitive operation in \name.
+Instead, \name uses subtyping for restriction. Combined with disjoint
+quantification, we can encode a \lstinline{remove} function that removes a given
+field from a record:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=RCD_DEF
+\lstinline{remove} takes a value x which contains a record of type
+\lstinline${low : Int}$ as well as some extra information of type \lstinline{B}.
+The disjointness constraint ensures that the value of type \lstinline{B} does
+not contain a record with type \lstinline${low : Int}$. The following examples
+shows removing the \lstinline{low} field:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=RCD_EG
+\end{comment}
+
+
+\subsubsection{Disjointness of Records}
+
+Most record calculi forbid duplicate labels in the declarations of record types.
+Some allow labels coincide but the last field overrides the previous ones.
+Records in \name allow duplicate labels. This is because we adopt a lenient
+approach to record disjointness~\cite{alpuimdisjoint}. Of course records with
+distinct fields are disjoint naturally. \name accepts duplicate labels as long
+as the types of the overlapping fields are disjoint. For example,
+\begin{lstlisting}
+  {open = 192, high = 195, open = true}
+\end{lstlisting}
+is allowed in \name. An interesting question arises when we try to select a
+duplicate label, say \lstinline{open}. What should be the result? Should it be
+192 or \lstinline{true}? Neither choice is satisfying, as with the coherence
+problem for merges. Instead \name rejects such expression, and asks for more
+type information from the context. Thus the following is accepted because there
+is only one \lstinline{open} associated with \lstinline{Int}.
+\begin{lstlisting}
+  {open = 192, high = 195, open = true}.open + 3
+\end{lstlisting}

@@ -1,0 +1,52 @@
+\newcommand{\turns}{\vdash}
+\newcommand{\oftype}{\!:\!}
+\newcommand{\subtype}{<:}
+\newcommand{\commonsuper}{\Uparrow}
+\newcommand{\commonsub}{\Downarrow}
+\newcommand{\disjoint}{*}
+\newcommand{\disjointimpl}{*_\textnormal{i}}
+\newcommand{\disjointax}{*_\textnormal{ax}}
+\newcommand{\subst}[2]{\lbrack #2 := #1 \rbrack~}
+
+\newcommand{\yields}[1]{\highlight{$\; \hookrightarrow #1$}}
+
+\newcommand{\ftv}[1]{\textsf{ftv}(#1)}
+
+\newcommand{\binderspace}{\,}
+\newcommand{\appspace}{\;}
+
+\newcommand{\inter}{\&}
+\newcommand{\union}{|}
+\newcommand{\forr}[2]{\forall #1.\binderspace #2}
+\newcommand{\fordis}[3]{\for {(#1 \disjoint #2)} {#3}}
+\newcommand{\lam}[2]{\lambda #1.\binderspace #2}
+\newcommand{\lamty}[3]{\lam {(#1 \oftype #2)} #3}
+\newcommand{\blam}[2]{\Lambda #1.\binderspace #2}
+\newcommand{\blamdis}[3]{\blam {(#1 \disjoint #2)} #3}
+\newcommand{\mergeop}{,,}
+\newcommand{\app}[2]{#1 \; #2}
+\newcommand{\tapp}[2]{#1 \appspace #2}
+\newcommand{\pair}[2]{(#1, #2)}
+\newcommand{\proj}[2]{{\code{proj}}_{#1} #2}
+\newcommand{\fst}[1]{\app {\code{fst}} {#1}}
+\newcommand{\snd}[1]{\app {\code{snd}} {#1}}
+\newcommand{\recordType}[2]{\{ #1 : #2 \}}
+\newcommand{\recordCon}[2]{\{ #1 = #2 \}}
+
+\newcommand{\true}{\code{True}}
+\newcommand{\tyint}{\code{Int}}
+\newcommand{\tybool}{\code{Bool}}
+\newcommand{\tychar}{\code{Char}}
+\newcommand{\tystring}{\code{String}}
+
+\newcommand{\hltext}[2][gray!40]{\colorbox{#1}{#2}}
+\newcommand{\hl}[2][gray!40]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+\newcommand{\mynotes}[3]{{\color{#2} {\sc #1}: #3}}
+\newcommand\bruno[1]{\mynotes{bruno}{red}{#1}}
+\newcommand\jeremy[1]{\mynotes{jeremy}{blue}{#1}}
+\newcommand\name{{\bf SEDEL}\xspace}
+\newcommand{\bname}{$\mathtt{F}_{i} $\xspace}
+
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%

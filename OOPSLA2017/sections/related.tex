@@ -1,0 +1,344 @@
+\section{Related Work}
+\label{sec:related}
+
+% \bruno{I think (part of) this text can be discussed in here instead:
+
+
+There are multiple flavours of inheritance. To avoid confusion, since the same
+terminology is often used in the literature to mean different things, we use the
+following 3 terms when comparing related work with ours.
+
+\begin{itemize}
+\item{{\bf Static inheritance:}} Static inheritance refers to what the typical
+  model of inheritance in class-based languages. The inheritance model is said
+  to be static because when using class extension, the extended classes are
+  statically known at compile-time.
+\item{{\bf Mutable Inheritance:}} Prototype-based languages allow another model
+  of inheritance, which we call \emph{mutable inheritance}. In this inheritance
+  model, self-references are mutable and changeable at any point.
+\item{{\bf Dynamic Inheritance:}} Dynamic inheritance is a less well-known model
+  which stands in between static and mutable inheritance. Unlike the static
+  inheritance model, with dynamic inheritance objects can inherit from other
+  objects which are not statically known. However, unlike mutable inheritance,
+  the self-reference is not mutable and cannot be arbitrarily changed at
+  run-time.
+\end{itemize}
+
+Figure~\ref{fig:comparision} shows the comparison between \name and various
+similar languages that follow \citeauthor{cook1989inheritance}'s ``Inheritance is not
+Subtyping'' (i.e. the flexible model), as we will explain below.
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+  \begin{tabular}{|l||c|c|c|c|}
+    \hline
+    & \bf{Statically typed} & \bf{Polymorphism} & \bf{Meta-theory} & \bf{Inheritance}  \\
+    \hline
+    \name & \cmark & \cmark & \cmark & Dynamic \\
+    \hline
+    \textsc{Self} & \xmark & \xmark & \xmark & Mutable \\
+    \hline
+    Cecil & \cmark & \cmark & \xmark & Static \\
+    \hline
+    Cook's Modula-3 & \cmark & \xmark & \xmark & Static \\
+    \hline
+    IFJ & \cmark & \xmark & \cmark & Dynamic \\
+    \hline
+    \textsc{Darwin} & \cmark & \xmark & \xmark & Dynamic \\
+    \hline
+  \end{tabular}
+  \end{small}
+  \caption{Comparison between \name and various similar languages that
+  adopt the \emph{flexible model}.}
+  \label{fig:comparision}
+\end{figure}
+
+
+
+% \paragraph{Dynamically-typed Languages with Delegation Mechanism}
+
+% \begin{itemize}
+% \item Clojure Protocols
+%   % http://www.ibm.com/developerworks/library/j-clojure-protocols/
+% \item Ruby mixin
+% \item JS mixin
+% \end{itemize}
+
+% They are all dynamically typed.
+
+
+\paragraph{Delegation-based languages}
+
+\citet{lieberman1986using} is the first to promote the use of prototypes and
+delegation as the mechanism to code sharing between objects. Since then many
+researchers have studied the mechanisms of
+delegation~\cite{wegner1987dimensions,malenfant1995semantic,goldberg1989smalltalk}.
+\textsc{Self}~\cite{ungar1988self} is a dynamically typed, prototype-based
+language with a simple and uniform object model. \textsc{Self}'s inheritance
+model is typical of what we call mutable inheritance, because an object's parent
+slots may be assigned new values at run-time. Mutable inheritance is rather
+unstructured, and oftentimes access to any clashing methods will generate a
+``messageAmbiguous'' error at run-time. Although \name's dynamic inheritance is
+not as powerful as mutable inheritance, its static type system can guarantee
+that no such errors occur at run-time.
+
+There is not much work on statically-typed, delegation-based languages.
+\citet{kniesel1999type} provides a good overview of problems when combining
+delegation with a static type discipline. Cecil~\cite{chambers1992object,
+  chambers1993cecil} is a prototype-based language, where delegation is the
+mechanism for method call and code reuse. Cecil supports a polymorphic static
+type system, although no meta-theory of any kind is given. Its type system is
+able to detect statically when a message might be ambiguously defined as a
+result of multiple inheritance or multiple dispatching. However, one major
+omission of Cecil, which is also one of the interesting features of \name, is
+dynamic inheritance. There are other
+works~\cite{fisher1995delegation,anderson2003can} on delegation in a
+statically-typed setting, but none of them provide means (such as the merge
+construct, disjointness constraints, etc.) that are needed for extensible
+designs.
+
+\citet{cook1989inheritance} were the first to propose a typed model of
+inheritance where subtyping and inheritance are two separate concepts. In
+particular, they introduce the notion of \textit{type inheritance} and show that
+inherited objects have inherited types, not subtypes. An interesting aspect of
+their calculus is the \textbf{with} construct, used to join two records. This is
+somewhat similar to our merge construct. However two major differences are worth
+pointing out: 1) the \textbf{with} construct operates only on records; and 2) it
+is a biased operator, favoring values from its right argument. This biased
+operator is good for modelling mixins, but not traits. The
+\textbf{with} construct seems to be unable to merge two arbitrary (and possible
+polymorphic) values, since this seems to require something like
+\emph{row polymorphism}~\cite{wand1987complete,wand1989type}, which is not available in their language.
+The \textit{onion} construct in the Big Bang
+language~\cite{palmer2015building,menon2012big} has a similar bias problem -- it is a
+left-associative operator which gives rightmost precedence to one
+implementation when conflicts exist.
+
+\paragraph{Mixin-based inheritance}
+
+Mixins have become very popular in many OO languages
+~\cite{flatt1998classes,bono1999core, ancona2003jam}. \citeauthor{bracha1990mixin}'s
+seminal paper~\citep{bracha1990mixin} extends Modula-3 with mixins. Mixins are subclasses parameterized
+over a superclass, and used to produce a variety of classes with the same
+functionality and behaviour. Mixin-based inheritance requires that mixins be
+composed linearly, and as such, conflicts are resolved implicitly (mixins
+appearing later overwrite all the identically named features of earlier mixins).
+In comparison, the trait model in \name requires conflicts be resolved
+explicitly. We want to emphasize that this conflict detection is essential in
+expressing composition operators for Object Algebras, without running
+into ambiguities.
+
+
+\paragraph{Trait-based inheritance}
+
+The seminar paper by \citet{scharli2003traits} introduced the ideas behind
+traits, where they also documented an implementation of the trait
+mechanism in a dynamically typed version of Smalltalk. Since then many
+formalizations of traits have been
+proposed~\cite{scharli2003traitsformal,ducasse2006traits,bettini2010prototypical}.
+For example \citet{fisher2004typed} presented a statically-typed calculus that
+models traits. Conflict detection is the hallmark of trait-based
+inheritance, compared with mixin-based inheritance. One important difference
+with \name is that those systems support \textit{classes} in addition to traits,
+and consider the interaction between them, whereas \name is 
+delegation based and the mechanism for code reuse is purely traits
+(i.e., there are no classes in \name). The
+deviation from traditional class-based models is not only because of its
+simplicity, but also because we need a very \textit{dynamic} form of
+inheritance, as has been elaborated throughout the paper.
+
+Compared to the traditional trait mode, traits in \name have the following
+differences: 1) traditional traits cannot be instantiated but only composed with
+a class, whereas traits in \name can be instantiated directly; 2) traditional
+traits cannot take constructor parameters whereas ours can; 3) the trait system
+in \name lacks a proper notation of inheritance relationship. For example in the
+traditional trait model, if the same method (i.e., from the same trait) is
+obtained more than once via different paths, there is no conflict. This is not
+the case in \name; and 4) traits in \name support dynamic
+inheritance. 
+%In the
+%traditional trait model, when it comes to inheritance, the traits being
+%inherited must be statically known.
+
+
+
+
+% \citet{flatt1998classes} proposed MIXEDJAVA, an extension to a subset of
+% sequential Java called CLASSICJAVA with mixins. In their model, mixins
+% completely subsume the role of classes (classes are mixins that do not inherit
+% any services). One interesting aspect in their system is that two identically
+% named methods are allowed to coexist, and are resolved at run-time with run-time
+% context information provided by the current \textit{view} of an object. In
+% comparison, conflicts in \name are detected statically, and resolved by the
+% programmers. Like \name, their model also enforces the distinction between
+% implementation inheritance and subtyping.
+
+% \citet{bono1999core} develop an imperative class-based calculus that provides a
+% formal model for both single and mixin inheritance. Objects are represented by
+% records and produced by instantiating classes. In their calculus, the class
+% construct is extensible but not subtypable, while objects are subtypable but not
+% extensible. Like \name, their system has a clean separation between subtyping
+% and inheritance. Also, their type system does not have polymorphism.
+
+% \citet{ancona2003jam} extends the Java language to support mixins, called Jam.
+% Since Jam is an upward-compatible extension of Java 1.0, it is inheritantly a
+% covariant mode. Unlike MIXEDJAVA, mixins can be only instantiated on classes,
+% and there is no notion of mixin composition.
+
+
+\begin{comment}
+
+\begin{itemize}
+
+
+\item ``Object-Oriented Multi-Methods in Cecil''
+
+\item ``Dimensions of Object-Based Language Design''
+
+\item ``On the Semantic Diversity of Delegation-Based Programming Languages''
+
+\item ``Self: The power of simplicity''
+
+\item ``Type-safe delegation for run-time component adaptation''
+
+\item ``A delegation-based object calculus with subtyping''
+
+\item ``Can Addresses be Types? (a case study: objects with delegation)''
+
+\item ``Inheritance is not subtyping''
+
+
+Mixins
+
+\item ``mixin-based inheritance''
+
+\item ``Classes and mixins''
+
+\item ``A core calculus of classes and mixins''
+
+\item ``A core calculus of higher-order mixins and classes''
+
+\item ``Jam—Designing a Java Extension with Mixins''
+
+
+
+\end{itemize}
+
+Do they have polymorphic type systems? Do they support mutable self reference?
+
+\end{comment}
+
+
+\paragraph{Class-based languages with more advanced forms of inheritance}
+
+Incomplete Featherweight Java (IFJ), proposed by \citet{bettini2008type}, is a
+conservative extension of Featherweight Java with incomplete objects. Besides
+standard classes, programmers can also define incomplete classes, whose
+instances are incomplete objects. Incomplete objects can be composed (by object
+composition) with complete objects, yielding new complete objects at run-time,
+while ensuring statically that the composition is type-safe. Incomplete objects
+are quite flexible, and support dynamic inheritance. However, object composition
+in IFJ is quite restrictive, compared to \name, in that it can only compose an
+incomplete object with a complete object. In that regard, and also because IFJ's
+type system is not polymorphic, IFJ is unable to encode composition operators of
+Object Algebras. \citet{kniesel1999type} showed that type-safe integration of
+delegation with subtyping into a class-based model is possible, resulting in the
+\textsc{Darwin} model. In \textsc{Darwin}, the type of the parent object must be
+a declared class and this limits the flexibility of dynamic composition.
+\citeauthor{ostermann2002dynamically}'s delegation
+layers~\citep{ostermann2002dynamically} use delegation for doing dynamic
+composition in a system with virtual classes. This is in contrast with most
+other approaches that use class-based composition, but closer to the dynamic
+composition that we use in \name.
+
+There are many other class-based OO languages that are equipped with more
+advanced forms of
+inheritance~\cite{meyer1987eiffel,buchi2000generic,ostermann2001object}. Most of
+them are heavyweight and are specific to classes. \name is object-centered, more
+lightweight, and is dedicated to express extensible designs in a simpler way.
+
+
+% Eiffel~\cite{meyer1987eiffel} is a class-based language that is based on the
+% identification of classes with types and of inheritance with subtyping. Eiffel
+% supports multiple inheritance, with the restriction that name collisions are
+% considered programming errors, and ambiguities must be resolved explicitly by
+% the programmer (by means of renaming). In this regard, \name is quite like
+% Eiffel. However, the type system in \name is more lenient in that two
+% identically named methods with different signatures can coexist without any
+% problems.
+
+% \citet{kniesel1999type} is the first to show that type-safe integration of
+% delegation with subtyping into a class-based model is possible, resulting in the
+% DARWIN model. In the DARWIN model, the type of the parent object must be a
+% declared class and this limits the flexibility of dynamic composition, whereas
+% in \name, the merge operator can merge/compose any objects. Another difference
+% with \name lies in the conflict resolution, where DARWIN relies on method
+% overriding with the assumption that the author of the overriding method is aware
+% of the effect.
+
+% Generic wrappers~\cite{buchi2000generic} supports aggregating objects at
+% run-time. In their model, once a ``wrappee'' is assigned to a ``wrapper'', the
+% wrappee is fixed. GBETA~\cite{ernst2000gbeta} has some dynamic features that are
+% related to delegation. Like Generic wrappers, parents in GBETA are fixed at
+% run-time.
+
+% \citet{ostermann2001object} proposed compound references (CR) as a abstraction
+% for object references, which provides explicit linguistic support for combining
+% different composition properties on-demand. The model is statically typed, and
+% decouples subtype declaration from implementation reuse.
+
+
+% \citet{ostermann2002dynamically} proposed delegation layers as an approach to
+% decompose a collaboration into layers and compose these layers dynamically at
+% run-time. This combines and generalizes delegation and virtual classes concepts.
+
+% \citet{ostermann2008nominal} compared the nominal and structural subtyping
+% mechanisms. They argue nominal subtyping gives more safety guarantee, whereas
+% structural subtyping is more flexible from a component-based perspective. The
+% type system of \name chooses structural subtyping.
+
+\paragraph{Intersection types, polymorphism and the merge construct}
+
+There is a large body of work on intersection types. Here we only talk about
+work that have direct influences on ours. \citet{dunfield2014elaborating} shows
+significant expressiveness of type systems with intersection types and a merge
+construct. However his calculus lacks coherence. The limitation was addressed
+by~\citet{oliveira2016disjoint}, where they introduced the notion of
+disjointness to ensure coherence. The combination of intersection types, a merge
+construct and parametric polymorphism, while achieving coherence was first
+studied in the \bname calculus~\cite{alpuimdisjoint}, where they proposed the
+notion of disjoint polymorphism. \bname serves as the theoretical foundation of
+\name.
+
+
+\begin{comment}
+
+\begin{itemize}
+
+\item Eiffel
+
+\item ``Delegation by object composition'' (IFJ) and ``Type safe dynamic object
+  delegation in class-based languages''
+
+\item ``Dynamically composable collaborations with delegation layers''
+
+\item ``Generic wrappers''
+
+\item ``Object-Oriented Composition Untangled''
+
+\item ``gbeta - a language with virtual attributes, Block Structure, and Propagating, Dynamic Inheritance''
+
+\item ``Nominal and Structural Subtyping in Component-Based Programming''
+
+\item ``Engineering a programming language: The type and class system of Sather ''
+
+\item ``Big Bang Designing a Statically-Typed Scripting Language''
+
+\item ``Building a Typed Scripting Language''
+
+
+
+\end{itemize}
+
+\end{comment}

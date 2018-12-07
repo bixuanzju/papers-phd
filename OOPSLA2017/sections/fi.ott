@@ -1,0 +1,71 @@
+
+% Formalization of Fi with extensions
+
+
+%%% Syntax
+grammar
+
+%% Declarations
+pgm                                         :: 'pgm_' ::=      {{ com Program }}
+  | decl1 .. decln E                          ::   :: Decl
+
+
+decl                                        :: 'decl_' ::=     {{ com Declaration }}
+  | def f ( x1 : A1 ) .. ( xn : An ) : B = E  ::   :: TermDecl   {{ com Term Declaration }}
+  | type T [ a1 , .. , an ]  = A             ::   :: TypeDecl              {{ com Type Declaration }}
+
+
+E {{ tex e }} :: 'E_' ::=                                                    {{ com Terms }}
+  | ()                              ::   :: Top                 {{ com Top }}
+  | x                              ::   :: Var                 {{ com Variable }}
+  | N                              ::   :: Arith               {{ com Literal }}
+  | BL                              ::   :: Bool                {{ com Bool }}
+  | \ x . E                        ::  :: Lambda               {{ com Abstraction }}
+  | E1 E2                        ::  :: App               {{ com Application }}
+  | E1 ,, E2                        ::  :: Merge               {{ com Merge }}
+  | blam ( a ** A ) . E                       ::  :: BLam               {{ com BLam }}
+  | E A                        ::  :: TApp               {{ com TApp }}
+  | { l = E }                        ::  :: Recd               {{ com Record }}
+  | { l1 = E1 , ... , ln = En }                        ::  :: Recds               {{ com Records }}
+  | { l1 = E1 } ,, ... ,, { ln = En }                        ::  :: Recds2               {{ com Records2 }}
+  | E . l                        ::  :: Proj               {{ com Projection }}
+  | E -- { l : A }                       ::  :: Rem               {{ com Remove }}
+  | let x : A = E1 in E2      :: :: LetBinding {{ com Let binding }}
+  | if E1 then E2 else E3          ::   :: If                  {{ com Conditional }}
+  | E1 + E2                        ::   :: Add                 {{ com Add }}
+  | E1 - E2                        ::   :: Sub                 {{ com Sub }}
+  | E1 * E2                        ::   :: Mult                {{ com Mult }}
+  | E1 / E2                        ::   :: Div                 {{ com Division }}
+  | E1 == E2                       ::   :: Eq                  {{ com Equality }}
+  | E1 /= E2                       ::   :: Neq                  {{ com Neq }}
+  | E1 < E2                        ::   :: Lt                  {{ com Lt }}
+  | E1 > E2                        ::   :: Gt                  {{ com Gt }}
+
+
+
+A, B :: 'T_' ::=                                              {{ com Type }}
+  | top                           ::   :: Top          {{ com Arith }}
+  | Int                          ::   :: Int           {{ com Int }}
+  | Bool                          ::   :: Bool           {{ com Bool }}
+  | Char                          ::   :: Char           {{ com Char }}
+  | String                          ::   :: String           {{ com String }}
+  | A -> B                          ::   :: Arrow           {{ com Arrow }}
+  | A & B                          ::   :: And           {{ com And }}
+  | a                          ::   :: Var           {{ com Var }}
+  | forall ( a ** A ) . B      ::   :: Forall           {{ com Forall }}
+  | { l : A }      ::   :: RecdT           {{ com Record }}
+  | { l1 : A1 , ... , ln : An } :: :: RecdTs  {{ com Records }}
+  | { l1 : A1 } & ... & { ln : An } :: :: RecdTs2  {{ com Records2 }}
+  | T [ B1 , .. , Bn ]   ::   :: TApp    {{ com TApp }}
+
+
+defns
+Jtype :: '' ::=
+
+defn
+A <: B :: :: subtyping :: Sub_ {{ com Subtyping }} by
+
+
+A <: { l : A1 -> B1 } & { l : A2 -> B2 }
+------------------------------------------- :: R
+A <: { l : A1 & A2 -> B1 & B2 }

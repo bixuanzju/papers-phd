@@ -1,0 +1,310 @@
+\section{Case Study: Modularizing Components in a Small Scripting Language}
+
+%This section shows the expressiveness of \name. 
+%We show that features of \name
+%(dynamically composable traits, intersection types, the merge operator,
+%parametric polymorphism and disjoint quantification) enable extensible designs
+%that have been presented in mainstream languages. 
+%In particular, \name addresses
+%limitations of those languages, making the designs significantly
+%simpler. 
+To further illustrate the applicability of \name, we present a case study based
+on the approach to Object Algebras presented in Section~\ref{sec:OA}. The case
+study modularizes several orthogonal features of a small
+JavaScript-like language, used by~\citet{poplcook} in his textbook
+on Programming Languages. The case study illustrates how various features can be
+modularly developed and composed to assemble a complete language with
+various operations baked in.
+
+
+% The second is a case study on embedding a higher-order
+% domain-specific language (simply-typed lambda-calculus with conditional and
+% constants) with a selectable evaluation order: CBN and CBV. The outcome is an
+% evaluator parameterized over the evaluation order. This case study shows that
+% features of \name are sufficient for such a seemingly impossible task, which
+% usually require fancy types (in particular, GADTs).
+
+\subsection{Overview}
+
+A \textit{feature} is an increment in program
+functionality~\citep{zave1999faq,lopez2005evaluating}. Figure~\ref{fig:mini-js}
+presents the syntax of the expressions, values and types provided by the
+features; each line is annotated with the corresponding feature. Starting from a
+simple arithmetic language, we gradually introduce new features and combine them
+with some of the existing features to form various languages. Below we briefly
+explain what constitutes each feature:
+\begin{itemize}
+\item $\mathit{natF}$ and $\mathit{boolF}$ contain, among others, literals,
+  additions, if expressions.
+% \item $\mathit{boolF}$ introduces Boolean values and if expressions.
+\item $\mathit{compF}$ and $\mathit{logicF}$ introduce comparisons between
+  numbers and logical conjunction/disjunction.
+% \item  introduces logical conjunction and disjunction.
+\item $\mathit{varF}$ introduces local variables and variable declarations.
+\item $\mathit{funcF}$ introduces top-level functions and function calls.
+\end{itemize}
+\noindent Besides, each feature is packed with 3 operations: evaluator, pretty
+printer, and type checker.
+
+\begin{figure}[t]
+\centering
+\begin{small}
+\begin{tabular}{lrclr}
+  Expressions & $e$ & ::= & $[[N]] \mid [[e1 + e2]] \mid [[e1 - e2]] \mid [[e1 * e2]] \mid [[e1 / e2]] $ & $\mathit{natF}$ \\
+              && $\mid$ & $[[BL]] \mid [[if e1 then e2 else e3]] $ & $\mathit{boolF}$\\
+              && $\mid$ & $ [[e1 == e2]] \mid [[e1 < e2]] $ & $\mathit{compF}$ \\
+              && $\mid$ & $ [[e1 && e2]] \mid [[e1 || e2]] $ & $\mathit{logicF}$ \\
+              && $\mid$ & $[[x]] \mid [[var x = e1 ; e2]]$  &  $\mathit{varF}$ \\
+              && $\mid$ & $[[e1 e2]]$ & $\mathit{funcF}$ \\
+  Programs & $[[jpgm]]$ & ::= & $[[jdecl1 .. jdecln e]]$ &  $\mathit{funcF}$ \\
+  Functions & $[[jdecl]]$ & ::= & $[[function f ( x : t ) { e }]]$ &  $\mathit{funcF}$ \\
+  Values & $v$ & ::= & $[[N]] \mid [[BL]]$ & \\
+  Types  & $t$ & ::= & $[[int]] \mid [[bool]]$ &
+\end{tabular}
+\end{small}
+\caption{Mini-JS expressions, values, and types}
+\label{fig:mini-js}
+\end{figure}
+
+
+\begin{figure}[t]
+  \centering
+  \begin{small}
+\begin{tabular}{|l||c|c|c||c|c|c|c|c|c|}
+\hline
+\multirow{2}{*}{Language} & \multicolumn{3}{c||}{Operations} & \multicolumn{6}{c|}{Data variants}           \\ \cline{2-10}
+                      & eval     & print     & check    & $\mathit{natF}$ & $\mathit{boolF}$ & $\mathit{compF}$ & $\mathit{logicF}$ & $\mathit{varF}$ & $\mathit{funcF}$ \\ \hline \hline
+\lstinline$simplenat$             &   \cmark       & \cmark          &          &  \cmark    &       &       &        &      &       \\ \hline
+\lstinline$simplebool$          &  \cmark        &  \cmark         &          &      &  \cmark     &       &        &      &       \\ \hline
+\lstinline$natbool$       &  \cmark        & \cmark          & \cmark         & \cmark     & \cmark      &       &        &      &       \\ \hline
+\lstinline$varbool$       &  \cmark        &  \cmark         &          &      & \cmark      &       &        & \cmark     &       \\ \hline
+\lstinline$varnat$      &   \cmark       &  \cmark         &   &  \cmark    &     &       &        & \cmark      &       \\ \hline
+\lstinline$simplelogic$  &  \cmark        &  \cmark         &          &      &   \cmark    &       &    \cmark    &      &       \\ \hline
+\lstinline$varlogic$   &    \cmark      &   \cmark        &          &      &  \cmark     &       &  \cmark  &  \cmark    &       \\ \hline
+\lstinline$arith$     &  \cmark  &  \cmark &  \cmark &  \cmark    &  \cmark     &  \cmark     &        &      &       \\ \hline
+\lstinline$arithlogic$ &  \cmark   &  \cmark &  \cmark  & \cmark     &  \cmark     & \cmark      & \cmark       &      &       \\ \hline
+\lstinline$vararith$        &  \cmark   &  \cmark  &  \cmark  & \cmark     &  \cmark     &  \cmark     &        & \cmark     &       \\ \hline
+\lstinline$vararithlogic$  &  \cmark &  \cmark  &  \cmark  & \cmark & \cmark & \cmark &  \cmark & \cmark &       \\ \hline
+\lstinline$mini-JS$  &  \cmark &  \cmark  &  \cmark  & \cmark & \cmark & \cmark &  \cmark & \cmark & \cmark      \\ \hline
+\end{tabular}
+
+  \end{small}
+\caption{Overview of the languages we can assemble}
+\label{fig:langs}
+
+\end{figure}
+
+Having the feature set, we can synthesize different languages by selecting one or
+more operations, and one or more data variants, as shown in
+Figure~\ref{fig:langs}. For example \lstinline{arith} is a simple language of
+arithmetic expressions. On top of that, we also define an evaluator, a pretty
+printer, and a type checker. Note that for some languages (e.g.,
+\lstinline{simplenat}), since they have only one kind of value, we only define an
+evaluator and a pretty printer. We thus obtain 12 languages and 30 operations in
+total. The complete language \lstinline{mini-JS} has all the features and
+operations. Besides, we also define a new algebra with the combined behavior of
+all the operations.
+
+% Figure~\ref{fig:dependency} gives an overview of the reusable components of the
+% implementation, and the subtyping/inheritance relations of the languages we can
+% assemble. The interactions between languages and features are revealed by the
+% arrows. Below we briefly explain what features/operations each language supports:
+% \begin{itemize}
+% \item \lstinline{ArithL} is a simple language of arithmetic expressions,
+%   directly inherited from the feature $\mathit{Arith}$. We define an evaluator
+%   and a pretty printer.
+% \item \lstinline{BoolArithL} extends \lstinline{ArithL} with the feature
+%   $\mathit{Bool}$. Apart from the evaluator and pretty printer, we define
+%   another operation: type checker. Thus \lstinline{BoolArithL} is illustrative
+%   of solving the Expression Problem.
+% \item \lstinline{VarArithL} extends \lstinline{BoolArithL} with the feature
+%   $\mathit{Var}$. We define an evaluator, a pretty printer, and a type checker.
+% \item \lstinline{Mini-JS} is the complete language that inherits all the
+%   features and operations.
+% \end{itemize}
+
+From Figure~\ref{fig:langs} we can also see the subtyping/inheritance relations
+between each language. For example, since the feature set of \lstinline{arith}
+contains that of \lstinline{natbool}, we can say \lstinline{arith} extends
+\lstinline{natbool}, and the former is a supertype of the latter. Indeed,
+operations defined for \lstinline{arith} can safely apply to expressions of \lstinline{natbool}.
+
+
+% For example, the leftward arrow between
+% \lstinline{BoolArithL} and \lstinline{ArithL} says that \lstinline{BoolArithL}
+% extends \lstinline{ArithL}, while the rightward dashed arrow between them says
+% that \lstinline{ArithL} is a subtype of \lstinline{BoolArithL}. We thus obtain 4
+% languages and 11 operations in total.
+
+% \begin{figure}[t]
+%   \centering
+%   \includegraphics{dependency.eps}
+%   \caption{Overview of the language components.}
+%   \label{fig:dependency}
+% \end{figure}
+
+\subsection{Evaluation}
+
+To evaluate \name's implementation of the case study,
+Figure~\ref{fig:sloc} compares the number of source lines of code
+(SLOC, lines of code without counting empty lines and comments) for
+\name's \emph{modular} implementation with the vanilla
+\emph{non-modular} AST-based implementations in Haskell. The Haskell
+implementations are just straightforward AST interpreters and
+operations, which duplicate code across the multiple language
+implementations.
+
+Since \name is a new language, we
+had to write various code that is provided in Haskell by the standard library,
+so they are not counted for fairness of comparison. In the left part, for each
+feature, we count the lines of the algebra interface (number beside the feature
+name), and the algebras for the operations. In the right part, for each
+language, we count the lines of defining the AST, and those to combine previously
+defined operations. For example, here is the code that is needed to make the
+\lstinline{arith} language.
+
+\lstinputlisting[linerange=537-547]{../examples/case_study.sl}% APPLY:linerange=ARITH
+
+\noindent We only need 8 lines in total: 2 lines to define the AST
+(\lstinline{Arith}), and 6 lines to combine the operations.
+
+Therefore, the total SLOC of \name's implementation is the sum of all the
+lines in the feature and language parts (237 (SLOC of all features) plus 84
+(ASTs and operations)). Although \name is considerably more verbose than a
+functional language like Haskell, \name's modular implementation for 12 languages and 30
+operations in total reduces approximately 58\% in terms of SLOC. The reason is
+that, the more frequently a feature is reused by other languages directly or
+indirectly, the more reduction we see in the total SLOC. For example,
+$\mathit{natF}$ is used across many languages. Even though \lstinline{simplenat}
+itself \textit{alone} has almost twice SLOC ($40 = 7+23+7+3$) than that of Haskell (which
+has 29), we still get a huge gain when implementing other languages.
+
+
+
+\begin{figure}[t]
+  \centering
+\begin{small}
+  \begin{tabular}{|r|ccc||l|ccc|}
+    \hline
+     Feature & \textbf{eval} & \textbf{print} & \textbf{check} & Lang name & \name & \textbf{Haskell} & \textbf{\% Reduced}  \\
+    \hline
+    $\mathit{natF}(7)$ & 23 & 7 & 39 & \lstinline$simplenat$ & 3 & 29 & 90\%  \\
+    $\mathit{boolF}(4)$ & 9 & 4 & 17 & \lstinline$simplebool$ & 3 & 12 & 75\% \\
+    $\mathit{compF}(4)$ & 12 & 4 & 20 & \lstinline$natbool$ & 5 & 66 & 92\% \\
+    $\mathit{logicF}(4)$ & 12 & 4 & 20 & \lstinline$varbool$ & 4 & 20 & 80\% \\
+    $\mathit{varF}(4)$ & 7 & 4 & 7 & \lstinline$varnat$ & 4 & 37 & 89\% \\
+    $\mathit{funcF}(3)$ & 10 & 3 & 9 & \lstinline$simplelogic$ & 4 & 24 & 83\% \\
+     & & & & \lstinline$varlogic$ & 6 & 32 & 81\% \\
+     & & & & \lstinline$arith$ & 8 & 86 & 91\% \\
+     & & & & \lstinline$arithlogic$ & 8 & 106 & 92\% \\
+     & & & & \lstinline$vararith$ & 8 & 99 & 92\% \\
+     & & & & \lstinline$vararithlogic$ & 8 & 119 & 93\% \\
+     & & & & \lstinline$mini-JS$ & 23 & 140 & 84\% \\
+    \hline
+    \bf{Total} & & & 237 & & 321 & 770 & 58\% \\
+    \hline
+
+  \end{tabular}
+  \end{small}
+  \caption{SLOC statistics: \name implementation vs vanilla AST implementation.}
+  \label{fig:sloc}
+\end{figure}
+
+
+
+\begin{comment}
+\subsection{Putting all together}
+
+% With all the components ready, we can assemble them at will to cook a language
+% with whatever features we want. For example, we hope by now the reader can share
+% our feeling that this is indeed a simple and modular way to cook a language
+% incrementally.
+
+To demonstrate the usage of the final language \lstinline{MiniJS}, here is a function that
+makes sure ``well-typed programs cannot go wrong'':
+\lstinputlisting[linerange=-]{}% APPLY:linerange=SUPER_DEF
+It type checks the program before passing it to the evaluator and pretty
+printer.
+
+% we first create a program that
+% uses all the features the language supports now.
+% \lstinputlisting[linerange=-]{}% APPLY:linerange=FINAL_TEST
+% The concrete syntax of the program is shown in the comment above. We assume a
+% pre-defined function environment (\lstinline{fenv}) containing the definition of
+% the \lstinline{add1} function.
+
+% Finally we apply it to the program we have just created:
+% \lstinputlisting[linerange=738-739]{../examples/case_study.sl}% APPLY:linerange=TEST_TEST
+% Everything works as expected!
+\end{comment}
+
+\begin{comment}
+\subsection{Parameterizing Expressions by the Evaluation Order}
+
+We now turn to the second case study. In this case study, we embed a
+higher-order domain-specific language inside \name. Our object language in this
+case study is typed lambda calculus with conditional and constants. This time,
+the embedding not only demonstrates the extensibility, as is shown in the first
+case study, but also object types, expressed in the meta-language (\name) and
+manifestly ensuring well-scoped and well-typed expressions in the object
+language. What is more, the evaluator over the object expressions is type
+preserving by construction. The embedding of typed languages is directly
+inspired by Kiselyov's lecture notes~\cite{kiselyov2012typed} on the
+"tagless-final" approach to embedding languages.
+
+\paragraph{Well-typed object expressions} One important issue with such
+embedding is how to deal with binders in the object language. In general there
+are two options, one can either use deBrujin indices~\cite{}, or higher-order
+abstract syntax (HOAS)~\cite{}. Each option has its cons and pros, but for this
+particular case study, we find HOAS convenient. HOAS represents object language
+abstractions as \name abstractions and object variables as \name variables. By
+utilizing the infrastructure of the meta-language, we are free of issues such as
+variable capture. Here is the interface of the object language.
+\lstinputlisting[linerange=-]{}% APPLY:linerange=TYPED_LAMBDA
+Embedded object expressions of type \lstinline{A} are represented as \name
+values of the type \lstinline{Expr[A]}. The \lstinline{bot} constructor, which
+represents non-terminating computation, is there for the purpose of illustrating
+different evaluation strategies.
+
+A careful reader may notice that the \lstinline{ExprAlg} interface has no
+abstractions. This is intentional! Evaluators with different evaluation
+strategies only differ in the interpretation for abstractions, as will be shown
+later on. For this reason, \lstinline{lam} is moved to a separate interface of
+its own.
+\lstinputlisting[linerange=-]{}% APPLY:linerange=ABSTRACTION
+
+
+\paragraph{Well-typed evaluator}
+The benefit of typeful embedding shows up when defining the evaluator.
+\lstinputlisting[linerange=-]{}% APPLY:linerange=TYPED_EVAL
+Unlike the evaluator in the first case study, there is no need for a separate
+\lstinline{Value} datatype for values, as they are directly modeled by \name
+values. Note that the resulting evaluator is \textit{type preserving} by
+construction.
+
+\paragraph{Call-by-name, call-by-value}
+Our evaluator defined in the first case study inherits the evaluation strategy
+from the meta-language. We now show call-by-name and call-by-value evaluators.
+The two evaluators are quite alike, sharing most of the code. As said before,
+the only difference is the interpretation for \lstinline{lam}.
+\lstinputlisting[linerange=-]{}% APPLY:linerange=CBN_CBV
+The call-by-name \lstinline{lam}, when applied, will receive an unevaluated
+argument expression, use it as it is. The call-by-value \lstinline{lam}, as in
+the call-by-name evaluator, receives an unevaluated argument expression,
+evaluates it before passing its result to the abstraction body \lstinline{f}.
+
+Now to make an evaluator parameterized over the evaluation order, we just take a
+trait \lstinline{o} with unknown implementation, compose it with other language
+features.
+\lstinputlisting[linerange=-]{}% APPLY:linerange=MAKE_EVAL
+Here is the call-by-name evaluator at work:
+\lstinputlisting[linerange=-]{}% APPLY:linerange=CBN_TEST
+On the other hand, \lstinline{(evaluator evalBindCBV ex)()} would result in a
+infinite loop. The complete code with several examples can be found in the
+supplementary materials.
+
+\jeremy{I am afraid we don't seem to have many advantages over OCaml's version,
+  because we don't really have higher-kinded types, we cannot make a AST type
+  for this example, though \lstinline{makeEvaluator} seems to be one advantage }
+
+\end{comment}
