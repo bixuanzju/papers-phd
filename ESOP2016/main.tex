@@ -1,0 +1,188 @@
+% Springer template
+\documentclass[a4paper]{llncs}
+
+%% -- Packages Imports --
+
+% AMS stuff
+\usepackage{amsmath}
+\usepackage{amssymb}
+\let\proof\relax
+\let\endproof\relax
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{xspace}
+\usepackage{setspace}
+\usepackage{comment}
+\usepackage{cite}
+
+% Language
+\usepackage{csquotes}
+\usepackage[british]{babel}
+\MakeOuterQuote{"}
+
+
+\newcommand{\name}{{\bf $\lambda_{\star}^{\mu}$}\xspace}
+\newcommand{\coc}{{\bf $\lambda C$}\xspace}
+\newcommand{\ecore}{$\lambda_{\star}$\xspace}
+\newcommand{\cc}{$\lambda C$\xspace}
+\newcommand{\sufcc}{{\bf Fun}\xspace}
+\newcommand{\fold}{{\bf $\mathsf{fold}$}\xspace}
+\newcommand{\unfold}{{\bf $\mathsf{unfold}$}\xspace}
+
+\newcommand{\authornote}[3]{{\color{#2} {\sc #1}: #3}}
+\newcommand\bruno[1]{\authornote{bruno}{red}{#1}}
+\newcommand\jeremy[1]{\authornote{jeremy}{blue}{#1}}
+\newcommand\linus[1]{\authornote{linus}{green}{#1}}
+\newcommand{\fixme}[1]{{\color{red} #1}}
+
+% Hyper links
+\usepackage{hyperref}
+\hypersetup{
+   colorlinks,
+   citecolor=black,
+   filecolor=black,
+   linkcolor=black,
+   urlcolor=black
+}
+
+% Compact list
+\usepackage{paralist}
+
+% Figure import
+\usepackage{graphicx}
+\usepackage{float}
+
+% Code highlighting
+\usepackage{listings}
+\usepackage{xcolor}
+\newcommand{\hl}[2][gray!40]{\colorbox{#1}{#2}}
+\newcommand{\hlmath}[2][gray!40]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+
+% Theorem
+% \usepackage{amsthm}
+% \newtheorem{thm}{Theorem}[section]
+% \newtheorem{lem}[thm]{Lemma}
+% \newtheorem{dfn}[thm]{Definition}
+
+%% Typesetting inference rules
+\usepackage{styles/mathpartir}  % by Didier Rémy (http://gallium.inria.fr/~remy/latex/mathpartir.html
+
+% Ott includes
+\input{sections/expcore.ott.tex}
+\input{sections/otthelper.tex}
+
+% lhs2tex
+\usepackage{mylhs2tex}
+
+% Subsection style
+% \usepackage{titlesec}
+% \titleformat{\subsubsection}[runin]{\bfseries\itshape\normalsize}{}{0em}{}[$\;$]
+
+% Table
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage[para,online,flushleft]{threeparttable}
+
+%% -- Packages Imports --
+
+% Main
+\begin{document}
+
+\mainmatter
+
+% Title
+\title{A Simple Yet Expressive Calculus for Modern Functional Languages}
+%\title{A Dependently-typed Intermediate Language with General Recursion}
+%\subtitle{Or: Decidable Type-Checking in the presence of
+%  Type-Level General Recursion}
+
+\author{Bi Xuan \and Yang Yanpeng \and Bruno C. d. S. Oliveira}
+
+\institute{The University of Hong Kong\\
+\email{\{xbihku, yangyp\}@connect.hku.hk} \\
+\email{bruno@cs.hku.hk}}
+
+% \authorinfo{Foo \and Bar \and Baz}
+%            {The University of Foo}
+%            {\{foo,bar,baz\}@foo.edu}
+
+\maketitle
+
+% Abstract
+\begin{abstract}
+Typed core (or intermediate) languages for modern 
+functional languages, such as Haskell or ML, 
+are becoming more and more complex. This is a natural tendency.
+Programmers and language designers wish for more expressive and
+powerful source-language constructs. In turn this requires new, more
+powerful constructs in core languages. Unfortunately, the added
+complexity means that the meta-theory and implementation of such core
+languages becomes significantly harder.
+
+This paper proposes a simple yet expressive core calculus (\name),
+which has a fraction of the language constructs of existing core
+languages. The key to simplicity is the combination of two ideas. The
+first idea is to use a Pure Type Systems (PTS) style of syntax that
+unifies the various syntactic levels of the language. However, this
+creates an immediate challenge: with types and terms unified, the
+\emph{decidability} of type checking requires type-level computation
+to terminate, but with general recursion it is hard to have such
+guarantee. The second idea, inspired by the traditional treatment of
+iso-recursive types, is to solve this challenge by making each
+type-level computation step explicit. The usefulness of \name is
+illustrated by a light surface language built on top of \name, which
+supports many advanced programming language features of
+state-of-the-art functional languages. 
+%The main limitation of \name is
+%the absence of a more expressive form of type-equality, which is left
+%for future work.
+\end{abstract}
+
+% Category, terms & keywords
+% \category{D.3.1}{Programming Languages}{Formal Definitions and Theory}
+% \terms Languages, Design
+% \keywords Dependent types, Intermediate language
+
+%% -- Starting Point -- 
+
+\input{sections/introduction.tex}
+
+\input{sections/overview.tex}
+
+\input{sections/examples.tex}
+
+\input{sections/explicitcore.tex}
+
+% \input{sections/recursion.tex}
+
+\input{sections/datatypes.tex}
+
+\input{sections/related.tex}
+
+\input{sections/conclusion.tex}
+
+%% -- References --
+
+% \acks
+% Thanks to Blah. This work is supported by Blah.
+
+\newpage
+
+\bibliographystyle{plain}
+% \nocite{*}
+\bibliography{main}
+
+%% -- Appendix --
+\clearpage
+\appendix
+\input{sections/appendix.tex}
+
+%% -- The end --
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

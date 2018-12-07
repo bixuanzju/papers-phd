@@ -1,0 +1,567 @@
+----------------------- REVIEW 1 ---------------------
+PAPER: 109
+TITLE: A Simple Yet Expressive Calculus for Modern Functional Languages
+AUTHORS: Xuan Bi, Yanpeng Yang and Bruno C. D. S. Oliveira
+
+OVERALL EVALUATION: -1 (reject)
+REVIEWER'S CONFIDENCE: 5 (expert)
+
+----------- REVIEW -----------
+SUMMARY OF CONTRIBUTIONS
+
+The authors define new a lambda-calculus (λμ⋆), which is similar to the Calculus of Constructions but adds Type:Type, general recursion, and a new way to deal with type conversion by explicit casts. (The casts are the novel part.) There is a paper proof of type safety.
+
+They then argue that this calculus is suitable as a core language for functional programming languages, by defining a surface language (Fun), and showing how to elaborate it into λμ⋆. They describe how they support general recursive datatypes, higher-kinded types, nested datatypes, kind polymorphism, and datatype promotion. The elaborator has been implemented and is available on github. They argue that by using dependent types, their core language can be made much simpler than existing ones (only 8 syntactic forms, as opposed to about 30 for the Haskell core language). There is a paper proof of type-preservation of elaboration.
+
+EVALUATION
+
+The research problem is interesting. Most work on dependent types have been in the context of theorem provers and software verification system. Like the authors say, the experience with Haskell suggests that dependent types would also be suitable for functional programming core languages, and in that situation we would want to make different tradeoffs.
+
+The technical development (proofs and examples) is carefully done, and explained clearly.
+
+However, I think the set of features supported in the surface language Fun is too small to convincingly make the case that this is a suitable core language.
+
+The individual features in λμ⋆ are not necessarily new. There have been previous dependently typed calculi with Type:Type and general recursion (the authors cite Cayenne, Cardelli's Type:Type language, and PiSigma), and there have also been previous dependently typed calculi which use explicit casts (PTSf and Zombie; see below). So the selling point of the paper is not so much "here's how to do something which we didn't know how to do before", but rather "by using a subset of the features of existing dependently typed languages we can get something much simpler which is still expressive enough for functional programming".
+
+Then, it is important to make sure that it really is expressive enough. But the comparison with Haskell Core is overstated. While λμ⋆ is smaller, it also supports fewer features than Haskell, because Fun does not have type-level functions or GADTs. In particular GADTs is the major source of complexity in Haskell core (see below). Without GADTs having promoted datatypes is not very useful, so in practice Fun is roughly as expressive as Haskell98, and I think the complexity of the Haskell98 core language (a higher-kinded variant of System F) is in the same ballpark as λμ⋆.
+
+Also, modern languages do want GADTs (they are both in Haskell and OCaml now), and it is not clear how to add them to λμ⋆.
+
+The authors say that in future work they intend to investigate GADTs and type-level functions. If they can get those to work while keeping the language simple, that would make this research much more interesting.
+
+
+DETAILS
+
+The main innovation in the core language are the cast↓ and cast↑ forms, which make the typechecker beta-reduce or beta-expand the type of an expression. This is unlike most dependently typed languages, where beta-reduction happens automatically without any expression syntax. Because the language uses explicit cast forms, the typechecker will not get stuck in an infinite loop even if the types contain looping expressions.
+
+The idea of explicitly marking type conversions is not new. It's implicit in the way Nuprl manipulates typing derivations instead of expressions, more recently  Doorn et al [Doorn] defined a calculus they called PTSf. Also the authors cite the Zombie language. All these are more general than λμ⋆, i.e. you can express the cast↓/cast↑ operations in them. The authors discuss this, and say that their contribution is simplicity: just having a way to request a single top-level call-by-name reduction/expansion step is enough for their elaborator, so they don't need a fancy equation system.
+
+As they point out, when using type-level general recursion to encode recursive types, their cast↓/cast↑ mechanism is exactly equivalent to standard iso-recursive types, which I think is a very interesting observation.
+
+On the other hand, in their current elaborator, the _only_ thing type-conversion is used for is to encode recursive types. So maybe it is not surprising that a mechanism that imitates iso-recursive types turns out to be sufficient to do that. If they later extend the Fun language to use type-level computation in other ways, it could turn out that they also need more fine-grained tools to do so.
+
+For example, consider implementing unit-types (meters, meters/second², etc). One simple way is to do it as a type indexed by integers representing the exponents  of the mass, length, time dimensions. Then the multiplication operation has type
+ mult : ∀ i i' j j' k k'. Quantity i j k -> Quantity i' j' k' -> Quantity (i+i') (j+j') (k+k')
+and  to typecheck expressions we need to show type equalities like
+   Quantity (2+1) 1 1  = Quantity 3 1 1
+
+The paper explains how to translate indexed types (e.g. PTree in section 3). However, under that translation, a type constructor application like (PTree (2+2)) will call-by-name reduce to a complicated type which still has (2+2) occuring as a subexpression. So if you just apply cast↓ to the type, there is no way to force the index to evaluate.
+
+PTSf, Zombie, and Haskell Core deals with this situation by equality congruence rules which indicate which subexpression should be reduced. In future work, when extending Fun to use more interesting type-level functions, it seems likely that the λμ⋆ core language will need to be made more complex by including a similar feature.
+
+Then the paper goes on to present the surface language Fun, with a tour through its features: Datatypes, Datatypes with negative occurances (used for HOAS), Higher-kinded types, Nested datatypes, Kind polymorphism, Datatype promotion.
+
+I think nested datatypes is a bit out of place here--you can do that in just System F, so it doesn't illustrate that the core language is unusually expressive--but higher-kinded types, kind polymorphism, and datatype promotion all are good examples of how using dependent types creates a simple and general core language.
+
+On the other hand, I think the comparison with Haskell Core is overstated, because several of the ways λμ⋆ might lead to problems in a full-scale language:
+
+- Because of collapsed syntax, there is less duplication in the syntax. But the Haskell syntactic distinction between λ and Λ does serve a purpose; as e.g. Lindley and McBridge [Lindley] explain, it indicates which arguments need to be retained at compile time. (For example, ordinarily functions that take numbers are arguments need to represent them in memory, but a Haskell function which takes a promoted natural number as (type-level) argument does not. In λμ⋆ this distinction is not made). Probably in order to compile λμ⋆ efficiently, it would need some kind of annotations indicating eraseability.
+
+- In λμ⋆, there is no primitive support for datatypes, data constructors, and case statements, which makes the language much smaller. Instead, data is Scott-coded as λ-expressions. In a real compiler this might not be efficient enough, so you might want to distinguish functions and datatype values in the core language, which would bring back some complexity.
+
+But setting aside the questions of efficiency,  in the context of dependent types there is a more serious problem with λ-coding data, which is that it doesn't provide enough reasoning principles. In the context of functional programming, this comes up when supporting Generalized Algebraic Datatypes (GADTs).
+
+The idea of GADTs is that pattern matching on them adds information to the typing context. A common example is writing the head() function on length indexed lists:
+
+  hd : Vector a (Succ n) -> a
+  hd (Cons x xs) = x
+  -- No case for (hd Nil)
+
+In Haskell, the programmer does not have to write a branch for nil, because Nil has type (Vector a 0), and the argument type is (Vector a (Succ n)). This shows the power of GADTs: while Haskell does not allow proofs of arbitrary properties, the compiler can use the types to prove that certain paths are dead code.
+
+In the Haskell core language, this is elaborated into a case-expression where each branch introduces a new equation into the context, and the Nil-branch is discharged by a proof of contradiction from 0=(Succ n).
+
+Unfortunately, in the Calculus of Constructions (which λμ⋆ is based on), there is no way to prove 0=(Succ n). This is the main reason that the Calculus of Constructions was abandoned in favour of the Calculus of Inductive Constructions, which takes datatypes and case-expressions on data as primitives rather than λ-encoding them. There is ongoing research on trying to λ-encode data in dependent type theory (e.g. Fu and Stump [Fu]), but so far no-one has been able to make it work. In the related work section, the authors note that this will be a challenge for future work.
+
+In Haskell core, GADTs are supported by two primitive features: datatypes and equations. But omitting these two accounts for most of the simplicity of λμ⋆. If you were to add them back in, you probably also need to adjust the operational semantics to do more typecast-shifting, which in turn needs the type injectivity rules, etc, and you might end up with almost as complex a language as Haskell core (albeit with collapsed syntax).
+
+COMMENTS FOR THE AUTHORS
+
+I had some trouble getting the implementation to work. Copying and pasting snippets from the examples directory often just gave "Parse error!". For example, ptree.fun has inconsistent spelling "nat" versus "Nat".
+
+Using the term "datatype promotion" for types indexed by naturals etc sounds wrong to me. As I see it, the thing we want is indexed types, and there are two ways to go about it: either allow true dependent types (as in λμ⋆), or do what Haskell does and use promotion to make copies of datatypes at the kind level (which seems like a hack, but hey).
+
+The proof sketches in the short version of the paper are very uninformative! "We prove the case for one-step reduction, i.e., e → e′. The theorem follows by induction on the number of one-step reductions of e ->> e′. The proof is by induction with respect to the definition of one-step reduction →." This describes every type preservation proof ever made. You could save space by omitting the proof sketch altogether. (And perhaps try to instead highlight some particularly interesting aspects of the proof).
+
+There is a gap in the proof of Progress, in the (e1 e2) application case. The proof says that, if e1 is a value v, then "by Lemma 5 (3), it must be a λ-term such that e1 ≡ λx :τ1.e1' for some e1; satisfying ∅ ⊢ e1' : τ2." But Lemma 5(3) doesn't say that the value has to be a λ-expression, rather it says that IF it is a λ, then the body is typeable. You need to also prove and appeal to an inversion lemma saying that the only values inhabiting function types are λ-expressions. The reason I'm interested in this case is that you also need to worry about values of the form (cast↑ [τ] e). In Haskell Core, that's the case that requires cast-shifting rules in the operational semantics. In your system, I think this is fine because arrow types can never beta-reduce. But it would be worth calling out this in a separate lemma, it seems to be a key way your metatheory differs from similar systems.
+
+In figure one you write that
+  let x = e2 in e1
+is syntactic sugar for
+  e1[x ↦ e2]
+but I think it's more standard to make it sugar for
+  (λx.e1) e2
+If you use a substitution, then desugaring a program can cause it to grow exponentially in size.
+
+REFERENCES
+
+[Doorn]
+Floris van Doorn, Herman Geuvers, and Freek Wiedijk, "Explicit Convertibility Proofs in Pure Type Systems", in "LFMTP '13 Proceedings of the Eighth ACM SIGPLAN international workshop on Logical frameworks & meta-languages: theory & practice", 2013.
+
+[Fu]
+Peng Fu and Aaron Stump, "Self Types for Dependently Typed Lambda Encodings." in "Rewriting Techniques and Applications/Typed Lambda Calculi and Applications (RTA-TLCA)", 2015.
+
+[Lindley]
+Sam Lindley and Conor McBride, "Hasochism: The Pleasure and Pain of Dependently Typed Haskell Programming", in "Haskell '13 Proceedings of the 2013 ACM SIGPLAN symposium on Haskell"
+
+----------------------- REVIEW 2 ---------------------
+PAPER: 109
+TITLE: A Simple Yet Expressive Calculus for Modern Functional Languages
+AUTHORS: Xuan Bi, Yanpeng Yang and Bruno C. D. S. Oliveira
+
+OVERALL EVALUATION: 1 (accept)
+REVIEWER'S CONFIDENCE: 3 (medium)
+
+----------- REVIEW -----------
+Synopsis.
+This paper presents an impredicative variant of the pure type system,
+λ^μ_*, in which the number of β-reduction/expansion needed for type
+conversion has to be explicitly given. The type conversion rule says if
+an expression e has a type τ₁ and τ₁ is β-equal to τ₂, then one may
+conclude that e has a type τ₂. λ^μ_* comes with two term constructors,
+cast↑ and cast↓. If an expression e has a type τ, then (cast↓ e) has a
+type that is the one-step weak head β-reduct of τ. (Likewise, cast↑ is
+a one-step weak head β-expansion of τ.) The resulting type system is
+proved to enjoy decidable type checking and type soundness (with
+respect to a call-by-name semantics).
+
+λ^μ_* can express many advanced features found in modern programming
+languages, including higher-kinded types, nested datatypes and kind
+polymorphism, despite its simplicity (λ^μ_* has only 8 language
+constructs where as System F_C, the current core language for GHC
+Haskell, has over 30 language construct). The main goal of λ^μ_* is to
+serve as an expressive core language for functional languages like
+Haskell or ML.
+
+Evaluation.
+The paper is very well-written and easy to read. I like it. But I
+don't champion the paper due to the following reservations.
+
+* ML is a call-by-value language which tightly incorporates
+  side-effect (when compared to Haskell). I don't know offhand how to
+  compile effectful ML programs into λ^μ_*.
+
+* I found the result of Section 5, translating a surface language Fun
+  into λ^μ_*, is not convincing enough to justify that  λ^μ_* can
+  serves as a core language of Haskell or ML (which variant of ML do
+  you envisage?) I would like to see a detailed discussion on to which
+  extent λ^μ_* can express language features supported by Haskell or
+  ML, and what remains to be doe to cover the entire Haskell (or
+  ML). (Yes, this is briefly discussed in Section 6.)
+
+Detailed comments.
+
+I would like the paragraph "Casts and Recursive Types" to be
+significantly elaborated. I found the paragraph very interesting. (I
+think Section 3 can be shortened. Many materials in Section 3 are not
+new and can be assumed for ESOP audiences, I think.) In particular, I
+am interested in the following points.
+
+  1) The rationale behind making cast↑ a value from the programmer's
+      perspective.
+
+  2) The paper writes that cast↑ is computationally irrelevant hence
+      can be erased after type checking. However, cast↑ loop is a value
+      whereas loop is not, and the evaluation of the former immediately
+      terminates whereas the evaluation of the latter diverges. So,
+      cast↑ seems to be computationally relevant for me. Where am I wrong?
+
+  3) How do casts prevent building a non-terminating type? An illustration
+      with examples would be nice.
+
+Page 3, paragraph 1, line 2, "We focus on traditional functional
+languages like ML or Haskell":
+Those languages support side-effect, unlike Agda or Coq. I woud like
+the authors to discuss about side-effect with respect to λ^μ_*. Maybe
+being slightly less ambitious, and targeting only languages, like
+Haskell, which carefully separate pure and effectful worlds, is
+reasonable? Also, the call-by-name semantics is unfit for ML.
+
+Page 3, paragraph 2, "In both System F_C and λ^μ_*, type equality in
+λ^μ_* is purely":
+The sentence is wired. Perhaps "in λ^μ_*" should be removed.
+
+Page 6, Recursive Terms:
+It would be instructive if the paper reminds the reader here about the
+call-by-name semantics. The unrestricted μ operator is not suitable
+for call-by-value languages.
+
+Section 3, line 1, "to serve as an expressive core language for
+functional languages like Haskell or ML":
+ML is not a call-by-name language.
+
+Page 8, line 3, "Note that due to explicit typing, the program
+requires a quite a few type annotations and type parameters":
+I think type inference is one of the essential features of ML (and
+probably Haskell), and this requirement feels against the spirit of
+ML.
+
+Page 8, definition of data Exp:
+Please begin a new line and align for the Num constructor!
+
+Page 10, in the definition of Mu:
+What is g?
+
+Page 10:
+What is special about the type of Mu, compared to previous examples,
+for instance, the type of Func?
+
+Page 10, definition of PTree:
+Please begin a new line for the Empty constructor!
+
+I wonder if and how λ^μ_* is more expressive than limiting the number
+of β-steps in the type conversion globally in a given program, or, than
+a type system parameterized by the maximum number of β-steps performed
+during the type conversion.
+
+I wonder if the following paper is relevant:
+  Vincent Siles, Hugo Herbelin,
+  Pure Type System conversion is always typable. J. Funct. Program. 22(2): 153-180 (2012)
+
+----------------------- REVIEW 3 ---------------------
+PAPER: 109
+TITLE: A Simple Yet Expressive Calculus for Modern Functional Languages
+AUTHORS: Xuan Bi, Yanpeng Yang and Bruno C. D. S. Oliveira
+
+OVERALL EVALUATION: -1 (reject)
+REVIEWER'S CONFIDENCE: 5 (expert)
+
+----------- REVIEW -----------
+CONTENT
+
+The authors present λ_*^μ, a version of System U (PTS with type in
+type *:*) with general recursion.  Instead of a type conversion rule,
+there are term formers for explicit type casts: one for a weak head
+reduction step and one for a weak head expansion step.  Due to the
+lack of conversion rule, type checking remains decidable even in
+absence of type normalization.  The authors further prove subject
+reduction and progress.
+
+It is argued that λ*μ is a good candidate for a core language for
+functional languages such as Haskell and ML.  Haskell's F_C has grown
+into a complex language and requires further extensions in the future,
+while System U (as the terminal PTS) subsumes all other PTSs and can
+encode all of Haskell (if extended with recursion).  As proof of
+concept, the authors show how to elaborate a typical functional
+language "Fun" into λ*μ.
+
+EVALUATION
+
+The paper is well-written and provides easy access to λ*μ and its
+contributions.   However, most of the paper's content is a
+recapitulation of established knowledge in programming language
+theory.  And I think λ*μ's type system is too weak: it does not
+subsume System U, i.e., there is no way to transform a System U typing
+derivation into a well-typed λ*μ term with casts.
+
+The problem is that casts are restricted to weak head conversion
+steps.  This has the benefit that subject reduction for the cast
+simplification rule
+
+  cast-down (cast-up [τ] e) ⟶ e
+
+holds immediately: a down-cast (weak head type reduction) inverts the
+effect of an up-cast (weak head type expansion to τ), as weak head
+reduction is deterministic.
+
+However, type equality as generated by weak head conversion is not a
+congruence.  Even if
+
+  τ  is weak-head convertible to  τ'
+
+it is not the case that
+
+  List τ  is weak-head convertible to  List τ'.
+
+Thus, even if there are casts taking an expression from type τ to τ',
+an expression of type List τ cannot be cast to type List τ'.  As a
+consequence, no casts can make the following term typable:
+
+  sequence : (m : ★ → ★) → (a : ★) → List (m a) → m (List a)
+  fs : List (c → a)
+  x : c
+  ⊢ sequence (λ a:★. c → a) a fs x : List a
+
+The problem is that fs is expected to have type
+
+  List ((λa:★. c → a) a)
+
+which cannot be cast to List (c → a) (except with the map-function,
+but not if you consider List to be a type variable...).
+
+The implementation provided by the authors confirms this, it is unable
+to type check this term:
+
+  \ List : * -> * .
+  \ sequence : (m : * -> *) -> (a : *) -> List (m a) -> m (List a) .
+  \ a : * .
+  \ c : * .
+  \ fs : List (c -> a) .
+  \ x : c .
+  sequence (\ a : * . c -> a) a fs x
+
+How to get a PTS with explicit casts that does not lose expressivity
+is described in the paper
+
+  F. van Doorn, H. Geuvers F. Wiedijk,
+  Explicit Convertibility Proofs in Pure Type Systems,
+  in Proceedings of LFMTP 2013, the Eighth ACM SIGPLAN international
+  workshop on Logical frameworks and meta-languages: theory and
+  practice, Boston USA, September 2013, ACM.
+
+which the authors do not cite.
+
+This paper is unconvincing, I recommend rejection for ESOP 2016.
+
+DETAILS
+
+Please provide page numbers in submission versions!
+
+up-casts
+
+  Requiring the full type expression at each up-cast could lead to
+  excessive type information.  Do you have ideas how to keep the size
+  of the core language expressions in check?
+
+Section 4 "λ*μ calculus...very close to the calculus of constructions"
+
+  But even closer to System U!  Why did you pick the calculus of
+  constructions as reference point?
+
+Figure 1
+
+  A non-duplicating (thus, preferable) encoding of
+
+    let x : τ = e₂ in e₁
+
+  would be
+
+    (λx:τ. e₁) e₂
+
+Lemma 1  This property is called "deterministic".
+
+  Replace "is called decidable if" by "is deterministic, i.e."
+  (otherwise it is not a lemma, but a definition).
+
+Theorem 2
+
+  rests crucially on Lemma 1, in case S_CASTDOWNUP.  Worth referencing.
+
+Figure 4 and Figure 5
+
+  There are "let"s without anything after the "in".
+
+----------------------- REVIEW 4 ---------------------
+PAPER: 109
+TITLE: A Simple Yet Expressive Calculus for Modern Functional Languages
+AUTHORS: Xuan Bi, Yanpeng Yang and Bruno C. D. S. Oliveira
+
+OVERALL EVALUATION: 1 (accept)
+REVIEWER'S CONFIDENCE: 4 (high)
+
+----------- REVIEW -----------
+The paper presents a PTS with general recursion and a single level of
+terms (⋆ : ⋆), yielding a correspondingly small number of constructions.
+It preserves decidability of type checking by making explicit each step
+of computation on a type, while fully normalizing terms at runtime.
+
+Less is more, or is it?
+=======================
+
+(page 3.) The authors make the persuasive argument that having less
+language constructions automatically results in the language being i)
+easier to implement, ii) easier to reason about, and iii) more
+expressive. However, these claims, on which the motivation for the paper
+rests, are not fully justified in the paper.
+
+In fact, having different levels may i) make program optimization
+easier, for example by erasing terms at the type-level, ii) simplify
+reasoning by limiting the cases that one has to deal with at each
+level, even if the overall number of constructs is bigger, and iii) in
+general, express the operational semantics intended by the user of the
+surface language in a more fine-grained way.
+
+
+General recursion and a single level
+====================================
+
+(pages 5 and 6) Assume the following declaration:
+
+``` {.fun}
+plus : nat → nat → nat
+plus = μ (plus : nat → nat → nat). λ (n : nat).
+  (case n of Z ⇒ λ (m : nat). m;
+             S n ⇒ (λ (m : nat). S (plus n m)))
+```
+
+The system is said to both collapse terms and types into a single
+hierarchy, and support general recursion. However, evaluation within
+types is still limited to a statically-determined number of steps. For
+example, there is no sequence of casts that can witness the
+equality of "(∏(n:nat).(PTree (plus n Z)))" and "(∏(n:nat).(PTree (plus
+Z n)))", although, for every value n, the subterms (plus n 0) and
+(plus 0 n) reduce to the same value.
+
+Even if it there were such a sequence of casts; for example,
+"(∏(n:nat).(PTree (plus (S (S Z)) n)))" reducing to "(∏(n:nat).(PTree
+(S (S n))))", it seems that the problem of finding out whether it
+exists has just been pushed into a previous translation stage.
+
+Finally, I could not find out whether λμ⋆ actually supports the
+reduction of terms under a ∏ type, as no explicit rule is given in the
+operational semantics.
+
+Fun: a surface language on top of λμ⋆
+=====================================
+
+(pages 7, 8, 9) Fun is often compared with Haskell in the paper. The
+examples show that many features and language extensions of the latter
+are supported in the former. However, it would be good for the missing
+features to also be listed explicitly.
+
+Some the examples (e.g. datatype promotion) are limited to a data type
+declaration (PTree). It would be interesting to see how functions over
+PTree can be implemented and translated.
+
+Formalization of the surface language
+=====================================
+
+(page 21) The only translation rules that make use of cast↑ and cast↓
+are TRdecl~Data~ (for the data constructors) and TRcase (for pattern
+matching); and there are exactly as many casts as the number of type
+parameters (n), plus 1 for a possible recursive occurrence. There does
+not seem to be much non-obvious type-level computation in the translation
+rules, which is surprising given that the explicit computation steps are
+one of the bigger selling points of the paper. It may be the case that
+more complex cast-introduction rules are needed for introducing more
+advanced features are introduced.
+
+Related work
+============
+
+Comparisons
+-----------
+
+(page 23) The comparison of the number of constructs with FC and Fω
+could be better justified.  After all, Fω is logically consistent
+(while λμ⋆ is not), and FC supports many more features (GADTs, inductive
+families, …) than λμ⋆ does. Although it should be easy to support more
+advanced features in λμ⋆ without adding (many) more constructs, the
+authors do not offer any hints on how that may be achieved.
+
+Equality
+--------
+
+(page 23) As for equality types, they could turn out to be useful for
+declaring data types that are usually defined as GADTs. For example,
+lists that keep track of their length statically:
+
+``` {.haskell}
+data Vector a m
+  = (m ~ Z)   => Nil
+  | forall n. (m ~ S n) => (:-) a (Vector a n)
+```
+
+Termination
+-----------
+
+(page 25) The statement that disabling the termination checker in Agda
+or Idris leads to undecidability is not fully accurate. Applications of
+functions marked as non-terminating will not be reduced at compile time.
+This weakens the theory, but does not lead to undecidability per se.
+
+Final remarks
+=============
+
+If one accepts that smaller core languages are better, and that the
+limitations of λμ⋆ could be easily surpassed, this paper makes a good
+case for the potential of impredicative core languages.
+
+Whether λμ⋆ can fulfil its goal of becoming a superior replacement for
+System FC is still to be seen. However, the implementation of the
+missing features (e.g. GADTs and a constraint solver generating the
+required casts), would be a paper on its own.  The λμ⋆ system does
+provide a simple and rigorous foundation for such developments, and,
+more concretely, an illuminating generalization of iso-recursive
+types. Both are useful ideas which can be built upon. Therefore, I
+believe this paper should be accepted.
+
+----------------------- REVIEW 5 ---------------------
+PAPER: 109
+TITLE: A Simple Yet Expressive Calculus for Modern Functional Languages
+AUTHORS: Xuan Bi, Yanpeng Yang and Bruno C. D. S. Oliveira
+
+OVERALL EVALUATION: 1 (accept)
+REVIEWER'S CONFIDENCE: 3 (medium)
+
+----------- REVIEW -----------
+This paper presents a core calculus, \lambda_*^\mu (referred to L*u in
+the remainder of this review) which unifies types and terms into the
+same syntactic category, in the style of the Calculus of
+Constructions, but which admits general recursion in term-level
+computation while maintaining a decidable type system. It does this by
+generalizing the fold and unfold operations of isorecursive types into
+upcasts and downcasts, which represent type-level computation. L*u's
+type system is decidable because type-level computation is restricted
+to these operations and otherwise uses syntactic type equality.
+
+The paper also presents a surface language, Fun, which supports
+features like ADTs and HOAS. Fun is used to show that a complex
+language can be fully modeled by the minimal calculus of L*u, and that
+translation to L*u is safety-preserving.
+
+Overall, I liked the sections that focused on L*u. While I'm not an
+expert in the precise subject, it seems like a significant
+contribution and the generalization of the isorecursive approach is a
+neat technique. Section 2 in particular is very well written and I
+came away from it and from Section 4 with a good understanding of how
+L*u differs from the CoC, what those differences get you, and the
+insights that led to them.
+
+The sections of the paper focusing on the Fun surface language felt
+far weaker. Fun is, as I understand it, intended to demonstrate that
+the L*u calculus can model complex features. Section 3 seems very out
+of place and doesn't much contribute to my understanding of the
+paper. It claims that Fun (which, at this point in the paper, has not
+been formally described, and has informally barely been discussed) can
+represent different operations without describing how they translate
+into L*u. The translation itself, and Theorem 4, seem much more
+important to the point of Fun than a series of Fun examples with
+little reference to L*u. The translation itself needs more detailed
+description -- there's a lot of things going on in Figure 5, and it's
+not clear which parts are key to understanding how to reduce complex
+features into L*u terms. Overall, I don't come away with any idea of
+how to write my own translation of my own language into L*u, which
+seems like an important contribution if the idea is that L*u could
+become the future core calculus for modeling a variety of languages.
+
+The use of upcasts and downcasts which cancel out, coupled with a
+cast-inserting translation relation, is very reminiscent of the
+approach taken by gradual typing (Siek and Taha 2006; Herman et al
+2007; Siek et al 2009; etc, etc). In gradual typing, however, it is
+usually very clear when defining a cast inserted exactly where casts
+need to be inserted -- it's exactly where the type checker compares
+two types using a consistency relation, which checks equality of the
+statically known parts of each type. Is there any similar guideline
+for when casts need to be inserted when translating to L*u? It's hard
+to see any strong pattern in the TR_Case and TRDecl_Data rules for why
+casts were needed exactly where they were used, and the prose is far
+too thin to come away with any insight. An intuition for this could
+help with the previous paragraph, and make the pathway to writing my
+own translations into L*u tractable.
+
+Despite these concerns with the material describing Fun, the core
+contribution of L*u seems like a significant contribution, and so I
+would recommend this paper's acceptance.
+
+Minor notes:
+
+Page 7: I was surprised initially here that casts could be applied to
+things of type \mu x:t... Coming back to it it's clear but so far cast
+has been presented as just performing beta reduction and expansion.
+
+Page 8: There probably should be a comma between the definitions of eval' and reify'.
+
+Figure 4: The metavariables R and D are undefined.
+
+------------------------------------------------------

@@ -1,0 +1,182 @@
+\newcommand{\newsyntax}{
+\ottrulehead{\ottnt{e}  ,\ \tau,\
+\sigma}{::=}{\ottcom{Expressions}}\ottprodnewline
+\ottfirstprodline{|}{\dots}{}{}{}{}\ottprodnewline
+\ottprodline{|}{[[mu x:t.e]]}{}{}{}{\ottcom{Polymorphic Recursion}}}
+
+\section{Dependent Types with General Recursion}\label{sec:rec}
+
+In this section we present \name: an extension of \ecore with a
+recursion construct.  Recursion 
+has a uniform representation on both term level and type level: the
+same construct works both as a term-level fixpoint and a recursive type.
+The addition of general recursion does not break decidability of
+type checking nor type safety. The full specification and proofs of \name
+can be found in the supplementary materials of this paper.
+
+\subsection{Syntax and Semantics}
+
+Figure \ref{fig:rec:ext} shows the changes of extending \ecore to
+\name with general recursion. The changes are subtle, since we add
+only one more primitive, reduction rule and typing rule for general
+recursion. Nevertheless general recursion allows a large number 
+of programs that can be expressed in programming languages such 
+as Haskell to be expressed in \name as well.
+
+For the syntax, we add the polymorphic recursive expression $[[mu x:t.e]]$
+to represent general recursion in both terms and types.  The recursive
+expression is \emph{polymorphic}, in the sense that $[[t]]$ 
+is not restricted to $[[star]]$ but can be any type, 
+such as a function type $[[int -> int]]$ or a kind $[[star -> star]]$.
+For the operational semantics, we add
+the rule \ruleref{S\_Mu} to define the unrolling of recursion
+as a one-step reduction. For typing, we
+add the rule \ruleref{T\_Mu} for checking the validity of a
+recursive term. The rule ensures that the 
+recursion $[[mu x:t.e]]$ should have the same type $[[t]]$ as the
+binder $[[x]]$ and also the inner expression $[[e]]$.
+
+\begin{figure}
+	\begin{center}
+  \gram{\newsyntax}\ottinterrule
+  \end{center}
+	\ottdefnstepXXrec{}\ottinterrule
+	\ottdefnexprXXrec{}
+	\caption{Syntax and semantics changes from \ecore to \name}
+    \label{fig:rec:ext}
+\end{figure}
+
+\subsection{The Two Faces of Recursion}
+\label{sec:rec:recur}
+\paragraph{Term-level Recursion}
+
+In \name, the $[[mu]]$-operator works as a \emph{fixpoint} on the term
+level. By rule \ruleref{S\_Mu}, evaluating a term $[[mu x:t.e]]$ will
+substitute all $[[x]]$'s in $e$ with the whole $[[mu]]$-term itself,
+resulting in the unrolling $[[e [x |-> mu x:t.e] ]]$. The
+$[[mu]]$-term is equivalent to a recursive function that should be
+allowed to unroll without restriction. Therefore, the definition of
+values is not changed in \name and a $[[mu]]$-term is not treated as a
+value. 
+
+Recall the factorial function example in Section
+\ref{sec:overview:recursion}.
+By rule \ruleref{T\_Mu}, the type of $\mathit{fact}$ is $[[int ->
+    int]]$. Thus, we can apply $\mathit{fact}$ to an integer, say $3$,
+and will get an integer as the result. In this example, we assume
+evaluating the $\kw{if}$-$\kw{then}$-$\kw{else}$ construct and 
+arithmetic expressions follows the one-step
+reduction. Together with standard reduction rules \ruleref{S\_Mu} and
+\ruleref{S\_App}, we can evaluate the term $\mathit{fact}~3$ as
+follows:
+\begin{align*}
+    &\mathit{fact}~3 \\ [[-->]]~& ([[\x : int . @@]]~\kw{if}~
+  ~x==0~\kw{then}~1~\kw{else}~x \times \mathit{fact}~(x - 1))~3
+  \\ [[-->]]~ & \kw{if}~3==0~\kw{then}~1~\kw{else}~3 \times
+  \mathit{fact}~(3 - 1) \\ [[-->]]~& 3 \times \mathit{fact}~(3-1)
+  \\ [[-->]]~& \dots [[-->]]~ 6. 
+\end{align*}
+
+Note that we never check if a $\mu$-term can terminate or not, which
+is an undecidable problem for general recursive terms. The
+factorial function example above can stop, while there exist some
+terms that will loop forever. However, term-level non-termination is
+only a runtime concern and does not block the type checker. In Section
+\ref{sec:rec:meta} we show type checking \name is still decidable
+in the presence of general recursion.
+
+\paragraph{Type-level Recursion}
+
+On the type level, $[[mu x:t.e]]$ works as a \emph{iso-recursive}
+type~\cite{eqi:iso}, a kind of recursive type that is not equal but only isomorphic
+to its unrolling. Normally, we need to add two more primitives
+$[[fold]]$ and $[[unfold]]$ for the iso-recursive type to map back
+and forth between the original and unrolled form. Assume there exist
+expressions $[[e1]]$ and $[[e2]]$ such that
+\[\begin{array}{lll}
+  &[[e1]] &: [[mu x:t.T]]\\
+  &[[e2]] &: [[T [x |-> mu x:t.T] ]]
+\end{array}\]
+We have the following typing results
+\[\begin{array}{lll}
+  &[[unfold e1]] &: [[T [x |-> mu x:t.T] ]]\\
+  &[[fold [mu x:t.T] e2]] &: [[mu x:t.T]]
+\end{array}\]
+which are derived from the standard rules for recursive types~\cite{tapl}
+\[ \inferrule{[[G |- e1 :(mu x:t.T)]] \\ [[G |- T[x |-> mu x:t.T] : star]]}
+   {[[G |- unfold e1 : (T[x |-> mu x:t.T]) ]]} \]
+\[ \inferrule{[[G |- e2 : T[x |-> mu x:t.T] ]] \\ [[G |- (mu x:t.T) : star]] }
+   {[[G |- fold [mu x:t.T] e2 : (mu x:t.T) ]]} \]
+Thus, we have the following relation between types of $[[e1]]$ and $[[e2]]$
+witnessed by $[[fold]]$ and $[[unfold]]$:
+\begin{align*}
+  [[mu x:t.T]] \xrightleftharpoons[{[[fold]]~[ [[mu x:t.T]] ]}]
+  {[[unfold]]} [[T[x |-> mu x:t.T] ]]
+\end{align*}
+
+However, in \name we do not need to introduce $[[fold]]$ and
+$[[unfold]]$ operators, because with the rule \ruleref{S\_Mu},
+$[[castup]]$ and $[[castdown]]$ \emph{generalize} $[[fold]]$ and $[[unfold]]$.
+Consider the same expressions $[[e1]]$ and $[[e2]]$ above. The type of
+$[[e2]]$ is the unrolling of $[[e1]]$'s type, which follows the
+one-step reduction relation by rule \ruleref{S\_Mu}:
+\[ [[mu x:t.T --> T [x |-> mu x:t.T] ]] \]
+By applying rules \ruleref{T\_CastUp} and \ruleref{T\_CastDown}, we
+can obtain the following typing results:
+\[\begin{array}{lll}
+	&[[castdown e1]] &: [[T [x |-> mu x:t.T] ]]\\
+	&[[castup [mu x:t.T] e2]] &: [[mu x:t.T]]
+\end{array}\]
+Thus, $[[castup]]$ and $[[castdown]]$ witness the isomorphism between
+the original recursive type and its unrolling, behaving in the
+same way
+as $[[fold]]$ and $[[unfold]]$ in iso-recursive types:
+\begin{align*}
+  [[mu x:t.T]] \xrightleftharpoons[{[[castup]]~[ [[mu x:t.T]]
+  ]}]{[[castdown]]} [[T[x |-> mu x:t.T] ]]
+\end{align*}
+
+
+\subsection{Decidability of Type Checking and Type Safety}\label{sec:rec:meta}
+We gave the proof of the decidability of type checking \ecore in
+Section \ref{sec:ecore:meta} without requiring strong normalization. The
+\cast rules, which rely on checking if
+one type can be reduced to another in one step, are critical for decidability. When we introduce
+general recursion into the language, if we can make sure that the newly
+added and original typing rules are decidable, then the decidability
+of type checking still follows in \name.
+The type-checking rule \ruleref{T\_Mu} for 
+recursion is decidable because its premises only include
+decidable typing judgements. 
+
+However, the rule \ruleref{S\_Mu} changes
+the one-step reduction, which may affect the decidability of \cast
+rules. If the decidability of changed reduction rules still holds, by
+following the proof for \ecore, we can show that \cast
+rules are decidable in \name. Note that given a recursive term
+$[[mu x:t.e]]$, by rule \ruleref{S\_Mu}, there always exists a unique
+term $[[e']]=[[e[x|->mu x:t.e] ]]$ such that $[[mu x:t.e -->
+    e']]$. Thus, the decidability of one-step reduction still holds,
+i.e., Lemma \ref{lem:ecore:unique} holds in \name. Then we can conclude that 
+type checking \name is decidable:
+
+\begin{thm}[Decidability of Type Checking \name]\label{lem:rec:decide}
+	There is an algorithm which given $[[G]], [[e]]$ computes the
+        unique $[[t]]$ such that $[[G |- e:t]]$ or reports there is no
+        such $[[t]]$.
+\end{thm}
+
+Moreover, it is straightforward to show the type safety of \name by
+considering rules \ruleref{S\_Mu} and \ruleref{T\_Mu} during the
+induction step of proofs for Theorem \ref{lem:ecore:reduct} and
+\ref{lem:ecore:prog}. The type safety of \name is given by
+the following theorems:
+
+\begin{thm}[Subject Reduction of \name]\label{lem:rec:reduct}
+If $[[G |- e:T]]$ and $[[e]] [[->>]] e'$ then $[[G |- e':T]]$.
+\end{thm}
+
+\begin{thm}[Progress of \name]\label{lem:rec:prog}
+If $[[empty |- e:T]]$ then either $[[e]]$ is a value $v$ or there
+exists $[[e]]'$ such that $[[e --> e']]$.
+\end{thm}

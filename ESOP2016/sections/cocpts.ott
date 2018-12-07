@@ -1,0 +1,61 @@
+% Formalization of Calculus of Constructions
+
+%% Syntax
+grammar
+
+ee {{ tex e }} , tt {{ tex \tau }} :: 'ee_' ::=       {{ com Expressions    }}
+  | x                              ::  :: cVar        {{ com Variable }}
+  | ss                             ::  :: cSort       {{ com Sort }}
+  | ee1 ee2                        ::  :: cApp        {{ com Application }}
+  | \ x : tt . ee                  ::  :: cLam        {{ com Abstraction }}
+  | Pi x : tt1 . tt2               ::  :: cPi         {{ com Product }}
+  | ee1 [ x |-> ee2 ]              :: M:: cSub        {{ com Substitution }}
+  | ( ee )                         :: M:: cParens     {{ com Parenthesized expression }}
+  | ee1 -> ee2                     :: M:: cFunType
+
+ss {{ tex s }}, rr {{ tex t }} :: 'ss_' ::= {{ com Sorts }}
+  | star                ::  :: cStar                  {{ com Star }}
+  | square              ::  :: cSquare                {{ com Square }}
+
+%%% Typing rules
+defns
+LintCC :: '' ::=
+
+defn G  |- ee : tt ::  :: exprcoc :: 'Tcc_' {{ com Typing rules of \cc }}
+by
+
+---------------------- :: Ax
+empty |- star : square
+
+G |- tt : ss
+x fresh G
+----------------- :: Var
+G, x : tt |- x : tt
+
+G |- ee : tt2
+G |- tt1 : ss
+x fresh G
+------------------- :: Weak
+G, x : tt1 |- ee : tt2
+
+G |- ee1 : (Pi x:tt2.tt1)
+G |- ee2 : tt2
+------------------------ :: App
+G |- ee1 ee2 : tt1[x |-> ee2]
+
+G, x : tt1 |- ee : tt2
+G |- (Pi x:tt1.tt2) : ss
+--------------------------- :: Lam
+G |- (\x:tt1.ee):(Pi x:tt1.tt2)
+
+G |- tt1 : ss
+G, x:tt1 |- tt2:rr
+------------------- :: Pi
+G |- (Pi x:tt1.tt2):rr
+
+G |- ee : tt1
+G |- tt2 : ss
+tt1 =b tt2
+----------- :: Conv
+G |- ee : tt2
+

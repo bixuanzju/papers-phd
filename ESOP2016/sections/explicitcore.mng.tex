@@ -1,0 +1,469 @@
+
+\section{Dependent Types with Casts and General Recursion}\label{sec:ecore}
+
+In this section, we present the \name calculus. This calculus is very
+close to the calculus of constructions, except for three key differences:
+1) the absence of the $\Box$ constant (due to use of the
+``type-in-type'' axiom); 2) the existence of two \cast operators; 3)
+general recursion on both term level and type level.
+Unlike \cc the proof of 
+decidability of type checking for \name does not require the strong normalization of the
+calculus. Thus, the addition of general recursion does not break decidable
+type checking. In the rest of this section, we demonstrate the syntax,
+operational semantics, typing rules and metatheory of \name.
+Full proofs of metatheory can be found in the full version of this paper\footnote{\url{https://github.com/bixuanzju/full-version}}.
+
+\subsection{Syntax}\label{sec:ecore:syn}
+
+Figure \ref{fig:ecore:syntax} shows the syntax of \name, including
+expressions, contexts and values. \name uses a unified 
+representation for different syntactic levels by following the
+\emph{pure type system} (PTS) representation of \cc~\cite{handbook}. Therefore, there
+is no syntactic distinction between terms, types or kinds. This design
+brings economy for type checking, since one set of rules can cover
+all syntactic levels. By convention, we use metavariables $[[t]]$ and
+$[[T]]$ for an expression on the type-level position and $e$ for one
+on the term level.
+
+\paragraph{Type of Types}
+In \cc, there are two distinct sorts $[[star]]$ and
+$[[square]]$ representing the type of \emph{types} and \emph{sorts}
+respectively, and an axiom $[[star]]:[[square]]$ specifying the
+relation between the two sorts~\cite{handbook}. In \name, we further merge types and
+kinds together by including only a single sort $[[star]]$ and an
+impredicative axiom $[[star]]:[[star]]$.
+
+\paragraph{Explicit Type Conversion}
+
+We introduce two new primitives $[[castup]]$ and $[[castdown]]$
+(pronounced as ``cast up'' and ``cast down'') to replace the implicit
+conversion rule of \cc with \emph{one-step} explicit type
+conversions. The type-conversions perform two directions of conversion:
+$[[castdown]]$ is for the \emph{beta reduction} of types, and
+$[[castup]]$ is for the \emph{beta expansion}. The $[[castup]]$
+construct takes a
+type parameter $[[t]]$ as the result type of one-step beta expansion
+for disambiguation (see also Section \ref{subsec:cast}). The $[[castdown]]$ construct
+does not need a type parameter,  because the result type of one-step beta reduction
+is uniquely determined, as we shall see in Section \ref{sec:ecore:meta}.
+
+\paragraph{General Recursion}
+General recursion allows a large number of programs that can be expressed in programming languages such 
+as Haskell to be expressed in \name as well.
+We add one primitive $[[mu]]$ to represent general recursion.
+It has a uniform representation on both term level and type level: the
+same construct works both as a term-level fixpoint and a recursive type. The recursive
+expression $[[mu x:t.e]]$ is \emph{polymorphic}, in the sense that $[[t]]$ 
+is not restricted to $[[star]]$ but can be any type, 
+such as a function type $[[int -> int]]$ or a kind $[[star -> star]]$.
+
+\begin{figure}[t]
+\centering
+\footnotesize
+\begin{spacing}{0.9}
+    \gram{\otte\ottinterrule
+        \ottG\ottinterrule
+        \ottv}
+    \[
+    \begin{array}{l}
+    \text{Syntactic Sugar} \\
+    \ottcoresugar \end{array}\]
+\end{spacing}
+    \caption{Syntax of \name}
+    \label{fig:ecore:syntax}
+\end{figure}
+
+\paragraph{Syntactic Sugar}
+Figure \ref{fig:ecore:syntax} also shows the syntactic sugar used in \name.
+By convention, we use $[[t1 -> t2]]$ to represent 
+$[[Pi x:t1.t2]]$ if $[[x]]$ does not occur free in $[[t2]]$. 
+We also interchangeably use the dependent function type $[[(x:t1) -> t2]]$
+to denote $[[Pi x:t1.t2]]$.
+We use $[[let x:t=e2 in e1]]$ to locally bind a variable $[[x]]$ to 
+an expression $[[e2]]$ in $[[e1]]$, and its variant $[[letrec]]$ for
+recursive functions.
+% Because $[[e2]]$ can be a type,
+% we cannot simply desugar the let-binding into an application:
+% \[
+% [[let x:t=e2 in e1]] [[:=]] [[(\x:t.e1)e2]]
+% \]
+% We can find a counter-example like
+% \[
+% [[let x : star= int in (\ y : x . y) three]]
+% \]
+
+For the brevity of translation rules in Section \ref{sec:surface},
+we use $[[foldn]]$ and $[[unfoldn]]$ to denote
+$n$ consecutive cast operators. $[[foldn]]$ is simplified to only take
+one type parameter, the last type $[[t1]]$ of the $n$ cast operations.
+The original $[[foldn]]$ includes intermediate results $[[t2]], \dots, [[tn]]$
+of type conversion:
+\[
+    [[foldn]] [ [[t1]], \dots, [[tn]] ] [[e]]  [[:=]] [[castup]] [
+    [[t1]] ] ([[castup]] [ [[t2]] ] (\dots ( [[castup]] [ [[tn]] ]
+  [[e]] ) \dots ))
+\]
+Due to the decidability of one-step reduction (shown in Section 
+\ref{sec:ecore:meta}), the intermediate types can be uniquely determined, 
+thus can be left out from the $[[foldn]]$ operator.
+
+\subsection{Operational Semantics}\label{sec:ecore:opsem}
+
+Figure \ref{fig:ecore:opsem} shows the \emph{call-by-name} operational
+semantics, defined by one-step reduction. Three base cases include
+\ruleref{S\_Beta} for beta reduction, \ruleref{S\_CastDownUp} for
+cast canceling and \ruleref{S\_Mu} for recursion unrolling.
+Two inductive cases, \ruleref{S\_App} and
+\ruleref{S\_CastDown}, define reduction in the head position of an
+application, and in the $[[castdown]]$ inner expression respectively.
+The reduction rules are \emph{weak} because they are not allowed to do
+the reduction inside a $\lambda$-term or $[[castup]]$-term --- both of
+them are defined as values (see Figure \ref{fig:ecore:syntax}).
+
+To evaluate the value of a term-level expression, we apply the
+one-step reduction multiple times. The number of evaluation steps is
+not restricted. So we can define the \emph{multi-step reduction}:
+
+\begin{definition}[Multi-step reduction]
+    The relation $[[->>]]$ is the transitive and reflexive closure of
+    the one-step reduction $[[-->]]$.
+\end{definition}
+
+\begin{figure}[t]
+\small
+\begin{spacing}{0.7}
+    \ottdefnstep{}
+    \ottusedrule{\ottdruleSXXMu{}}
+\end{spacing}
+    \caption{Operational semantics of \name}
+    \label{fig:ecore:opsem}
+\end{figure}
+
+\subsection{Typing}\label{sec:ecore:type}
+
+Figure \ref{fig:ecore:typing} gives the \emph{syntax-directed} typing
+rules of \name, including rules of context well-formedness $[[|- G]]$
+and expression typing $[[G |- e : t]]$. Note that there is only a
+single set of rules for expression typing, because there is no
+distinction of different syntactic levels.
+
+Most typing rules are quite standard. We write $[[|- G]]$ if a context
+$[[G]]$ is well-formed. We use $[[G |- t : star]]$ to check if $[[t]]$ is a
+well-formed type. Rule \ruleref{T\_Ax} is the ``type-in-type''
+axiom. Rule \ruleref{T\_Var} checks the type of variable $[[x]]$ from
+the valid context. Rules \ruleref{T\_App} and \ruleref{T\_Lam} check
+the validity of application and abstraction respectively. Rule \ruleref{T\_Pi}
+checks the type well-formedness of the dependent function. Rule
+\ruleref{T\_Mu} checks the validity of a
+recursive term. It ensures that the 
+recursion $[[mu x:t.e]]$ should have the same type $[[t]]$ as the
+binder $[[x]]$ and also the inner expression $[[e]]$.
+
+\paragraph{The Cast Rules}
+We focus on rules \ruleref{T\_CastUp} and \ruleref{T\_CastDown} that
+define the semantics of \cast operators and replace the conversion
+rule of \cc. The relation between the original
+and converted type is defined by one-step reduction (see Figure
+\ref{fig:ecore:opsem}). 
+
+For example, given a judgement
+$[[G |- e : t2]]$ and relation $[[t1 --> t2]] [[-->]] [[t3]]$,
+$[[castup [t1] e]]$ expands the type of $[[e]]$ from $[[t2]]$ to
+$[[t1]]$, while $[[castdown e]]$ reduces the type of $[[e]]$ from
+$[[t2]]$ to $[[t3]]$. We can formally give the typing derivations of 
+the examples in Section \ref{subsec:cast}:
+{
+\small
+\[
+\inferrule{[[G |- e : (\x : star.x) int]] \\ [[G |- int : star]] \\ [[(\x :
+star.x) int --> int]]}{[[G |- (castdown e):int]]}
+\]
+\[
+\inferrule{[[G |- three : int]] \\ [[G |- (\x : star.x) int : star]] \\ [[(\x :
+star.x) int --> int]]}{[[G |- (castup[(\x : star.x) int] three):(\x : star.x)
+int]]}
+\]
+}
+
+
+
+Importantly, in \name term-level and type-level computation are treated 
+differently. Term-level computation is dealt in the usual way, by 
+using multi-step reduction until a value is finally obtained. 
+Type-level computation, on the other hand, is controlled by the program:
+each step of the computation is induced by a cast. If a type-level 
+program requires $n$ steps of computation to reach normal form, 
+then it will require $n$ casts to compute a type-level value.
+
+\paragraph{Pros and Cons of Type in Type}
+The ``type-in-type'' axiom is well-known to give rise 
+to logical inconsistency~\cite{systemfw}. However, since our goal is to 
+investigate core languages for languages that are logically
+inconsistent anyway (due to general recursion), we do not view 
+``type-in-type''  as a problematic rule.
+On the other hand the rule \ruleref{T\_Ax} brings additional
+expressiveness and benefits:
+for example \emph{kind polymorphism} is supported in \name.
+A term that takes a kind parameter like $[[\
+    x:square.x->x]]$ cannot be typed in \cc, since $[[square]]$ is
+the highest sort that does not have a type.
+In contrast, \name does not have such limitation. Because of
+the $[[star]]:[[star]]$ axiom, the term $[[\x:star.x->x]]$ has a legal 
+type $[[Pi x:star.star]]$ in \name. It can be applied to 
+a kind such as $[[star -> star]]$
+to obtain $[[(star->star) -> (star -> star)]]$.
+
+\paragraph{Syntactic Equality}
+Finally, the definition of type equality in \name differs from
+\cc. Without \cc's conversion rule, the type of a term cannot be
+converted freely against beta equality, unless using \cast
+operators. Thus, types of expressions are equal only if they are
+syntactically equal (up to alpha renaming).
+
+\begin{figure}[t]
+\footnotesize
+\centering
+\begin{spacing}{1.0}
+\renewcommand{\ottdrule}[4][]{{\inferrule{#2 }{#3}\,\ottdrulename{#4}}}
+\renewenvironment{ottdefnblock}[3][]{\raggedright \framebox{\mbox{#2}} \quad #3 \\[0pt]}{}
+\renewcommand{\ottusedrule}[1]{$#1\quad$}
+    \ottdefnctx{}\ottinterrule
+    \ottdefnexpr{}
+    \ottusedrule{\ottdruleTXXMu{}}
+\end{spacing}
+    \caption{Typing rules of \name}
+    \label{fig:ecore:typing}
+\end{figure}
+
+\subsection{The Two Faces of Recursion}
+\label{sec:ecore:recur}
+\paragraph{Term-level Recursion}
+
+In \name, the $[[mu]]$-operator works as a \emph{fixpoint} on the term
+level. By rule \ruleref{S\_Mu}, evaluating a term $[[mu x:t.e]]$ will
+substitute all $[[x]]$'s in $e$ with the whole $[[mu]]$-term itself,
+resulting in the unrolling $[[e [x |-> mu x:t.e] ]]$. The
+$[[mu]]$-term is equivalent to a recursive function that should be
+allowed to unroll without restriction. Therefore, the definition of
+values is not changed in \name and a $[[mu]]$-term is not treated as a
+value. 
+
+Recall the factorial function example in Section
+\ref{sec:overview:recursion}.
+By rule \ruleref{T\_Mu}, the type of $\mathit{fact}$ is $[[int ->
+    int]]$. Thus we can apply $\mathit{fact}$ to an integer.
+In this example, we assume
+evaluating the $\kw{if}$-$\kw{then}$-$\kw{else}$ construct and 
+arithmetic expressions follows the one-step
+reduction. Together with standard reduction rules \ruleref{S\_Mu} and
+\ruleref{S\_App}, we can evaluate the term $\mathit{fact}~3$ as
+follows:
+\begin{spacing}{0.7}
+\small
+\begin{align*}
+    &\mathit{fact}~3 \\ [[-->]]~& ([[\x : int . @@]]~\kw{if}~
+  ~x==0~\kw{then}~1~\kw{else}~x \times \mathit{fact}~(x - 1))~3
+  \\ [[-->]]~ & \kw{if}~3==0~\kw{then}~1~\kw{else}~3 \times
+  \mathit{fact}~(3 - 1) \\ [[-->]]~& 3 \times \mathit{fact}~(3-1)
+  \\ [[-->]]~& \dots [[-->]]~ 6. 
+\end{align*}
+\end{spacing}
+
+Note that we never check if a $\mu$-term can terminate or not, which
+is an undecidable problem for general recursive terms. The
+factorial function example above can stop, while there exist some
+terms that will loop forever. However, term-level non-termination is
+only a runtime concern and does not block the type checker. In Section
+\ref{sec:ecore:meta} we show type checking \name is still decidable
+in the presence of general recursion.
+
+\paragraph{Type-level Recursion}
+
+On the type level, $[[mu x:t.e]]$ works as a \emph{iso-recursive}
+type~\cite{eqi:iso}, a kind of recursive type that is not equal but only isomorphic
+to its unrolling. Normally, we need to add two more primitives
+$[[fold]]$ and $[[unfold]]$ for the iso-recursive type to map back
+and forth between the original and unrolled form. Assume there exist
+expressions $[[e1]]$ and $[[e2]]$ such that
+\[\begin{array}{lll}
+  &[[e1]] &: [[mu x:t.T]]\\
+  &[[e2]] &: [[T [x |-> mu x:t.T] ]]
+\end{array}\]
+We have the following typing results
+\[\begin{array}{lll}
+  &[[unfold e1]] &: [[T [x |-> mu x:t.T] ]]\\
+  &[[fold [mu x:t.T] e2]] &: [[mu x:t.T]]
+\end{array}\]
+which are derived from the standard rules for recursive types~\cite{tapl}
+{
+\small
+\[ \inferrule{[[G |- e1 :(mu x:t.T)]] \\ [[G |- T[x |-> mu x:t.T] : star]]}
+   {[[G |- unfold e1 : (T[x |-> mu x:t.T]) ]]} \]
+\[ \inferrule{[[G |- e2 : T[x |-> mu x:t.T] ]] \\ [[G |- (mu x:t.T) : star]] }
+   {[[G |- fold [mu x:t.T] e2 : (mu x:t.T) ]]} \]}
+Thus, we have the following relation between types of $[[e1]]$ and $[[e2]]$
+witnessed by $[[fold]]$ and $[[unfold]]$:
+\begin{align*}
+  [[mu x:t.T]] \xrightleftharpoons[{[[fold]]~[ [[mu x:t.T]] ]}]
+  {[[unfold]]} [[T[x |-> mu x:t.T] ]]
+\end{align*}
+
+However, in \name we do not need to introduce $[[fold]]$ and
+$[[unfold]]$ operators, because with the rule \ruleref{S\_Mu},
+$[[castup]]$ and $[[castdown]]$ \emph{generalize} $[[fold]]$ and $[[unfold]]$.
+Consider the same expressions $[[e1]]$ and $[[e2]]$ above. The type of
+$[[e2]]$ is the unrolling of $[[e1]]$'s type, which follows the
+one-step reduction relation by rule \ruleref{S\_Mu}:
+\[ [[mu x:t.T --> T [x |-> mu x:t.T] ]] \]
+By applying rules \ruleref{T\_CastUp} and \ruleref{T\_CastDown}, we
+can obtain the following typing results:
+\[\begin{array}{lll}
+  &[[castdown e1]] &: [[T [x |-> mu x:t.T] ]]\\
+  &[[castup [mu x:t.T] e2]] &: [[mu x:t.T]]
+\end{array}\]
+Thus, $[[castup]]$ and $[[castdown]]$ witness the isomorphism between
+the original recursive type and its unrolling, behaving in the
+same way
+as $[[fold]]$ and $[[unfold]]$ in iso-recursive types:
+\begin{align*}
+  [[mu x:t.T]] \xrightleftharpoons[{[[castup]]~[ [[mu x:t.T]]
+  ]}]{[[castdown]]} [[T[x |-> mu x:t.T] ]]
+\end{align*}
+
+\paragraph{Casts and Recursive Types}
+Figure \ref{fig:ecore:syntax} shows that $[[castup]]$ is a \emph{value} that cannot be further reduced 
+during the evaluation. It follows the convention of $[[fold]]$ in iso-recursive types~\cite{Vanderwaart:2003ik}.
+But too many $[[castup]]$ constructs left for code generation will
+increase the size of the program and cause runtime overhead.
+Actually, $[[castup]]$ constructs can be safely erased after type checking:
+they are \emph{computationally irrelevant} and do not actually 
+transform a term other than changing its type.
+%However, noticing that $[[castup [t] e]]$ or $[[castdown e]]$ have
+%different types from $[[e]]$, types of terms are not preserved if directly removing cast constructs.
+%This breaks the subject reduction theorem, and consequently type-safety.
+
+%Therefore, we stick to the semantics of iso-recursive types for \cast
+%operators which has type preservation. This way explicit casts and
+%recursion can genuinely be seen as a generalization of recursive
+%types (see Section \ref{sec:ecore:type}). Furthermore, we believe that all \cast operators can be
+%eliminated through type erasure, when generating code,
+%to address the potential performance issue of code generation.
+
+An important remark is that casts are necessary, not only for controlling the unrolling of recursive types,
+but also for type conversion of other constructs. 
+This is because the ``type-in-type'' axiom~\cite{typeintype} makes it possible
+to encode fixpoints even without a fixpoint primitive, i.e., the $\mu$-operator.
+Thus if no casts would be performed on terms without recursive types,
+it would still be possible to build a term with a non-terminating type and
+make type-checking non-terminating.
+
+\subsection{Metatheory}\label{sec:ecore:meta}
+We now discuss the metatheory of \name. We focus on two properties:
+the decidability of type checking and the type safety of the
+language. First, we show that type checking \name is decidable
+without requiring strong normalization. Second, the language is type-safe, 
+proven by subject reduction and progress theorems.
+
+\paragraph{Decidability of Type Checking}
+For the decidability, we need to show there exists a type checking
+algorithm, which never loops forever and returns a unique type for a
+well-formed expression $[[e]]$. This is done by induction on the
+length of $[[e]]$ and ranging over typing rules. Most expression
+typing rules, including the rule \ruleref{T\_Mu} for recursion, 
+which have only typing judgements in premises, are
+already decidable by the induction hypothesis. Thus, it is
+straightforward to follow the syntax-directed judgement to derive a
+unique type checking result.
+
+The critical case is for rules \ruleref{T\_CastUp} and
+\ruleref{T\_CastDown}.  Both rules contain a premise that needs to
+judge if two types $[[t1]]$ and $[[t2]]$ follow the one-step
+reduction, i.e., if $[[t1 --> t2]]$ holds. We need to show that
+$[[t2]]$ is \emph{unique} with respect to the one-step reduction, or
+equivalently, reducing $[[t1]]$ by one step will get only a sole
+result $[[t2]]$. Otherwise, assume $[[e]]:[[t1]]$ and there exists
+$[[t2']]$ such that $[[t1 --> t2]]$ and $[[t1 --> t2']]$. Then the
+type of $[[castdown e]]$ can be either $[[t2]]$ or $[[t2']]$ by rule
+\ruleref{T\_CastDown}, which would not be decidable. The decidability
+of one-step reduction is
+given by the following lemma:
+
+\begin{lemma}[Decidability of One-step Reduction]\label{lem:ecore:unique}
+	The one-step reduction $[[-->]]$ is called decidable if 
+given $[[e]]$ there is a unique $[[e']]$ such that $[[e --> e']]$ or
+there is no such $[[e']]$.
+\end{lemma}
+
+\begin{proof}
+	By induction on the structure of $[[e]]$.
+\end{proof}
+
+Note that the presence of recursion does not affect this lemma: 
+given a recursive term
+$[[mu x:t.e]]$, by rule \ruleref{S\_Mu}, there always exists a unique
+term $[[e']]=[[e[x|->mu x:t.e] ]]$ such that $[[mu x:t.e -->
+    e']]$.
+With this result, we show a decidable algorithm to check whether
+the one-step relation $[[t1 --> t2]]$ holds. An intuitive algorithm is to
+reduce the type $[[t1]]$ by one step to obtain $[[t1']]$ (which is
+unique by Lemma \ref{lem:ecore:unique}), and compare if $[[t1']]$ and
+$[[t2]]$ are syntactically equal. Thus, checking if $[[t1 --> t2]]$ is
+decidable and rules \ruleref{T\_CastUp} and \ruleref{T\_CastDown} are
+therefore decidable. We can conclude the decidability of type
+checking:
+
+\begin{theorem}[Decidability of Type Checking \name]\label{lem:ecore:decide}
+	There is an algorithm which given $[[G]], [[e]]$ computes the unique
+$[[t]]$ such that $[[G |- e:t]]$ or reports there is no such $[[t]]$.
+\end{theorem}
+
+\begin{proof}
+	By induction on the structure of $[[e]]$.
+\end{proof}
+
+We emphasize that when proving the decidability of type checking, we
+do not rely on strong normalization. Intuitively,
+explicit type conversion rules use one-step reduction, which already
+has a decidable checking algorithm according to Lemma
+\ref{lem:ecore:unique}. We do not need to further require the
+normalization of terms. This is different from the proof for \cc which
+requires the language to be strongly normalizing
+\cite{pts:normalize}. In \cc the conversion rule needs to examine
+the beta equivalence of terms, which is decidable only if every term
+has a normal form.
+
+\paragraph{Type Safety}
+The proof of the type safety of \name is fairly standard by subject
+reduction and progress theorems. The subject reduction proof relies on
+the substitution lemma. We give the proof sketch of the related lemma and
+theorems as follows:
+
+\begin{lemma}[Substitution]\label{lem:ecore:subst}
+	If $[[G1, x:T, G2 |- e1:t]]$ and $[[G1 |- e2:T]]$, then $[[G1, G2 [x |-> e2]
+|- e1[x |-> e2]  : t[x |-> e2] ]]$.
+\end{lemma}
+
+\begin{proof}
+    (\emph{Sketch}) By induction on the derivation of $[[G1, x:T, G2 |- e1:t]]$. We only treat cases \ruleref{T\_Mu}, \ruleref{T\_CastUp} and \ruleref{T\_CastDown} since other cases can be easily followed by the proof for PTS in \cite{handbook}.
+\end{proof}
+
+\begin{theorem}[Subject Reduction of \name]\label{lem:ecore:reduct}
+If $[[G |- e:T]]$ and $[[e]] [[->>]] e'$ then $[[G |- e':T]]$.
+\end{theorem}
+
+\begin{proof}
+    (\emph{Sketch}) We prove the case for one-step reduction, i.e., $[[e -->
+e']]$. The theorem follows by induction on the number of one-step reductions
+of $[[e]] [[->>]] [[e']]$.
+    The proof is by induction with respect to the definition of one-step
+reduction $[[-->]]$.
+\end{proof}
+
+\begin{theorem}[Progress of \name]\label{lem:ecore:prog}
+If $[[empty |- e:T]]$ then either $[[e]]$ is a value $v$ or there exists $[[e]]'$
+such that $[[e --> e']]$.
+\end{theorem}
+
+\begin{proof}
+    By induction on the derivation of $[[empty |- e:T]]$.
+\end{proof}
