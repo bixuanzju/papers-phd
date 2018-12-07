@@ -1,0 +1,85 @@
+\section{Related Work}
+
+This section discusses related work: intermediate functional languages on top of the JVM,
+TCE and function representations, TCE on the JVM, and the JVM modifications.
+
+\paragraph{Intermediate Functional Languages on top of the JVM.}
+A primary objective of our work is to create an efficient intermediate
+language that targets the JVM. With such intermediate language,
+compiler writers can easily develop FP compilers in the JVM.
+System F is an obvious candidate for an intermediate language as it
+serves as a foundation for ML-style or Haskell-style FP languages.
+However, there is no efficient implementation of System F in the JVM.
+The only implementation of System F that we know of (for a JVM-like
+platform) was done by Kennedy and Syme~\cite{Kennedy2004}. They showed
+that System F can be encoded, in a type-preserving way, into
+.NET's C\#. That encoding could easily be employed in Java or the JVM as
+well. However, their focus was different from ours. They were not aiming
+at having an efficient implementation of System F. Instead, their goal
+was to show that the type system of languages such as C\# or Java is
+expressive enough to faithfully encode System F terms. They used a
+FAO-based approach and have not exploited the erasure semantics of System F.
+As a result, the encoding suffers from various performance drawbacks
+and cannot be realistically used as an intermediate language. MLj
+\cite{Benton1998} compiled a subset of SML '97 (interoperable with
+Java libraries) to the Monadic Intermediate Language, from which it
+generated Java bytecode. Various Haskell-to-JVM compiler backends
+\cite{Wakeling1999,Tullsen1996,Choi2001} used different
+variations of the \emph{graph reduction machine}~\cite{Wadsworth:1971} for their
+code generation, whereas we translate from System F. 
+
+\paragraph{Tail-Call Elimination and Function Representations.}
+A choice of a function representation plays a great role
+\cite{Shao1994} in time and space efficiency as well as in how
+difficult it is to correctly implement tail calls. Since
+Steele's pioneering work on tail calls \cite{Steele1977}, implementors
+of FP languages often recognize TCE as a necessary
+feature. Steele's Rabbit Scheme compiler~\cite{Steele1978} introduced the ``UUO handler'' 
+that inspired our TCE technique using IFOs.
+Early on, some Scheme compilers targeted C as an intermediate
+language and overcame the absence of TCE in the backend compiler by
+using trampolines. Trampolines incur on performance penalties and
+different techniques, with ``Cheney on the M.T.A." \cite{Baker1995}
+being the most known one, improved upon them. The limitations of the
+JVM architecture, such as the lack of control over the memory
+allocation process, prevent a full implementation of Baker's
+technique. 
+
+\paragraph{Tail-Call Elimination on the JVM.}
+Apart from the recent languages, such as Scala \cite{Odersky2014b} or
+Clojure \cite{Hickey2008}, functional languages have
+targeted the JVM since its early versions. 
+Several other JVM functional languages support (self) tail recursion
+optimization, but not full TCE. Examples include MLj \cite{Benton1998}
+or Frege~\cite{Wechsung}.  Later work \cite{Minamide2003} extended MLj
+with Selective TCE. This work used an effect system to estimate the number
+of successive tail calls and introduced trampolines only when
+necessary. Another approach to TCE in the JVM  is to 
+use an explicit stack on the heap (an \texttt{Object[]} array)~\cite{Choi2001}. 
+With such explicit stack for TCE, the approach from Steele's pioneering work \cite{Steele1978} 
+can also be encoded in the JVM. Our work avoids the need for an explicit stack by using 
+IFOs, thus allowing for a more direct implementation of this technique. 
+The Funnel compiler for the JVM \cite{Schinz2001} used
+standard method calls and shrank the stack only after the execution
+reached a predefined ``tail call limit". This dynamic optimization
+needs careful tuning of the parameters, but can be possibly used to
+further improve performance of our approach.
+
+\paragraph{JVM Modifications.}
+Proposals to modify the JVM \cite{League2001}, which would arguably be a better
+solution for improving support for FP,
+appeared early on. One reason why the JVM does not support tail calls
+was due to a claimed incompatibility of a security mechanism based on
+stack inspection with a global TCE policy. The abstract
+continuation-marks machine \cite{Clements2004} refuted this
+claim. There exists one modified Java HotSpot\texttrademark VM
+\cite{Schwaighofer2009} with TCE support. The research Maxine VM
+with its new self-optimizing runtime system \cite{Wuerthinger2013}
+allows a more efficient execution of JVM-hosted languages. Despite
+these and other proposals and JVM implementations, such as IBM J9, we
+are not aware of any concrete plans for adding TCE support to the
+next official JVM release. Some other virtual machines designed for
+imperative languages do not support TCE either. For example, the
+standard Python interpreter lacks it, even though some enhanced
+variants can overcome this issue \cite{Tismer2000}. Hence, ideas from our
+work can be applied outside of the JVM ecosystem.

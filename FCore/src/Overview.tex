@@ -1,0 +1,256 @@
+\section{\name and IFOs, Informally}\label{sec:overview}
+
+This section informally presents \name programs and their IFO-based
+encoding and how to deal with tail-call elimination.
+Sections~\ref{sec:fcore} and \ref{sec:tce} present a formalized
+compilation method for a subset of \name (System F) into Java, based on the ideas from this section.
+Note that, for purposes of presentation, we show slightly simplified encodings in this
+section compared to the formal compilation method.
+
+\subsection{Encoding Functions with IFOs}\label{subsec:ifos}
+
+\noindent In \Name, we compile all functions to classes extending the \lstinline{Function} class presented in
+Section~\ref{sec:intro}. For example, consider a simple identity
+function on integers. In \name or System F (extended with integers),
+we represent it as follows:
+
+\vspace{5pt}
+$id \equiv \lambda (x : Int).~x$
+\vspace{5pt}
+
+\noindent We can manually encode this definition with an IFO in Java as follows:
+
+\begin{lstlisting}
+class Id extends Function {
+    public void apply () {
+        final Integer x = (Integer) this.arg;
+        res = x;
+    }
+}
+\end{lstlisting}
+
+\noindent The \lstinline{arg} field encodes the argument of the
+function, whereas the \lstinline{res} field encodes the result. Thus,
+to create the identity function, all we need to do is to copy the
+argument to the result. A function invocation such as
+$id~3$ is encoded as follows:
+
+\begin{lstlisting}
+Function id = new Id();
+id.arg = 3; // setting argument
+id.apply();  // invoking apply()
+\end{lstlisting}
+
+\noindent The function application goes in two steps:
+it first sets the \lstinline{arg} field to \lstinline{3} and then
+invokes the \lstinline{apply()} method.
+
+\subsubsection{Curried Functions.} IFOs can naturally define
+curried functions, such as:
+
+\vspace{5pt}
+$constant \equiv \lambda (x : Int) .~\lambda (y : Int) .~x$
+\vspace{5pt}
+
+\noindent Given two integer arguments, this function will always return
+the first one. Using IFOs, we can encode $constant$ in Java as follows:
+
+\begin{lstlisting}
+class Constant extends Function {
+    public void apply () {
+        final Integer x = (Integer) this.arg;
+        class IConstant extends Function {
+            public void apply() {
+                final Integer y = (Integer) this.arg;
+                res = x;
+            }
+        }
+        res = new IConstant();
+    }
+}
+\end{lstlisting}
+
+\noindent Here, the first lambda function sets the second one as its result.
+The definition of the second \lstinline{apply} method
+sets the result of the function to the argument of the first lambda
+function. The use of inner classes enforces the lexical scoping of functions.
+ We encode an application such as $constant~3~4$ as:
+
+\begin{lstlisting}
+Function constant = new Constant();
+constant.arg = 3;
+constant.apply();
+Function f = (Function) constant.res;
+f.arg = 4;
+f.apply();
+\end{lstlisting}
+
+\noindent We first set the argument of the \lstinline{constant} function to $3$. Then,
+we invoke the \lstinline{apply} method and store the
+resulting function to a variable \lstinline{f}. Finally, we set the
+argument of \lstinline{f} to $4$ and invoke \lstinline{f}'s
+\lstinline{apply} method.
+Note that the alias \lstinline{x} for \lstinline{this.arg} is needed to prevent accidental
+overwriting of arguments in partial applications. For example in
+$constant~3~(constant~4~5)$, the inner application $constant~4~5$ would overwrite
+$3$ to $4$ and the outer one would incorrectly return $4$.
+
+\subsubsection{Partial Function Application.} With curried functions, we can encode partial application easily.
+For example, consider the following
+expression:
+\vspace{5pt}
+$three \equiv constant~3$.
+\vspace{5pt}
+\noindent The code for this partial application is simply:
+\begin{lstlisting}
+Function constant = new Constant();
+constant.arg = 3;
+constant.apply();
+\end{lstlisting}
+\begin{figure}[t!]
+\begin{tabular}[t]{l r}
+\begin{lstlisting}
+// tail-call elimination
+class Mutual {
+	Function teven;
+	Function todd;
+	class TEven extends Function {
+		public void apply () {
+			final Integer n =
+			  (Integer) this.arg;
+			if (n == 0) {
+				res = true;
+			}
+			else {
+				todd.arg = n - 1;
+				// tail call
+				Next.next = todd;
+			}
+		}
+	}
+\end{lstlisting}&
+\hspace{20pt}\begin{lstlisting}
+	class TOdd extends Function {
+		public void apply () {
+			final Integer n =
+			  (Integer) this.arg;
+			if (n == 0) {
+				res = false;
+			}
+			else {
+				teven.arg = n - 1;
+				// tail call
+				Next.next = teven;
+			}
+		}
+	}
+	{ // initialization block
+		todd = new TOdd();
+		teven = new TEven();
+	}
+}
+\end{lstlisting}
+\end{tabular}
+
+\caption{Functions \lstinline{even} and \lstinline{odd} using IFOs with
+  tail-call elimination}
+
+\label{fig:even}
+
+\end{figure}
+\subsubsection{Recursion.} \name supports simple recursion, as well as
+mutual recursion. For example, consider the functions $even$ and $odd$
+defined to be mutually recursive:
+
+\vspace{5pt}
+\noindent$even \equiv \lambda (n : Int).~{\bf if}~(n=0)~{\bf then}~true~{\bf  else}~odd(n-1)$ \\
+\noindent$odd \equiv \lambda (n : Int).~{\bf if}~(n=0)~{\bf then}~false~{\bf else}~even(n-1)$
+\vspace{5pt}
+
+\noindent These two functions define a naive algorithm for detecting
+whether a number is even or odd. We can encode recursion using Java's own
+recursion: the Java references \lstinline{even} and
+\lstinline{odd} are themselves mutually recursive (Figure~\ref{fig:even}).
+
+\subsection{Tail-call Elimination}
+
+The recursive calls in $even$ and $odd$ are tail calls.
+IFOs present new ways for doing tail-call elimination in the JVM.
+The key idea, inspired by Steele's work on encoding tail-call
+elimination~\cite{Steele1978}, is to use a simple
+auxiliary structure
+\begin{lstlisting}
+class Next {static Function next = null;}
+\end{lstlisting}
+\noindent that keeps track of the next call to be executed. Figure~\ref{fig:even} illustrates the use of the
+\lstinline{Next} structure. This is where we make a fundamental use of the fact
+that function application is divided into two parts with IFOs.
+In tail calls, we set the arguments of the
+function, but we delay the \lstinline{apply} method calls.
+Instead, the \lstinline{next} field of \lstinline{Next} is set
+to the function with the \lstinline{apply} method. The \lstinline{apply}
+method is then invoked at the call-site of the functions. The code in Figure \ref{fig:trampoline} illustrates the call \lstinline{even 10}.
+In JVM-style trampolines, each (method) call creates a Thunk. IFOs, however, are reused
+throughout the execution.
+\begin{figure}[t]
+\begin{tabular}[t]{l l}
+\begin{lstlisting}
+// TCE with JVM-style trampolines
+interface Thunk {
+  Object apply();
+}
+...
+  static Object teven(final int n) {
+    if(n == 0) return true;
+    else return new Thunk() {
+      public Object apply() {
+        return todd(n-1);
+      }
+    };
+  }
+  static Object todd(final int n) {
+    if(n == 0) return false;
+    else return new Thunk() {
+      public Object apply() {
+        return teven(n-1);
+      }
+    };
+...
+Object trampoline = even(10);
+while(trampoline instanceof Thunk)
+      trampoline =
+      ((Thunk) trampoline).apply();
+return (Boolean) trampoline;
+\end{lstlisting}&
+\hspace{10pt}\begin{lstlisting}
+// TCE with IFOs + Next
+Mutual m = new Mutual();
+Function teven = m.teven;
+...
+teven.arg = 10;
+Next.next = teven;
+Function c;
+Boolean res;
+do {
+  c = Next.next;
+  Next.next = null;
+  c.apply();
+} while (Next.next != null);
+res = (Boolean) c.res;
+\end{lstlisting}
+\end{tabular}
+
+\caption{This figure contrasts the TCE approach with JVM-style trampolines (left, custom
+implementation) and with IFOs and the Next handler (right, see Figure \ref{fig:even} for implementation).}
+
+\label{fig:trampoline}
+\vspace{-15pt}
+\end{figure}
+\noindent The idea is that a function call (which is not a tail-call)
+has a loop that jumps back-and-forth into functions. The technique
+is similar to some trampoline approaches in C-like languages. However,
+an important difference to JVM-style trampolines is that utilization of heap space is not growing.
+In other words, tail-calls do not create new objects for their execution, which
+improves memory and time performance.
+Note that this method is \emph{general}: it works for \emph{simple recursive
+tail calls}, \emph{mutually recursive tail calls}, and \emph{non-recursive tail calls}.

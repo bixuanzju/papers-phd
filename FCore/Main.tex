@@ -1,0 +1,127 @@
+\documentclass{llncs}
+\usepackage{makeidx}  
+\usepackage{color}
+\usepackage{graphicx}
+\usepackage{latexsym}
+\usepackage{stmaryrd}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\usepackage{mathpartir}
+\usepackage{wasysym}
+\usepackage{booktabs}
+
+\usepackage{courier}            % standard fixed width font
+\usepackage[scaled]{helvet} % see www.ctan.org/get/macros/latex/required/psnfss/psnfss2e.pdf
+
+\usepackage{url}             % format URLs
+
+\usepackage{listings}          % format code
+\usepackage{enumitem}      % adjust spacing in enums
+\usepackage[colorlinks=true,allcolors=blue,breaklinks,draft=false]{hyperref}   % hyperlinks, including DOIs and URLs in bibliography
+% known bug: http://tex.stackexchange.com/questions/1522/pdfendlink-ended-up-in-different-nesting-level-than-pdfstartlink
+\newcommand{\doi}[1]{doi:~\href{http://dx.doi.org/#1}{\Hurl{#1}}}   % print a hyperlinked DOI
+\newcommand{\imageof}[1]{\llbracket #1 \rrbracket}
+
+\usepackage{fancyvrb}
+\usepackage{lipsum}
+\usepackage{comment}
+\usepackage{todonotes}
+
+\usepackage{mathpartir}
+
+\definecolor{light}{gray}{.75}
+
+\lstset{ %
+language=Java,                % choose the language of the code
+columns=flexible,
+lineskip=-1pt,
+basicstyle=\ttfamily\small,       % the size of the fonts that are used for the code
+numbers=none,                   % where to put the line-numbers
+numberstyle=\ttfamily\tiny,      % the size of the fonts that are used for the line-numbers
+stepnumber=1,                   % the step between two line-numbers. If it's 1 each line will be numbered
+numbersep=5pt,                  % how far the line-numbers are from the code
+backgroundcolor=\color{white},  % choose the background color. You must add \usepackage{color}
+showspaces=false,               % show spaces adding particular underscores
+showstringspaces=false,         % underline spaces within strings
+showtabs=false,                 % show tabs within strings adding particular underscores
+morekeywords={var},
+%  frame=single,                   % adds a frame around the code
+tabsize=2,                  % sets default tabsize to 2 spaces
+captionpos=none,                   % sets the caption-position to bottom
+breaklines=true,                % sets automatic line breaking
+breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+title=\lstname,                 % show the filename of files included with \lstinputlisting; also try caption instead of title
+escapeinside={(*}{*)},          % if you want to add a comment within your code
+keywordstyle=\ttfamily\bfseries
+}
+
+\newcommand{\gbox}[1]{\colorbox{light}{$\!\!#1\!\!$}}
+
+\newcommand{\name}{{\bf FCore~}}
+\newcommand{\Name}{{\bf FCore}}
+
+\input{macros}
+\input{Preamble}
+
+% Document starts
+\begin{document}
+
+\lstset{keywordstyle=\textbf,language=Java}
+
+\title{Memory-efficient Tail Calls in the JVM with Imperative Functional Objects}
+
+\author{Tom\'{a}\v{s} Tauber\inst{1}, Xuan Bi\inst{1}, Zhiyuan Shi\inst{1},
+Weixin Zhang\inst{1}, Huang Li\inst{2}, Zhenrui Zhang\inst{2}, Bruno C. d. S. Oliveira\inst{1}}
+%
+\authorrunning{Tom\'{a}\v{s} Tauber et al.} 
+\tocauthor{Tom\'{a}\v{s} Tauber, Xuan Bi, Zhiyuan Shi,
+Weixin Zhang, Huang Li, Zhenrui Zhang, Bruno C. d. S. Oliveira}
+%
+\institute{The University of Hong Kong, Pok Fu Lam Road, Hong Kong SAR 
+\and
+Zhejiang University, 38 Zheda Road, Hangzhou, China}
+
+\maketitle
+
+\begin{abstract}
+
+This paper presents \Name: a JVM implementation of System F
+with support for full \emph{tail-call elimination} (TCE). 
+Our compilation technique for \name is innovative in two respects: it
+uses a new representation for first-class functions called
+\emph{imperative functional objects}; and it provides a way
+to do TCE on the JVM using constant space.
+
+Unlike conventional TCE techniques on the JVM, allocated function objects
+are reused in chains of tail calls.
+Thus, programs written in \name
+can use idiomatic functional programming styles, relying
+on TCE, and perform well without worrying about
+the JVM limitations. Our empirical results show that programs which use tail calls
+can run in constant space and with low execution time overhead when compiled with \Name.
+
+\end{abstract}
+
+\input{src/Introduction.tex}
+
+\input{src/Overview.tex}
+
+\input{src/FCore.tex}
+
+\input{src/Compilation.tex}
+
+\input{src/Evaluation.tex}
+
+\input{src/RelatedWork.tex}
+
+\input{src/Conclusion.tex}
+
+\subsubsection*{Acknowledgments.}
+We would like to thank T. H. Tse, C.-L. Wang, Vlad Urechte, R\'{u}nar Bjarnason, and \name contributors for help and valuable feedback on previous drafts of this work. We also thank the anonymous reviewers for their helpful suggestions. The work described in this paper was partially supported by a grant from the Research Grants Council of the Hong Kong Special Administrative Region, China (Project No. HKU 27200514).
+
+% Bibliography
+\bibliographystyle{splncs}
+\bibliography{papers}
+
+\end{document}

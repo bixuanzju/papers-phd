@@ -1,0 +1,88 @@
+\begin{comment}
+\section{Implementation}\label{sec:implementation}
+
+We implemented\footnote{\name code repository: \url{https://github.com/hkuplg/fcore}}
+ a compiler for \name based on the
+representation and type-directed translation we described in
+Sections~\ref{sec:fcore} and \ref{sec:tce}.  We wrote the compiler
+in Haskell. This section overviews additional information about the
+implementation.
+
+\subsection{Syntax Extensions and Java Interoperability}
+
+Our actual implementation of \name and Closure F extend the basic 
+System F with other constructs. These include primitive
+operations, types and literals, let bindings, conditional expressions,
+tuples, and fixpoints. We also have different frontends, 
+which extend \name with convenient language constructs that helped us in development.
+We wrote our benchmark programs in one 
+of these frontends. 
+%\name and Closure F intermediate languages' value and type
+%expressions with several useful constructs. 
+
+We also added constructs for a basic interoperability mechanism with
+Java and the JVM: creating instances of classes, calling methods,
+accessing fields, and executing blocks of statements.  We type-check these constructs
+using an ``oracle''.  In the implementation, the type-checker sends
+queries about Java constructs to a server with a set classpath and the
+server answers these queries using the Reflection
+API. One advantage of this design is that it allows
+us to target different Java-based platforms. Apart from supporting the
+JVM, we can support the Android platform. The Android platform
+uses a different set of libraries from the JVM SDK. 
+
+Besides benchmark programs, we have a number of other programs written 
+in \Name. These programs include functional programs for 
+drawing fractals (such as the Mandelbrot set, the Burning Ship, or the
+Sierpinski Triangle) which helped us to test the Java interoperability.
+We also have a test suite with unit tests of the \name compiler.
+
+%\subsection{Multi-argument Closure Optimization}
+
+\subsection{Additional Optimizations}
+
+Our compiler also performs standard optimizations that are not
+accounted by the basic translations in Sections~\ref{sec:fcore} and
+\ref{sec:tce}.  For unboxing, different \lstinline{Function} classes exist
+with specialized primitive fields. The translation chooses among them
+and generates variables with primitive types when possible. The
+compiler inlines expressions of let bindings, value abstractions, and
+fixpoints; and partially evaluates value applications, conditionals,
+and primitive type operations.
+
+An important optimization that our compiler also does is
+multi-argument function optimization. This kind of optimization is
+standard in FP~\cite{marlow06making} and provides a major boost in
+time and memory performance. The straightforward
+translation described in the previous section has one drawback when
+translating multi-argument functions: for each single value
+application, we generate a function object that requires an apply call
+to execute the body. Using the additional information that Closure F
+has about multi-argument binders, our compiler creates a single
+multi-argument function, instead of multiple single argument
+functions. 
+\end{comment}
+\begin{comment}
+The idea employed in our implementation is similar 
+to the alternative encoding of curried functions briefly presented 
+in Section~\ref{subsec:ifos}.
+\end{comment}
+
+%In
+% functional programming, we encounter different common scenarios, such
+% as partial applied or higher-order functions, when this approach can
+% become a major performance penalty. For this reason, we perform one
+% optimization for these cases.  In this optimization, we augment the
+% translation in two ways: we eliminate apply calls in partial
+% applications and move the code blocks from apply methods to
+% initialization blocks in the corresponding Closure objects. In order
+% to do these two steps, we need to be able to detect partial
+% applications.  Luckily, we can simply see this in types of our
+% representation. When translating $E1~E2$, we have the following
+% options for the E1's type $\Delta$ environment:
+%
+%\begin{enumerate}
+%  \item $\forall \alpha.\Delta$: we continue checking next binders of $\Delta$.
+%  \item $\forall (x: T).\Delta$: we know this is a partial application, hence we do not generate an apply call and move its body to the initialization block.
+%  \item $\forall (x: T).\epsilon$: we know this is a full application, hence we generate code as usual.
+%\end{enumerate}

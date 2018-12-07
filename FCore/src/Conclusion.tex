@@ -1,0 +1,29 @@
+\section{Conclusion \& Future Work}\label{sec:conclusion}
+Functional Programming in the JVM is already possible today. 
+However, when efficiency is a concern, programmers and compiler 
+writers still need to be aware of the limitations of the JVM. 
+Some of the problems are the need for two function representations; 
+and the lack of a good solution for TCE. This paper shows that IFOs allow for a uniform representation of 
+functions, while being competitive in terms of time performance and 
+supporting TCE in constant space.
+
+There is much to be done for future work. We would like to prove
+correctness results for our translation from System F to Java. To
+achieve this, we will first need a suitable formalization of Java that
+includes inner classes and imperative features. Furthermore, we
+will adopt the thread-safe version of our translation -- one main difference is that
+IFOs should be allocated at their call sites rather than at their definition sites.
+  One other aspect is with currying and partial applications,
+where the uniform function representation is important.
+FAOs here can have substantial time and memory overheads, especially when defining multi-argument
+recursive functions, so current languages tend to avoid them and use two representations:
+JVM methods when possible; and FAOs when necessary.
+With additional optimizations in \Name, such as multi-argument closure optimization
+and unboxing, IFOs serve as one uniform efficient function representation.
+ We would like to formalize and refine a number of optimizations that we
+have been experimenting with in \Name; and explore what other optimizations are possible
+with IFOs.
+Finally, we want to build frontends for
+realistic functional languages on top of \name and write large
+functional programs, including a full bootstrapping compiler of \Name, in those frontends.
+

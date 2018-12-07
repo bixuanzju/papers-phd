@@ -1,0 +1,24 @@
+\newcommand{\yank}[1]{\textbf{yank:}}
+\newcommand{\todoc}[2]{{\textcolor{#1} {\textbf{[[#2]]}}}}
+\newcommand{\todo}[1]{{\todoc{red}{\textbf{[[#1]]}}}}
+
+\newcommand{\todored}[1]{\todoc{red}  {\textbf{[[#1]]}}}
+\newcommand{\todoblue}[1]{\todoc{blue}{\textbf{[[#1]]}}}
+\newcommand{\todogreen}[1]{\todoc{green}{\textbf{[[#1]]}}}
+
+\newcommand{\TODO}[1]{\todored{#1}}
+
+\newcommand{\wc}[1]{\todogreen{WC: #1}}
+\newcommand{\wt}[1]{\todogreen{WT: #1}}
+\newcommand{\tom}[1]{\marginpar{\textcolor{red}{TOM}}\textcolor{red}{#1}}
+\newcommand{\bruno}[1]{\todogreen{BRUNO: #1}}
+
+% \newcommand{\wc}[1]{}
+% \newcommand{\wt}[1]{}
+% \newcommand{\tom}[1]{}
+% \newcommand{\bruno}[1]{}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "Main"
+%%% End: 

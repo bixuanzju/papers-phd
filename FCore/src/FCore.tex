@@ -1,0 +1,496 @@
+%% ODER: format ==         = "\mathrel{==}"
+%% ODER: format /=         = "\neq "
+%
+%
+\makeatletter
+\@ifundefined{lhs2tex.lhs2tex.sty.read}%
+  {\@namedef{lhs2tex.lhs2tex.sty.read}{}%
+   \newcommand\SkipToFmtEnd{}%
+   \newcommand\EndFmtInput{}%
+   \long\def\SkipToFmtEnd#1\EndFmtInput{}%
+  }\SkipToFmtEnd
+
+\newcommand\ReadOnlyOnce[1]{\@ifundefined{#1}{\@namedef{#1}{}}\SkipToFmtEnd}
+\usepackage{amstext}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\DeclareFontFamily{OT1}{cmtex}{}
+\DeclareFontShape{OT1}{cmtex}{m}{n}
+  {<5><6><7><8>cmtex8
+   <9>cmtex9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmtex10}{}
+\DeclareFontShape{OT1}{cmtex}{m}{it}
+  {<-> ssub * cmtt/m/it}{}
+\newcommand{\texfamily}{\fontfamily{cmtex}\selectfont}
+\DeclareFontShape{OT1}{cmtt}{bx}{n}
+  {<5><6><7><8>cmtt8
+   <9>cmbtt9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmbtt10}{}
+\DeclareFontShape{OT1}{cmtex}{bx}{n}
+  {<-> ssub * cmtt/bx/n}{}
+\newcommand{\tex}[1]{\text{\texfamily#1}}	% NEU
+
+\newcommand{\Sp}{\hskip.33334em\relax}
+
+
+\newcommand{\Conid}[1]{\mathit{#1}}
+\newcommand{\Varid}[1]{\mathit{#1}}
+\newcommand{\anonymous}{\kern0.06em \vbox{\hrule\@width.5em}}
+\newcommand{\plus}{\mathbin{+\!\!\!+}}
+\newcommand{\bind}{\mathbin{>\!\!\!>\mkern-6.7mu=}}
+\newcommand{\rbind}{\mathbin{=\mkern-6.7mu<\!\!\!<}}% suggested by Neil Mitchell
+\newcommand{\sequ}{\mathbin{>\!\!\!>}}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+\usepackage{polytable}
+
+%mathindent has to be defined
+\@ifundefined{mathindent}%
+  {\newdimen\mathindent\mathindent\leftmargini}%
+  {}%
+
+\def\resethooks{%
+  \global\let\SaveRestoreHook\empty
+  \global\let\ColumnHook\empty}
+\newcommand*{\savecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\savecolumns[#1]}}
+\newcommand*{\restorecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\restorecolumns[#1]}}
+\newcommand*{\aligncolumn}[2]%
+  {\g@addto@macro\ColumnHook{\column{#1}{#2}}}
+
+\resethooks
+
+\newcommand{\onelinecommentchars}{\quad-{}- }
+\newcommand{\commentbeginchars}{\enskip\{-}
+\newcommand{\commentendchars}{-\}\enskip}
+
+\newcommand{\visiblecomments}{%
+  \let\onelinecomment=\onelinecommentchars
+  \let\commentbegin=\commentbeginchars
+  \let\commentend=\commentendchars}
+
+\newcommand{\invisiblecomments}{%
+  \let\onelinecomment=\empty
+  \let\commentbegin=\empty
+  \let\commentend=\empty}
+
+\visiblecomments
+
+\newlength{\blanklineskip}
+\setlength{\blanklineskip}{0.66084ex}
+
+\newcommand{\hsindent}[1]{\quad}% default is fixed indentation
+\let\hspre\empty
+\let\hspost\empty
+\newcommand{\NB}{\textbf{NB}}
+\newcommand{\Todo}[1]{$\langle$\textbf{To do:}~#1$\rangle$}
+
+\EndFmtInput
+\makeatother
+%
+%
+%
+%
+%
+%
+% This package provides two environments suitable to take the place
+% of hscode, called "plainhscode" and "arrayhscode". 
+%
+% The plain environment surrounds each code block by vertical space,
+% and it uses \abovedisplayskip and \belowdisplayskip to get spacing
+% similar to formulas. Note that if these dimensions are changed,
+% the spacing around displayed math formulas changes as well.
+% All code is indented using \leftskip.
+%
+% Changed 19.08.2004 to reflect changes in colorcode. Should work with
+% CodeGroup.sty.
+%
+\ReadOnlyOnce{polycode.fmt}%
+\makeatletter
+
+\newcommand{\hsnewpar}[1]%
+  {{\parskip=0pt\parindent=0pt\par\vskip #1\noindent}}
+
+% can be used, for instance, to redefine the code size, by setting the
+% command to \small or something alike
+\newcommand{\hscodestyle}{}
+
+% The command \sethscode can be used to switch the code formatting
+% behaviour by mapping the hscode environment in the subst directive
+% to a new LaTeX environment.
+
+\newcommand{\sethscode}[1]%
+  {\expandafter\let\expandafter\hscode\csname #1\endcsname
+   \expandafter\let\expandafter\endhscode\csname end#1\endcsname}
+
+% "compatibility" mode restores the non-polycode.fmt layout.
+
+\newenvironment{compathscode}%
+  {\par\noindent
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed\)%
+   \par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\compaths}{\sethscode{compathscode}}
+
+% "plain" mode is the proposed default.
+% It should now work with \centering.
+% This required some changes. The old version
+% is still available for reference as oldplainhscode.
+
+\newenvironment{plainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newenvironment{oldplainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+% Here, we make plainhscode the default environment.
+
+\newcommand{\plainhs}{\sethscode{plainhscode}}
+\newcommand{\oldplainhs}{\sethscode{oldplainhscode}}
+\plainhs
+
+% The arrayhscode is like plain, but makes use of polytable's
+% parray environment which disallows page breaks in code blocks.
+
+\newenvironment{arrayhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\parray}%
+  {\endparray\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newcommand{\arrayhs}{\sethscode{arrayhscode}}
+
+% The mathhscode environment also makes use of polytable's parray 
+% environment. It is supposed to be used only inside math mode 
+% (I used it to typeset the type rules in my thesis).
+
+\newenvironment{mathhscode}%
+  {\parray}{\endparray}
+
+\newcommand{\mathhs}{\sethscode{mathhscode}}
+
+% texths is similar to mathhs, but works in text mode.
+
+\newenvironment{texthscode}%
+  {\(\parray}{\endparray\)}
+
+\newcommand{\texths}{\sethscode{texthscode}}
+
+% The framed environment places code in a framed box.
+
+\def\codeframewidth{\arrayrulewidth}
+\RequirePackage{calc}
+
+\newenvironment{framedhscode}%
+  {\parskip=\abovedisplayskip\par\noindent
+   \hscodestyle
+   \arrayrulewidth=\codeframewidth
+   \tabular{@{}|p{\linewidth-2\arraycolsep-2\arrayrulewidth-2pt}|@{}}%
+   \hline\framedhslinecorrect\\{-1.5ex}%
+   \let\endoflinesave=\\
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \framedhslinecorrect\endoflinesave{.5ex}\hline
+   \endtabular
+   \parskip=\belowdisplayskip\par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\framedhslinecorrect}[2]%
+  {#1[#2]}
+
+\newcommand{\framedhs}{\sethscode{framedhscode}}
+
+% The inlinehscode environment is an experimental environment
+% that can be used to typeset displayed code inline.
+
+\newenvironment{inlinehscode}%
+  {\(\def\column##1##2{}%
+   \let\>\undefined\let\<\undefined\let\\\undefined
+   \newcommand\>[1][]{}\newcommand\<[1][]{}\newcommand\\[1][]{}%
+   \def\fromto##1##2##3{##3}%
+   \def\nextline{}}{\) }%
+
+\newcommand{\inlinehs}{\sethscode{inlinehscode}}
+
+% The joincode environment is a separate environment that
+% can be used to surround and thereby connect multiple code
+% blocks.
+
+\newenvironment{joincode}%
+  {\let\orighscode=\hscode
+   \let\origendhscode=\endhscode
+   \def\endhscode{\def\hscode{\endgroup\def\@currenvir{hscode}\\}\begingroup}
+   %\let\SaveRestoreHook=\empty
+   %\let\ColumnHook=\empty
+   %\let\resethooks=\empty
+   \orighscode\def\hscode{\endgroup\def\@currenvir{hscode}}}%
+  {\origendhscode
+   \global\let\hscode=\orighscode
+   \global\let\endhscode=\origendhscode}%
+
+\makeatother
+\EndFmtInput
+%
+%
+%
+% First, let's redefine the forall, and the dot.
+%
+%
+% This is made in such a way that after a forall, the next
+% dot will be printed as a period, otherwise the formatting
+% of `comp_` is used. By redefining `comp_`, as suitable
+% composition operator can be chosen. Similarly, period_
+% is used for the period.
+%
+\ReadOnlyOnce{forall.fmt}%
+\makeatletter
+
+% The HaskellResetHook is a list to which things can
+% be added that reset the Haskell state to the beginning.
+% This is to recover from states where the hacked intelligence
+% is not sufficient.
+
+\let\HaskellResetHook\empty
+\newcommand*{\AtHaskellReset}[1]{%
+  \g@addto@macro\HaskellResetHook{#1}}
+\newcommand*{\HaskellReset}{\HaskellResetHook}
+
+\global\let\hsforallread\empty
+
+\newcommand\hsforall{\global\let\hsdot=\hsperiodonce}
+\newcommand*\hsperiodonce[2]{#2\global\let\hsdot=\hscompose}
+\newcommand*\hscompose[2]{#1}
+
+\AtHaskellReset{\global\let\hsdot=\hscompose}
+
+% In the beginning, we should reset Haskell once.
+\HaskellReset
+
+\makeatother
+\EndFmtInput
+\newcommand{\typeSrc}{T}
+\newcommand{\envSrc}{G}
+
+\newsavebox{\simpleapply}
+\newsavebox{\normalclosure}
+
+\begin{lrbox}{\simpleapply}
+\begin{minipage}{2.5in}
+\begin{lstlisting}[mathescape]
+$S_3$ :=  {
+   Function $f$ = $J_1$;
+   $f$.arg = $J_2$;
+   $f$.apply();
+   $\langle T_1 \rangle~x_f$ = ($\langle T_1 \rangle$) $f$.res;}
+\end{lstlisting}
+\end{minipage}
+\end{lrbox}
+
+\begin{lrbox}{\normalclosure}
+\begin{minipage}{2.5in}
+\begin{lstlisting}[mathescape]
+$S_2$ :=  {
+  class FC extends Function {
+     void apply() {
+        $\langle T_1 \rangle ~y$ = ($\langle T_1 \rangle$) this.arg;
+         $S_1$;
+         $res = J$;
+     }
+  };
+  Function f = new FC();}
+\end{lstlisting}
+\end{minipage}
+\end{lrbox}
+
+\section{Compiling \Name}\label{sec:fcore}
+
+This section formally presents \name and its compilation to
+Java. \Name~is an extension of System F (the polymorphic
+$\lambda$-calculus)~\cite{girard72dissertation,reynolds74towards} that
+can serve as a target for compiler writers.
+
+\subsubsection{Syntax.}
+
+In this section, for space reasons, we cover only the \name constructs
+that correspond exactly to System F. Nevertheless, the constructs in
+System F represent the most relevant parts of the compilation
+process. As discussed in Section~\ref{sec:implementation}, our
+implementation of \name includes other constructs that are
+needed to create a practical programming language.
+
+\paragraph{System F.}
+The basic syntax of System F is:
+
+
+\bda{l}
+\ba{lll}
+    \textbf{Types} & \type  ::=  \alpha \mid \type_1 \arrow \type_2
+    \mid \forall \alpha. \type & \\
+	\textbf{Expressions} & e  ::=  x \mid \lambda (x:\type) . e \mid e_1\;e_2 \mid \Lambda \alpha . e \mid e\;\type &
+\ea
+\eda
+
+\noindent \emph{Types} $\type$ consist of type variables $\alpha$,
+function types $\type_1 \arrow \type_2$, and type abstraction $\forall
+\alpha. \type$. A lambda binder $\lambda (x:\type) . e$ abstracts
+expressions $e$ over values (bound by a variable $x$ of type $\type$)
+and is eliminated by function application $e_1\;e_2$. An expression
+$\Lambda \alpha . e$ abstracts an expression $e$ over some type
+variable $\alpha$ and is eliminated by a type application $e\;\type$.
+
+\subsubsection{From System F to Java.}
+
+\figtwocol{f:translation}{Type-Directed Translation from System F to Java}{
+\framebox{$\Gamma \turns  e : \tau \leadsto J \textbf{~in~} S$}
+
+\begin{mathpar}
+  \inferrule* [left=(FJ-Var)]
+  {(x_1 : \type \mapsto x_2)  \in \Gamma}
+  {\Gamma \turns x_1 : \type \leadsto x_2 \textbf{~in~} \{\}}
+
+  \inferrule* [left=(FJ-TApp)]
+  {\Gamma \turns e : \forall \alpha. \type_2  \leadsto J \textbf{~in~} S}
+  {\Gamma \turns e \, \type_1 : \type_2[\type_1/\alpha] \leadsto J
+            \textbf{~in~} S}
+            
+  \inferrule* [left=(FJ-TAbs)]
+  {\Gamma, \alpha \turns e : \type \leadsto J \textbf{~in~} S}
+  {\Gamma \turns \Lambda \alpha.e : \forall \alpha. \type \leadsto J \textbf{~in~} S}
+ 
+  \inferrule* [left=(FJ-Abs)]
+  {\Gamma , x : \type_1 \mapsto y \turns e : \type_2 \leadsto J \textbf{~in~} S_1 
+  \\\\ f,~y~,~FC~fresh}
+  {\Gamma \turns \lambda (x:\type_1).e : \type_1 \rightarrow \type_2 \leadsto f \textbf{~in~} S_2
+  \\\\ \usebox{\normalclosure}
+  } 
+ 
+   \inferrule* [left=(FJ-App)]
+  {
+  \Gamma \turns e_1 : \type_2 \rightarrow \type_1
+  \leadsto J_1 \textbf{~in~} S_1 ~~~~~~~\\
+           \Gamma \turns e_2 : \type_2 \leadsto J_2 \textbf{~in~} S_2 ~~~~~~~
+     f,~x_f~fresh  
+  }
+  {\Gamma \turns e_1 \, e_2 : \type_1 \leadsto x_f \textbf{~in~}
+           S_1 \uplus S_2 \uplus S_3
+  \\\\ \usebox{\simpleapply}
+  }   
+          
+\end{mathpar}
+
+
+\text{Translation of System F types to Java types:}
+\vspace{-5pt}
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{21}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[3]{}\langle\alpha\rangle{}\<[21]%
+\>[21]{}\mathrel{=}\text{\lstinline{Object}}{}\<[E]%
+\\
+\>[3]{}\langle\forall \alpha. \tau\rangle{}\<[21]%
+\>[21]{}\mathrel{=}\langle\tau\rangle{}\<[E]%
+\\
+\>[3]{}\langle\tau_2 \rightarrow \tau_1\rangle{}\<[21]%
+\>[21]{}\mathrel{=}\text{\lstinline{Function}}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+\vspace{-15pt}
+
+ }
+
+Figure \ref{f:translation} shows the type-directed translation rules
+that generate Java code from given System F expressions. We exploit
+the fact that System F has an erasure semantics in the
+translation. This means that type abstractions and type applications
+do not generate any code or have any overhead at run-time.
+
+We use two sets of rules in our translation. The first one
+is translating System F expressions. The second set of rules,
+ the function $\langle \tau\rangle$, describes 
+ how we translate System F types into Java types.
+
+In order to do the translation, we need \emph{translation environments}:
+
+\hspace{-7pt}\bda{lll} & \Gamma ::=
+\epsilon \mid \Gamma~(\relation{x_1}{\tau} \mapsto x_2) \mid \Gamma \alpha & \\ \eda
+
+\noindent Translation environments have two purposes: 1) to keep track of the type 
+and value bindings for type-checking purposes; 2) to establish the mapping 
+between System F variables and Java variables in the generated code.
+
+% \bda{lll} \textbf{Translation Environments} & \Delta ::=
+% \epsilon \mid \Delta (\relation{x}{\tau}) \mid \Delta \alpha & \\ \eda
+
+The translation judgment in the first set of rules adapts the typing
+judgment of System F:
+
+$\Gamma \turns  e : \tau \leadsto J \textbf{~in~} S$
+
+\noindent It states that System F expression \emph{e} with type
+$\tau$ results in Java expression \emph{J} created after executing a
+block of statements \emph{S} with respect to translation environments
+$\Gamma$. \texttt{FJ-Var} checks whether a given value-type binding
+is present in an environment and generates a corresponding, previously initialized,
+Java variable. \texttt{FJ-TApp} resolves the type of an abstraction and substitutes 
+the applied type in it. \texttt{FJ-TAbs} translates the body of type abstractions --
+note that, in the extended language, type abstractions would need to generate suspensions. 
+\texttt{FJ-Abs} translates term abstractions. For translating term abstractions, we need evidence for resolving
+the body \emph{e} and a bound variable \emph{x} of type $\tau_1$.
+We then wrap the generated expression \emph{J} and its deriving statements
+\emph{S} as follows. We create a class with a fresh name
+\emph{FC}, extending the \emph{Function} class. 
+In the body of \lstinline{apply}, we first create an alias for the function argument with a
+fresh name $y$, then execute all statements $S_1$ deriving its
+resulting Java expression \emph{J} that we assign as the output of
+this function. 
+Following that, we create a fresh alias \emph{f} for the
+instance of the mentioned function, representing the class
+\emph{FC}.
+\texttt{FJ-App} is the most vital rule. Given the evidence that
+$e_1$ is a function type, we generate a fresh
+alias \emph{f} for its corresponding Java expression $J_1$. The $S_3$
+block contains statements to derive the result of the
+application. As described in Section~\ref{sec:overview}, we split applications into
+two parts in IFOs. We first set the argument of \emph{f} to the Java
+expression $J_2$, given the evidence resulting from $e_2$. Then,
+we call \emph{f}'s \lstinline{apply} method and store the output in a fresh
+variable $x_f$. Before executing statements in $S_3$, we need to
+execute statements $S_1$ and $S_2$ deriving $J_1$ and $J_2$ respectively. 
+To derive $x_f$, we need to execute all
+dependent statements: $S_1 \uplus S_2 \uplus S_3$.
+
+\subsubsection{Properties of the Translation.}
+Two fundamental properties are worthwhile proving for
+this translation: \emph{translation generates well-typed (cast-safe) Java programs}; and \emph{semantic preservation}.
+Proving these two properties requires the static and dynamic semantics
+(as well as the soundness proof) of the target language (an imperative subset of
+Java with inner classes in our case). Unfortunately, as far as we know, the exact subset of
+Java that we use has not been completely formalized yet. Three possibilities exist: 1) choosing an existing Java subset formalization and emulating its missing features in the translation, 2) developing our own formalized Java subset, 3) relating the translation to complete Java semantics within matching logic \cite{Bogdanas2015}. Each option would require complex changes beyond this paper's scope, hence it is a part of future work.
