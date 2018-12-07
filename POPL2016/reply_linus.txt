@@ -1,0 +1,122 @@
+We thank all reviewers for their comments. But it seems the goal of
+this paper is not clear to some reviewers. We first would like to
+emphasize it again.
+
+There are two main benefits of using PTS-style syntax for the core:
+
+1) Opening up the rich world of Dependently Typed Programming (Coq,
+Agda, Idris) via systems like calculus of constructions;
+
+2) Significant simplification of core language by eliminating
+redundancy between various syntactic levels.
+
+The goal of this paper is to achieve 2, but NOT 1. We focus more on
+extending practical languages like ML or Haskell with interesting
+type-level features, but perhaps NOT having the *full power* of
+dependent types.
+
+#A
+
+Because two fragments of Zombie or F* are tightly coupled, it is
+rather hard to make the comparison only with the programmatic fragment
+alone. For example, in Zombie, the conversion rule (TConv) for
+programmatic part depends on equality proofs, which is only available
+in the logical part.
+
+#B
+
+### "the comparisons suggest that the goal of the proposed language is
+#dependently-typed programming"
+
+This assumption is false. In the introduction, we clearly say that it
+is a non-goal of the current work is to use our core language for
+modern dependently typed languages like Agda or Idris.
+
+#### "The ideas in this paper are not new."
+
+Our work essentially gives a positive answer to the question:
+
+"Can we have a calculus comparable in simplicity to PTS that can be
+used to model key features of modern functional languages (like
+Haskell and ML), including general recursion, while preserving
+type-soundness and decidable type-checking?"
+
+None of the suggested references [1,2,3,4,5] gives a direct answer to
+this question. [1] does not support decidable type-checking; whereas
+[2,3,4,5] are significantly more complex than a PTS-based calculus.
+
+We also disagree the idea of one-step casts is obvious from references
+[1,2,3,4,5].  While it is true that other systems have some form of
+casts as an alternative to the conversion rule, the existing
+approaches are *fundamentally different*:
+
+All cast approaches in [2,3,4,5] and System FC rely on *equality
+proofs*, while our one-step casts DO NOT. This makes a big difference
+because:
+
+ 1) To build equality proofs we need various other language
+constructs, which adds to the complexity.
+
+ 2) Moreover, we need to ensure that the equality proofs are valid.
+If we are not careful, in a language with non-termination, we could
+easily build bogus equality proofs such as:
+
+_|_ : Int = Char
+
+Some of the languages do provide solutions to this problem. For
+example, in System FC, type equality coercions connects two *value*
+types, and in Zombie, the existence of a logical fragment can
+guarantee that the proofs are valid. Other approaches include
+restricting valid equality proofs to be syntactic values only [2,4],
+or having different languages for proofs and terms [3,5].
+
+However, because our casts have no equality proofs, neither of these
+problems apply and thus the system can be much simpler!
+
+#### "The use of general recursion to implement recursive types is
+already shown in Cardelli's paper"
+
+Cardelli shows how to model *equi*-recursive types without
+casts. Thus, type-level computation is completely unrestricted and
+type-checking is undecidable.
+
+The whole point of our system is to provide a mechanism to control
+type-level computation and achieve decidable type-checking using
+inspiration from *iso*-recursive types, which is clearly different
+from what Cardelli proposes.
+
+#### "The core language is not as expressive as FC"
+
+It is true that certain features of FC cannot be expressed, *but this
+is acknowledged in the paper*. See related work paragraph on System
+FC, where we talk about GADTs and equality for example.  We will
+emphasize the limitations against FC better, and discuss about
+erasability.
+
+#### "the paper does not discuss the trade-offs involved when allowing
+nontermination in dependently-typed languages"
+
+This is not true: we do mention that the price to pay for simplicity +
+non-termination is the loss of logical consistency at the end of
+introduction.
+
+#### "but this surface language lacks type-level computation, meaning
+that it cannot take advantage of the main benefits of the core
+language."
+
+In fact the surface language takes very good advantage of the benefits
+of the core language. The encoding of datatypes and case analysis, for
+example, uses casts and type-level computation steps in a fundamental
+way: we need to use casts to simulate fold/unfold, and we also need
+small type-level computational steps to encode parametrised datatypes.
+
+#D
+
+Like System FC, the convenience of type-level computation in the core
+is given up but compensated by language constructs in the surface: the
+number of casts can be computed during the translation. It is indeed
+impossible to compute the number of casts for arbitrary type-level
+computation. But in practical languages like Haskell, only restricted
+form of type-level computation is allowed for generating type casts,
+such as type families. We have discussed this issue in the second
+paragraph of Section 8.

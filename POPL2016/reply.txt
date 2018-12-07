@@ -1,0 +1,169 @@
+We thank all reviewers for their thoughtful comments.
+
+###Let us reemphazise our goal first, since some reviewers are
+confused about it. There are at least two potential benefits of using a
+PTS-style, unified syntax for core languages:
+
+1)Opening up the rich world of Dependently-Typed Programming
+(DTP), as in Coq/Agda/Idris...;
+
+2)*Significantly simplifying core languages*, by eliminating
+redundancy between the various syntactic levels.
+
+This paper aims at 2, not 1! In particular we focus on traditional
+functional languages like ML or Haskell extended with many interesting
+type-level features, but perhaps not the *full power* of dependent
+types.
+
+
+
+#143A
+
+###Logical and programmatic fragments in languages like Zombie or F*
+are *tightly coupled*! Thus it's hard to compare only with the
+programmatic fragment. For example, in Zombie, the conversion rule
+(TConv) for the programmatic part depends on equality proofs, which
+are only available in the logical part.
+
+###"why a cast is required for each beta-reduction/expansion at the
+type level"
+
+With Type:Type, even without fixpoints, the type-system is
+undecidable: it is well-known that with Type:Type leads to paradoxes,
+that can encode fixpoints. Thus it is still necessary to control
+computation at the type-level for other constructs.
+
+
+
+#143B
+
+###"The ideas in this paper aren't new."
+
+This paper gives a positive answer to the question: 
+
+"Can we have a calculus comparable in simplicity to PTS that models key
+features of modern functional languages (like Haskell and ML), while
+preserving type-soundness and decidable type-checking?"
+
+None of the suggested references [1,2,3,4,5] answers this
+question. [1] doesn't support decidable type-checking; whereas
+[2,3,4,5] are significantly more complex than a PTS-based calculus.
+
+#“The use of general recursion to implement recursive types is
+already shown in Cardelli's paper”
+
+*We don't claim to be the first to unify recursion and recursive
+types*. The related work acknowledges that others had this idea
+before:
+
+"Like λμ⋆ , ΠΣ uses one recursion mechanism for both types and
+functions" 
+
+*Our claimed contribution* is a generalization of *iso-recursive types*
+that unifies recursion and iso-recursive types. *Cardelli's work
+doesn't show this*: Cardelli models *equi*-recursive types (he uses no
+casts and/or fold/unfold). The whole point of using iso-recursive
+types is to obtain decidable type-checking, which Cardelli doesn't
+have.
+
+#We also disagree that the idea of one-step casts is not significantly
+different to references [1,2,3,4,5] (or System FC). Part of our
+motivation was precisely to come up with a simpler alternative to
+System FC casts!  We do agree that related work should discuss these
+differences better (currently we only briefly mention that System FC
+also has a form of casts).
+
+Essentially, *all cast approaches in System FC and [2,3,4,5] require
+equality proofs, while our one-step casts does not*.  *Our one-step
+casts lead to a significantly simpler language design* because:
+
+1)Building equality proofs requires various other language
+constructs, *adding to the complexity of the language*.
+
+2)It is desirable to ensure that the equality proofs are valid. Otherwise, we
+could easily build bogus equality proofs with non-termination, which
+could (among other things) endanger type-safety:
+
+_|_ : Int = Char
+
+Solutions to this problem exist. For example, in Zombie, the existence
+of a logical fragment guarantees that the proofs are valid. Other
+approaches include restricting valid equality proofs to be syntactic
+values only [2,4], or having different languages for proofs and terms
+[3,5]. However all those solutions *complicate the language
+design/metatheory!*
+
+
+###Much of the criticism in this review assumes that we claim our core
+language to be good for DTP, as in Cayenne, Idris, Coq or Agda.
+
+*This assumption is false*. The introduction clearly states:
+
+“A **non-goal** of the current work (although a worthy avenue for
+future work) is to use λμ⋆ as a core language for modern DTP languages
+like Agda/Idris”
+
+This review also has a large paragraph complaining about missing 
+features from FC and features useful for DTP.
+
+It's true that certain features of FC cannot be expressed, *but this
+is acknowledged in the paper*. See related work paragraph on System
+FC, where we talk about GADTs and equality for example.  We'll
+emphasize the limitations against FC/DTP better, and include discussions
+on erasability (which we have indeed not mentioned).
+
+
+###"the paper doesn't discuss the trade-offs involved when allowing
+nontermination in dependently-typed languages"
+
+*This isn't true*: we mention the loss of logical consistency as
+another trade-off of our work in the introduction (paragraph before
+contributions).
+
+
+###"I found the formalization of explicit casts odd, in particular the
+decision to make 'cast up' a value"
+
+In short, the decision to make 'cast up' a value was to retain
+type-preservation. If we had a reduction rule, doing something like:
+
+castUp T e --> e
+
+then this would not preserve types (remember that type-equality is
+only upto alpha-equivalence in our system). Also, by keeping
+castUp as a value, we retain the semantics of iso-recursive types.
+
+
+###“this surface language lacks type-level computation, meaning that it
+cannot take advantage of the main benefits of the core language.”
+
+Actually the surface language takes good advantage of the benefits of
+the core language. The encoding of datatypes and case analysis uses
+casts and type-level computation steps in a fundamental way: we need
+to use casts to simulate fold/unfold, and we also need small
+type-level computational steps to encode parametrised datatypes.
+
+
+
+#143C
+
+###"can anything be said about the connections between this
+calculus and step-indexed logical relations?"
+
+We are not sufficiently familiar with step-indexed logical relations
+to give a good answer at this time, but thanks for pointing out the
+(possible) connection! We'll surely investigate.
+
+
+
+#143D
+
+###Please note that casts are mostly meant as a feature of the *core*
+language, and aren't meant to be used in the source.  The
+contribution/goal of Section 3 is to illustrate how many features of
+source languages are encoded via *type-level computation and casts*.
+See also the reply to the last point for reviewer B.
+
+Intensive type-level computation would indeed be inconvenient at
+the moment (say by allowing casts on the source), but please look at
+our discussion in the last paragraph of Section 8 for what can be done.

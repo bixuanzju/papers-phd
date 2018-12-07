@@ -1,0 +1,189 @@
+% SIGPLAN template
+\documentclass[preprint]{sigplanconf}
+
+%% -- Packages Imports --
+
+% AMS stuff
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{xspace}
+\usepackage{comment}
+
+% Language
+\usepackage{csquotes}
+\usepackage[british]{babel}
+\MakeOuterQuote{"}
+
+
+\newcommand{\name}{{\bf $\lambda_{\star}^{\mu}$}\xspace}
+\newcommand{\coc}{{\bf $\lambda C$}\xspace}
+\newcommand{\ecore}{$\lambda_{\star}$\xspace}
+\newcommand{\cc}{$\lambda C$\xspace}
+\newcommand{\sufcc}{{\bf Fun}\xspace}
+\newcommand{\fold}{{\bf $\mathsf{fold}$}\xspace}
+\newcommand{\unfold}{{\bf $\mathsf{unfold}$}\xspace}
+
+\newcommand{\authornote}[3]{{\color{#2} {\sc #1}: #3}}
+\newcommand\bruno[1]{\authornote{bruno}{red}{#1}}
+\newcommand\jeremy[1]{\authornote{jeremy}{blue}{#1}}
+\newcommand\linus[1]{\authornote{linus}{green}{#1}}
+\newcommand{\fixme}[1]{{\color{red} #1}}
+
+% Hyper links
+\usepackage{hyperref}
+\hypersetup{
+   colorlinks,
+   citecolor=black,
+   filecolor=black,
+   linkcolor=black,
+   urlcolor=black
+}
+
+% Compact list
+\usepackage{paralist}
+
+% Figure import
+\usepackage{graphicx}
+\usepackage{float}
+
+% Code highlighting
+\usepackage{listings}
+\usepackage{xcolor}
+\newcommand{\hl}[2][gray!40]{\colorbox{#1}{#2}}
+\newcommand{\hlmath}[2][gray!40]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+
+% Theorem
+\usepackage{amsthm}
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{dfn}[thm]{Definition}
+
+%% Typesetting inference rules
+\usepackage{styles/mathpartir}  % by Didier Rémy (http://gallium.inria.fr/~remy/latex/mathpartir.html
+
+% Ott includes
+\input{sections/expcore.ott.tex}
+\input{sections/otthelper.tex}
+
+% lhs2tex
+\usepackage{mylhs2tex}
+
+% Subsection style
+\usepackage{titlesec}
+\titleformat{\subsubsection}[runin]{\bfseries\itshape\normalsize}{}{0em}{}[$\;$]
+
+% Table
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage[para,online,flushleft]{threeparttable}
+
+%% -- Packages Imports --
+
+% Main
+\begin{document}
+
+% Page size - US Letter
+%\special{papersize=8.5in,11in}
+%\setlength{\pdfpageheight}{\paperheight}
+%\setlength{\pdfpagewidth}{\paperwidth}
+
+% Conference info
+\conferenceinfo{CONF 'yy}{Month d--d, 20yy, City, ST, Country}
+\copyrightyear{20yy}
+\copyrightdata{978-1-nnnn-nnnn-n/yy/mm}
+\doi{nnnnnnn.nnnnnnn}
+
+% Title
+\titlebanner{} % Only for preprint
+\preprintfooter{} % Only for preprint
+
+\title{Type-Level Computation One Step at a Time}
+%\title{A Dependently-typed Intermediate Language with General Recursion}
+%\subtitle{Or: Decidable Type-Checking in the presence of
+%  Type-Level General Recursion}
+
+\authorinfo{}{}{}
+% \authorinfo{Foo \and Bar \and Baz}
+%            {The University of Foo}
+%            {\{foo,bar,baz\}@foo.edu}
+
+\maketitle
+
+% Abstract
+\begin{abstract}
+Many type systems support a conversion rule that allows type-level
+computation. In such type systems ensuring the \emph{decidability} of
+type checking requires type-level computation to terminate.
+For calculi where the syntax of types and terms is the same, the
+decidability of type checking is usually dependent on the strong normalization
+of the calculus, which ensures termination. An unfortunate
+consequence of this coupling between decidability and strong
+normalization is that adding (unrestricted) general recursion to such
+calculi is difficult.
+
+This paper proposes an alternative to the conversion rule that allows
+the same syntax for types and terms, type-level computation, and
+preserves decidability of type checking under the presence of general
+recursion. The key idea, which is inspired by the traditional
+treatment of \emph{iso-recursive types}, is to make each type-level
+computation step explicit. Each beta reduction or expansion at the
+type level is introduced by type-safe cast construct. Such construct allows control
+over the type-level computation and ensures decidability of
+type checking even in the presence of non-terminating programs at the
+type level.  We realize this idea by presenting \name: a variant of the
+calculus of constructions with general recursion and recursive types.
+Furthermore we show how many advanced programming language features of
+state-of-the-art functional languages (such as Haskell) can be encoded
+in our minimalistic core calculus.
+\end{abstract}
+
+% Category, terms & keywords
+\category{D.3.1}{Programming Languages}{Formal Definitions and Theory}
+\terms Languages, Design
+\keywords Dependent types, Intermediate language
+
+%% -- Starting Point -- 
+
+\input{sections/introduction.tex}
+
+\input{sections/overview.tex}
+
+\input{sections/examples.tex}
+
+\input{sections/explicitcore.tex}
+
+\input{sections/recursion.tex}
+
+\input{sections/datatypes.tex}
+
+\input{sections/related.tex}
+
+\input{sections/conclusion.tex}
+
+%% -- References --
+
+% \acks
+% Thanks to Blah. This work is supported by Blah.
+
+\newpage
+
+\bibliographystyle{abbrvnat}
+% \nocite{*}
+\bibliography{main}
+
+%% -- Appendix --
+\clearpage
+\appendix
+\input{sections/appendix.tex}
+
+%% -- The end --
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

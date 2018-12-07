@@ -1,0 +1,471 @@
+> ===========================================================================
+>                           POPL 2016 Review #143A
+>                      Updated 24 Sep 2015 4:41:40am EDT
+> ---------------------------------------------------------------------------
+>            Paper #143: Type-Level Computation One Step at a Time
+> ---------------------------------------------------------------------------
+>
+>                       Overall merit: 3. Weak accept
+> Reviewer expertise (shown to authors): 3.
+>                                         Knowledgeable (I have a broad
+>                                         understanding of this topic)
+>
+>                          ===== Paper summary =====
+>
+> This paper presents a way to integrate general recursion with a
+> dependently typed programming language, without losing decidability of
+> type checking. It does so by introducing additional syntax for explicit
+> type casts in order to make the conversion rule type-directed. The
+> result is a pleasingly small core language with a single syntactic sort
+> for both terms and types, but with different equational theories on the
+> term and type levels. The price for this elegance however is the loss of
+> a consistent logical fragment.
+> On the type level, the general fixpoint can be used to define
+> iso-recursive types, where the explicit casts serve the role of the fold
+> and unfold operators. As the authors demonstrate, this can be used to
+> desugar a high-level language with datatypes into their core language.
+> This desugaring makes it plausible that it could also be used as a core
+> language for real languages with strong type systems, though some
+> features such as GADTs still need some thought.
+>
+> ===== Comments for authors and suggestions to make this a strong paper =====
+>
+> Strong points
+>
+> The paper proposes a very attractive core language for Haskell-like
+> languages that integrates dependent types and general recursion. The
+> paper also gives a convincing demonstration of how a high-level language
+> can be translated to the core language. The large amount of examples
+> give a good motivation for the language design, and also demonstrate the
+> flexibility of the language for encoding various type system features.
+>
+> Weak points
+>
+> This reviewer does not have extensive experience with intermediate
+> languages, and it was not immediately obvious to me that the fact that
+> many surface language features can be encoded is the main criterion
+> for selecting an intermediate language. For instance, maybe it is
+> easier to generate efficient machine code from one intermediate language
+> that for another one.
+
+Does not need to be addressed.
+
+>
+> The discussion of related work is thorough, but not 100% fair: some
+> other languages (e.g. Zombie) have a consistent logical fragment. Since
+> the language presented does not have a consistent logical fragment, it
+> would be more interesting to make the comparison with just the
+> programming part of other languages in the related work section.
+
+- [X] See reply; mention in related work, it is hard to separate logic from program parts. (jeremy)
+
+>
+> The approach proposed in the paper does not (yet?) support type level
+> computation in the surface language; type level computation is only used
+> in the intermediate language to support encoding of surface language
+> features.
+
+Affirmative
+
+>
+> But these weak points are relatively minor issues. Overall, I think
+> this is a good paper that is well at home in POPL.
+>
+>
+> Other comments - suggestions for improvements
+>
+> The discussion of the metatheory in the paper is rather short (most of
+> it is given in the appendix). It would help if some intuition about the
+> proofs could be given in the main paper rather than only in the
+> appendix. In particular, it was not immediately clear to me why
+> evaluation of a well-typed term cannot get stuck on an application of
+> the “cast down” operator.
+
+- [x] add more proof sketch (Linus: but is this really necessary?)
+
+>
+> It is not clear to me why a cast is required for each
+> beta-reduction/expansion at the type level, instead of just
+> folding/unfolding of fixpoints. Is this just to make the metatheory
+> easier, or is there a more fundamental reason?
+
+- [ ] See reply. (Linus: not sure if needed to mention)
+
+
+>
+> It would help to mention sooner that a call-by-name evaluation strategy
+> is used, as this is important to understand the typing rules for the
+> explicit casts.
+
+- [X] mention in introduction we use CBN (jeremy)
+
+>
+> The PTree example is somewhat confusing because it uses two different
+> versions of the natural numbers.
+
+Fixed
+
+>
+> ===========================================================================
+>                           POPL 2016 Review #143B
+>                     Updated 23 Sep 2015 11:46:08am EDT
+> ---------------------------------------------------------------------------
+>            Paper #143: Type-Level Computation One Step at a Time
+> ---------------------------------------------------------------------------
+>
+>                       Overall merit: 2. Weak reject
+> Reviewer expertise (shown to authors): 4.
+>                                         Expert (I have published papers in
+>                                         related topics)
+>
+>                          ===== Paper summary =====
+>
+> This paper describes a dependently-typed language with *:* and general
+> recursion. To support decidable type checking, this language requires that all
+> uses of conversion be marked in terms, one step at a time. Type checking is
+> decidable and the language is type sound.
+>
+> ===== Comments for authors and suggestions to make this a strong paper =====
+>
+> This paper is technically correct and well written. However, it lacks novelty
+> and does not tell the complete story in its comparisons with related work. In
+> particular, the comparisons suggest that the goal of the proposed language is
+> dependently-typed programming, as in Cayenne, Idris, Coq or Agda. However, the
+> language in the paper is less expressive than GHC.
+>
+> Therefore, I cannot support publication.
+>
+> * The ideas in this paper are not new.
+>
+> One way to describe this work is that makes type checking Cardelli's type:type
+> language decidable [1] by marking the uses of conversion in terms. In that
+> case, type checking becomes syntax directed so the proof of decidable type
+> checking is almost trivial. This technique has been used, for example, in Guru
+> [5], many Trellys variants [2], [3], [4], and in Haskell's intermediate
+> language FC.
+>
+> The exact formalization of the explicit type casts does differ from prior work,
+> but I don't believe this difference to be consequential (see below).
+>
+> The use of general recursion to implement recursive types is already shown in
+> Cardelli's paper (though the terminology of equi- and iso- recursive
+> types wasn't available at the time).
+>
+> The datatype encodings are standard and the proofs/proof techniques used in
+> this paper follow standard practice.
+
+
+- [X] See replay. mention in related work why our casts and recursive type are different from others (jeremy)
+
+>
+> * The core language lacks expressiveness for dependently-typed programming
+> and is not as expressive as FC.
+>
+>  - The form of explicit cast proposed by this paper does not equate as many
+>  terms as it should. According to the rules of Figure 4, this cast allows
+>  an equality based on weak, CBN one-step reduction. In contrast, definitional
+>  equality in Coq or Agda, equates terms via full reduction.
+>
+>  For example, if x is a variable of type Nat -> *, then in this language, the
+>  type:
+>
+>      x (2 + 2)
+>
+>  cannot be cast to the type:
+>
+>      x 4
+>
+>  However, these two types would be definitionally equivalent in Coq/Agda
+>  and coercible in FC.
+>
+>  In general, it is useful for the equality derived by cast to be congruent
+>  and coherent (i.e. insensitive to explicit casts) and that is not the case
+>  here.
+>
+>  - The language does not include any form of equality type/proposition, such
+>  as the "C" in FC or equality types in Coq/Agda. (Note that sections 2 and 3
+>  do not discuss the encoding of GADTs or any other form of indexed types.)
+>
+>  A related issue is the lack of induction principles, or other form of
+>  dependently-typed pattern matching. For example, in case analysis of natural
+>  numbers, the type system should be able to take advantage of the fact that
+>  the scrutinee is equal to zero in the zero case. This typing rule is not
+>  available via Church/Scott encodings, see Fu and Stump below for a discussion
+>  of this issue.
+
+- [X] See reply, mention in introduction our goal is not DTP (jeremy)
+
+>
+>  - To be used as an intermediate language of an efficient functional
+>  programming language like Haskell, the language should distinguish between
+>  "erasable" arguments and those that need to be preserved until execution. The
+>  FC language currently does this via the type/term distinction, all types are
+>  erased, all terms preserved. If the type/term distinction is removed via a
+>  pure type system (and there are proposals to do so, such as in Gundry's
+>  dissertation) then it should be replaced by something else.
+>
+
+- [x] Mention discussion of erasability in related work (Linus: mentioned in section 4)
+
+> Given the differences in expressiveness, the comparison in Figure 9 is not
+> very informative.
+>
+> * The paper does not justify the design of the source or core languages.
+>
+> In particular, it presents lambda^mu_* as a replacement for FC, but this
+> language is not as expressive as FC. It also develops the surface language
+> Fun, but this surface language lacks type-level computation, meaning that it
+> cannot take advantage of the main benefits of the core language.
+>
+
+- [X] See reply, mention in S5 that our surface language takes good advantages of the core. (jeremy)
+
+> Furthermore, the paper does not discuss the trade-offs involved when allowing
+> nontermination in dependently-typed languages. It is more than just decidable
+> type-checking at stake---having a consistent logic provides stronger
+> guarantees for programmers and more efficient compilation. Indeed, because
+> type checking can take arbitrarily long in Coq/Agda, the lack of decidable
+> type checking is the least important consequence of an inconsistant logic.
+
+Been mentioned in the introduction
+
+>
+> Note that I'm not saying that languages like Cayenne are useless or
+> uninteresting. I believe that there is much still to be learned from
+> nonterminating dependently-typed languages! However, as we do so, both their
+> advantages and limitations must be discussed.
+>
+> Up and Down casts:
+>
+> I found the formalization of explicit casts odd, in particular the decision to
+> make 'cast up' a value. I'm guessing that this follows from a generalization
+> of the fold/unfold coercions of iso-recursive types. With iso-recursive types,
+> fold is an introduction form for recursive types, and unfold its elimination
+> form. The cast up/down operational semantics exactly follow that of
+> fold/unfold.
+
+- [x] See reply, discussion why castup is a value in related work (Linus: mentioned in section 4)
+
+>
+> However, in \lambda_*, there is no recursive type to introduce! At this point
+> the design is unmotivated. Why not have a single form of cast?
+>
+> For example, you could rewrite cast thus:
+>
+>        G |- e : A        A ~>* C   B ~>* C
+>       --------------------------------------
+>        G |- cast [A][B] e : B
+>
+> This version is based on the idea of "joinability" and more closely resembles
+> the (symmetric) conversion rule in Coq. A and B are castable types if there is
+> some common reduct. Of course, in the presence of nontermination, this rule is
+> undecidable, but it can be made decidable by adding a maximum number of steps
+> that A and B should take to find the common term C.
+>
+> This comment doesn't mean that cast up/cast down is wrong (in fact, it may
+> make Section 6 a bit easier) only that I would have liked to have seen more
+> discussion of the design.
+>
+> [1] Cardelli, A Polymorphic lambda-calculus with Type:Type. SRC Research
+> Report 10, May 1, 1986.
+>
+> [2] Vilhelm Sjöberg, Chris Casinghino, Ki Yung Ahn, Nathan Collins, Harley D.
+> Eades III, Peng Fu, Garrin Kimmell, Tim Sheard, Aaron Stump, and Stephanie
+> Weirich. Irrelevance, Heterogenous Equality, and Call-by-value Dependent Type
+> Systems. In Fourth workshop on Mathematically Structured Functional
+> Programming (MSFP '12), pages 112-162, 2012.
+>
+> [3] Garrin Kimmell, Aaron Stump, Harley D Eades III, Peng Fu, Tim Sheard,
+> Stephanie Weirich, Chris Casinghino, Vilhelm Sjöberg, Nathan Collins, Ki Yung
+> Ahn. Equational reasoning about programs with general recursion and
+> call-by-value semantics PLPV 2012
+>
+> [4] Vilhelm Sjöberg and Stephanie Weirich. Programming up to Congruence. In
+> POPL 2015: 42nd ACM SIGPLAN-SIGACT Symposium on Principles of Programming
+> Languages, pages 369-382, Mumbai, India, January 2015.
+>
+> [5] Verified programming in Guru. A Stump, M Deters, A Petcher, T Schiller, T
+> Simpson PLPV 2005
+>
+> [6] Adam Gundry. Type Inference, Haskell and Dependent Types. PhD
+> Dissertation, University of Strathclyde. December 2013.
+>
+> [7] Self Types for Dependently Typed Lambda Encodings Peng Fu, Aaron Stump.
+> Rewriting and Typed Lambda Calculi. Lecture Notes in Computer Science Volume
+> 8560, 2014, pp 224-239
+>
+> ==================================================
+> [Added after rebuttal]
+>
+> Thank you for clarifying your goals in this work.  I will reinterpret
+> my comments based on the fact that you would like to design a core
+> language for a typed-polymorphic functional programming language with
+> datatypes. In particular, you do not intend to include any sort of
+> nontrivial type equality (such as GADTs) or type-level computation
+> (type families, or even F_omega style type functions).
+>
+> To recap: the contribution of your work is to take the existing idea
+> of encoding datatypes using recursive functions in a Pure Type System
+> and to combine it with the existing idea of using casts to make type
+> checking a PTS with arbitrary recursion decidable. Your design of
+> those casts is strongly based on the design of iso-recursive types,
+> and is significantly less expressive than the casts in other work.
+>
+> This lack of expressiveness is significant. Your soundness proof is
+> much, much simpler than soundness proofs for more expressive
+> languages. Even F-omega requires much more work in the progress proof
+> to accommodate type-level computation. You could bring this comparison
+> out more.
+>
+> However, because the expressiveness of your casts is tailored to
+> implementing datatypes, it seems unlikely that they could be used for
+> anything other than that.
+>
+> My confusion about your paper ultimately stemmed from the connection
+> to related work, inclusion of datatype promotion (which are often
+> motivated by GADTs), and mostly from Figure 9. Why compare against
+> those languages? The comparison is meaningless as all of those
+> languages are more expressive than you want. Shouldn't your comparison
+> be with other core languages for FP?  (I believe that Figure is so
+> misleading that you should remove it from the paper.)
+>
+> Finally, in the context of core languages for FP, your work should
+> cite Henk, an older intermediate language for Haskell based on pure
+> type systems:
+> http://research.microsoft.com/apps/pubs/default.aspx?id=67066
+>
+> Based on the rebuttal, I'll raise my score to 2. I'm not convinced
+> that this system is significantly simpler than one that just includes
+> iso-recursive types. And the fact that it can't be extended to GADTs
+> or F-omega-like type functions limits its applicability.
+>
+> ===========================================================================
+>                           POPL 2016 Review #143C
+> ---------------------------------------------------------------------------
+>            Paper #143: Type-Level Computation One Step at a Time
+> ---------------------------------------------------------------------------
+>
+>                       Overall merit: 4. Accept
+> Reviewer expertise (shown to authors): 4.
+>                                         Expert (I have published papers in
+>                                         related topics)
+>
+>                          ===== Paper summary =====
+>
+> High-level intermediate languages for the study of functional
+> programming and type systems are becoming increasingly complicated.
+> This is a natural tendency, reflecting the increasing sophistication
+> of the source-level constructs exposed to the programmer.  But it
+> comes at a high price, both in the study of their metatheory and in
+> their implementations.
+>
+> This paper takes a rather drastic step towards simplifying
+> intermediate languages by combining two ideas: (1) all levels (terms,
+> types, kinds) are unified using Type : Type, and (2) we recover
+> decidability of type-checking by requiring casts to mediate type-level
+> reductions or expansions.  The latter is quite explicit in the sense
+> that it captures a single step of reduction (down) or expansion (up).
+>
+> The authors then investigate the metatheory, which includes
+> preservation, progress, and decidability of type-checking.  Of course,
+> when viewed as a logic it would be inconsistent.  They also provide a
+> light surface syntax, Fun, which can be translated into the core
+> language lambda-mu-*.  Fun provides evidence that reasonably
+> expressive source languages can be translated to lambda-mu-*.
+> Nevertheless, some features of languages such as Haskell are still
+> outside the scope, partly because one of the goals was to entirely
+> avoid the use of casts in the source.
+>
+> ===== Comments for authors and suggestions to make this a strong paper =====
+>
+> All great ideas are simple.  I was reminded of this quote when reading
+> this delightful paper, which is very well presented.  Like the
+> authors, I feel we need to a way to escape the increasing complexity
+> of intermediate languages that sit at the core of wide-spectrum
+> languages such as Haskell.
+>
+> My first reaction was that the present proposal is not at the right
+> level of abstraction in that the notion of "one-step reduction" is too
+> brittle to be reflected in the language.  The examples and the
+> translation of Fun, however, convinced me that it is worth considering
+> this avenue.  Just the example of higher-order abstract syntax alone,
+> which includes eval and reify, is interesting.  Also, the way the
+> usual fold/unfold for iso-recursive types come out as a special case
+> is comforting.  Even if, in the end, inductive families or GADTs do
+> not quite fit, this is a very solid basis for further investigation
+> and well worth publishing.
+>
+> One question: can anything be said about the connections between this
+> calculus and step-indexed logical relations?  It is intriguing to
+> consider that both centrally depend on partial computations, but it is
+> possible that this is just a meaningless coincidence.
+
+Do we need to say that?
+
+>
+> Minor comments:
+>
+> abstract: "by type-safe" => "by a type-safe"
+>
+> p.4, col. 2: "which naively supports".  Did you mean "natively
+> supports"?
+>
+> p.6, syntactic sugar.  I think it dangerous to think of "let x:tau =
+> e2 in e1" as syntactic sugar for "[e2/x]e1".  For one, if x does not
+> occur in e1 then e2 will never be type-checked in "[e2/x]e1" which
+> could very unintuitive programs pass.  More generally, it does not
+> seem a good idea to just ignore the type tau.
+>
+> p.7 "any way" => "anyway"
+
+Fixed
+
+>
+> ===========================================================================
+>                           POPL 2016 Review #143D
+> ---------------------------------------------------------------------------
+>            Paper #143: Type-Level Computation One Step at a Time
+> ---------------------------------------------------------------------------
+>
+>                       Overall merit: 2. Weak reject
+> Reviewer expertise (shown to authors): 3.
+>                                         Knowledgeable (I have a broad
+>                                         understanding of this topic)
+>
+>                          ===== Paper summary =====
+>
+> This paper develops the idea that type-level computation can be easily
+> integrated in a language with general recursion without disturbing
+> decidability of type checking as long as every type-level computation
+> step is made explicit.
+>
+> The simplicity of this idea is very appealing. However, I'm not
+> convinced that this is a serious alternative to careful design of core
+> languages that restrict type-level computations for decidability while
+> allowing the expression of powerful features. Making type-level
+> computation steps explicit is a big inconvenience at best (think about
+> refactoring / code maintenance tasks), and impossible at worst
+> (knowing when an infinite number of steps are needed amounts to
+> solving the halting problem), unless you're willing to first prove
+> that type-checking a higher-level language is decidable before
+> attempting a down-coding, or restrict yourself to provably terminating
+> forms of recursion (both of which are the very alternatives that this
+> paper seems to challenge).
+>
+> These problems become evident in Section 6, which translates a
+> language for which *type-checking is already known to be decidable* to
+> the core calculus developed in the paper.  In that light, the
+> discussion of supported features in Section 3 doesn't seem to point to
+> any contribution.
+>
+> Apart from these problems, the technical development of the core
+> calculus (including meta-theory, proofs) are pretty solid.
+>
+> I believe the paper would be much stronger if the authors instead
+> pitched the idea of making every step of type-level computation
+> explicit as a proof technique for decidability of expressive type
+> systems in higher-level languages (thereby acknowledging that it
+> complements, rather than provides an alternative to, the design of
+> such type systems). As such, the core calculus could still serve as a
+> useful lower-level language to compile to, with the results in this
+> paper supporting the soundness of the proof technique.

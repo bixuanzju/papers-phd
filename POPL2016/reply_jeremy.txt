@@ -1,0 +1,107 @@
+We thank all reviewers for their valuable and thoughtful comments. In
+what follows, we address the most crucial points.
+
+First of all, allow us to reemphasize the goal of our paper, since
+some reviewers seem to be confused about it.
+
+There are at least two benefits of using PTS-style syntax and
+unification of all syntactic levels for a language:
+
+1) It opens up the rich world of Dependently Typed Programming (DTP)
+via systems like the calculus of constructions;
+
+2) It *significantly simplifies core languages*, by eliminating
+redundancy between the various syntactic levels.
+
+The goal of this paper is to achieve 2, not 1. In particular we are
+aimed at more traditional functional languages like ML or Haskell
+extended with some interesting type-level features, but perhaps
+not the full power of dependent types. That's the goal of the paper!
+
+#143A
+
+It is rather hard to make the comparison only with the programmatic
+fragment because those two fragments are tightly coupled. For example
+in Zombie, the conversion rule (TConv) for programmatic fragment
+depends on equality proofs, which are only available in the logical
+fragment.
+
+#143B
+
+A large part of the criticism in this review is grounded on the
+assumption that we claim our core language to be good for DTP.
+
+*This assumption is false*: we do not claim that our core language is
+good for DTP. Moreover we also state some (though perhaps not all) of
+the reasons why the language is limited for the kind of DTP available
+in Agda/Idris/Coq.
+
+For example in the introduction, we clearly say that:
+
+"A **non-goal** of the current work (although a worthy avenue for
+future work) is to use λμ⋆ as a core language for modern dependently
+typed languages ..."
+
+It is true that certain features of FC cannot be expressed, *but this
+is acknowledged in the paper*. See related work paragraph on System
+FC, where we talk about GADTs and equality for example. We will
+emphasize the limitations against FC better, and include discussions
+on erasability (which we have indeed not mentioned) in the paper's
+revision.
+
+The reviewer also suggests that the idea of casts has already been
+proposed. While it is true that other systems have some form of casts
+as an alternative to the conversion rule, including System FC which
+was our initial inspiration; the *existing casts approaches are
+fundamentally different*.
+
+All cast approaches in [2,3,4,5] and System FC rely on equality
+proofs. *In contrast, our one-step casts do not rely on equality
+proofs*. This makes a big difference because:
+
+1) To build equality proofs we need various other language constructs,
+which adds to the complexity of the language;
+
+2) Moreover, we need to ensure that the equality proofs are valid. If
+we are not careful, in a language with non-termination, we could
+easily build bogus equality proofs such as:
+
+_|_ : Int = Char
+
+Some of the languages do provide solutions to this problem. For
+example, in System FC, type equality coercions connects two *value*
+types, and in Zombie, the existence of a logical fragment can
+guarantee that the proofs are valid. Other approaches include
+restricting valid equality proofs to be syntactic values only [2,4],
+or having different languages for proofs and terms [3,5].
+
+However, because our casts have no equality proofs, neither of these
+problems apply and thus the system can be much simpler!
+
+Cardelli shows how to model *equi*-recursive types. He uses no casts,
+and thus type-level computation is completely unrestricted. Therefore
+there is no decidable type-checking in Cardelli’s system.
+
+*The whole point* of our system is to provide a mechanism to control
+type-level computation using inspiration from *iso*-recursive types.
+This is how we get decidable type-checking in the presence of
+recursion at the type-level. So there is clearly a *big* difference to
+what Cardelli proposes.
+
+The surface language takes very good advantage of the benefits of the
+core language. The encoding of datatypes and case analysis, for
+example, uses casts and type-level computation steps in a fundamental
+way: we need to use casts to simulate fold/unfold, and we also need
+small type-level computational steps to encode parametrised datatypes.
+
+#143D
+
+Just like System FC, the convenience of type-level computation in the
+core language is given up but compensated by language constructs in
+the surface language. The number of casts can be computed during the
+translation (as shown in the encoding of datatypes and case
+analysis). It is indeed impossible to compute the number of casts for
+arbitrary type-level computation. But in a practical surface language
+, type-level computation is often restricted in order for generating
+type casts, such as closed type families in Haskell. We have discussed
+this issue in the second paragraph of Section 8.

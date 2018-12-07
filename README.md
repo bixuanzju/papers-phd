@@ -21,5 +21,6 @@ In reverse chronological order
 | [`OOPSLA2017`](./OOPSLA2017)             | Predecessor of [`SEDEL`](./SEDEL). Submitted to OOPSLA'17, rejected.                                         |
 | [`APLAS2016`](./APLAS2016)               | A dependently-typed calculus with general recursion and decidable type-checking. **In APLAS'16**.            |
 | [`ESOP2016`](./ESOP2016)                 | Predecessor of [`APLAS2016`](./APLAS2016). Submitted to ESOP'16, rejected.                                   |
+| [`POPL2016`](./POPL2016)                 | Predecessor of [`ESOP2016`](./ESOP2016). Submitted to POPL'16, rejected.                                     |
 | [`module`](./module)                     | Failed project (first-class modules using dependent intersections), my major project from 2016 to 2017.      |
 
