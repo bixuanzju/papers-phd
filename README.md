@@ -22,7 +22,7 @@ In reverse chronological order
 | [`APLAS2016`](./APLAS2016)   | A dependently-typed calculus with general recursion and decidable type-checking. **In APLAS'16**.       |
 | [`ESOP2016`](./ESOP2016)     | Predecessor of [`APLAS2016`](./APLAS2016). Submitted to ESOP'16, rejected.                              |
 | [`POPL2016`](./POPL2016)     | Predecessor of [`ESOP2016`](./ESOP2016). Submitted to POPL'16, rejected.                                |
-| [`FCore`](./FCore)           | A JVM implementation of System F with support for full tail-call elimination (TCE). **In APLAS'15**.    |
+| [`FCore`](./FCore)           | A JVM implementation of System F with support for full tail-call elimination. **In APLAS'15**.          |
 | [`PLDI2015`](./PLDI2015)     | Predecessor of [`FCore`](./FCore). Submitted to PLDI'15, rejected.                                      |
 | [`module`](./module)         | Failed project (first-class modules using dependent intersections), my major project from 2016 to 2017. |
 
