@@ -1,0 +1,92 @@
+We thank the reviewers for their comments. We address misunderstandings
+and answer main questions below.
+
+#Review1
+
+>as the authors acknowledge, the boilerplate they avoid is both entirely
+>routine and can already be automated in Haskell-like languages.
+
+The reviewer misunderstands what we say in the paper:
+the Haskell code in Appendix D *does not* automate all boilerplate.
+We criticize two aspects in the Haskell solution in S2:
+
+1)The boilerplate required;
+2)The need for explicit delegation.
+
+Our sophisticated Haskell encoding in Appendix D deals with 2), but
+still does not automate all boilerplate. Please read the last
+paragraph of S2.1 (in particular "Nevertheless, that approach still
+requires a lot of boilerplate...") again. Furthermore, Appendix D is
+a sophisticated encoding using advanced language extensions which
+cannot be routinely extended without understanding how it works.
+Moreover, some Haskell extensions are not yet formally studied, and
+others (while studied independently) have not been studied in
+combination with other extensions.
+Our language design has the added advantage that we have
+mechanized its metatheory.
+
+To fully deal with 1) in Haskell, one might use Template Haskell
+meta-programming, but this comes with all the associated problems of
+meta-programming.
+
+Finally, we do acknowledge that most of the boilerplate code is entirely
+routine. Indeed, this is precisely the point of our paper: following
+established software engineering principles (e.g., DRY) repetitive boilerplate
+code should be avoided. This goal has already received much attention in
+programming language design (e.g., type classes, datatype generic programming,
+...). In particular, type classes (for which there are probably
+hundreds of papers published and one of the most important developments
+in type systems in the last 30 years) offer to do pretty much the same:
+automation of entirely routine code. We can always rewrite code
+without type classes via the dictionary translation, by writing the
+boilerplate code by hand. However, we doubt that today anyone
+would question the value of eliminating such routine code.
+
+>What is the type of language4?
+
+The reviewer probably meant language3, whose type is:
+
+{identity:Int->WellSized,
+ fan:Int->WellSized,
+ beside:WellSized->WellSized->WellSized,
+ above:WellSized&Width->WellSized&Width->WellSized,
+ stretch:List[Int]->WellSized&Width->WellSized
+}
+
+The dependencies are expressed by intersections, such as those used in `above`
+and `stretch`.
+
+>Recursive types
+
+Adding recursive types is non-trivial due to coherence. Since our
+proof method relies on logical relations and recursive types make the
+semantics non-terminating, the addition of recursive types will likely
+require step-indexed logical relations. This would be a next-level effort
+from our side (especially since all the metatheory is developed in
+Coq). We think that such extension is a contribution on its
+own. Furthermore by not including recursive types in the current work
+we make it clear what is needed to support polymorphism. The addition
+of recursive types (and step-indexing) would greatly obscure the
+current contributions of our paper.
+
+#Review2
+
+>intersection distributes over function and record types but it's not clear
+>that this is what you refer to as BCD-style subtyping.
+
+Yes, distributivity of intersections is the key feature of BCD subtyping. We
+will clarify it in the revision.
+
+#Review3
+
+>as I found the comparison between different implementations for circuits
+>somewhat tedious and it didn't motivate well for me the purpose of the calculus.
+
+Our goal was to show how existing languages require boilerplate code to
+compose interpretations of EDSLs. Such boilerplate code is
+undesirable and our language design avoids it. We will strengthen our
+argumentation for the example by incorporating some of the points
+that we pointed out to reviewer 1. Note also that (as briefly stated in
+the introduction) there are several other applications for the
+calculus that are covered in previous work. Here we focused on one
+application that requires all features of Fi+.

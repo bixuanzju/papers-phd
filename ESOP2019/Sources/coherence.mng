@@ -41,11 +41,12 @@ and its metatheory, and leads to a weaker substitution lemma.
 % account for disjointness pre-conditions. All of these contribute
 Moreover, the syntactic coherence approach is incompatible with BCD subtyping,
 which leads to multiple subtyping derivations with different coercions and
-requires a more general substitution lemma. For example, consider the
-coercions produced by $ \forall (  \alpha   *   \mathsf{Int}  ) .\, \alpha  \, \& \,  \alpha   <:   \forall (  \alpha   *   \mathsf{Int}  \, \& \,  \mathsf{Int}  ) .\, \alpha $ (neither
-type is ``well-formed'' in the sense of \fname). Two possible ones are
-$ \lambda \ottmv{f} .\,  \Lambda  \alpha .\, \pi_1 \, \ottsym{(}  \ottmv{f} \, \alpha  \ottsym{)}  $ and $ \lambda \ottmv{f} .\,  \Lambda  \alpha .\, \pi_2 \, \ottsym{(}  \ottmv{f} \, \alpha  \ottsym{)}  $. It is not at all
-obvious that they should be equivalent in an appropriate sense.
+requires a more general substitution lemma.
+% For example, consider the
+% coercions produced by $ \forall (  \alpha   *   \mathsf{Int}  ) .\, \alpha  \, \& \,  \alpha   <:   \forall (  \alpha   *   \mathsf{Int}  \, \& \,  \mathsf{Int}  ) .\, \alpha $ (neither
+% type is ``well-formed'' in the sense of \fname). Two possible ones are
+% $ \lambda \ottmv{f} .\,  \Lambda  \alpha .\, \pi_1 \, \ottsym{(}  \ottmv{f} \, \alpha  \ottsym{)}  $ and $ \lambda \ottmv{f} .\,  \Lambda  \alpha .\, \pi_2 \, \ottsym{(}  \ottmv{f} \, \alpha  \ottsym{)}  $. It is not at all
+% obvious that they should be equivalent in an appropriate sense.
 To accommodate BCD into \oname, Bi et al.~\cite{bi_et_al:LIPIcs:2018:9227}
 have created the \namee calculus and
 developed a semantically-founded proof method based on logical relations.
@@ -155,11 +156,11 @@ appropriately is:
      (  \ottnt{v_{{\mathrm{1}}}}  ,  \ottnt{v_{{\mathrm{2}}}}  ) \in \valR{ \alpha }{ \mathsf{Int} }_{ \rho }  \defeq  (  \ottnt{v_{{\mathrm{1}}}}  ,  \ottnt{v_{{\mathrm{2}}}}  ) \in \valR{ \rho_{{\mathrm{1}}}  \ottsym{(}  \alpha  \ottsym{)} }{ \mathsf{Int} }_{  \emptyset  } 
   \end{align}
 }%
-Here is an example to motivate this case.
-Let  $  \mathit{E} =  \Lambda (  \alpha   *   \top  ) .\, \ottsym{(}   \lambda \ottmv{x} .\, \ottmv{x}   \ottsym{)}   \ottsym{:}  \alpha  \, \& \,  \mathsf{Int}  \rightarrow  \alpha  \, \& \,  \mathsf{Int} $.
-We expect that $\mathit{E} \, \mathsf{Int} \,  1   \longrightarrow^{*}  \langle   1   \ottsym{,}   1   \rangle$, which
+Here is an example to motivate it.
+Let  $  \mathit{E} =  \Lambda (  \alpha   *   \top  ) .\, \ottsym{(}  \ottsym{(}   \lambda \ottmv{x} .\, \ottmv{x}   \ottsym{)}  \ottsym{:}  \alpha  \, \& \,  \mathsf{Int}  \rightarrow  \alpha  \, \& \,  \mathsf{Int}  \ottsym{)}  $.
+We expect that $\mathit{E} \, \mathsf{Int} \,  1 $ evaluates to $\langle   1   \ottsym{,}   1   \rangle$. To prove that,
 %%\footnote{The reader is advised to try it out in our prototype interpreter.}
-boils down to showing $  (1 , 1)   \in \valR{\alpha}{ \mathsf{Int} }_{[ \alpha \mapsto ( \mathsf{Int} ,  \mathsf{Int} , \mathsf{R})   ]}  $.
+we need to show $  (1 , 1)   \in \valR{\alpha}{ \mathsf{Int} }_{[ \alpha \mapsto ( \mathsf{Int} ,  \mathsf{Int} , \mathsf{R})   ]}  $.
 According to \cref{eq:var}, this is indeed the case. However, we run into ill-foundedness issue again, because
 $\rho_{{\mathrm{1}}}  \ottsym{(}  \alpha  \ottsym{)}$ could be larger than $\alpha$. Alas, this time the parametricity relation has no solution for us.
 
@@ -169,6 +170,13 @@ $\rho_{{\mathrm{1}}}  \ottsym{(}  \alpha  \ottsym{)}$ could be larger than $\alp
 
 % \bruno{Perhaps we are still showing too many auxiliary lemmas here? We
 % could cut on some of these if we are looking for space.}
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.8,right=#1,#2]
+    {#3}
+    {#4}
+}
+
 In light of the fact that substitution in the logical relation seems unavoidable
 in our setting, and that impredicativity is at odds with substitution, we turn
 to \emph{predicativity}: we change \rref{T-tapp} to its predicative version:
@@ -182,6 +190,13 @@ We do not believe that predicativity is a severe restriction in practice, since 
 languages (e.g., those based on the Hindley-Milner type system~\cite{milner1978theory, hindley1969principal} like Haskell and
 OCaml) are themselves predicative and do not require the full generality of an
 impredicative core language.
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.6,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
 
 % The restriction to
 % predicative polymorphism, though reducing expressiveness in theory, does not seem to cost much
@@ -260,10 +275,10 @@ We need to show that the relation is indeed well-founded:
 \end{restatable}
 \proof
   Let $| \cdot |_{\forall}$ and $| \cdot |_s$ be the number of
-  $\forall$-quantifies and the size of types, respectively. We consider the measure $\langle
+  $\forall$-quantifies and the size of types, respectively. Consider the measure $\langle
   | \cdot |_{\forall} , | \cdot |_s \rangle$,
   where $\langle \dots \rangle$ denotes lexicographic order. For the case of
-  disjoint quantification, the number of $\forall$-quantifiers decreases because monotype $\ottnt{t}$ does not contain $\forall$-quantifiers.
+  disjoint quantification, the number of $\forall$-quantifiers decreases.
   For the other cases, the measure of $| \cdot |_{\forall}$ does not increase, and
   the measure of $| \cdot |_s$ strictly decreases.
 \qed
@@ -310,7 +325,7 @@ half of \cref{fig:logical:fi}.
   {\small
   \begin{align*}
     & \Delta  ;  \Gamma   \vdash  \logeq{ \ottnt{e_{{\mathrm{1}}}} }{ \ottnt{e_{{\mathrm{2}}}} } :  \ottnt{A}  ;  \ottnt{B}    \defeq  \ottsym{\mbox{$\mid$}}  \Delta  \ottsym{\mbox{$\mid$}}  \ottsym{;}  \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \vdash  \ottnt{e_{{\mathrm{1}}}}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{A}  \ottsym{\mbox{$\mid$}} \land \ottsym{\mbox{$\mid$}}  \Delta  \ottsym{\mbox{$\mid$}}  \ottsym{;}  \ottsym{\mbox{$\mid$}}  \Gamma  \ottsym{\mbox{$\mid$}}  \vdash  \ottnt{e_{{\mathrm{2}}}}  \ottsym{:}  \ottsym{\mbox{$\mid$}}  \ottnt{B}  \ottsym{\mbox{$\mid$}} \ \land \\
-    &\qquad (\forall \rho, \gamma_{{\mathrm{1}}}, \gamma_{{\mathrm{2}}}. \  \rho  \in \ddR{ \Delta }  \land  ( \gamma_{{\mathrm{1}}} ,  \gamma_{{\mathrm{2}}} ) \in \ggR{ \Gamma }_{ \rho }  \Longrightarrow  (  \gamma_{{\mathrm{1}}}  \ottsym{(}  \rho_{{\mathrm{1}}}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{)}  \ottsym{)}  ,  \gamma_{{\mathrm{2}}}  \ottsym{(}  \rho_{{\mathrm{2}}}  \ottsym{(}  \ottnt{e_{{\mathrm{2}}}}  \ottsym{)}  \ottsym{)}  ) \in \eeR{ \rho  \ottsym{(}  \ottnt{A}  \ottsym{)} }{ \rho  \ottsym{(}  \ottnt{B}  \ottsym{)} } )
+    &\quad (\forall \rho, \gamma_{{\mathrm{1}}}, \gamma_{{\mathrm{2}}}. \  \rho  \in \ddR{ \Delta }  \land  ( \gamma_{{\mathrm{1}}} ,  \gamma_{{\mathrm{2}}} ) \in \ggR{ \Gamma }_{ \rho }  \Longrightarrow  (  \gamma_{{\mathrm{1}}}  \ottsym{(}  \rho_{{\mathrm{1}}}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{)}  \ottsym{)}  ,  \gamma_{{\mathrm{2}}}  \ottsym{(}  \rho_{{\mathrm{2}}}  \ottsym{(}  \ottnt{e_{{\mathrm{2}}}}  \ottsym{)}  \ottsym{)}  ) \in \eeR{ \rho  \ottsym{(}  \ottnt{A}  \ottsym{)} }{ \rho  \ottsym{(}  \ottnt{B}  \ottsym{)} } )
   \end{align*}
   }%
 \end{definition}
@@ -318,29 +333,29 @@ For conciseness, we write $ \Delta  ;  \Gamma   \vdash  \logeq{ \ottnt{e_{{\math
 
 \paragraph{Contextual equivalence.}
 
-\begin{figure}[t]
-  \centering
-\begin{tabular}{llll}\toprule
-  \tnamee contexts & $\mathcal{D}$ & $\Coloneqq$ &  $ [\cdot]  \mid  \lambda \ottmv{x} .\, \mathcal{D}  \mid  \Lambda  \alpha  .\,  \mathcal{D}   \mid \mathcal{D} \, \tau \mid \mathcal{D} \, \ottnt{e} \mid \ottnt{e} \, \mathcal{D} \mid \langle  \mathcal{D}  \ottsym{,}  \ottnt{e}  \rangle \mid \langle  \ottnt{e}  \ottsym{,}  \mathcal{D}  \rangle \mid co \, \mathcal{D} $ \\
-  \fnamee contexts & $\mathcal{C}$ & $\Coloneqq$ &  $ [\cdot]  \mid  \lambda \ottmv{x} .\, \mathcal{C}  \mid  \Lambda (   \alpha    *   \ottnt{A}  ) .\,  \mathcal{C}  \mid \mathcal{C} \, \ottnt{A} \mid \mathcal{C} \, \mathit{E} \mid \mathit{E} \, \mathcal{C} \mid \mathcal{C}  \ottsym{,,}  \mathit{E} \mid \mathit{E}  \ottsym{,,}  \mathcal{C} \mid \ottsym{\{}  \ottmv{l}  \ottsym{=}  \mathcal{C}  \ottsym{\}}  \mid \mathcal{C}  \ottsym{.}  \ottmv{l} \mid \mathcal{C}  \ottsym{:}  \ottnt{A} $ \\ \bottomrule
-\end{tabular}
-  \caption{Expression contexts}
-  \label{fig:contexts:fi}
-\end{figure}
+% \begin{figure}[t]
+%   \centering
+% \begin{tabular}{llll}\toprule
+%   \tnamee contexts & $\mathcal{D}$ & $\Coloneqq$ &  $ [\cdot]  \mid  \lambda \ottmv{x} .\, \mathcal{D}  \mid  \Lambda  \alpha  .\,  \mathcal{D}   \mid \mathcal{D} \, \tau \mid \mathcal{D} \, \ottnt{e} \mid \ottnt{e} \, \mathcal{D} \mid \langle  \mathcal{D}  \ottsym{,}  \ottnt{e}  \rangle \mid \langle  \ottnt{e}  \ottsym{,}  \mathcal{D}  \rangle \mid co \, \mathcal{D} $ \\
+%   \fnamee contexts & $\mathcal{C}$ & $\Coloneqq$ &  $ [\cdot]  \mid  \lambda \ottmv{x} .\, \mathcal{C}  \mid  \Lambda (   \alpha    *   \ottnt{A}  ) .\,  \mathcal{C}  \mid \mathcal{C} \, \ottnt{A} \mid \mathcal{C} \, \mathit{E} \mid \mathit{E} \, \mathcal{C} \mid \mathcal{C}  \ottsym{,,}  \mathit{E} \mid \mathit{E}  \ottsym{,,}  \mathcal{C} \mid \ottsym{\{}  \ottmv{l}  \ottsym{=}  \mathcal{C}  \ottsym{\}}  \mid \mathcal{C}  \ottsym{.}  \ottmv{l} \mid \mathcal{C}  \ottsym{:}  \ottnt{A} $ \\ \bottomrule
+% \end{tabular}
+%   \caption{Expression contexts}
+%   \label{fig:contexts:fi}
+% \end{figure}
 
 Following \namee, the notion of coherence is based on \emph{contextual
   equivalence}. The intuition is that two programs are equivalent if we
-\emph{cannot} tell them apart in any context. More formally, we introduce
-\emph{expression contexts}, whose syntax is shown in \cref{fig:contexts:fi}. Due
-to the bidirectional nature of the type system, the typing judgment of $\ottnt{C}$
-features 4 different forms (see \cref{appendix:fnamee}),
+\emph{cannot} tell them apart in any context. As usual, contextual
+equivalence is expressed using \emph{expression contexts} ($\mathcal{C}$ and $\mathcal{D}$ denote \fnamee and \tnamee expression contexts, respectively),
+Due to the bidirectional nature of the type system, the typing judgment of $\mathcal{C}$
+features 4 different forms (full rules are in the appendix),
 e.g., $\mathcal{C}  \ottsym{:}  \ottsym{(}  \Delta  \ottsym{;}  \Gamma \, \Rightarrow \, \ottnt{A}  \ottsym{)}  \mapsto  \ottsym{(}  \Delta'  \ottsym{;}  \Gamma' \, \Rightarrow \, \ottnt{A'}  \ottsym{)}  \rightsquigarrow  \mathcal{D}$ reads if $\Delta  \ottsym{;}  \Gamma  \vdash  \mathit{E} \, \Rightarrow \, \ottnt{A}$
 then $\Delta'  \ottsym{;}  \Gamma'  \vdash  \mathcal{C}  \ottsym{\{}  \mathit{E}  \ottsym{\}} \, \Rightarrow \, \ottnt{A'}$. The judgment also generates a well-typed \tnamee context $\mathcal{D}$. The
 following two definitions capture the notion of contextual equivalence:
 
 \begin{definition}[Kleene Equality $\backsimeq$]
-  Two complete programs, $\ottnt{e}$ and $\ottnt{e'}$, are Kleene equal, written
-  $\kleq{\ottnt{e}}{\ottnt{e'}}$, iff there exists $i$ such that $\ottnt{e}  \longrightarrow^{*}  i$ and
+  Two complete programs (i.e., closed terms of type $ \mathsf{Int} $), $\ottnt{e}$ and $\ottnt{e'}$, are Kleene equal, written
+  $\kleq{\ottnt{e}}{\ottnt{e'}}$, iff there exists an integer $i$ such that $\ottnt{e}  \longrightarrow^{*}  i$ and
   $\ottnt{e'}  \longrightarrow^{*}  i$.
 \end{definition}
 

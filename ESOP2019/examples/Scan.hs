@@ -72,7 +72,6 @@ e12 = brentKung
 
 -- BEGIN_DSL_WS
 data WellSized = WS { wS :: Bool, ox :: Width }
-
 instance Circuit WellSized where
  identity n   = WS True (identity n)
  fan n        = WS True (fan n)

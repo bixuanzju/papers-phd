@@ -1,0 +1,170 @@
+---------------------- REVIEW 1 ---------------------
+PAPER: 38
+TITLE: Distributive Disjoint Polymorphism for Compositional Programming
+AUTHORS: Xuan Bi, Ningning Xie, Bruno Oliveira and Tom Schrijvers
+
+Overall evaluation: 0 (borderline paper)
+
+----------- Overall evaluation -----------
+Paper summary
+  =============
+
+  The paper describes F⁺ᵢ, a language with disjoint intersection types and
+  subtyping.  The authors show soundness and coherence for F⁺ᵢ, using a logical
+  relation they call canonicity.  Canonicity is weaker than typical logical
+  relations for calculi like System F---it does not imply parametricity---but is
+  sufficient to show coherence.  The authors also show that type checking for
+  F⁺ᵢ is decidable, distinguishing it from other calculi with subtyping such as
+  F_sub.
+
+
+  Evaluation
+  ==========
+
+  To me, the weakness in this paper the motivation, not the technical
+  development.  As a result, while the technical development is sound, and some
+  of the results not uninteresting, the paper as a whole is somewhat
+  unsatisfying.
+
+  The motivation relies largely on the ease of reuse of embedded domain specific
+  languages.  The paper argues that F⁺ᵢ provides a significant advantage over
+  existing approaches, which they demonstrate by comparing an EDSL
+  implementation in Haskell to one in SEDEL, a language based on F⁺ᵢ.  I found
+  this comparison unconvincing in several regards.  First, they end up comparing
+  an implicit implementation (using type classes in Haskell) to an explicit
+  implementation (in SEDEL).  This just seems to increase the verbosity of their
+  implementation.  They show that the merging operator allows them to combine
+  implementations in SEDEL without boilerplate.  However, as the authors
+  acknowledge, the boilerplate they avoid is both entirely routine and can
+  already be automated in Haskell-like languages.  Finally, they claim to have
+  eliminated the need for projections in the well-sized example, but this is
+  again entirely routine in their Haskell implementation (particularly given the
+  machinery of Appendix D).
+
+> TODO: strengthen S2
+
+  This is not to say that the paper makes no progress simply because its
+  examples can be encoded in Haskell!  However, I would hope for the amount of
+  new metatheory to be proportional to the gain in expressiveness.  In this
+  case, the opposite seems true: there is quite a lot of metatheory for only
+  incremental improvements in the motivating example.  Perhaps there are other
+  details that would flesh out the story.  What is the type of language4 (with
+  its implicit dependence on a Width interpretation of the tree)?  How does the
+  formal system extend to include recursive types?  How comprehensible are error
+  messages, particularly in the presence of recursive types?
+
+> FIXED
+
+  At the end of section 6, the authors refer to another potential use of F⁺ᵢ,
+  this time to encode bounded quantification.  This is very interesting!  In
+  particular, it would pay off the various decidability results of their
+  calculus, and show another, entirely unrelated, application of their calculus.
+  Unfortunately, this example does not seem to be fully developed.
+
+> TODO?
+
+----------------------- REVIEW 2 ---------------------
+PAPER: 38
+TITLE: Distributive Disjoint Polymorphism for Compositional Programming
+AUTHORS: Xuan Bi, Ningning Xie, Bruno Oliveira and Tom Schrijvers
+
+Overall evaluation: 2 (accept)
+
+----------- Overall evaluation -----------
+The paper develops the Fi+ calculus, which extends and combines the
+  authors' previous work on the λi+ and Fi calculi.  Its distinctive
+  features are (1) the merge operator, which is a (point-wise)
+  generalization of record concatenation to functions, (2) disjoint
+  intersection types, which are used to type the merge operator, (3)
+  disjoint polymorphism, where a type variable can have a disjontness
+  constraint, and (4) BCD-style subtyping, which allows intersection
+  type constructor to distribute over function and universal types.
+  λi+ has (1), (2), and (4) and Fi has (1), (2), and (3).  The Fi+
+  calculus has all of them.
+
+  The semantics of the calulus is given by type-based translation to
+  Fco, which is a second-order calculus of coercions.  Since one Fi+
+  term can have more than one type derivation and so more than one
+  translation, it is crucial to show coherence (the proprety that the
+  semantics of an Fi+ term doesn't depend on its type derivation,
+  namely how it's translated to an Fco term).  The paper shows
+  coherence for a predicative fragment of the Fi+ calculus using a
+  logical relations technique.  The logical relations used are
+  heterogeneous in the sense that LHS and RHS terms may have different
+  types.
+
+  All the metatheory has been verified in Coq.
+
+  This is a well-motivated, well-executed, and well-written paper.
+  The motivation behind the work is to make tagless final encoding
+  more compositional without incurring boiler-plate code.  The paper
+  does a very good job explaining the problem of compositional
+  programming and motivates the main features of the calculus (listed
+  above) through an example.  Due to space limitation, the formal
+  definition focuses on the difference from the previous work of λi+
+  and Fi and sometimes skips details but it's fairly self-contained.
+  The challenges in showing coherence is clearly explained, too.  It's
+  somewhat unfortunate that proved coherence is limited to a
+  predicative fragment but the reason why it is difficult to show for
+  the full language is convincing.
+
+  Although the paper may look incremental (given the previous work),
+  I still find the extension non trivial and recommend accepting.
+
+
+  Minor comments:
+
+  Section 2.  Since you emphasize BCD-style subtyping in the
+  introduction, you should also mention how it is used in Section 2.2.
+  The bottom of page 8 mentions that intersection distributes over
+  function and record types but it's not clear that this is what you
+  refer to as BCD-style subtyping.  (I'm not sure if it's standard
+  terminology to refer to distributivity of intersection over function
+  types or product types as BCD-style subtyping.)
+
+> FIXED
+
+  p.20, "E = \(a * T).(\x.x) : a & Int -> a & Int": Where does "& Int"
+  come from?  Also, E should be translated to Fco before applying
+  to Int and 1.
+
+> FIXED
+
+  Definition 4: What are "complete" programs?  Are they closed terms
+  of a base type?
+
+
+> FIXED
+
+  Fig. 13: The symbol for syntactic coherence seems to suggest that
+  syntactic coherence is somewhat inferior to semantics coherence.
+  Is that intended?  It's worth distinguishing the two kinds but
+  I don't know if one is considered "better" than the other.
+
+> TODO?
+
+  p.24: "a [-> an] (unrestricted)"
+
+> FIXED
+
+----------------------- REVIEW 3 ---------------------
+PAPER: 38
+TITLE: Distributive Disjoint Polymorphism for Compositional Programming
+AUTHORS: Xuan Bi, Ningning Xie, Bruno Oliveira and Tom Schrijvers
+
+Overall evaluation: 1 (weak accept)
+
+----------- Overall evaluation -----------
+The paper proposes the F+_i calculus is a polymorphic calculus supporting (disjoint) intersection types and subtyping in addition to a built-in merge operator. It extends the previous F_i calculus (which studied a combination of parametric polymorphism and disjoint intersections) and removes key restrictions, in particular:
+
+- unrestricted intersection types (in particular when an intersection is well-formed)
+- it supports buttom type
+- type checking is decidable
+
+This is a significant improvement over the previous F_i calculus.
+
+The authors then prove coherence using a logical canonicity relation. The technical exposition of (Sec 3, Sec 4) is well done and the authors guide the reader through the various choices and decisions. The proof is mechanized in Coq which is impressive and gives further confidence in the established result.
+
+Personally, I found Sec 2 the weakest in the paper, as I found the comparison between different implementations for circuits somewhat tedious and it didn't motivate well for me the purpose of the calculus.
+
+> TODO: strengthen S2

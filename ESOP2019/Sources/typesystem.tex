@@ -106,8 +106,8 @@ System F extended with products and explicit coercions.
   % Monotypes & $[[t]]$ & $\Coloneqq$ & $[[nat]] \mid [[Top]] \mid [[Bot]] \mid [[t1 -> t2]]  \mid [[t1 & t2]] \mid [[X]] \mid [[{l : t}]]$\\
   Expressions & $[[ee]]$ & $\Coloneqq$ & $[[x]] \mid [[ii]] \mid [[Top]] \mid [[\x . ee]] \mid [[ee1 ee2]] \mid [[ ee1 ,, ee2 ]] \mid [[ ee : A ]] \mid [[{l = ee}]] \mid [[ ee.l  ]] $ \\
         & & $\mid$ & $  [[\X ** A . ee]] \mid [[ ee A ]] $ \\
-  Term contexts & $[[GG]]$ & $\Coloneqq$ &  $[[empty]] \mid [[GG , x : A]] $ \\
-  Type contexts & $[[DD]] $ & $\Coloneqq $ & $[[empty]] \mid [[DD , X ** A]] $  \\ \bottomrule
+  Term contexts & $[[GG]]$ & $\Coloneqq$ &  $[[empty]] \mid [[GG , x : A]] $  \\
+  Type contexts & $[[DD]] $ & $\Coloneqq$ & $ [[empty]] \mid [[DD , X ** A]] $  \\ \bottomrule
 \end{tabular}
   \caption{Syntax of \fnamee}
   \label{fig:syntax:fi}
@@ -188,6 +188,13 @@ $[[ \X ** A . ee ]]$ and type applications $[[ee A]]$.
 
 \paragraph{Well-formedness and unrestricted intersections.}
 
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.8,right=#1,#2]
+    {#3}
+    {#4}
+}
+
+
 \fnamee's well-formedness judgment of types $[[ DD |- A ]]$ is
 standard, and only enforces well-scoping. This
 is one of the key differences from \fname, which uses
@@ -211,7 +218,14 @@ show that \fname only produces disjoint intersection types. As a consequence,
 \fname features a \emph{weaker} substitution lemma (note the gray
 part in \cref{lemma:weaker_lemma}) than \fnamee (\cref{lemma:general_lemma}).
 
-\begin{proposition}[Types are stable under substitution in \fname] \label{lemma:weaker_lemma}
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.6,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
+
+\begin{proposition}[Type substitution in \fname] \label{lemma:weaker_lemma}
   If $[[DD |- A]]$, $[[DD |- B]]$, $[[ (X ** C) in DD  ]]$, $\hlmath{[[ DD |- B ** C ]]}$
   and well-formed context $[[  DD [ X ~> B ]   ]]$, then $[[   DD [ X ~> B ] |-  A [ X ~> B  ]     ]]$.
 \end{proposition}
@@ -224,7 +238,7 @@ part in \cref{lemma:weaker_lemma}) than \fnamee (\cref{lemma:general_lemma}).
 \end{figure}
 
 
-\begin{lemma}[Types are stable under substitution in \fnamee] \label{lemma:general_lemma}
+\begin{lemma}[Type substitution in \fnamee] \label{lemma:general_lemma}
   If $[[DD |- A]]$, $[[DD |- B]]$, $[[ (X ** C) in DD  ]]$
   and well-formed context $[[  DD [ X ~> B ]   ]]$, then $[[   DD [ X ~> B ] |-  A [ X ~> B  ]     ]]$.
 \end{lemma}
@@ -319,12 +333,14 @@ a notable change regarding disjointness with \emph{top-like types}.
 Top-like types are all types that are isomorphic to $[[Top]]$ (i.e.,
 simultaneously sub- and supertypes of $[[Top]]$). Hence, they are inhabited by a
 single value, isomorphic to the $[[Top]]$ value. \cref{fig:disjoint:fi} captures
-this notion in a syntax-directed fashion in the $[[A top]]$ predicate. As a
-historical note, top-like types were first introduced in
-\oname~\cite{oliveira2016disjoint}, and then adopted by \fname~\cite{alpuimdisjoint}. Their motivation
-is solely for enabling a syntactic method of proving coherence, and due to the
-lack of BCD subtyping, they do not have a type-theoretic interpretation of
-top-like types.
+this notion in a syntax-directed fashion in the $[[A top]]$ predicate.
+As a historical note, the concept of top-like types was already known by
+Barendregt et al.~\cite{Barendregt_1983}. The \oname calculus~\cite{oliveira2016disjoint}
+re-discovered it and coined the term ``top-like types''; the \fname calculus~\cite{alpuimdisjoint} extended it
+with universal quantifiers. Note that in both calculi,
+top-like types are solely employed for enabling a syntactic method of
+proving coherence, and due to the lack of BCD subtyping, they do not have a
+type-theoretic interpretation of top-like types.
 
 
 
@@ -369,7 +385,7 @@ Two other interesting rules are
 with some type $[[B]]$ if its disjointness constraints $[[A]]$ is a subtype of
 $[[B]]$.
 Disjointness axioms $[[ A **a B ]]$ (appearing in \rref{D-ax}) take
-care of two types with different type constructors (e.g., $[[nat]]$ and records). Axiom rules can be found in \cref{appendix:fnamee}.
+care of two types with different type constructors (e.g., $[[nat]]$ and records). Axiom rules can be found in the appendix.
 Finally we note that the disjointness relation is symmetric.
 
 % \begin{lemma}[Symmetry of disjointness]
@@ -627,7 +643,7 @@ variable is popped out and we continue with the body.
 \Rref{A-bot} is similar to its declarative counterpart.
 Two meta-functions $[[ < fs >1 ]]$
 and $[[ < fs >2 ]]$ are meant to generate correct forms of coercions, and their
-definitions are shown in \cref{appendix:fnamee}. For other algorithmic rules, we refer to
+definitions are shown in the appendix. For other algorithmic rules, we refer to
 \namee~\cite{bi_et_al:LIPIcs:2018:9227} for detailed explanations.
 
 
@@ -652,7 +668,7 @@ Moreover, we prove that our algorithmic type system is decidable. To see this,
 first notice that the bidirectional type system is syntax-directed, so we only
 need to show decidability of algorithmic subtyping and
 disjointness. The full (manual) proofs for decidability can be found in
-\cref{appendix:decidable}.
+the appendix.
 
 \begin{restatable}[Decidability of algorithmic subtyping]{lemma}{decidesub} \label{lemma:decide-sub}
   Given $[[fs]]$, $[[A]]$ and $[[B]]$, it is decidable whether there exists
@@ -669,6 +685,13 @@ disjointness. The full (manual) proofs for decidability can be found in
 % \begin{restatable}[Decidability of typing]{theorem}{decidetyp} \label{lemma:decide-typing}
 %   Given $[[DD]]$, $[[GG]]$, $[[ee]]$ and $[[A]]$, it is decidable whether $[[DD ; GG  |- ee dirflag A]]$.
 % \end{restatable}
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.8,right=#1,#2]
+    {#3}
+    {#4}
+}
+
 
 One interesting observation here is that although our disjointness
 quantification has a similar shape to bounded quantification $[[\/X<:A. B]]$ in
@@ -690,6 +713,13 @@ by employing an invariant rule for bounded quantification
 (that is by forcing $[[A1]]$ and $[[A2]]$ to be identical).
 Disjoint quantification does not require such invariant rule for
 decidability.
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.6,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
 
 \begin{comment}
 For example, in the original

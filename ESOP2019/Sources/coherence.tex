@@ -40,11 +40,12 @@ and its metatheory, and leads to a weaker substitution lemma.
 % account for disjointness pre-conditions. All of these contribute
 Moreover, the syntactic coherence approach is incompatible with BCD subtyping,
 which leads to multiple subtyping derivations with different coercions and
-requires a more general substitution lemma. For example, consider the
-coercions produced by $[[ \X ** nat . X & X <: \X ** nat & nat . X ]]$ (neither
-type is ``well-formed'' in the sense of \fname). Two possible ones are
-$[[ \f . \X . pp1 (f X) ]]$ and $[[ \f . \X . pp2 (f X) ]]$. It is not at all
-obvious that they should be equivalent in an appropriate sense.
+requires a more general substitution lemma.
+% For example, consider the
+% coercions produced by $[[ \X ** nat . X & X <: \X ** nat & nat . X ]]$ (neither
+% type is ``well-formed'' in the sense of \fname). Two possible ones are
+% $[[ \f . \X . pp1 (f X) ]]$ and $[[ \f . \X . pp2 (f X) ]]$. It is not at all
+% obvious that they should be equivalent in an appropriate sense.
 To accommodate BCD into \oname, Bi et al.~\cite{bi_et_al:LIPIcs:2018:9227}
 have created the \namee calculus and
 developed a semantically-founded proof method based on logical relations.
@@ -154,11 +155,11 @@ appropriately is:
     [[(v1, v2)  in V(X; nat) with pq ]] \defeq [[ (v1, v2) in V(pq1 (X); nat) with emp  ]]
   \end{align}
 }%
-Here is an example to motivate this case.
-Let  $  [[ee]] = [[\ X ** Top . (\x . x) : X & nat -> X & nat]] $.
-We expect that $[[ee nat 1 -->> <1 , 1> ]]$, which
+Here is an example to motivate it.
+Let  $  [[ee]] = [[\ X ** Top . ((\x . x) : X & nat -> X & nat)]] $.
+We expect that $[[ee nat 1 ]]$ evaluates to $[[ <1 , 1> ]]$. To prove that,
 %%\footnote{The reader is advised to try it out in our prototype interpreter.}
-boils down to showing $  (1 , 1)   \in \valR{[[X]]}{[[nat]]}_{[ [[X]] \mapsto ([[nat]], [[nat]], [[Rel]])   ]}  $.
+we need to show $  (1 , 1)   \in \valR{[[X]]}{[[nat]]}_{[ [[X]] \mapsto ([[nat]], [[nat]], [[Rel]])   ]}  $.
 According to \cref{eq:var}, this is indeed the case. However, we run into ill-foundedness issue again, because
 $[[pq1 (X)]]$ could be larger than $[[X]]$. Alas, this time the parametricity relation has no solution for us.
 
@@ -168,6 +169,13 @@ $[[pq1 (X)]]$ could be larger than $[[X]]$. Alas, this time the parametricity re
 
 % \bruno{Perhaps we are still showing too many auxiliary lemmas here? We
 % could cut on some of these if we are looking for space.}
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.8,right=#1,#2]
+    {#3}
+    {#4}
+}
+
 In light of the fact that substitution in the logical relation seems unavoidable
 in our setting, and that impredicativity is at odds with substitution, we turn
 to \emph{predicativity}: we change \rref{T-tapp} to its predicative version:
@@ -181,6 +189,13 @@ We do not believe that predicativity is a severe restriction in practice, since 
 languages (e.g., those based on the Hindley-Milner type system~\cite{milner1978theory, hindley1969principal} like Haskell and
 OCaml) are themselves predicative and do not require the full generality of an
 impredicative core language.
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.6,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
 
 % The restriction to
 % predicative polymorphism, though reducing expressiveness in theory, does not seem to cost much
@@ -259,10 +274,10 @@ We need to show that the relation is indeed well-founded:
 \end{restatable}
 \proof
   Let $| \cdot |_{\forall}$ and $| \cdot |_s$ be the number of
-  $\forall$-quantifies and the size of types, respectively. We consider the measure $\langle
+  $\forall$-quantifies and the size of types, respectively. Consider the measure $\langle
   | \cdot |_{\forall} , | \cdot |_s \rangle$,
   where $\langle \dots \rangle$ denotes lexicographic order. For the case of
-  disjoint quantification, the number of $\forall$-quantifiers decreases because monotype $[[t]]$ does not contain $\forall$-quantifiers.
+  disjoint quantification, the number of $\forall$-quantifiers decreases.
   For the other cases, the measure of $| \cdot |_{\forall}$ does not increase, and
   the measure of $| \cdot |_s$ strictly decreases.
 \qed
@@ -309,7 +324,7 @@ half of \cref{fig:logical:fi}.
   {\small
   \begin{align*}
     &[[DD ; GG |- e1 == e2 : A ; B]]   \defeq  [[|DD| ; |GG| |- e1 : |A|]] \land [[ |DD | ; |GG| |- e2 : | B | ]] \ \land \\
-    &\qquad (\forall [[p]], [[g1]], [[g2]]. \ [[p in DD]] \land [[(g1, g2) in GG with p ]] \Longrightarrow [[(g1 (p1 (e1)), g2 (p2 (e2)))  in E (p(A) ; p(B)) ]])
+    &\quad (\forall [[p]], [[g1]], [[g2]]. \ [[p in DD]] \land [[(g1, g2) in GG with p ]] \Longrightarrow [[(g1 (p1 (e1)), g2 (p2 (e2)))  in E (p(A) ; p(B)) ]])
   \end{align*}
   }%
 \end{definition}
@@ -317,29 +332,29 @@ For conciseness, we write $[[DD ; GG |- e1 == e2 : A]]$ to mean $[[DD ; GG |- e1
 
 \paragraph{Contextual equivalence.}
 
-\begin{figure}[t]
-  \centering
-\begin{tabular}{llll}\toprule
-  \tnamee contexts & $[[cc]]$ & $\Coloneqq$ &  $[[__]] \mid [[\ x . cc]] \mid [[\ X . cc]]  \mid [[ cc T  ]] \mid [[cc e]] \mid [[e cc]] \mid [[< cc , e>]] \mid [[<e , cc>]] \mid [[c cc]] $ \\
-  \fnamee contexts & $[[CC]]$ & $\Coloneqq$ &  $[[__]] \mid [[\ x . CC]] \mid [[\ X ** A. CC]] \mid [[ CC A  ]] \mid [[CC ee]] \mid [[ee CC]] \mid [[ CC ,, ee  ]] \mid [[ ee ,, CC  ]] \mid [[ { l = CC}  ]]  \mid [[ CC . l]] \mid [[ CC : A ]] $ \\ \bottomrule
-\end{tabular}
-  \caption{Expression contexts}
-  \label{fig:contexts:fi}
-\end{figure}
+% \begin{figure}[t]
+%   \centering
+% \begin{tabular}{llll}\toprule
+%   \tnamee contexts & $[[cc]]$ & $\Coloneqq$ &  $[[__]] \mid [[\ x . cc]] \mid [[\ X . cc]]  \mid [[ cc T  ]] \mid [[cc e]] \mid [[e cc]] \mid [[< cc , e>]] \mid [[<e , cc>]] \mid [[c cc]] $ \\
+%   \fnamee contexts & $[[CC]]$ & $\Coloneqq$ &  $[[__]] \mid [[\ x . CC]] \mid [[\ X ** A. CC]] \mid [[ CC A  ]] \mid [[CC ee]] \mid [[ee CC]] \mid [[ CC ,, ee  ]] \mid [[ ee ,, CC  ]] \mid [[ { l = CC}  ]]  \mid [[ CC . l]] \mid [[ CC : A ]] $ \\ \bottomrule
+% \end{tabular}
+%   \caption{Expression contexts}
+%   \label{fig:contexts:fi}
+% \end{figure}
 
 Following \namee, the notion of coherence is based on \emph{contextual
   equivalence}. The intuition is that two programs are equivalent if we
-\emph{cannot} tell them apart in any context. More formally, we introduce
-\emph{expression contexts}, whose syntax is shown in \cref{fig:contexts:fi}. Due
-to the bidirectional nature of the type system, the typing judgment of $[[C]]$
-features 4 different forms (see \cref{appendix:fnamee}),
+\emph{cannot} tell them apart in any context. As usual, contextual
+equivalence is expressed using \emph{expression contexts} ($[[CC]]$ and $[[cc]]$ denote \fnamee and \tnamee expression contexts, respectively),
+Due to the bidirectional nature of the type system, the typing judgment of $[[CC]]$
+features 4 different forms (full rules are in the appendix),
 e.g., $[[CC : (DD; GG => A) ~> (DD'; GG' => A') ~~> cc]]$ reads if $[[DD ; GG |- ee => A]]$
 then $[[DD' ; GG' |- CC { ee } => A']]$. The judgment also generates a well-typed \tnamee context $[[cc]]$. The
 following two definitions capture the notion of contextual equivalence:
 
 \begin{definition}[Kleene Equality $\backsimeq$]
-  Two complete programs, $[[e]]$ and $[[e']]$, are Kleene equal, written
-  $\kleq{[[e]]}{[[e']]}$, iff there exists $[[ii]]$ such that $[[e -->> ii]]$ and
+  Two complete programs (i.e., closed terms of type $[[nat]]$), $[[e]]$ and $[[e']]$, are Kleene equal, written
+  $\kleq{[[e]]}{[[e']]}$, iff there exists an integer $[[ii]]$ such that $[[e -->> ii]]$ and
   $[[e' -->> ii]]$.
 \end{definition}
 

@@ -11,8 +11,8 @@ In reverse chronological order
 
 | Directory                    | Description                                                                                             |
 |------------------------------|---------------------------------------------------------------------------------------------------------|
-| [`ESOP2019`](./ESOP2019)     | A calculus with improved disjoint polymorphism. Submitted to ESOP'19, currently under review.           |
-| [`TOPLAS2019`](./TOPLAS2019) | Journal version of [`Gradual`](./Gradual), submitted to TOPLAS'19, currently under review.              |
+| [`ESOP2019`](./ESOP2019)     | A calculus with improved disjoint polymorphism. **In ESOP'19**.                                         |
+| [`TOPLAS2019`](./TOPLAS2019) | Journal version of [`Gradual`](./Gradual). **In TOPLAS'19**.                                            |
 | [`Necolus`](./Necolus)       | A calculus featuring disjoint intersection types and BCD subtyping. **In ECOOP'18**.                    |
 | [`SEDEL`](./SEDEL)           | A calculus featuring typed first-class traits. **In ECOOP'18**.                                         |
 | [`Gradual`](./Gradual)       | A gradually-typed calculus with implicit polymorphism. **In ESOP'18**.                                  |

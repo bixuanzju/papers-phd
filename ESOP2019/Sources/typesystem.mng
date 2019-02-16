@@ -107,8 +107,8 @@ System F extended with products and explicit coercions.
   % Monotypes & $\ottnt{t}$ & $\Coloneqq$ & $ \mathsf{Int}  \mid  \top  \mid  \bot  \mid \ottnt{t_{{\mathrm{1}}}}  \rightarrow  \ottnt{t_{{\mathrm{2}}}}  \mid \ottnt{t_{{\mathrm{1}}}}  \, \& \,  \ottnt{t_{{\mathrm{2}}}} \mid \alpha \mid \ottsym{\{}  \ottmv{l}  \ottsym{:}  \ottnt{t}  \ottsym{\}}$\\
   Expressions & $\mathit{E}$ & $\Coloneqq$ & $\ottmv{x} \mid i \mid  \top  \mid  \lambda \ottmv{x} .\, \mathit{E}  \mid \mathit{E}_{{\mathrm{1}}} \, \mathit{E}_{{\mathrm{2}}} \mid  \mathit{E}_{{\mathrm{1}}}  \, ,, \,  \mathit{E}_{{\mathrm{2}}}  \mid \mathit{E}  \ottsym{:}  \ottnt{A} \mid \ottsym{\{}  \ottmv{l}  \ottsym{=}  \mathit{E}  \ottsym{\}} \mid \mathit{E}  \ottsym{.}  \ottmv{l} $ \\
         & & $\mid$ & $   \Lambda (  \alpha   *   \ottnt{A}  ) .\, \mathit{E}  \mid \mathit{E} \, \ottnt{A} $ \\
-  Term contexts & $\Gamma$ & $\Coloneqq$ &  $ \bullet  \mid \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottnt{A} $ \\
-  Type contexts & $\Delta $ & $\Coloneqq $ & $ \bullet  \mid \Delta  \ottsym{,}  \alpha  *  \ottnt{A} $  \\ \bottomrule
+  Term contexts & $\Gamma$ & $\Coloneqq$ &  $ \bullet  \mid \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottnt{A} $  \\
+  Type contexts & $\Delta $ & $\Coloneqq$ & $  \bullet  \mid \Delta  \ottsym{,}  \alpha  *  \ottnt{A} $  \\ \bottomrule
 \end{tabular}
   \caption{Syntax of \fnamee}
   \label{fig:syntax:fi}
@@ -189,6 +189,13 @@ $ \Lambda (  \alpha   *   \ottnt{A}  ) .\, \mathit{E} $ and type applications $\
 
 \paragraph{Well-formedness and unrestricted intersections.}
 
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.8,right=#1,#2]
+    {#3}
+    {#4}
+}
+
+
 \fnamee's well-formedness judgment of types $\Delta  \vdash  \ottnt{A}$ is
 standard, and only enforces well-scoping. This
 is one of the key differences from \fname, which uses
@@ -212,7 +219,14 @@ show that \fname only produces disjoint intersection types. As a consequence,
 \fname features a \emph{weaker} substitution lemma (note the gray
 part in \cref{lemma:weaker_lemma}) than \fnamee (\cref{lemma:general_lemma}).
 
-\begin{proposition}[Types are stable under substitution in \fname] \label{lemma:weaker_lemma}
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.6,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
+
+\begin{proposition}[Type substitution in \fname] \label{lemma:weaker_lemma}
   If $\Delta  \vdash  \ottnt{A}$, $\Delta  \vdash  \ottnt{B}$, $ ( \alpha   *   \ottnt{C} ) \in  \Delta $, $\hlmath{\Delta  \vdash  \ottnt{B}  *  \ottnt{C}}$
   and well-formed context $ [  \ottnt{B}  /  \alpha  ]  \Delta $, then $ [  \ottnt{B}  /  \alpha  ]  \Delta   \vdash   [  \ottnt{B}  /  \alpha  ]  \ottnt{A} $.
 \end{proposition}
@@ -225,7 +239,7 @@ part in \cref{lemma:weaker_lemma}) than \fnamee (\cref{lemma:general_lemma}).
 \end{figure}
 
 
-\begin{lemma}[Types are stable under substitution in \fnamee] \label{lemma:general_lemma}
+\begin{lemma}[Type substitution in \fnamee] \label{lemma:general_lemma}
   If $\Delta  \vdash  \ottnt{A}$, $\Delta  \vdash  \ottnt{B}$, $ ( \alpha   *   \ottnt{C} ) \in  \Delta $
   and well-formed context $ [  \ottnt{B}  /  \alpha  ]  \Delta $, then $ [  \ottnt{B}  /  \alpha  ]  \Delta   \vdash   [  \ottnt{B}  /  \alpha  ]  \ottnt{A} $.
 \end{lemma}
@@ -320,12 +334,14 @@ a notable change regarding disjointness with \emph{top-like types}.
 Top-like types are all types that are isomorphic to $ \top $ (i.e.,
 simultaneously sub- and supertypes of $ \top $). Hence, they are inhabited by a
 single value, isomorphic to the $ \top $ value. \cref{fig:disjoint:fi} captures
-this notion in a syntax-directed fashion in the $ \rceil  \ottnt{A}  \lceil $ predicate. As a
-historical note, top-like types were first introduced in
-\oname~\cite{oliveira2016disjoint}, and then adopted by \fname~\cite{alpuimdisjoint}. Their motivation
-is solely for enabling a syntactic method of proving coherence, and due to the
-lack of BCD subtyping, they do not have a type-theoretic interpretation of
-top-like types.
+this notion in a syntax-directed fashion in the $ \rceil  \ottnt{A}  \lceil $ predicate.
+As a historical note, the concept of top-like types was already known by
+Barendregt et al.~\cite{Barendregt_1983}. The \oname calculus~\cite{oliveira2016disjoint}
+re-discovered it and coined the term ``top-like types''; the \fname calculus~\cite{alpuimdisjoint} extended it
+with universal quantifiers. Note that in both calculi,
+top-like types are solely employed for enabling a syntactic method of
+proving coherence, and due to the lack of BCD subtyping, they do not have a
+type-theoretic interpretation of top-like types.
 
 
 
@@ -370,7 +386,7 @@ Two other interesting rules are
 with some type $\ottnt{B}$ if its disjointness constraints $\ottnt{A}$ is a subtype of
 $\ottnt{B}$.
 Disjointness axioms $ \ottnt{A}  *_{ax}  \ottnt{B} $ (appearing in \rref{D-ax}) take
-care of two types with different type constructors (e.g., $ \mathsf{Int} $ and records). Axiom rules can be found in \cref{appendix:fnamee}.
+care of two types with different type constructors (e.g., $ \mathsf{Int} $ and records). Axiom rules can be found in the appendix.
 Finally we note that the disjointness relation is symmetric.
 
 % \begin{lemma}[Symmetry of disjointness]
@@ -628,7 +644,7 @@ variable is popped out and we continue with the body.
 \Rref{A-bot} is similar to its declarative counterpart.
 Two meta-functions $ \llbracket  \mathcal{Q}  \rrbracket^{\top} $
 and $ \llbracket  \mathcal{Q}  \rrbracket^{\&} $ are meant to generate correct forms of coercions, and their
-definitions are shown in \cref{appendix:fnamee}. For other algorithmic rules, we refer to
+definitions are shown in the appendix. For other algorithmic rules, we refer to
 \namee~\cite{bi_et_al:LIPIcs:2018:9227} for detailed explanations.
 
 
@@ -653,7 +669,7 @@ Moreover, we prove that our algorithmic type system is decidable. To see this,
 first notice that the bidirectional type system is syntax-directed, so we only
 need to show decidability of algorithmic subtyping and
 disjointness. The full (manual) proofs for decidability can be found in
-\cref{appendix:decidable}.
+the appendix.
 
 \begin{restatable}[Decidability of algorithmic subtyping]{lemma}{decidesub} \label{lemma:decide-sub}
   Given $\mathcal{Q}$, $\ottnt{A}$ and $\ottnt{B}$, it is decidable whether there exists
@@ -670,6 +686,13 @@ disjointness. The full (manual) proofs for decidability can be found in
 % \begin{restatable}[Decidability of typing]{theorem}{decidetyp} \label{lemma:decide-typing}
 %   Given $\Delta$, $\Gamma$, $\mathit{E}$ and $\ottnt{A}$, it is decidable whether $\Delta  \ottsym{;}  \Gamma  \vdash  \mathit{E} \, \Leftrightarrow \, \ottnt{A}$.
 % \end{restatable}
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.8,right=#1,#2]
+    {#3}
+    {#4}
+}
+
 
 One interesting observation here is that although our disjointness
 quantification has a similar shape to bounded quantification $ \forall (  \alpha   <:   \ottnt{A}  ) .\,  \ottnt{B} $ in
@@ -691,6 +714,13 @@ by employing an invariant rule for bounded quantification
 (that is by forcing $\ottnt{A_{{\mathrm{1}}}}$ and $\ottnt{A_{{\mathrm{2}}}}$ to be identical).
 Disjoint quantification does not require such invariant rule for
 decidability.
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.6,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
 
 \begin{comment}
 For example, in the original

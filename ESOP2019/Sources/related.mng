@@ -105,7 +105,7 @@ that works on functions only. % Like ours, they also impose well-formedness
 % arbitrary types.
 Dunfield proposed a calculus~\cite{dunfield2014elaborating}
 (which we call \dname) that shows significant expressiveness of type systems
-with unrestricted intersection types and a (unrestricted) merge operator.
+with unrestricted intersection types and an (unrestricted) merge operator.
 However, because of his unrestricted merge operator (allowing $  1   \, ,, \,   2  $), his calculus lacks coherence.
 Blaauwbroek's \lname~\cite{lasselambda} enriched \dname with BCD subtyping and
 computational effects, but he did not address coherence.

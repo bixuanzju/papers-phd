@@ -101,24 +101,35 @@ in a modular and compositional style.
 Defining the merge combinator in existing
 programming languages is verbose and cumbersome, requiring code for every
 new kind of syntax. Yet, that code is essentially mechanical and ought to be
-automated. While using advanced meta-programming techniques enables automating
+automated. 
+While using advanced meta-programming techniques enables automating
 the merge combinator to a large extent in existing programming
 languages~\cite{oliveira2013feature, rendel14attributes}, those techniques have
 several problems: error messages can be problematic, type-unsafe reflection
 is needed in some approaches~\cite{oliveira2013feature} and
 advanced type-level features are required in others~\cite{rendel14attributes}.
+An alternative to the merge combinator that supports modular multiple
+interpretations and works in OO languages with
+support for some form of multiple inheritance and covariant
+type-refinement of fields has also been recently
+proposed~\cite{zhang19shallow}. 
+While this approach is relatively simple, it still
+requires a lot of manual boilerplate code for composition of interpretations.
 
 This paper presents a calculus and polymorphic type system with
 \emph{(disjoint) intersection types}~\cite{oliveira2016disjoint},
-called \fnamee~\footnote{The ``+'' symbol stands for two extra features
-compared to \fname: \emph{BCD subtyping} and \emph{unrestricted intersections}.}, that
+called \fnamee. \fnamee
 supports our broader notion of compositional designs, and enables
 the development of highly modular and reusable programs. \fnamee
 has a built-in merge operator and a powerful subtyping relation that
-are used to automate the composition of multiple (possibly dependent) interpretations.
-% \jeremy{How about a figure that depicts the relationships between
-%   \oname, \fname, \namee and \fnamee?}\bruno{Great idea, by I think it
-% makes more sense in related work.}
+are used to automate the composition of multiple (possibly dependent)
+interpretations. In \fnamee subtyping is coercive and enables the
+automatic generation of coercions in a \emph{type-directed} fashion. 
+This process is similar to that of other type-directed code generation mechanisms
+such as 
+\emph{type classes}~\cite{Wadler89typeclasses}, which eliminate 
+boilerplate code associated to the \emph{dictionary translation}~\cite{Wadler89typeclasses}.
+
 \fnamee continues a line of
 research on disjoint intersection types.
  Previous work on
@@ -207,20 +218,20 @@ In summary the contributions of this paper are:
 
 \item {\bf The \fnamee calculus,} which is the first calculus to combine 
 disjoint intersection types, BCD-style distributive subtyping and 
-disjoint polymorphism. 
-   We show several meta-theoretical results, such as \emph{type-safety}, 
-\emph{sound and complete algorithmic subtyping}, \emph{coherence} and
-\emph{decidability} of the type system.
+disjoint polymorphism. We show several meta-theoretical results, such as \emph{type-safety}, \emph{sound and complete algorithmic subtyping},
+\emph{coherence} and \emph{decidability} of the type system.
+\fnamee includes the \emph{bottom type}, which was considered to be a
+significant challenge in previous work on disjoint polymorphism~\cite{alpuimdisjoint}.
 
-\item {\bf An extension of the canonicity relation with polymorphism,} which enables the proof
-    of coherence of \fnamee. We show that the ideas of
+\item {\bf An extension of the canonicity relation with polymorphism,}
+  which enables the proof of coherence of \fnamee. We show that the ideas of
   System F's \emph{parametricity} cannot be ported to
   \fnamee. To overcome the problem we use a technique based on
   immediate substitutions and a predicativity restriction.
 
-\item {\bf Disjoint intersection types in the presence of bottom:}
-  Our calculus includes the bottom type, which was considered to be a
-significant challenge in previous work on disjoint polymorphism~\cite{alpuimdisjoint}.
+% \item {\bf Disjoint intersection types in the presence of bottom:}
+%   Our calculus includes the bottom type, which was considered to be a
+% significant challenge in previous work on disjoint polymorphism~\cite{alpuimdisjoint}.
 
 \item {\bf Improved compositional designs:} We show that \fnamee's combination of features
 enables improved
