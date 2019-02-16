@@ -1,0 +1,73 @@
+
+% AMS packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\usepackage{mathtools}
+\usepackage{mdwlist}
+\usepackage{pifont}
+
+
+% Miscellaneous
+\usepackage{paralist}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{lscape}
+
+
+% Revision tools
+\usepackage{xspace}
+\usepackage{comment}
+\newcommand\mynote[3]{}
+
+\newcommand{\hl}[2][gray!40]{\colorbox{#1}{#2}}
+\newcommand{\hlmath}[2][gray!40]{\colorbox{#1}{$\displaystyle#2$}}
+\newcommand{\otthl}[2][gray!40]{ \colorbox{#1}{$\displaystyle#2$}}
+
+
+% Graphs
+\usepackage{tikz}
+\usetikzlibrary{matrix}
+\usetikzlibrary{arrows,automata}
+\usetikzlibrary{positioning}
+
+
+% Hyper links
+\usepackage{url}
+\usepackage{
+  nameref,%\nameref
+  hyperref,%\autoref
+}
+\usepackage[capitalise]{cleveref}
+
+\usepackage{thmtools, thm-restate}
+
+\usepackage[misc]{ifsym}
+
+\declaretheorem[name=$\mathcal{L}$emma,
+  % numberwithin=section,
+  refname={$\mathcal{L}$emma,$\mathcal{L}$emmas},
+  Refname={$\mathcal{L}$emma,$\mathcal{L}$emmas}]{clemma}
+
+\declaretheorem[name=$\mathcal{T}$heorem,
+  % numberwithin=section,
+  refname={$\mathcal{T}$heorem,$\mathcal{T}$heorems},
+  Refname={$\mathcal{T}$heorem,$\mathcal{T}$heorems}]{ctheorem}
+
+\declaretheorem[name=Observation]{observation}
+
+\declaretheorem[name=Proof]{Proof}
+
+
+\usepackage{rotating}
+
+\usepackage{ottalt}
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[right=\scriptsize{#1}]
+    {#3}
+    {#4}
+}

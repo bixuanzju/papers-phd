@@ -95,8 +95,9 @@ Our calculus does not provide built-in support for algebraic datatypes (ADTs).
 Nevertheless, the calculus is expressive enough to support efficient
 function-based encodings of (optionally polymorphic) ADTs\footnote{In a type
   system with impure features, such as non-termination or exceptions, the encoded
-  types can have valid inhabitants with side-effects. However, that is beyond
-  the scope of this paper.}. This offers an immediate way to model algebraic
+  types can have valid inhabitants with side-effects, which means we only get
+  the \textit{lazy} version of those datatypes.}.
+This offers an immediate way to model algebraic
 datatypes in our calculus without requiring extensions to our calculus or, more
 importantly, to its target---the polymorphic blame calculus. While we believe
 that such extensions are possible, they would likely require non-trivial
